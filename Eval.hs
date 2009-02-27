@@ -107,6 +107,9 @@ eval es env (StrCat e1 e2) = do StrLit a <- eval es env e1 t
 
 eval es (SigVal sve) = do --Just t <- cur_t `fmap` ask
   SigV efun <- eval es sve
+  {-case cur_t es of
+    Just t -> return ()
+    Nothing -> error $ "no time in expr "++show sve-}
   return $ efun (curTime es)
 
 eval es (Sig se) 
@@ -123,8 +126,11 @@ eval es (SigAt offset sve) =
        NumV n <- eval es offset
        return (efun $ (numToDouble n)) 
 
+{-eval es (SigDelay s) = eval es (Sig $ SigAt (M2 Sub (SigVal (Var "seconds")) dt') s )
+    where dt' = Const . NumV . NReal $ dt es-}
+
 eval es (Event evexp) = do
-  let evalEvt t = case unEvalM $ eval es evexp of
+  let evalEvt t = case unEvalM $ eval (withTime t es) evexp of
                              ListV l -> l
                              _ -> []
   return $ ListV $ concatMap evalEvt [0,dt es..tmax es]
@@ -170,7 +176,10 @@ applyNumM2  es e1 e2 f
 test = teval (1+1.5) 
 
 teval e = unEvalM $ eval emptyEvalS e
+decr = Lam "x" $ M2 Sub (Var "x") 1 
 add = Lam "x" $ Lam "y" $ M2 Add (Var "x") (Var "y") 
+fact = Lam "n" 
+
 myAdd = App (App add 1) 2
 
 ta = teval myAdd

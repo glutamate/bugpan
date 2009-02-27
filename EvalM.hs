@@ -20,7 +20,7 @@ curTime = fromJust . cur_t
 
 --type EvalM a = ErrorT String (ReaderT EvalS Identity) a
 
-data EvalM a = Res { unEvalM :: a } | Error String
+data EvalM a = Res a | Error String
 
 emptyEvalS = EvalS 1 1 Nothing []
 --    deriving (Functor, Monad, MonadPlus, Error, MonadReader)
@@ -51,6 +51,10 @@ unEvalM st era =   runIdentity $ runReaderT (do ra <- runErrorT  era
                                                 case ra of 
                                                       Right rra -> return rra
                                                       Left s -> fail s) st -}
+
+unEvalM :: EvalM a -> a
+unEvalM (Res x) = x
+unEvalM (Error s) = error $ "unEvalM: "++s
 
 runEvalM :: Monad m => EvalM a -> m a
 runEvalM (Res x) = return  x

@@ -52,7 +52,7 @@ run prelude decls dt tmax
 	 --let initEnvExprs = [(n,e) | Let n e <- decls]
          --let initEnv = [] 
          env <- newIORef prelude
-         unsolvd <- newIORef [(n,changeSigDelay dt e) | Let n e <- decls]
+         unsolvd <- newIORef [(n, changeSigDelay dt e) | Let n e <- decls]
          --unsolvEvts <- newIORef [(n,changeSigDelay dt e) | LetEvt n e <- decls]
          --let (initEnv, unsolvd) =  resolveExprs [] initEnvExprs
          let addEnv n v = readIORef env >>= writeIORef env . ((n,v):)
@@ -109,10 +109,10 @@ run prelude decls dt tmax
 
          -- print nmsigs
 
-         dumpEnv env "before resolve"
-         dumpEnv unsolvd "unsolved"
+        -- dumpEnv env "before resolve"
+         --dumpEnv unsolvd "unsolved"
          tryResolv
-         dumpEnv env "after resolve"
+         --dumpEnv env "after resolve"
          --rest of sinks
          envNow <- readIORef env
 	 forM_ snksLater $ \(s,e) -> do
@@ -129,7 +129,7 @@ run prelude decls dt tmax
                                     putStrLn "}" 
 
 remPrelude :: Eq a => [(a,b)] -> [(a,b)] -> [(a,b)]
-remPrelude prel env = filter (\(x,y)-> x `elem` map fst prel) env
+remPrelude prel env = filter (\(x,y)-> not (x `elem` map fst prel)) env
 
 resolveExprs :: Env -> Double -> Double ->[(String,E)] -> (Env, [(String,E)])
 resolveExprs env dt tmax newSigs 
@@ -141,27 +141,37 @@ resolveExprs env dt tmax newSigs
           maybeSolve :: (String,E) -> Either (String,V) (String,E)
           maybeSolve (n, vs) = if haveAllVarsInExpr vs
                                    then evalExpr (n,vs)
-                                   else ulog (concat ["missing vars for ",
+                                   else {- ulog (concat ["missing vars for ",
                                                      n, ": ",
-                                                     show (freeVars vs)]) $ Right (n,vs)
+                                                     show (freeVars vs)]) $ -} Right (n,vs)
           haveAllVarsInExpr e = all (`elem` (map fst env)) $ freeVars e
+          fromRight (Right x) = x
           es :: EvalS
           es = EvalS dt tmax Nothing env
           evalExpr :: (String,E)->Either (String,V) (String,E)
-          evalExpr (n,ss) = case sfEvalM (eval es ss) of
+          evalExpr (n,ss) = case  eres of
                                 Right v -> Left (n,v)
                                 Left x ->ulog (show ss++"\n"++show x) $ Right (n,ss)
+              where eres =  sfEvalM (eval (extEnv (n, fromRight eres) es) ss)
+                    nres = sfEvalM (eval es ss)
+
 
 ulog x y = unsafePerformIO (putStrLn ("unsafe log: "++x) >> return y)
 
 lookupMany :: Eq a => [a] -> [(a,b)] -> [(a,b)]
 lookupMany nms assoc 
-    = map (\(n,v)-> (n, fromJust v)) . filter (isJust . snd) $ map (\nm->(nm, lookup nm assoc)) nms 
+    = justSnds $ map (\nm->(nm, lookup nm assoc)) nms 
 
 
 	{-= do 	e <- newIORef []
 		forM_ [0,dt..tmax] $ \t-> print t
 -}
+
+justSnds :: [(a,Maybe b)]->[(a,b)]
+justSnds [] = []
+justSnds ((x,Nothing):rest) = justSnds rest
+justSnds ((x,Just y):rest) = (x,y):(justSnds rest)
+
 declExprs (Let _ e) = [e]
 --declExprs (LetSig _ e) = [e]
 declExprs (LetRec _ e) = [e]

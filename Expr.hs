@@ -89,11 +89,15 @@ queryE q e@(SigDelay e1) = q e++m e1
 	where m = queryE q
 queryE q e@(Event e1) = q e++m e1
 	where m = queryE q
+queryE q e@(Const _) = q e
+	where m = queryE q
 queryE q e@(SigAt e1 e2) = q e++m e1++m e2
 	where m = queryE q
 queryE q e@(Case ce cs) = q e++q ce++concatMap (m . snd) cs
 	where m = queryE q
-queryE q e = q e 
+queryE q e@(Var _) = q e
+queryE q e@(Nil) = q e
+queryE q e = error $ "queryE: unknown expr "++show e 
 
 freeVars :: E -> [String]
 freeVars e = fv [] e
@@ -129,6 +133,7 @@ mapE f (App le ae) = f (App (m le) (m ae))
 mapE f (Var n) = f (Var n)
 mapE f (Sig s) = f (Sig (mapE f s))
 mapE f (SigVal s) = f (SigVal (mapE f s))
+mapE f (SigDelay s) = f (SigDelay (mapE f s))
 mapE f (SigAt s1 s2) = f (SigAt (mapE f s1) (mapE f s2))
 mapE f (M1 m s) = f (M1 m (mapE f s))
 mapE f (M2 m s1 s2) = f (M2 m (mapE f s1) (mapE f s2))
@@ -138,7 +143,12 @@ mapE f (Cons s1 s2) = f (Cons (mapE f s1) (mapE f s2))
 mapE f (Not s) = f (Not (mapE f s))
 mapE f (Cmp o s1 s2) = f (Cmp o (mapE f s1) (mapE f s2))
 mapE f (Pair s1 s2) = f (Pair (mapE f s1) (mapE f s2))
-mapE f e = f e
+mapE f (Event s2) = f (Event (mapE f s2))
+mapE f (Const c) = f (Const c)
+mapE f (Nil) = f (Nil)
+mapE f e = error $ "mapE: unknown expr "++show e 
+
+--mapE f e = f e
 
 subVar n es e = mapE f e where 
     f (Var n') | n== n' = es
