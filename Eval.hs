@@ -126,6 +126,10 @@ eval es (SigAt offset sve) =
        NumV n <- eval es offset
        return (efun $ (numToDouble n)) 
 
+eval es (LetE ses er) = do
+  let nvs = map (\(n,e)-> (n, unEvalM $ eval (extsEnv nvs es) e)) ses
+  eval (extsEnv nvs es) er
+
 {-eval es (SigDelay s) = eval es (Sig $ SigAt (M2 Sub (SigVal (Var "seconds")) dt') s )
     where dt' = Const . NumV . NReal $ dt es-}
 
@@ -176,7 +180,7 @@ applyNumM2  es e1 e2 f
 test = teval (1+1.5) 
 
 teval e = unEvalM $ eval emptyEvalS e
-decr = Lam "x" $ M2 Sub (Var "x") 1 
+--decr = Lam "x" $ M2 Sub (Var "x") 1 
 add = Lam "x" $ Lam "y" $ M2 Add (Var "x") (Var "y") 
 fact = (Lam "n" (If (Var "n" .==. 1) (1) (M2 Mul (Var "n") (App (Var "fact") ((Var "n") -1)))))
 

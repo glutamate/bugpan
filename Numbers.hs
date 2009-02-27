@@ -8,9 +8,12 @@ data NumVl = NInt Int
 	   -- | NRat Int Int
 	   | NReal Double
 	   | NCmplx (Complex Double)
-		deriving (Show, Eq)
+		deriving ( Eq)
 
-
+instance Show NumVl where
+    show (NInt i) = show i
+    show (NReal f) = show f
+    show (NCmplx (r:+c)) = show r++" + i*"++show c
 
 data Ntype = NI | NR | NC deriving (Show,Eq, Enum, Ord)
 

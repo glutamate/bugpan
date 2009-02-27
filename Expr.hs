@@ -20,6 +20,7 @@ data CmpOp = Lt | Gt | Eq | Ne | Le | Ge deriving (Show, Eq)
 instance Num V where
     (NumV n1) + (NumV n2) = NumV $n1+n2
     (NumV n1) - (NumV n2) = NumV $n1-n2
+    e1 - e2 = error $ "error: "++show e1++"-"++show e2
     (NumV n1) * (NumV n2) = NumV $n1*n2
     abs (NumV n1) = NumV (abs n1)
     signum (NumV n1) = NumV (signum n1)
@@ -47,6 +48,7 @@ data E =  If E E E
 	| SigAt E E
         | SigDelay E
         | Event E
+        | LetE [(String, E)] E
 --	| NamedSig E
 	deriving (Show, Eq)
 
@@ -61,6 +63,10 @@ data Declare
 queryE :: (E-> [a]) -> E -> [a]
 queryE q e@(If p c a) = q e ++ m p ++ m c ++m a
 	where m = queryE q
+
+queryE q e@(LetE ses er) = q e ++ m er ++ concatMap (m . snd) ses  
+	where m = queryE q
+
 queryE q e@(Lam n bd) = q e ++ m bd
 	where m = queryE q
 queryE q e@(App le ae) = q e ++ m le ++ m ae
@@ -121,6 +127,7 @@ freeVars e = fv [] e
           fv e (Event s1) = fv e s1
           fv e (Const _) = []
           fv e (Nil) = []
+          fv e (LetE ses er) = fv (map fst ses++e) er ++ concatMap (fv (map fst ses++e) . snd) ses 
           --fv e (expr) = []
 
 mapE :: (E-> E)-> E -> E
@@ -146,6 +153,7 @@ mapE f (Pair s1 s2) = f (Pair (mapE f s1) (mapE f s2))
 mapE f (Event s2) = f (Event (mapE f s2))
 mapE f (Const c) = f (Const c)
 mapE f (Nil) = f (Nil)
+mapE f (LetE ses er) = f (LetE (map (\(n,e)-> (n, mapE f e)) ses) (mapE f er))
 mapE f e = error $ "mapE: unknown expr "++show e 
 
 --mapE f e = f e

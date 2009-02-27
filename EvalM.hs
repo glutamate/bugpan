@@ -72,7 +72,22 @@ data V  = BoolV Bool
 	| LamV (V->EvalM V)
 	| SigV (Double->V)
         | Unit
-          deriving (Show, Eq)
+          deriving (Eq)
+
+instance Show V where
+    show (BoolV True) = "True"
+    show (BoolV False) = "False"
+    show (NumV v) = show v
+    show (StrV s) = show s
+    show (LamV _) = "<lambda value>"
+    show (SigV _) = "<signal value>"
+    show (PairV v w) = "("++show v++","++show w++")"
+    show (Unit) = "()"
+    show (ListV vs) =  "["++slist vs++"]"
+        where slist [] = ""
+              slist (x:[]) = show x
+              slist (x:xs) = show x ++ ", " ++ slist xs
+
 
 withTime t  es =  es {cur_t=Just t}
 
@@ -80,6 +95,10 @@ withoutTime  es = es {cur_t= Nothing }
 
 extEnv :: (String,V) -> EvalS -> EvalS
 extEnv p@(n,v) es = es {env=(p:env es)}
+
+extsEnv :: [(String,V)] -> EvalS -> EvalS
+extsEnv ps es = es {env=(ps++env es)}
+
 
 type Env = [(String, V)]
 

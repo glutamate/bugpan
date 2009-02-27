@@ -26,7 +26,24 @@ import System.IO.Unsafe
 
 -- +let rec
 -- let rec for signals?
+{- euler:
+ dy/dt = f(y, t) and y(0) = y0
 
+then
+
+y(t+dt) = y(t) + dt * f(y(t), t)
+
+integrate :: (a->Signal a) -> a -> Signal a
+integrate f y0 = s 
+    where yt = SigVal $ SigDelay s
+           s = Sig $ yt+ dt * SigVal (f (yt)) 
+
+
+start simpler:
+
+iterate :: (a->a) -> a -> Signal a
+intsig :: Signal a -> Signal a
+-}
 -- database sinks
 
 -- poisson events
@@ -35,7 +52,6 @@ import System.IO.Unsafe
 -- mouse input, gfx output
 -- try int fire 
 -- parser
-
 
 sigSrcs :: [(String, Device SigSrc)]
 sigSrcs = [] -- ("seconds", secondsSig)]
