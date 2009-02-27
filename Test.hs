@@ -6,7 +6,7 @@ import EvalM
 import Run
 import Numbers
 
-main = lookup "cross1" `fmap` run prelude testProg 0.1 1
+main = {-lookup "cross1" `fmap`-} run prelude testProg 0.1 1
 
 smapE :: E
 smapE = Lam "f" $ Lam "sig" $ Sig (App (Var "f") (SigVal (Var "sig")))
@@ -18,6 +18,8 @@ testProg = [Let "secs" (Var "seconds"),
             Let "secsp1d2" $ Sig (SigAt (time-0.2) (Var "secsp1")),
             Let "secsp1d1" $ SigDelay (Var "secsp1"),
             Let "cross1" $ crossesUp (Var "seconds") 0.5,
+            Let "fact" fact,
+            Let "fact5" (Var "fact" $> 5),
             --Let "cross2" $ crossesUp (Var "secsp1d1") 1.5,
             SinkConnect (Var "secsp1d1") "print"]
 
@@ -63,7 +65,11 @@ prelude = [
                                                      vs <- sequence $ map f ls
                                                      return $ ListV vs),
  "seconds" #= SigV (NumV . NReal),                           
- "incr" #= (LamV $ \x-> return $ x+1)
+ "incr" #= (LamV $ \x-> return $ x+1) {-,
+ "fact" #= (LamV $ \n -> return  (If (Var "n" .==. 1) 
+                                         (1) 
+                                         (M2 Mul (Var "n") (App (Var "fact") ((Var "n") -1))))) -}
+
  --"smap" #= LamV $ \f-> LamV $ \sig-> Sig (App (Var "f") (SigVal (Var "sig")))
 
           ]

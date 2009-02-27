@@ -21,10 +21,10 @@ import System.IO.Unsafe
 -- +events
 -- +delay
 -- +no more pull sig
--- event does not have oto be in outer
+-- +event does not have oto be in outer
 -- plot sink
 
--- let rec
+-- +let rec
 -- let rec for signals?
 
 -- database sinks
@@ -46,7 +46,7 @@ sigSnks = [("print", printSnk)]
 
 allSrcNames = map fst sigSrcs
 
-run :: Env -> [Declare] ->Double -> Double -> IO Env
+run :: Env -> [Declare] ->Double -> Double -> IO ()
 run prelude decls dt tmax 
     = do let exprs = concatMap declExprs decls
 	 --let initEnvExprs = [(n,e) | Let n e <- decls]
@@ -109,10 +109,10 @@ run prelude decls dt tmax
 
          -- print nmsigs
 
-        -- dumpEnv env "before resolve"
-         --dumpEnv unsolvd "unsolved"
+         dumpEnv env "before resolve"
+         dumpEnv unsolvd "unsolved"
          tryResolv
-         --dumpEnv env "after resolve"
+         dumpEnv env "after resolve"
          --rest of sinks
          envNow <- readIORef env
 	 forM_ snksLater $ \(s,e) -> do
@@ -121,7 +121,8 @@ run prelude decls dt tmax
                  let vals = zip tms $ map sig tms
                  applyVlToSnk vals s
                  
-	 return $ remPrelude prelude envNow
+         mapM (\(n,v) -> putStrLn (n++" = "++show v) ) $ remPrelude prelude envNow 
+	 return () 
              where dumpEnv e s = do putStrLn $ "Env("++s++")={" 
                                     readIORef e >>= mapM_ (\(k,v)-> do putStr (show k) 
                                                                        putStr " := " 
@@ -139,12 +140,12 @@ resolveExprs env dt tmax newSigs
     where (newSolvd,solvLater) = partitionEithers $ map maybeSolve newSigs
           -- (solvdEvts,evtsLater) = partitionEithers $ map maybeSolveEvts newEvts
           maybeSolve :: (String,E) -> Either (String,V) (String,E)
-          maybeSolve (n, vs) = if haveAllVarsInExpr vs
+          maybeSolve (n, vs) = if haveAllVarsInExpr n vs
                                    then evalExpr (n,vs)
                                    else {- ulog (concat ["missing vars for ",
                                                      n, ": ",
                                                      show (freeVars vs)]) $ -} Right (n,vs)
-          haveAllVarsInExpr e = all (`elem` (map fst env)) $ freeVars e
+          haveAllVarsInExpr n e = all (`elem` (n:map fst env)) $ freeVars e
           fromRight (Right x) = x
           es :: EvalS
           es = EvalS dt tmax Nothing env

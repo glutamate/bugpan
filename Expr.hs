@@ -192,6 +192,9 @@ e1 .>. e2 = Cmp Gt e1 e2
 e1 .<. e2 = Cmp Lt e1 e2
 e1 .>=. e2 = Cmp Ge e1 e2
 e1 .<=. e2 = Cmp Le e1 e2
+e1 .==. e2 = Cmp Eq e1 e2
+
+
 
 
 e1 .&. e2 = And e1 e2
