@@ -113,6 +113,8 @@ boolToV = BoolV
 vToBool (BoolV b)= return b
 vToBool _ = fail "non-boolean predicate"
 
+vToDbl (NumV n) = numToDouble n
+
 unLamV (LamV f) = return f
 unLamV _ = fail "expected function argument"
 

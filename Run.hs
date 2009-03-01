@@ -22,7 +22,7 @@ import System.IO.Unsafe
 -- +delay
 -- +no more pull sig
 -- +event does not have oto be in outer
--- plot sink
+-- +plot sink
 
 -- +let rec
 -- let rec for signals?
@@ -44,13 +44,13 @@ start simpler:
 iterate :: (a->a) -> a -> Signal a
 intsig :: Signal a -> Signal a
 -}
--- database sinks
 
 -- poisson events
 -- convolution
  
 -- mouse input, gfx output
 -- try int fire 
+-- database sinks
 -- parser
 
 sigSrcs :: [(String, Device SigSrc)]

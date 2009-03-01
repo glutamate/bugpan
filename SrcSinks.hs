@@ -5,6 +5,7 @@ import Eval
 import EvalM
 import Numbers
 import Control.Monad
+import Charts
 
 data Device a = Device {
 	initWith :: IO (),
@@ -23,6 +24,13 @@ secondsSig = emptyDev $ SrcAnyTimePure (\t->NumV $ NReal t)
 
 printSnk = emptyDev $ SnkAnyTime (\t v-> putStrLn $ "at "++show t++": "++show v)
 
+plotSnk 
+    = emptyDev $ SnkAllInOneGoAnytimeAnyRate 
+      (\vpts-> do
+         let pts = map (\(t,v) -> (t, vToDbl v)) vpts
+         plotGraph pts
+      )
+
 data SigSrc =   SrcAllInOneGo (IO [V]) Int
 		-- | SrcRealTime (IO a)
 		| SrcAnyTime (Double -> IO V)
@@ -30,7 +38,7 @@ data SigSrc =   SrcAllInOneGo (IO [V]) Int
 
 data SigSnk =   SnkAllInOneGoBefore ([V] -> IO ()) 
 		| SnkAllInOneGoAnytime ([V] -> IO ()) 
-		| SnkAllInOneGoAnytimeAnyRate (Int -> [V] -> IO ()) 
+		| SnkAllInOneGoAnytimeAnyRate ([(Double, V)] -> IO ()) 
 		-- | SnkRealTime (a-> IO ())
 		| SnkAnyTime (Double -> V -> IO ())
 
@@ -39,8 +47,13 @@ loadBefore _ = False
 
 
 applyVlToSnk :: [(Double, V)] -> Device SigSnk -> IO ()
-applyVlToSnk vls (Device _ _ _ _ _  (SnkAnyTime teio)) = forM_ vls $ uncurry teio
-applyVlToSnk vls (Device _ _ _ _ _  (SnkAllInOneGoAnytime teio)) = teio $ map snd vls
+applyVlToSnk vls (Device _ _ _ _ _  (SnkAnyTime teio)) 
+    = forM_ vls $ uncurry teio
+applyVlToSnk vls (Device _ _ _ _ _  (SnkAllInOneGoAnytime teio)) 
+    = teio $ map snd vls
+applyVlToSnk vls (Device _ _ _ _ _  (SnkAllInOneGoAnytimeAnyRate teio)) 
+    = teio (vls)
+
 
 getVlsFromSig :: Device SigSrc -> IO V
 getVlsFromSig (Device _ _ _ _ _  (SrcAnyTimePure srcfun))
