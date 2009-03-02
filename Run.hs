@@ -43,6 +43,13 @@ start simpler:
 
 iterate :: (a->a) -> a -> Signal a
 intsig :: Signal a -> Signal a
+
+why do i need sigdelay ?
+
+-integrate
+-differentiate
+-filter? 
+
 -}
 
 -- +compiled prelude
@@ -232,7 +239,7 @@ rights (_:es) = rights es
 
 changeSigDelay :: Double -> E -> E
 changeSigDelay dt es = (mapE f es)
-    where f (SigDelay s) = Sig $ SigAt (M2 Sub time dt') s
+    where f (SigDelay s p0) = Sig $ SigAt (M2 Sub time dt') s
           f e =e 
           dt' = (Const . NumV $ NReal dt)
           time = SigVal (Var "seconds")

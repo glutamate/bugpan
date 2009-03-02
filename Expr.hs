@@ -46,7 +46,7 @@ data E =  If E E E
 	| Sig E
 	| SigVal E
 	| SigAt E E
-        | SigDelay E
+        | SigDelay E E
         | Event E
         | LetE [(String, E)] E
 --	| NamedSig E
@@ -91,7 +91,7 @@ queryE q e@(Sig e1) = q e++m e1
 	where m = queryE q
 queryE q e@(SigVal e1) = q e++m e1
 	where m = queryE q
-queryE q e@(SigDelay e1) = q e++m e1
+queryE q e@(SigDelay e1 e2) = q e++m e1++ m e2
 	where m = queryE q
 queryE q e@(Event e1) = q e++m e1
 	where m = queryE q
@@ -123,7 +123,7 @@ freeVars e = fv [] e
           fv e (Or s1 s2) = fv e s1 ++ fv e s2
           fv e (Cons s1 s2) = fv e s1 ++ fv e s2
           fv e (Pair s1 s2) = fv e s1 ++ fv e s2
-          fv e (SigDelay s1) = fv e s1
+          fv e (SigDelay s1 s2) = fv e s1++ fv e s2
           fv e (Event s1) = fv e s1
           fv e (Const _) = []
           fv e (Nil) = []
@@ -140,7 +140,7 @@ mapE f (App le ae) = f (App (m le) (m ae))
 mapE f (Var n) = f (Var n)
 mapE f (Sig s) = f (Sig (mapE f s))
 mapE f (SigVal s) = f (SigVal (mapE f s))
-mapE f (SigDelay s) = f (SigDelay (mapE f s))
+mapE f (SigDelay s1 s2) = f (SigDelay (mapE f s1) (mapE f s2))
 mapE f (SigAt s1 s2) = f (SigAt (mapE f s1) (mapE f s2))
 mapE f (M1 m s) = f (M1 m (mapE f s))
 mapE f (M2 m s1 s2) = f (M2 m (mapE f s1) (mapE f s2))
@@ -230,7 +230,7 @@ sig = Sig . toExpr
 sigVal :: ToE a => a -> E
 sigVal = SigVal . toExpr
 
-sigDelay :: ToE a => a -> E
-sigDelay = SigDelay . toExpr
+sigDelay :: (ToE a, ToE b) => a -> b-> E
+sigDelay x y = SigDelay (toExpr x) (toExpr y)
 
 x ^$> y = (toExpr x) $> (toExpr y)

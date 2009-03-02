@@ -130,8 +130,8 @@ eval es (LetE ses er) = do
   let nvs = map (\(n,e)-> (n, unEvalM $ eval (extsEnv nvs es) e)) ses
   eval (extsEnv nvs es) er
 
-{-eval es (SigDelay s) = eval es (Sig $ SigAt (M2 Sub (SigVal (Var "seconds")) dt') s )
-    where dt' = Const . NumV . NReal $ dt es-}
+eval es (SigDelay s p0) = eval es (Sig $ SigAt (M2 Sub (SigVal (Var "seconds")) dt') s )
+    where dt' = Const . NumV . NReal $ dt es
 
 eval es (Event evexp) = do
   let evalEvt t = case unEvalM $ eval (withTime t es) evexp of
