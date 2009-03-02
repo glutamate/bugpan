@@ -86,7 +86,7 @@ run prelude decls dt tmax
     = do let exprs = concatMap declExprs decls
 	 --let initEnvExprs = [(n,e) | Let n e <- decls]
          --let initEnv = [] 
-         env <- newIORef prelude
+         env <- newIORef (("fixedDt", NumV . NReal $ dt):prelude)
          unsolvd <- newIORef [(n, changeSigDelay dt e) | Let n e <- decls]
          --unsolvEvts <- newIORef [(n,changeSigDelay dt e) | LetEvt n e <- decls]
          --let (initEnv, unsolvd) =  resolveExprs [] initEnvExprs
