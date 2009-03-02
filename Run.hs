@@ -45,14 +45,23 @@ iterate :: (a->a) -> a -> Signal a
 intsig :: Signal a -> Signal a
 -}
 
--- compiled prelude
+-- +compiled prelude
+-- case, fst and snd
+-- sigdelay takes 2 args (for initital val)
+
+-- integrate other sig
 
 -- poisson events
 -- convolution
+
+-- solve ode
+-- try int fire 
  
 -- mouse input, gfx output
--- try int fire 
+
 -- database sinks
+
+-- daq sinks+srcs 
 -- parser
 
 sigSrcs :: [(String, Device SigSrc)]
@@ -140,7 +149,7 @@ run prelude decls dt tmax
                  let vals = zip tms $ map sig tms
                  applyVlToSnk vals s
                  
-         mapM (\(n,v) -> putStrLn (n++" = "++show v) ) $ remPrelude prelude envNow 
+         mapM (\(n,v) -> putStrLn (n++" = "++show v) ) $ {-remPrelude prelude-} envNow 
 	 return () 
              where dumpEnv e s = do putStrLn $ "Env("++s++")={" 
                                     readIORef e >>= mapM_ (\(k,v)-> do putStr (show k) 

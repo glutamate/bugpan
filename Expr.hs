@@ -213,3 +213,24 @@ e1 .|. e2 = Or e1 e2
 
 t = Const $ BoolV True
 f = Const $ BoolV False
+
+
+class ToE a where
+    toExpr :: a -> E
+
+instance ToE E where
+    toExpr = id
+
+instance ToE [Char] where
+    toExpr = Var
+
+sig :: ToE a => a -> E
+sig = Sig . toExpr
+
+sigVal :: ToE a => a -> E
+sigVal = SigVal . toExpr
+
+sigDelay :: ToE a => a -> E
+sigDelay = SigDelay . toExpr
+
+x ^$> y = (toExpr x) $> (toExpr y)

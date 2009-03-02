@@ -8,16 +8,12 @@ import Numbers
 
 main = {-lookup "cross1" `fmap`-} run prelude testProg 0.1 1
 
-smapE :: E
-smapE = Lam "f" $ Lam "sig" $ Sig (App (Var "f") (SigVal (Var "sig")))
-
-smap f s = (App (App smapE f) s)
-
 testProg =
     [Let "secs" (Var "seconds"),
-     Let "secsp1" $ smap (Var "incr") (Var "seconds"),
+     Let "secsp1" $ (Var "smap") $> (Var "incr") $> (Var "seconds"),
      Let "secsp1d2" $ Sig (SigAt (time-0.2) (Var "secsp1")),
      Let "secsp1d1" $ SigDelay (Var "secsp1"),
+     Let "intsig" $ Var "integrate" $> (Sig 1),
      Let "cross1" $ crossesUp (Var "seconds") 0.5,
      -- Let "fact" fact,
      Let "fact5" (Var "fact" $> 5),
@@ -35,7 +31,7 @@ testProg =
      Let "fib" $ LetE ["f" #= (Lam "n" $ If (Var "n" .<. 3) 
                                               (1) 
                                               ((Var "f" $> (decr $> (Var "n")))+(Var "f" $> (Var "decr2" $> (Var "n")))))] (Var "f"),
-     SinkConnect (Var "iterIncr") "plot"]
+     SinkConnect (Var "intsig") "print"]
 
 {-test = teval (1+1.5) 
 
@@ -83,18 +79,26 @@ prelude = [
  "incr" #= (LamV $ \x-> return $ x+1),
  "decr" #= (LamV $ \x-> return $ x-1),
  "decr2" #= (LamV $ \x-> return $ x-2),
+ "fst" #= (LamV $ \(PairV car _) -> return car),
+ "snd" #= (LamV $ \(PairV _ cdr) -> return cdr),
  "fact"#= ev (Lam "n" $ If (Var "n" .==. 1) 
                                1 
-                               (Var "n" * (Var "fact" $> (Var "n" -1))))
-{-,
- "fact" #= (LamV $ \n -> return  (If (Var "n" .==. 1) 
-                                         (1) 
-                                         (M2 Mul (Var "n") (App (Var "fact") ((Var "n") -1))))) -}
+                               (Var "n" * (Var "fact" $> (Var "n" -1)))),
+ "smap" #= ev (Lam "f" . Lam "s" $ Sig (Var "f" $> (SigVal $ Var "s"))),
 
- --"smap" #= LamV $ \f-> LamV $ \sig-> Sig (App (Var "f") (SigVal (Var "sig")))
+ "sscan" #= ev (Lam "f" . Lam "v0" . Lam "s" $
+                    LetE ["sr"#= (Sig $ (Var "f") $> (SigVal (Var "s")) $> (SigDelay (Var "sr")))
+                        ] $ Var "sr"),
+ "sscan'" #= ev (Lam "f" . Lam "v0" . Lam "s" $
+                    LetE ["sr"#= (sig $ "f" ^$> sigVal "s" $> sigDelay "sr")
+                         ] $ Var "sr"),
+ "intStep" #= ev (Lam "new" . Lam "otp" $ Pair (("fst" ^$> "otp") + (Var "new")*(time-("snd" ^$> "otp"))) (time)),
+ "integrate" #= ev (Lam "s" $ (Var "smap" $> Var "fst") $> (Var "sscan" $> (Var "intStep") $> (Pair 0 0) $> Var "s"))
 
+ --"constSig" #= ev ( Lam "v" $ Sig (Var "v"))
+-- "integrate" #= ev (Lam "s" $ (Var "sscan") $>  
           ]
-             where ev e = unEvalM $ eval (extsEnv prelude emptyEvalS) e  
+              where ev e = unEvalM $ eval (extsEnv prelude emptyEvalS) e  
               
 infixl 1 #=                                         
 x #= y = (x,y) 
