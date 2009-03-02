@@ -26,7 +26,7 @@ data Graph = Plots [Plot] [GraphStyle] | GBesides [Graph] | GAbove [Graph]
 
 --plotWindow [tms w,pts w]
            
-t n = do w' <- loadWave $ "/home/tomn/waves/"++show n++"_ecVoltage.twv"
+{-t n = do w' <- loadWave $ "/home/tomn/waves/"++show n++"_ecVoltage.twv"
          let w = downSample 1000 w' --restrict w' 4 6)
          print $ npnts w
          let mrks = [(x,0) | x <- [1..6]]::[(Double,Double)]
@@ -34,7 +34,7 @@ t n = do w' <- loadWave $ "/home/tomn/waves/"++show n++"_ecVoltage.twv"
          return ()
 
 main = t 8017
-
+-}
 plotGraph :: ToGraph g => g -> IO ()
 plotGraph g = plotGraph' . toGraph $ g
 -- plotGraph' (GBesides ps) = renderableToWindow (toRenderable $ layout) width height
@@ -83,7 +83,7 @@ instance ToPlot Plot where
     toPlot = id
 
 instance ToPlot [(Double,Double)] where
-    toPlot p = Plot p [FilledCircles]
+    toPlot p = Plot p []
 
 
 class ToGraph a where

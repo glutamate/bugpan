@@ -19,7 +19,7 @@ testProg =
      Let "secsp1d2" $ Sig (SigAt (time-0.2) (Var "secsp1")),
      Let "secsp1d1" $ SigDelay (Var "secsp1"),
      Let "cross1" $ crossesUp (Var "seconds") 0.5,
-     Let "fact" fact,
+     -- Let "fact" fact,
      Let "fact5" (Var "fact" $> 5),
      Let "fib6" (Var "fib" $> 6),
      Let "cross2" $ crossesUp (Var "secsp1d1") 1.5,
@@ -35,7 +35,7 @@ testProg =
      Let "fib" $ LetE ["f" #= (Lam "n" $ If (Var "n" .<. 3) 
                                               (1) 
                                               ((Var "f" $> (decr $> (Var "n")))+(Var "f" $> (Var "decr2" $> (Var "n")))))] (Var "f"),
-     SinkConnect (Var "iterIncr") "print"]
+     SinkConnect (Var "iterIncr") "plot"]
 
 {-test = teval (1+1.5) 
 
@@ -82,7 +82,10 @@ prelude = [
  "seconds" #= SigV (NumV . NReal),                           
  "incr" #= (LamV $ \x-> return $ x+1),
  "decr" #= (LamV $ \x-> return $ x-1),
- "decr2" #= (LamV $ \x-> return $ x-2)
+ "decr2" #= (LamV $ \x-> return $ x-2),
+ "fact"#= ev (Lam "n" $ If (Var "n" .==. 1) 
+                               1 
+                               (Var "n" * (Var "fact" $> (Var "n" -1))))
 {-,
  "fact" #= (LamV $ \n -> return  (If (Var "n" .==. 1) 
                                          (1) 
@@ -91,6 +94,7 @@ prelude = [
  --"smap" #= LamV $ \f-> LamV $ \sig-> Sig (App (Var "f") (SigVal (Var "sig")))
 
           ]
+             where ev e = unEvalM $ eval (extsEnv prelude emptyEvalS) e  
               
 infixl 1 #=                                         
 x #= y = (x,y) 

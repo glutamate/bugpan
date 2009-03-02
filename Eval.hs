@@ -182,7 +182,6 @@ test = teval (1+1.5)
 teval e = unEvalM $ eval emptyEvalS e
 --decr = Lam "x" $ M2 Sub (Var "x") 1 
 add = Lam "x" $ Lam "y" $ M2 Add (Var "x") (Var "y") 
-fact = (Lam "n" (If (Var "n" .==. 1) (1) (M2 Mul (Var "n") (App (Var "fact") ((Var "n") -1)))))
 
 myAdd = App (App add 1) 2
 

@@ -6,6 +6,7 @@ import EvalM
 import Numbers
 import Control.Monad
 import Charts
+import Control.Concurrent
 
 data Device a = Device {
 	initWith :: IO (),
@@ -28,7 +29,8 @@ plotSnk
     = emptyDev $ SnkAllInOneGoAnytimeAnyRate 
       (\vpts-> do
          let pts = map (\(t,v) -> (t, vToDbl v)) vpts
-         plotGraph pts
+         forkIO $ plotGraph (pts%Lines)
+         return ()
       )
 
 data SigSrc =   SrcAllInOneGo (IO [V]) Int

@@ -25,7 +25,7 @@ import System.IO.Unsafe
 -- +plot sink
 
 -- +let rec
--- let rec for signals?
+-- +let rec for signals?
 {- euler:
  dy/dt = f(y, t) and y(0) = y0
 
@@ -45,6 +45,8 @@ iterate :: (a->a) -> a -> Signal a
 intsig :: Signal a -> Signal a
 -}
 
+-- compiled prelude
+
 -- poisson events
 -- convolution
  
@@ -57,7 +59,8 @@ sigSrcs :: [(String, Device SigSrc)]
 sigSrcs = [] -- ("seconds", secondsSig)]
 
 sigSnks :: [(String, Device SigSnk)]
-sigSnks = [("print", printSnk)]
+sigSnks = [("print", printSnk), 
+           ("plot", plotSnk)]
 
 
 allSrcNames = map fst sigSrcs
@@ -90,15 +93,15 @@ run prelude decls dt tmax
 	 let srcNeeded = extractSigs exprs
          let srcs = lookupMany srcNeeded sigSrcs 
          mapM_ (prepareWith . snd) srcs 
-	 print $ map fst srcs
+	 --print $ map fst srcs
 
          -- find out which sinks are needed, init them
          let snks' = concatMap declSinks decls
          let snks = map (\(snm,e)->(fromJust $ lookup snm sigSnks ,e)) snks'
          let (snksNow, snksLater) = partition (loadBefore . fst) snks
          mapM_ (prepareWith . fst) snksNow 
-	 putStrLn $ "snks now="++(show $ map snd snksNow)	 
-         putStrLn $ "snks later="++(show $ map snd snksLater)
+	 --putStrLn $ "snks now="++(show $ map snd snksNow)	 
+        -- putStrLn $ "snks later="++(show $ map snd snksLater)
 
 
 	 -- put all the outputs
@@ -125,10 +128,10 @@ run prelude decls dt tmax
 
          -- print nmsigs
 
-         dumpEnv env "before resolve"
-         dumpEnv unsolvd "unsolved"
+         --dumpEnv env "before resolve"
+         --dumpEnv unsolvd "unsolved"
          tryResolv
-         dumpEnv env "after resolve"
+         --dumpEnv env "after resolve"
          --rest of sinks
          envNow <- readIORef env
 	 forM_ snksLater $ \(s,e) -> do
