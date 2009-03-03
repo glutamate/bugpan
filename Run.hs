@@ -75,8 +75,8 @@ sigSrcs :: [(String, Device SigSrc)]
 sigSrcs = [] -- ("seconds", secondsSig)]
 
 sigSnks :: [(String, Device SigSnk)]
-sigSnks = [("print", printSnk), 
-           ("plot", plotSnk)]
+sigSnks = [("print", printSnk)] 
+           --("plot", plotSnk)]
 
 
 allSrcNames = map fst sigSrcs
@@ -87,7 +87,7 @@ run prelude decls dt tmax
 	 --let initEnvExprs = [(n,e) | Let n e <- decls]
          --let initEnv = [] 
          env <- newIORef (("fixedDt", NumV . NReal $ dt):prelude)
-         unsolvd <- newIORef [(n, changeSigDelay dt e) | Let n e <- decls]
+         unsolvd <- newIORef [(n, {-changeSigDelay dt-} e) | Let n e <- decls]
          --unsolvEvts <- newIORef [(n,changeSigDelay dt e) | LetEvt n e <- decls]
          --let (initEnv, unsolvd) =  resolveExprs [] initEnvExprs
          let addEnv n v = readIORef env >>= writeIORef env . ((n,v):)

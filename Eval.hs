@@ -136,7 +136,7 @@ eval es (LetE ses er) = do
 eval es (SigDelay s p0) 
     = return . SigV $ \t -> if round (t/dt es)==0
                                then unEvalM $ eval es p0
-                               else unEvalM $ eval es $ Sig $ SigAt ((SigVal (Var "seconds"))- dt') s
+                               else unEvalM $ eval (withTime t es) $ SigAt ((SigVal (Var "seconds"))- dt') s
     where dt' = Const . NumV . NReal $ dt es
 
 eval es (Event evexp) = do
