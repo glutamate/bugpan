@@ -95,7 +95,10 @@ eval es (Lam nm e) = return $ LamV (\v-> eval (extEnv (nm,v) es) e)
          ag <- eval es env arg t
 	 eval es ((nm,ag):env) bd t-}
 eval es (App lam arg) 
-    = do (LamV f) <- eval es lam
+    = do lf <- eval es lam
+         let f = case lf of
+                   LamV f' -> f'
+                   e -> fail $ "expected lamv, got "++show e
          ag <- eval es arg
 	 f ag 
          --eval es env (subVar nm ag bd) t
@@ -180,7 +183,12 @@ applyNumM2  es e1 e2 f
       		v2 <- eval es e2 
 		case (v1,v2) of
 			(NumV n1,NumV n2) -> return . NumV $ applyNumFun2 f n1 n2
-			_ -> fail "foo"
+			(e1, e2) -> fail $ concat ["expected numbers, got ",
+                                                   show e1 ,
+                                                   " and ",
+                                                   show e2,
+                                                   "; FYI 9 op 8=",
+                                                   show (f 9 8) ]
 
 
 test = teval (1+1.5) 

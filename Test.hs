@@ -14,6 +14,10 @@ testProg =
      --Let "secsp1d2" $ Sig (SigAt (time-0.2) (Var "secsp1")),
      Let "secsp1d1" $ SigDelay (Var "secsp1") 15,
      Let "intsig" $ Var "integrate" $> (Sig 1),
+     Let "intStep" (Lam "new" . Lam "old" $ (Var "old") + (Var "new")*(Var "fixedDt")),
+     Let "accsig" (Var "accum" $> Var "secs"),
+     Let "integrate" (Lam "s" $ (Var "sscan" $> (Var "intStep") $> (0) $> Var "s")),
+     Let "add34" (Var "add" $> 3 $> 4),
      --Let "cross1" $ crossesUp (Var "seconds") 0.5,
      --Let "fact5" (Var "fact" $> 5),
      --Let "fib6" (Var "fib" $> 6),
@@ -44,7 +48,7 @@ crosses sig val = Event (If (SigVal sig .>=. val .&. SigVal (SigDelay sig 0) .<.
                      (Cons (Pair (time) (Const Unit)) Nil)
                      (Nil))
 crossesUp :: E -> E -> E
-crossesUp sig val = Event (If (SigVal sig .>=. val .&. SigVal (SigDelay sig ((-2)*abs val)) .<. val) 
+crossesUp sig val = Event (If (SigVal sig .>=. val .&. SigVal (SigDelay sig ((-2)*abs val)) .<. val) --something wrong
                        (Cons (Pair (time) (Const Unit)) Nil)
                        (Nil))
 
@@ -57,6 +61,10 @@ time = SigVal (Var "seconds")
 -- :set -fbreak-on-exception
 decr = Var "decr"
 
+unPairV pr = case pr of 
+               PairV x y -> return $ (x,y)
+               _ -> fail $"expected PairV, got "++show pr
+
 prelude :: Env
 prelude = [
  "map" #= LamV (\lf -> do f <- unLamV lf
@@ -68,8 +76,10 @@ prelude = [
  "incr" #= (LamV $ \x-> return $ x+1),
  "decr" #= (LamV $ \x-> return $ x-1),
  "decr2" #= (LamV $ \x-> return $ x-2),
- "fst" #= (LamV $ \(PairV car _) -> return car),
- "snd" #= (LamV $ \(PairV _ cdr) -> return cdr),
+ "fst" #= (LamV $ \x -> fst `fmap` unPairV x ),
+ "snd" #= (LamV $ \x -> snd `fmap` unPairV x),
+ "add" #= ev (Lam "x" $ Lam "y" $ Var "x" + Var "y") ,
+ "mul" #= ev (Lam "x" $ Lam "y" $ Var "x" * Var "y") ,
  "fact"#= ev (Lam "n" $ If (Var "n" .==. 1) 
                                1 
                                (Var "n" * (Var "fact" $> (Var "n" -1)))),
@@ -81,18 +91,20 @@ prelude = [
  "smap" #= ev (Lam "f" . Lam "s" $ Sig (Var "f" $> (SigVal $ Var "s"))),
 
  "sscan" #= ev (Lam "f" . Lam "v0" . Lam "s" $
-                    LetE ["sr"#= (Sig $ (Var "f") $> (SigVal (Var "s")) $> (SigDelay (Var "sr") (Var "v0")))
+                    LetE ["sr"#= (Sig $ (Var "f") $> (SigVal (Var "s")) $> (SigVal $ SigDelay (Var "sr") (Var "v0")))
                         ] $ Var "sr"),
  {-"sscan'" #= ev (Lam "f" . Lam "v0" . Lam "s" $
                     LetE ["sr"#= (sig $ "f" ^$> sigVal "s" $> sigDelay "sr")
                          ] $ Var "sr"),-}
- "intStep" #= ev (Lam "new" . Lam "otp" $ Pair (("fst" ^$> "otp") + (Var "new")*(time-("snd" ^$> "otp"))) (time)),
- "integrate" #= ev (Lam "s" $ (Var "smap" $> Var "fst") $> (Var "sscan" $> (Var "intStep") $> (Pair 0 0) $> Var "s")),
+ "intStep'" #= ev (Lam "new" . Lam "otp" $ Pair (("fst" ^$> "otp") + (Var "new")*(time-("snd" ^$> "otp"))) (time)),
+-- "intStep" #= ev (Lam "new" . Lam "old" $ (Var "old") + (Var "new")*(Var "fixedDt")),
+ "integrate'" #= ev (Lam "s" $ (Var "smap" $> Var "fst") $> (Var "sscan" $> (Var "intStep") $> (Pair 0 0) $> Var "s")),
+-- "integrate" #= ev (Lam "s" $ (Var "sscan" $> (Var "intStep") $> (0) $> Var "s")),
  "fib" #= ev (LetE ["f" #= (Lam "n" $ If (Var "n" .<. 3) 
                                               (1) 
-                                              ((Var "f" $> (decr $> (Var "n")))+(Var "f" $> (Var "decr2" $> (Var "n")))))] (Var "f"))
+                                              ((Var "f" $> (decr $> (Var "n")))+(Var "f" $> (Var "decr2" $> (Var "n")))))] (Var "f")),
 
-
+ "accum" #= ev (Lam "s" $ Var "sscan" $> Var "add" $> 0 $> Var "s")
  --"constSig" #= ev ( Lam "v" $ Sig (Var "v"))
 -- "integrate" #= ev (Lam "s" $ (Var "sscan") $>  
           ]
