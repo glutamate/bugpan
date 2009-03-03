@@ -156,7 +156,7 @@ run prelude decls dt tmax
                  let vals = zip tms $ map sig tms
                  applyVlToSnk vals s
                  
-         mapM (\(n,v) -> putStrLn (n++" = "++show v) ) $ {-remPrelude prelude-} envNow 
+         mapM (\(n,v) -> putStrLn (n++" = "++show v) ) $ remPrelude prelude envNow 
 	 return () 
              where dumpEnv e s = do putStrLn $ "Env("++s++")={" 
                                     readIORef e >>= mapM_ (\(k,v)-> do putStr (show k) 

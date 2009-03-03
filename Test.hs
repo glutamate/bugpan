@@ -12,8 +12,8 @@ testProg =
     [Let "secs" (Var "seconds"),
      Let "secsp1" $ (Var "smap") $> (Var "incr") $> (Var "seconds"),
      Let "secsp1d2" $ Sig (SigAt (time-0.2) (Var "secsp1")),
-     Let "secsp1d1" $ SigDelay (Var "secsp1"),
-     Let "intsig" $ Var "integrate" $> (Sig 1),
+     Let "secsp1d1" $ SigDelay (Var "secsp1") 15,
+     {-Let "intsig" $ Var "integrate" $> (Sig 1),
      Let "cross1" $ crossesUp (Var "seconds") 0.5,
      -- Let "fact" fact,
      Let "fact5" (Var "fact" $> 5),
@@ -24,14 +24,14 @@ testProg =
          (Lam "f" $ Lam "s0" $ 
           LetE ["s" #= ( 
                         Sig (If (time .<=. 0.05) (Var "s0")
-                                    (Var "f" $> SigVal (SigDelay (Var "s"))))
+                                    (Var "f" $> SigVal (SigDelay (Var "s") (Var "s0"))))
                        )] (Var "s")),
      Let "iterIncr" $ (Var "iterate" $> Var "incr" $> 1.0),
 --     Let "integrate" (Lam "s" (Sig ))
      Let "fib" $ LetE ["f" #= (Lam "n" $ If (Var "n" .<. 3) 
                                               (1) 
                                               ((Var "f" $> (decr $> (Var "n")))+(Var "f" $> (Var "decr2" $> (Var "n")))))] (Var "f"),
-     SinkConnect (Var "intsig") "print"]
+     -} SinkConnect (Var "secsp1d1") "print"]
 
 {-test = teval (1+1.5) 
 
@@ -50,12 +50,12 @@ convolve = undefined
 
 -- crosses :: Signal -> Value -> Signal
 crosses :: E -> E -> E
-crosses sig val = Event (If (SigVal sig .>=. val .&. SigVal (SigDelay sig) .<. val .|. 
-                      SigVal sig .<. val .&. SigVal (SigDelay sig) .>=. val) 
+crosses sig val = Event (If (SigVal sig .>=. val .&. SigVal (SigDelay sig 0) .<. val .|. --FIXME as below
+                      SigVal sig .<. val .&. SigVal (SigDelay sig 0) .>=. val) 
                      (Cons (Pair (time) (Const Unit)) Nil)
                      (Nil))
 crossesUp :: E -> E -> E
-crossesUp sig val = Event (If (SigVal sig .>=. val .&. SigVal (SigDelay sig) .<. val) 
+crossesUp sig val = Event (If (SigVal sig .>=. val .&. SigVal (SigDelay sig ((-2)*abs val)) .<. val) 
                        (Cons (Pair (time) (Const Unit)) Nil)
                        (Nil))
 
@@ -87,11 +87,11 @@ prelude = [
  "smap" #= ev (Lam "f" . Lam "s" $ Sig (Var "f" $> (SigVal $ Var "s"))),
 
  "sscan" #= ev (Lam "f" . Lam "v0" . Lam "s" $
-                    LetE ["sr"#= (Sig $ (Var "f") $> (SigVal (Var "s")) $> (SigDelay (Var "sr")))
+                    LetE ["sr"#= (Sig $ (Var "f") $> (SigVal (Var "s")) $> (SigDelay (Var "sr") (Var "v0")))
                         ] $ Var "sr"),
- "sscan'" #= ev (Lam "f" . Lam "v0" . Lam "s" $
+ {-"sscan'" #= ev (Lam "f" . Lam "v0" . Lam "s" $
                     LetE ["sr"#= (sig $ "f" ^$> sigVal "s" $> sigDelay "sr")
-                         ] $ Var "sr"),
+                         ] $ Var "sr"),-}
  "intStep" #= ev (Lam "new" . Lam "otp" $ Pair (("fst" ^$> "otp") + (Var "new")*(time-("snd" ^$> "otp"))) (time)),
  "integrate" #= ev (Lam "s" $ (Var "smap" $> Var "fst") $> (Var "sscan" $> (Var "intStep") $> (Pair 0 0) $> Var "s"))
 
