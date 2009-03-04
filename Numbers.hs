@@ -15,7 +15,7 @@ instance Eq NumVl where
     
 (NInt n1) =~= (NInt n2) = n1==n2
 (NReal n1) =~= (NReal n2) | nearlyZero n1 && nearlyZero n2 = True
-                          | otherwise = (n1-n2)/n1 <0.0001
+                          | otherwise = abs (n1-n2)/(max (abs n1) (abs n2)) <0.0000001
 
 nearlyZero n = (n<1e-18) && (n>(-1e-18))
 
