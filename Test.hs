@@ -7,7 +7,7 @@ import Run
 import Control.Monad
 import Numbers
 
-main = {-lookup "cross1" `fmap`-} run preludeFFI testProg 0.1 20
+main = {-lookup "cross1" `fmap`-} run preludeFFI testProg 0.1 5
 
 testProg = prelude ++
     [Let "secs" (Var "seconds"),
@@ -22,13 +22,15 @@ testProg = prelude ++
      Let "syn1" (Var "alpha" $> 10 $> 1) ,
      Let "gsyn" (Var "smap" $> (Var "alpha" $> 0.6) $> (Var "seconds")),
      Let "intsyn" $ Var "integrate" $> (Var "gsyn"),
+     "preSpike" =: (Var "every" $> 1),
+     "sum_1_10" =: (Var "sum" $> (Var "oneToTen")),
      --Let "cross1" $ crossesUp (Var "seconds") 0.5,
      --Let "fact5" (Var "fact" $> 5),
      --Let "fib6" (Var "fib" $> 6),
      --Let "cross2" $ crossesUp (Var "secsp1d1") 1.5,
      --Let "fib5" (Var "fib" $> 5),
      --Let "iterIncr" $ (Var "iterate" $> Var "incr" $> 1.0),
-     SinkConnect (Var "intsyn") "plot"]
+     SinkConnect (Var "intsyn") "print"]
 
 {-test = teval (1+1.5) 
 
@@ -48,8 +50,8 @@ tN = tstEval (negate 3)
 
 test = testExprs [
         Var "alpha" $> 0.39 $> 1 #= (NumV $ 0.1029803506111),
-        negate 3 #= (-3)
-        
+        negate 3 #= (-3),
+        (Var "sum" $> (Var "oneToTen")) #= 55
 
        ]
 
@@ -63,8 +65,8 @@ testExprs ((e,v):rest) = case sfEvalM $ tstEval e of
                            Left err -> putStrLn $ "error in eval "++show e++": "++err
 
 
-convolve :: E -> E -> E
-convolve = undefined
+--convolve :: E -> E -> E
+--convolve s es = Sig $ foldr (+) $ map fst e --see arraywave
 
 -- crosses :: Signal -> Value -> Signal
 crosses :: E -> E -> E
@@ -99,13 +101,20 @@ preludeFFI = [
  "decr2" #= (LamV $ \x-> return $ x-2),
  "fst" #= (LamV $ \x -> fst `fmap` unPairV x ),
  "snd" #= (LamV $ \x -> snd `fmap` unPairV x),
- "every" #= (LamV $ \iv -> return $ ListV [PairV (Const . NumV . NReal $ tm) Unit | tm <- []])-- (numToDouble intvl)
-]
+ "oneToTen" #= (ListV . map (NumV . NInt) $ [1..10]),
+ "sum" #= (LamV $ \vs -> foldr (+) 0 `fmap` unListV vs),
+
+ "every" #= (LamV $ \(NumV iv) -> return $ ListV [PairV (NumV $ NReal tm) Unit | tm <- [0,(numToDouble iv)..20]])]
+
+constReal = Const . NumV . NReal 
+constInt = Const . NumV . NInt
+
+--l = [PairV (Const . NumV . NReal $ tm) Unit | tm <- [0,(numToDouble intvl)..]]
 
 prelude :: [Declare]
 prelude = [
  "alpha" =: (Lam "tau" . Lam "t" $ If (Var "t" .<. 0) 0 (tau*tau*t *exp (negate tau * t))),
-
+ 
  "add" =: (Lam "x" $ Lam "y" $ Var "x" + Var "y") ,
  "mul" =: (Lam "x" $ Lam "y" $ Var "x" * Var "y") ,
  "fact"=: (Lam "n" $ If (Var "n" .==. 1) 
@@ -132,9 +141,9 @@ prelude = [
  "accum" =: (Lam "s" $ Var "sscan" $> Var "add" $> 0 $> Var "s"),
 
  "integrate" =: (Lam "s" $ (Var "sscan" $> (Var "intStep") $> (0) $> Var "s")),
- "intStep" =: (Lam "new" . Lam "old" $ (Var "old") + (Var "new")*(Var "fixedDt")),
- "every" =: (Lam "interval" $ 
-]
+ "intStep" =: (Lam "new" . Lam "old" $ (Var "old") + (Var "new")*(Var "fixedDt"))]
+ -- "every" =: (Lam "interval" $ 
+
     where tau = Var "tau"
           t = Var "t"
     

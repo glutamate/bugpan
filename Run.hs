@@ -58,7 +58,6 @@ why do i need sigdelay ?
 
 -- +integrate other sig
 
--- event sinks
 
 -- convolution
 
@@ -68,6 +67,8 @@ why do i need sigdelay ?
 -- try int fire 
  
 -- mouse input, gfx output
+
+-- event sinks
 
 -- database sinks
 
