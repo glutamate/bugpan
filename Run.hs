@@ -53,13 +53,14 @@ why do i need sigdelay ?
 -}
 
 -- +compiled prelude
--- case, fst and snd
--- sigdelay takes 2 args (for initital val)
+-- case
+-- +sigdelay takes 2 args (for initital val)
 
--- integrate other sig
+-- +integrate other sig
+
+-- convolution
 
 -- poisson events
--- convolution
 
 -- solve ode
 -- try int fire 
@@ -75,8 +76,8 @@ sigSrcs :: [(String, Device SigSrc)]
 sigSrcs = [] -- ("seconds", secondsSig)]
 
 sigSnks :: [(String, Device SigSnk)]
-sigSnks = [("print", printSnk)] 
-           --("plot", plotSnk)]
+sigSnks = [("print", printSnk), 
+           ("plot", plotSnk)]
 
 
 allSrcNames = map fst sigSrcs

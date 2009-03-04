@@ -191,7 +191,7 @@ applyNumM2  es e1 e2 f
                                                    show (f 9 8) ]
 
 
-test = teval (1+1.5) 
+--test = teval (1+1.5) 
 
 teval e = unEvalM $ eval emptyEvalS e
 --decr = Lam "x" $ M2 Sub (Var "x") 1 

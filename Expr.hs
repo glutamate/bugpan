@@ -24,6 +24,7 @@ instance Num V where
     (NumV n1) * (NumV n2) = NumV $n1*n2
     abs (NumV n1) = NumV (abs n1)
     signum (NumV n1) = NumV (signum n1)
+    negate (NumV n1) = NumV $ (NInt (-1))*n1
     fromInteger n = NumV . fromInteger $ n
 
  
@@ -167,7 +168,7 @@ instance Num E where
 	e1 + e2 = M2 Add e1 e2
 	e1 - e2 = M2 Sub e1 e2
 	e1 * e2 = M2 Mul e1 e2
-	negate e = M2 Mul (-1) e
+	negate e = M2 Mul (Const . NumV . NInt $ (-1)) e
 	abs e = If (Cmp Lt e 0) (negate e) (e)
 	signum e = If (Cmp Lt e 0) (-1) (1)
 	fromInteger i = Const . NumV $ NInt (fromInteger i)

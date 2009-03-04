@@ -8,7 +8,17 @@ data NumVl = NInt Int
 	   -- | NRat Int Int
 	   | NReal Double
 	   | NCmplx (Complex Double)
-		deriving ( Eq)
+		 
+
+instance Eq NumVl where
+    n1 == n2 = let (x,y) = sameize n1 n2 in x =~= y
+    
+(NInt n1) =~= (NInt n2) = n1==n2
+(NReal n1) =~= (NReal n2) | nearlyZero n1 && nearlyZero n2 = True
+                          | otherwise = (n1-n2)/n1 <0.0001
+
+nearlyZero n = (n<1e-18) && (n>(-1e-18))
+
 
 instance Show NumVl where
     show (NInt i) = show i
@@ -39,11 +49,13 @@ instance Ord NumVl where
 	compare (NCmplx i1) (NCmplx i2) = compare (magnitude i1) (magnitude i2)
 	compare n1 n2 = let (v1, v2) = sameize n1 n2 in compare v1 v2
 
+tst =  negate (NReal 1.1)
+
 instance Num NumVl where
 	(+) = combine (+) 
 	(-) = combine (-) 
 	(*) = combine (*) 
-	negate e = (-1)*e
+	negate e = (NInt (-1))*e
 	abs e = if e<0 then (negate e) else (e)
 	signum e = if e<0 then (-1) else (1)
 	fromInteger i = NInt (fromInteger i)

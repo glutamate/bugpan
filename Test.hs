@@ -4,27 +4,30 @@ import Expr
 import Eval
 import EvalM
 import Run
+import Control.Monad
 import Numbers
 
-main = {-lookup "cross1" `fmap`-} run prelude testProg 0.1 1
+main = {-lookup "cross1" `fmap`-} run prelude testProg 0.01 10
 
 testProg =
     [Let "secs" (Var "seconds"),
      Let "secsp1" $ (Var "smap") $> (Var "incr") $> (Var "seconds"),
-     --Let "secsp1d2" $ Sig (SigAt (time-0.2) (Var "secsp1")),
+     Let "secsp1d2" $ Sig (SigAt (time-0.2) (Var "secsp1")),
      Let "secsp1d1" $ SigDelay (Var "secsp1") 15,
-     Let "intsig" $ Var "integrate" $> (Sig 1),
-     Let "intStep" (Lam "new" . Lam "old" $ (Var "old") + (Var "new")*(Var "fixedDt")),
-     Let "accsig" (Var "accum" $> Var "secs"),
-     Let "integrate" (Lam "s" $ (Var "sscan" $> (Var "intStep") $> (0) $> Var "s")),
-     Let "add34" (Var "add" $> 3 $> 4),
+     --Let "intsig" $ Var "integrate" $> (Sig 1),
+     --Let "intStep" (Lam "new" . Lam "old" $ (Var "old") + (Var "new")*(Var "fixedDt")),
+     --Let "accsig" (Var "accum" $> Var "secs"),
+     --Let "integrate" (Lam "s" $ (Var "sscan" $> (Var "intStep") $> (0) $> Var "s")),
+     --Let "add34" (Var "add" $> 3 $> 4),
+     Let "syn1" (Var "alpha" $> 0.39 $> 1) ,
+     Let "gsyn" (Var "smap" $> (Var "alpha" $> 0.39) $> (Var "seconds")),
      --Let "cross1" $ crossesUp (Var "seconds") 0.5,
      --Let "fact5" (Var "fact" $> 5),
      --Let "fib6" (Var "fib" $> 6),
      --Let "cross2" $ crossesUp (Var "secsp1d1") 1.5,
      --Let "fib5" (Var "fib" $> 5),
      --Let "iterIncr" $ (Var "iterate" $> Var "incr" $> 1.0),
-     SinkConnect (Var "intsig") "print"]
+     SinkConnect (Var "gsyn") "plot"]
 
 {-test = teval (1+1.5) 
 
@@ -36,7 +39,25 @@ ta = teval myAdd
 
 t1 n = unEvalM emptyEvalS $ extEnv ("x",5) . extEnv ("y",6) $ eval (Var n)
 
+
 -}
+
+tA = tstEval (Var "alpha" $> 0.39 $> 1)
+tN = tstEval (negate 3)
+
+test = testExprs [
+        Var "alpha" $> 0.39 $> 1 #= (NumV $ 0.1029803506111),
+        negate 3 #= (-3)
+
+       ]
+
+
+testExprs :: [(E,V)] -> IO ()
+testExprs [] = return ()
+testExprs ((e,v):rest) = case sfEvalM $ tstEval e of
+                           Right v' -> when (v'/=v) $ putStrLn $ show e++"="++show v'++", expected "++show v
+                           Left err -> putStrLn $ "error in eval "++show e++": "++err
+
 
 convolve :: E -> E -> E
 convolve = undefined
@@ -75,7 +96,7 @@ prelude = [
  "fst" #= (LamV $ \x -> fst `fmap` unPairV x ),
  "snd" #= (LamV $ \x -> snd `fmap` unPairV x),
 
- "alpha" #= ev (Lam "tau" . Lam "t" $ If (Var "t" .<=. 0) 0 (tau*tau*t*exp (negate tau * t))),
+ "alpha" #= ev (Lam "tau" . Lam "t" $ If (Var "t" .<. 0) 0 (tau*tau*t *exp (negate tau * t))),
 
  "add" #= ev (Lam "x" $ Lam "y" $ Var "x" + Var "y") ,
  "mul" #= ev (Lam "x" $ Lam "y" $ Var "x" * Var "y") ,
@@ -111,6 +132,10 @@ prelude = [
                     tau = Var "tau"
                     t = Var "t"
     
-              
+preludeSt = extsEnv prelude emptyEvalS     
+
+tstEval = eval preludeSt
+
+
 infixl 1 #=                                         
 x #= y = (x,y) 
