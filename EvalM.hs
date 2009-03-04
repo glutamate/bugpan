@@ -121,6 +121,8 @@ unLamV _ = fail "expected function argument"
 unListV (ListV vs) = return vs
 unListV _ = fail "expected list argument"
 
+unPairV (PairV x y)= return $ (x,y)
+unPairV pr = fail $ "expected PairV, got "++show pr
 
 fromMaybe (Just x) _ = return x
 fromMaybe Nothing errs = fail errs

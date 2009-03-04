@@ -176,6 +176,13 @@ instance Fractional E where
 	e1 / e2 = M2 Div e1 e2
 	fromRational r = Const . NumV . NReal $ fromRational r
 
+instance Floating E where
+        pi = Const . NumV . NReal $ pi
+	exp = M1 Exp 
+        -- sin = M1 Sin
+        -- cos = M1 Cos
+
+
 
 data Pat = 	  PatAny String
 		| PatIgnore

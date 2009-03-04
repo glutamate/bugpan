@@ -61,10 +61,6 @@ time = SigVal (Var "seconds")
 -- :set -fbreak-on-exception
 decr = Var "decr"
 
-unPairV pr = case pr of 
-               PairV x y -> return $ (x,y)
-               _ -> fail $"expected PairV, got "++show pr
-
 prelude :: Env
 prelude = [
  "map" #= LamV (\lf -> do f <- unLamV lf
@@ -78,6 +74,9 @@ prelude = [
  "decr2" #= (LamV $ \x-> return $ x-2),
  "fst" #= (LamV $ \x -> fst `fmap` unPairV x ),
  "snd" #= (LamV $ \x -> snd `fmap` unPairV x),
+
+ "alpha" #= ev (Lam "tau" . Lam "t" $ If (Var "t" .<=. 0) 0 (tau*tau*t*exp (negate tau * t))),
+
  "add" #= ev (Lam "x" $ Lam "y" $ Var "x" + Var "y") ,
  "mul" #= ev (Lam "x" $ Lam "y" $ Var "x" * Var "y") ,
  "fact"#= ev (Lam "n" $ If (Var "n" .==. 1) 
@@ -109,6 +108,9 @@ prelude = [
 -- "integrate" #= ev (Lam "s" $ (Var "sscan") $>  
           ]
               where ev e = unEvalM $ eval (extsEnv prelude emptyEvalS) e  
+                    tau = Var "tau"
+                    t = Var "t"
+    
               
 infixl 1 #=                                         
 x #= y = (x,y) 
