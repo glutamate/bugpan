@@ -58,6 +58,8 @@ why do i need sigdelay ?
 
 -- +integrate other sig
 
+-- event sinks
+
 -- convolution
 
 -- poisson events

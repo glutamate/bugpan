@@ -15,9 +15,9 @@ testProg = prelude ++
      Let "secsp1d2" $ Sig (SigAt (time-0.2) (Var "secsp1")),
      Let "secsp1d1" $ SigDelay (Var "secsp1") 15,
      --Let "intsig" $ Var "integrate" $> (Sig 1),
-     Let "intStep" (Lam "new" . Lam "old" $ (Var "old") + (Var "new")*(Var "fixedDt")),
+
      Let "accsig" (Var "sscan" $> Var "add" $> (-5) $> Sig 1),
-     Let "integrate" (Lam "s" $ (Var "sscan" $> (Var "intStep") $> (0) $> Var "s")),
+
      --Let "add34" (Var "add" $> 3 $> 4),
      Let "syn1" (Var "alpha" $> 10 $> 1) ,
      Let "gsyn" (Var "smap" $> (Var "alpha" $> 0.6) $> (Var "seconds")),
@@ -98,7 +98,9 @@ preludeFFI = [
  "decr" #= (LamV $ \x-> return $ x-1),
  "decr2" #= (LamV $ \x-> return $ x-2),
  "fst" #= (LamV $ \x -> fst `fmap` unPairV x ),
- "snd" #= (LamV $ \x -> snd `fmap` unPairV x)]
+ "snd" #= (LamV $ \x -> snd `fmap` unPairV x),
+ "every" #= (LamV $ \iv -> return $ ListV [PairV (Const . NumV . NReal $ tm) Unit | tm <- []])-- (numToDouble intvl)
+]
 
 prelude :: [Declare]
 prelude = [
@@ -119,23 +121,22 @@ prelude = [
  "sscan" =: (Lam "f" . Lam "v0" . Lam "s" $
                     LetE ["sr"#= (Sig $ (Var "f") $> (SigVal (Var "s")) $> (SigVal $ SigDelay (Var "sr") (Var "v0")))
                         ] $ Var "sr"),
- {-"sscan'" =: (Lam "f" . Lam "v0" . Lam "s" $
-                    LetE ["sr"#= (sig $ "f" ^$> sigVal "s" $> sigDelay "sr")
-                         ] $ Var "sr"),-}
  "intStep'" =: (Lam "new" . Lam "otp" $ Pair (("fst" ^$> "otp") + (Var "new")*(time-("snd" ^$> "otp"))) (time)),
--- "intStep" =: (Lam "new" . Lam "old" $ (Var "old") + (Var "new")*(Var "fixedDt")),
+
  "integrate'" =: (Lam "s" $ (Var "smap" $> Var "fst") $> (Var "sscan" $> (Var "intStep") $> (Pair 0 0) $> Var "s")),
--- "integrate" =: (Lam "s" $ (Var "sscan" $> (Var "intStep") $> (0) $> Var "s")),
+
  "fib" =: (LetE ["f" #= (Lam "n" $ If (Var "n" .<. 3) 
                                               (1) 
                                               ((Var "f" $> (decr $> (Var "n")))+(Var "f" $> (Var "decr2" $> (Var "n")))))] (Var "f")),
 
- "accum" =: (Lam "s" $ Var "sscan" $> Var "add" $> 0 $> Var "s")
- --"constSig" =: ( Lam "v" $ Sig (Var "v"))
--- "integrate" =: (Lam "s" $ (Var "sscan") $>  
-          ]
-              where tau = Var "tau"
-                    t = Var "t"
+ "accum" =: (Lam "s" $ Var "sscan" $> Var "add" $> 0 $> Var "s"),
+
+ "integrate" =: (Lam "s" $ (Var "sscan" $> (Var "intStep") $> (0) $> Var "s")),
+ "intStep" =: (Lam "new" . Lam "old" $ (Var "old") + (Var "new")*(Var "fixedDt")),
+ "every" =: (Lam "interval" $ 
+]
+    where tau = Var "tau"
+          t = Var "t"
     
 preludeSt = extsEnv preludeFFI emptyEvalS     
 
