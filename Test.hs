@@ -7,7 +7,7 @@ import Run
 import Control.Monad
 import Numbers
 
-main = {-lookup "cross1" `fmap`-} run preludeFFI testProg 0.1 20
+main = {-lookup "cross1" `fmap`-} run preludeFFI testProg 0.1 10
 
 testProg = prelude ++
     [Let "secs" (Var "seconds"),
@@ -31,7 +31,7 @@ testProg = prelude ++
      --Let "cross2" $ crossesUp (Var "secsp1d1") 1.5,
      --Let "fib5" (Var "fib" $> 5),
      --Let "iterIncr" $ (Var "iterate" $> Var "incr" $> 1.0),
-     SinkConnect (Var "gcell") "plot"]
+     SinkConnect (Var "integrate" $> Var "gcell") "plot"]
 
 {-test = teval (1+1.5) 
 
@@ -105,7 +105,7 @@ preludeFFI = [
  "oneToTen" #= (ListV . map (NumV . NInt) $ [1..10]),
  "sum" #= (LamV $ \vs -> foldr (+) 0 `fmap` unListV vs),
 
- "every" #= (LamV $ \(NumV iv) -> return $ ListV [PairV (NumV $ NReal tm) Unit | tm <- [0,(numToDouble iv)..20]])]
+ "every" #= (LamV $ \(NumV iv) -> return $ ListV [PairV (NumV $ NReal tm) Unit | tm <- [0,(numToDouble iv)..100]])]
 
 constReal = Const . NumV . NReal 
 constInt = Const . NumV . NInt
@@ -145,14 +145,22 @@ prelude = [
  "integrate" =: (Lam "s" $ (Var "sscan" $> (Var "intStep") $> (0) $> Var "s")),
  "intStep" =: (Lam "new" . Lam "old" $ (Var "old") + (Var "new")*(Var "fixedDt")),
  "convolve" =: 
-     (Lam "s" . Lam "es" $ Sig (Var"sum" $> (Var "map" $> (Lam "e" (SigAt (time- (Var "fst" $> Var "e" )) (Var "s"))) $> Var "es")))]
+     (Lam "s" . Lam "es" $ Sig (Var"sum" $> (Var "map" $> (Lam "e" (SigAt (time- (Var "fst" $> Var "e" )) (Var "s"))) $> Var "es"))),
+ "solveOde" =: (Lam "sf" . Lam "v0" $
+               (LetE ["s" #= (Sig $ SigVal (SigDelay (Var "s") (Var "v0")) + 
+                                            dt * (SigAt (time-dt) $ (Var "sf") $> (SigVal (SigDelay (Var "s") (Var "v0")))))] 
+                (Var "s")))]
 
  -- "every" =: (Lam "interval" $ 
 
     where tau = Var "tau"
           t = Var "t"
+          dt = Var "fixedDt"
 --convolve s es = Sig . sum .map (\timp->SigAt (time-timp) s ) . map fst $ es --see arraywave
-
+--solveODE :: (a->Signal) -> a -> Signal
+solveODE sf v0 = s
+                 where s = Sig $ SigVal (SigDelay s v0) + dt * (SigAt (time-dt) $ sf (SigVal (SigDelay s v0)) )
+                       dt = 0.1
     
 preludeSt = extsEnv preludeFFI emptyEvalS     
 
