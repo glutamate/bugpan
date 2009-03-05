@@ -25,6 +25,7 @@ testProg = prelude ++
      "preSpike" =: (Var "every" $> 5),
      "sum_1_10" =: (Var "sum" $> (Var "oneToTen")),
      "gcell" =: (Var "convolve" $> Var "gsyn" $> Var "preSpike"),
+     "cellOde" =: (Lam "isig" . Lam "v" $ Sig $ ((SigVal $ Var "isig")-(Var "v"/1e9))/2e5-12), 
      --Let "cross1" $ crossesUp (Var "seconds") 0.5,
      --Let "fact5" (Var "fact" $> 5),
      --Let "fib6" (Var "fib" $> 6),
@@ -148,7 +149,7 @@ prelude = [
      (Lam "s" . Lam "es" $ Sig (Var"sum" $> (Var "map" $> (Lam "e" (SigAt (time- (Var "fst" $> Var "e" )) (Var "s"))) $> Var "es"))),
  "solveOde" =: (Lam "sf" . Lam "v0" $
                (LetE ["s" #= (Sig $ SigVal (SigDelay (Var "s") (Var "v0")) + 
-                                            dt * (SigAt (time-dt) $ (Var "sf") $> (SigVal (SigDelay (Var "s") (Var "v0")))))] 
+                                            dt * (SigAt (time-dt) $ Var "sf" $> (SigVal $ SigDelay (Var "s") (Var "v0"))))] 
                 (Var "s")))]
 
  -- "every" =: (Lam "interval" $ 
@@ -164,7 +165,9 @@ solveODE sf v0 = s
     
 preludeSt = extsEnv preludeFFI emptyEvalS     
 
-tstEval = eval preludeSt
+tstEval = eval wffi
+          where wffi =  extsEnv preludeFFI emptyEvalS  
+                -- wprelude = eval wffi prelude
 
 
 infixl 1 #=                                         
