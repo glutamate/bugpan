@@ -19,20 +19,24 @@ testProg = prelude ++
      Let "accsig" (Var "sscan" $> Var "add" $> (-5) $> Sig 1),
 
      --Let "add34" (Var "add" $> 3 $> 4),
-     Let "syn1" (Var "alpha" $> 10 $> 1) ,
-     Let "gsyn" (Var "smap" $> (Var "alpha" $> 0.6) $> (Var "seconds")),
+     Let "syn1" (Var "alpha" $> 10 $> 1),
+     --Let "gsyn" (Var "smap" $> (Var "alpha" $> 0.6) $> (Var "seconds")),
      Let "intsyn" $ Var "integrate" $> (Var "gsyn"),
-     "preSpike" =: (Var "every" $> 5),
+    -- "preSpike" =: (Var "every" $> 5),
      "sum_1_10" =: (Var "sum" $> (Var "oneToTen")),
-     "gcell" =: (Var "convolve" $> Var "gsyn" $> Var "preSpike"),
-     "cellOde" =: (Lam "isig" . Lam "v" $ Sig $ ((SigVal $ Var "isig")-(Var "v"/1e9))/2e5-12), 
+     --"gcell" =: (Var "convolve" $> Var "gsyn" $> Var "preSpike"),
+     "isig" =: (Var "smap" $> (Var "mul" $> 10e-12 ) $> (Var "step" $> 2 $> 4)),
+     "cellOde" =: (Lam "v" $ Sig $ ((SigVal $ Var "isig")-(Var "v"/1e9))/2e5-12),
+     "v" =: (Var "solveOde" $> Var "cellOde" $> (-0.07)),
      --Let "cross1" $ crossesUp (Var "seconds") 0.5,
      --Let "fact5" (Var "fact" $> 5),
      --Let "fib6" (Var "fib" $> 6),
      --Let "cross2" $ crossesUp (Var "secsp1d1") 1.5,
      --Let "fib5" (Var "fib" $> 5),
      --Let "iterIncr" $ (Var "iterate" $> Var "incr" $> 1.0),
-     SinkConnect (Var "integrate" $> Var "gcell") "plot"]
+     SinkConnect (Var "v") "print"]
+
+-- Dv = (i-v/r)/c 
 
 {-test = teval (1+1.5) 
 
@@ -140,6 +144,7 @@ prelude = [
                                               (1) 
                                               ((Var "f" $> (decr $> (Var "n")))+(Var "f" $> (Var "decr2" $> (Var "n")))))] 
            (Var "f")),
+ "step" =: (Lam "t1" . Lam "t2" $ Sig $ If (((Var "t1") .<=. time) .&. ((Var "t2") .>. time)) (1) (0)),
 
  "accum" =: (Lam "s" $ Var "sscan" $> Var "add" $> 0 $> Var "s"),
 
@@ -149,7 +154,7 @@ prelude = [
      (Lam "s" . Lam "es" $ Sig (Var"sum" $> (Var "map" $> (Lam "e" (SigAt (time- (Var "fst" $> Var "e" )) (Var "s"))) $> Var "es"))),
  "solveOde" =: (Lam "sf" . Lam "v0" $
                (LetE ["s" #= (Sig $ SigVal (SigDelay (Var "s") (Var "v0")) + 
-                                            dt * (SigAt (time-dt) $ Var "sf" $> (SigVal $ SigDelay (Var "s") (Var "v0"))))] 
+                                            dt * (SigAt (time-dt) $ (Var "sf" $> (SigVal $ SigDelay (Var "s") (Var "v0")))))] 
                 (Var "s")))]
 
  -- "every" =: (Lam "interval" $ 
