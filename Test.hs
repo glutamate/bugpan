@@ -7,7 +7,7 @@ import Run
 import Control.Monad
 import Numbers
 
-main = {-lookup "cross1" `fmap`-} run preludeFFI testProg 0.1 5
+main = {-lookup "cross1" `fmap`-} run preludeFFI testProg 0.1 20
 
 testProg = prelude ++
     [Let "secs" (Var "seconds"),
@@ -22,15 +22,16 @@ testProg = prelude ++
      Let "syn1" (Var "alpha" $> 10 $> 1) ,
      Let "gsyn" (Var "smap" $> (Var "alpha" $> 0.6) $> (Var "seconds")),
      Let "intsyn" $ Var "integrate" $> (Var "gsyn"),
-     "preSpike" =: (Var "every" $> 1),
+     "preSpike" =: (Var "every" $> 5),
      "sum_1_10" =: (Var "sum" $> (Var "oneToTen")),
+     "gcell" =: (Var "convolve" $> Var "gsyn" $> Var "preSpike"),
      --Let "cross1" $ crossesUp (Var "seconds") 0.5,
      --Let "fact5" (Var "fact" $> 5),
      --Let "fib6" (Var "fib" $> 6),
      --Let "cross2" $ crossesUp (Var "secsp1d1") 1.5,
      --Let "fib5" (Var "fib" $> 5),
      --Let "iterIncr" $ (Var "iterate" $> Var "incr" $> 1.0),
-     SinkConnect (Var "intsyn") "print"]
+     SinkConnect (Var "gcell") "plot"]
 
 {-test = teval (1+1.5) 
 
@@ -136,16 +137,22 @@ prelude = [
 
  "fib" =: (LetE ["f" #= (Lam "n" $ If (Var "n" .<. 3) 
                                               (1) 
-                                              ((Var "f" $> (decr $> (Var "n")))+(Var "f" $> (Var "decr2" $> (Var "n")))))] (Var "f")),
+                                              ((Var "f" $> (decr $> (Var "n")))+(Var "f" $> (Var "decr2" $> (Var "n")))))] 
+           (Var "f")),
 
  "accum" =: (Lam "s" $ Var "sscan" $> Var "add" $> 0 $> Var "s"),
 
  "integrate" =: (Lam "s" $ (Var "sscan" $> (Var "intStep") $> (0) $> Var "s")),
- "intStep" =: (Lam "new" . Lam "old" $ (Var "old") + (Var "new")*(Var "fixedDt"))]
+ "intStep" =: (Lam "new" . Lam "old" $ (Var "old") + (Var "new")*(Var "fixedDt")),
+ "convolve" =: 
+     (Lam "s" . Lam "es" $ Sig (Var"sum" $> (Var "map" $> (Lam "e" (SigAt (time- (Var "fst" $> Var "e" )) (Var "s"))) $> Var "es")))]
+
  -- "every" =: (Lam "interval" $ 
 
     where tau = Var "tau"
           t = Var "t"
+--convolve s es = Sig . sum .map (\timp->SigAt (time-timp) s ) . map fst $ es --see arraywave
+
     
 preludeSt = extsEnv preludeFFI emptyEvalS     
 
