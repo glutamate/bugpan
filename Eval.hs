@@ -94,11 +94,11 @@ eval es (Lam nm e) = return $ LamV (\v-> eval (extEnv (nm,v) es) e)
     = do (Lam nm bd) <- eval es env lam t
          ag <- eval es env arg t
 	 eval es ((nm,ag):env) bd t-}
-eval es (App lam arg) 
+eval es ea@(App lam arg) 
     = do lf <- eval es lam
          let f = case lf of
                    LamV f' -> f'
-                   e -> fail $ "expected lamv, got "++show e
+                   e -> fail $ "expected lamv, got "++show e++"in expr: "++show ea
          ag <- eval es arg
 	 f ag 
          --eval es env (subVar nm ag bd) t

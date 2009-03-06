@@ -7,7 +7,8 @@ import Run
 import Control.Monad
 import Numbers
 
-main = {-lookup "cross1" `fmap`-} run preludeFFI testProg 0.1 10
+main = {-lookup "cross1" `fmap`-} run preludeFFI testProg 0.1 6
+-- :set -fbreak-on-exception
 
 testProg = prelude ++
     [Let "secs" (Var "seconds"),
@@ -26,17 +27,25 @@ testProg = prelude ++
      "sum_1_10" =: (Var "sum" $> (Var "oneToTen")),
      --"gcell" =: (Var "convolve" $> Var "gsyn" $> Var "preSpike"),
      "isig" =: (Var "smap" $> (Var "mul" $> 10e-12 ) $> (Var "step" $> 2 $> 4)),
+     "isig2" =: (Var "step" $> 2 $> 4),
+     "isig1" =: (Sig 10e-12),
+     "anumber" =: 5,
      "cellOde" =: (Lam "v" $ Sig $ ((SigVal $ Var "isig")-(Var "v"/1e9))/2e5-12),
+     --"cellOde" =: (Lam "v" $ Sig $ ((SigVal $ Var "isig")-((-0.07)/1e9))/2e5-12),
+     "simpleOde" =: (Lam "y" $ Sig $ (SigVal (Var "step1")-(Var "y"))),
      "v" =: (Var "solveOde" $> Var "cellOde" $> (-0.07)),
+     "s" =: (Var "solveOde" $> Var "simpleOde" $> (-0.07)),
      --Let "cross1" $ crossesUp (Var "seconds") 0.5,
      --Let "fact5" (Var "fact" $> 5),
      --Let "fib6" (Var "fib" $> 6),
      --Let "cross2" $ crossesUp (Var "secsp1d1") 1.5,
      --Let "fib5" (Var "fib" $> 5),
      --Let "iterIncr" $ (Var "iterate" $> Var "incr" $> 1.0),
-     SinkConnect (Var "v") "print"]
+     SinkConnect (Var "s") "print"]
 
 -- Dv = (i-v/r)/c 
+
+--Dv=3
 
 {-test = teval (1+1.5) 
 
@@ -51,7 +60,7 @@ t1 n = unEvalM emptyEvalS $ extEnv ("x",5) . extEnv ("y",6) $ eval (Var n)
 
 -}
 
-tA = tstEval (Var "alpha" $> 0.39 $> 1)
+{-tA = tstEval (Var "alpha" $> 0.39 $> 1)
 tN = tstEval (negate 3)
 
 test = testExprs [
@@ -70,7 +79,7 @@ testExprs ((e,v):rest) = case sfEvalM $ tstEval e of
                            Right v' -> when (v'/=v) $ putStrLn $ show e++"="++show v'++", expected "++show v
                            Left err -> putStrLn $ "error in eval "++show e++": "++err
 
-
+-}
 --convolve :: E -> E -> E
 --convolve s es = Sig $ foldr (+) $ map fst e --see arraywave
 
@@ -86,12 +95,11 @@ crossesUp sig val = Event (If (SigVal sig .>=. val .&. SigVal (SigDelay sig ((-2
                        (Nil))
 
 
-sigAt sig evt =   Var "map" $> Lam "tvp" (SigAt (Var "fst" $> Var "tvp") sig) $> evt
+snapshot sig evt =   Var "map" $> Lam "tvp" (SigAt (Var "fst" $> Var "tvp") sig) $> evt
 time = SigVal (Var "seconds")
 
 --letEvt "foo" 
 
--- :set -fbreak-on-exception
 decr = Var "decr"
 
 preludeFFI :: Env
@@ -107,9 +115,9 @@ preludeFFI = [
  "decr2" #= (LamV $ \x-> return $ x-2),
  "fst" #= (LamV $ \x -> fst `fmap` unPairV x ),
  "snd" #= (LamV $ \x -> snd `fmap` unPairV x),
- "oneToTen" #= (ListV . map (NumV . NInt) $ [1..10]),
+ --"oneToTen" #= (ListV . map (NumV . NInt) $ [1..10]),
  "sum" #= (LamV $ \vs -> foldr (+) 0 `fmap` unListV vs),
-
+ "step1" #= (SigV (\t-> NumV . NReal $ t)), --if t>2 && t<4 then 0 else 0)),
  "every" #= (LamV $ \(NumV iv) -> return $ ListV [PairV (NumV $ NReal tm) Unit | tm <- [0,(numToDouble iv)..100]])]
 
 constReal = Const . NumV . NReal 
@@ -128,7 +136,8 @@ prelude = [
                                (Var "n" * (Var "fact" $> (Var "n" -1)))),
  "iterate" =: (Lam "f" $ Lam "s0" $ 
           LetE ["s" #= ( 
-                        Sig (If (time .<=. 0.05) (Var "s0")
+                        Sig (If (time .<=. 0.05) 
+                                    (Var "s0")
                                     (Var "f" $> SigVal (SigDelay (Var "s") (Var "s0"))))
                        )] (Var "s")),
  "smap" =: (Lam "f" . Lam "s" $ Sig (Var "f" $> (SigVal $ Var "s"))),
@@ -152,10 +161,16 @@ prelude = [
  "intStep" =: (Lam "new" . Lam "old" $ (Var "old") + (Var "new")*(Var "fixedDt")),
  "convolve" =: 
      (Lam "s" . Lam "es" $ Sig (Var"sum" $> (Var "map" $> (Lam "e" (SigAt (time- (Var "fst" $> Var "e" )) (Var "s"))) $> Var "es"))),
- "solveOde" =: (Lam "sf" . Lam "v0" $
+ "solveOde'" =: (Lam "sf" . Lam "v0" $
                (LetE ["s" #= (Sig $ SigVal (SigDelay (Var "s") (Var "v0")) + 
                                             dt * (SigAt (time-dt) $ (Var "sf" $> (SigVal $ SigDelay (Var "s") (Var "v0")))))] 
-                (Var "s")))]
+                (Var "s"))),
+ "solveStep" =: (Lam "v0" . Lam "sf" . Lam "old" $ (Var "old") + ( SigVal (SigDelay (Var "sf" $> Var "old") (Var "v0"))) * Var "fixedDt"),
+ "solveOde" =: (Lam "sf" . Lam "v0" $ Var "iterate" $> (Var "solveStep" $> Var "v0" $> Var "sf") $> Var "v0")]
+
+--solve = \sf v0 -> let s = Sig $ (sigval (delay s v0) + dt * (sf (sigval (delay s v0)))@t-dt) in s
+--solveStep sf new old = old + dt * (sf old) -- approx!
+--solve sf v0 = iterate (solvestep sf) v0
 
  -- "every" =: (Lam "interval" $ 
 
@@ -164,7 +179,7 @@ prelude = [
           dt = Var "fixedDt"
 --convolve s es = Sig . sum .map (\timp->SigAt (time-timp) s ) . map fst $ es --see arraywave
 --solveODE :: (a->Signal) -> a -> Signal
-solveODE sf v0 = s
+{-solveODE sf v0 = s
                  where s = Sig $ SigVal (SigDelay s v0) + dt * (SigAt (time-dt) $ sf (SigVal (SigDelay s v0)) )
                        dt = 0.1
     
@@ -174,7 +189,7 @@ tstEval = eval wffi
           where wffi =  extsEnv preludeFFI emptyEvalS  
                 -- wprelude = eval wffi prelude
 
-
+-}
 infixl 1 #=                                         
 x #= y = (x,y) 
 

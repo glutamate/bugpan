@@ -117,7 +117,7 @@ run prelude decls dt tmax
 
          -- find out which sinks are needed, init them
          let snks' = concatMap declSinks decls
-         let snks = map (\(snm,e)->(fromJust $ lookup snm sigSnks ,e)) snks'
+         let snks = map (\(snm,e)->(fromJust' $ lookup snm sigSnks ,e)) snks'
          let (snksNow, snksLater) = partition (loadBefore . fst) snks
          mapM_ (prepareWith . fst) snksNow 
 	 --putStrLn $ "snks now="++(show $ map snd snksNow)	 
@@ -195,6 +195,9 @@ resolveExprs env dt tmax newSigs
               where eres =  sfEvalM (eval (extEnv (n, fromRight eres) es) ss)
                     nres = sfEvalM (eval es ss)
 
+
+fromJust' (Just x) = x
+fromJust' Nothing = error "fromjust'" 
 
 ulog x y = unsafePerformIO (putStrLn ("unsafe log: "++x) >> return y)
 

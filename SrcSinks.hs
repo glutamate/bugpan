@@ -5,7 +5,7 @@ import Eval
 import EvalM
 import Numbers
 import Control.Monad
-import Charts
+--import Charts
 import Control.Concurrent
 
 data Device a = Device {
@@ -23,13 +23,13 @@ emptyDev d = Device ru ru ru ru ru d
 
 secondsSig = emptyDev $ SrcAnyTimePure (\t->NumV $ NReal t)
 
-printSnk = emptyDev $ SnkAnyTime (\t v-> putStrLn $ "at "++show t++": "++show v)
+printSnk = emptyDev $ SnkAnyTime (\t v-> do putStrLn $ "at "++show t++": "++show v)
 
 plotSnk 
     = emptyDev $ SnkAllInOneGoAnytimeAnyRate 
       (\vpts-> do
          let pts = map (\(t,v) -> (t, vToDbl v)) vpts
-         forkIO $ plotGraph (pts%Lines)
+         --forkIO $ plotGraph (pts%Lines)
          return ()
       )
 
