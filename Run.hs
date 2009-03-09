@@ -63,7 +63,7 @@ why do i need sigdelay ?
 
 -- poisson events
 
--- solve ode
+-- +solve ode
 -- try int fire 
  
 -- mouse input, gfx output

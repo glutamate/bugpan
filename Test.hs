@@ -7,8 +7,13 @@ import Run
 import Control.Monad
 import Numbers
 
-main = {-lookup "cross1" `fmap`-} run preludeFFI testProg 0.1 6
+main = {-lookup "cross1" `fmap`-} run preludeFFI testProg testdt testtmax
 -- :set -fbreak-on-exception
+
+
+testdt, testtmax :: Floating a => a
+testdt = 0.001
+testtmax = 0.06
 
 testProg = prelude ++
     [Let "secs" (Var "seconds"),
@@ -21,20 +26,20 @@ testProg = prelude ++
 
      --Let "add34" (Var "add" $> 3 $> 4),
      Let "syn1" (Var "alpha" $> 10 $> 1),
-     --Let "gsyn" (Var "smap" $> (Var "alpha" $> 0.6) $> (Var "seconds")),
+     Let "gsyn" (Var "smap" $> (Var "alpha" $> 300) $> (Var "seconds")),
      Let "intsyn" $ Var "integrate" $> (Var "gsyn"),
-    -- "preSpike" =: (Var "every" $> 5),
+      "preSpike" =: (Var "every" $> 0.01),
      "sum_1_10" =: (Var "sum" $> (Var "oneToTen")),
-     --"gcell" =: (Var "convolve" $> Var "gsyn" $> Var "preSpike"),
-     "isig" =: (Var "smap" $> (Var "mul" $> 10e-12 ) $> (Var "step" $> 2 $> 4)),
+     "gcell" =: (Var "convolve" $> Var "gsyn" $> Var "preSpike"),
+     "isig" =: (Var "smap" $> (Var "mul" $> 1e-14 ) $> (Var "gcell")),
      "isig2" =: (Var "step" $> 2 $> 4),
      "isig1" =: (Sig 10e-12),
      "anumber" =: 5,
-     "cellOde" =: (Lam "v" $ Sig $ ((SigVal $ Var "isig")-(Var "v"/1e9))/2e5-12),
+     "cellOde" =: (Lam "v" $ Sig $ ((SigVal $ Var "isig")-((Var "v"+0.07)/1e9))/(2.5e-12)),
      --"cellOde" =: (Lam "v" $ Sig $ ((SigVal $ Var "isig")-((-0.07)/1e9))/2e5-12),
      "simpleOde" =: (Lam "y" $ Sig $ (SigVal (Var "step1")-(Var "y"))),
      "v" =: (Var "solveOde" $> Var "cellOde" $> (-0.07)),
-     "s" =: (Var "solveOde1" $> Pair (0.1) (6) $> Var "simpleOde" $> (-0.07)),
+     "s" =: (Var "solveOde1" $> Pair (testdt) (testtmax) $> Var "cellOde" $> (-0.07)),
      --Let "cross1" $ crossesUp (Var "seconds") 0.5,
      --Let "fact5" (Var "fact" $> 5),
      --Let "fib6" (Var "fib" $> 6),
