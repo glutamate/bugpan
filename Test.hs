@@ -34,14 +34,14 @@ testProg = prelude ++
      --"cellOde" =: (Lam "v" $ Sig $ ((SigVal $ Var "isig")-((-0.07)/1e9))/2e5-12),
      "simpleOde" =: (Lam "y" $ Sig $ (SigVal (Var "step1")-(Var "y"))),
      "v" =: (Var "solveOde" $> Var "cellOde" $> (-0.07)),
-     "s" =: (Var "solveOde" $> Var "simpleOde" $> (-0.07)),
+     "s" =: (Var "solveOde1" $> Pair (0.1) (6) $> Var "simpleOde" $> (-0.07)),
      --Let "cross1" $ crossesUp (Var "seconds") 0.5,
      --Let "fact5" (Var "fact" $> 5),
      --Let "fib6" (Var "fib" $> 6),
      --Let "cross2" $ crossesUp (Var "secsp1d1") 1.5,
      --Let "fib5" (Var "fib" $> 5),
      --Let "iterIncr" $ (Var "iterate" $> Var "incr" $> 1.0),
-     SinkConnect (Var "s") "print"]
+     SinkConnect (Var "s") "plot"]
 
 -- Dv = (i-v/r)/c 
 
@@ -117,8 +117,28 @@ preludeFFI = [
  "snd" #= (LamV $ \x -> snd `fmap` unPairV x),
  --"oneToTen" #= (ListV . map (NumV . NInt) $ [1..10]),
  "sum" #= (LamV $ \vs -> foldr (+) 0 `fmap` unListV vs),
- "step1" #= (SigV (\t-> NumV . NReal $ t)), --if t>2 && t<4 then 0 else 0)),
- "every" #= (LamV $ \(NumV iv) -> return $ ListV [PairV (NumV $ NReal tm) Unit | tm <- [0,(numToDouble iv)..100]])]
+ "step1" #= (SigV (\t-> NumV . NReal $ if t>2 && t<4 then 1 else 0)),
+ "every" #= (LamV $ \(NumV iv) -> return $ ListV [PairV (NumV $ NReal tm) Unit | tm <- [0,(numToDouble iv)..100]]),
+ "solveOde1" #= (LamV $ \(PairV dtV tmaxV)->return $ LamV $ \(LamV sf)-> return $ LamV $ \y0 -> do 
+                                              dt <- vToDbl dtV
+                                              tmax <- vToDbl tmaxV
+                                              vls <- scanM (\y t-> do
+                                                              (SigV sig) <- sf y
+                                                              let deriv = sig $ t-dt
+                                                              return $ y+(NumV . NReal $ dt)*deriv
+                                                              ) y0 $ [0,dt..tmax]
+                                              return $ SigV $ \t-> vls !! round (t/dt)
+                )]
+
+
+ -- http://www.haskell.org/pipermail/beginners/2009-January/000667.html
+scanM :: (Monad m) => (a -> b -> m a) -> a -> [b] -> m [a]
+scanM f q [] = return [q]
+scanM f q (x:xs) =
+   do q2 <- f q x
+      qs <- scanM f q2 xs
+      return (q:qs)
+
 
 constReal = Const . NumV . NReal 
 constInt = Const . NumV . NInt

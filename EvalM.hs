@@ -113,7 +113,10 @@ boolToV = BoolV
 vToBool (BoolV b)= return b
 vToBool _ = fail "non-boolean predicate"
 
-vToDbl (NumV n) = numToDouble n
+vToDbl (NumV n) = return $ numToDouble n
+vToDbl (e) = error $ "expected nuymber, got "++show e
+
+unsafeVToDbl (NumV n) =  numToDouble n
 
 unLamV (LamV f) = return f
 unLamV _ = fail "expected function argument"

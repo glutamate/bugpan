@@ -5,7 +5,7 @@ import Eval
 import EvalM
 import Numbers
 import Control.Monad
---import Charts
+import Charts
 import Control.Concurrent
 
 data Device a = Device {
@@ -28,8 +28,8 @@ printSnk = emptyDev $ SnkAnyTime (\t v-> do putStrLn $ "at "++show t++": "++show
 plotSnk 
     = emptyDev $ SnkAllInOneGoAnytimeAnyRate 
       (\vpts-> do
-         let pts = map (\(t,v) -> (t, vToDbl v)) vpts
-         --forkIO $ plotGraph (pts%Lines)
+         let pts = map (\(t,v) -> (t, unsafeVToDbl v)) vpts
+         forkIO $ plotGraph (pts%Lines)
          return ()
       )
 
