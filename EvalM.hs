@@ -1,4 +1,4 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving, Rank2Types #-}
 
 module EvalM where
 
@@ -70,9 +70,12 @@ data V  = BoolV Bool
         | PairV V V
         | ListV [V]
 	| LamV (V->EvalM V)
+        | ULamV (forall a. V->(V->a)->a)
 	| SigV (Double->V)
         | Unit
-          deriving (Eq)
+
+instance Eq V where
+    _ == _ = False
 
 instance Show V where
     show (BoolV True) = "True"
