@@ -6,8 +6,10 @@ import EvalM
 import Run
 import Control.Monad
 import Numbers
+import Data.Char
 
-main = {-lookup "cross1" `fmap`-} run preludeFFI testProg testdt testtmax
+main = ppso 
+-- {-lookup "cross1" `fmap`-} run preludeFFI testProg testdt testtmax
 -- :set -fbreak-on-exception
 
 
@@ -15,12 +17,28 @@ testdt, testtmax :: Floating a => a
 testdt = 0.001
 testtmax = 0.06
 
+ppe = pp
+
+mypp n = putStrLn $ pp $ getE n testProg
+ppso = mypp "solveOde'"
+
+pp1 =  putStrLn $ map chr [0x03bb,0x644,32,0x62A,0x62C,0x62F,0x646,32, 0xceb1]
+
+
+getE :: String -> [Declare] -> E
+getE n [] = error "Not Found"
+getE n ((Let n1 e):tl) | n == n1 = e
+                       | otherwise = getE n tl
+getE n (_:tl) = getE n tl
+
+
+
 testProg = prelude ++
     [Let "secs" (Var "seconds"),
      Let "secsp1" $ (Var "smap") $> (Var "incr") $> (Var "seconds"),
      Let "secsp1d2" $ Sig (SigAt (time-0.2) (Var "secsp1")),
      Let "secsp1d1" $ SigDelay (Var "secsp1") 15,
-     --Let "intsig" $ Var "integrate" $> (Sig 1),
+     --Let "intsig" $ Var "integrate" $> (Sig 1), 
 
      Let "accsig" (Var "sscan" $> Var "add" $> (-5) $> Sig 1),
 
@@ -188,7 +206,7 @@ prelude = [
      (Lam "s" . Lam "es" $ Sig (Var"sum" $> (Var "map" $> (Lam "e" (SigAt (time- (Var "fst" $> Var "e" )) (Var "s"))) $> Var "es"))),
  "solveOde'" =: (Lam "sf" . Lam "v0" $
                (LetE ["s" #= (Sig $ SigVal (SigDelay (Var "s") (Var "v0")) + 
-                                            dt * (SigAt (time-dt) $ (Var "sf" $> (SigVal $ SigDelay (Var "s") (Var "v0")))))] 
+                                            dt * (SigVal $ (Var "sf" $> (SigVal $ SigDelay (Var "s") (Var "v0")))) )] 
                 (Var "s"))),
  "solveStep" =: (Lam "v0" . Lam "sf" . Lam "old" $ (Var "old") + ( SigVal (SigDelay (Var "sf" $> Var "old") (Var "v0"))) * Var "fixedDt"),
  "solveOde" =: (Lam "sf" . Lam "v0" $ Var "iterate" $> (Var "solveStep" $> Var "v0" $> Var "sf") $> Var "v0")]

@@ -48,6 +48,7 @@ data E =  If E E E
 	| SigVal E
 	| SigAt E E
         | SigDelay E E
+        | Switch [(E,E)] E
         | Event E
         | LetE [(String, E)] E
 --	| NamedSig E
@@ -60,6 +61,58 @@ data Declare
 	| Import String (Maybe String)
 	| SinkConnect E String
 	deriving (Show, Eq)
+
+depth :: E->Int
+depth (Const _) = 1
+depth (Lam _ b) = 1+depth b
+depth (App f b) = 1+ max (depth f) (depth b)
+depth (Var _) = 1
+depth (Pair e1 e2) = 1+ max (depth e1) (depth e2)
+depth (Nil) = 1
+depth (Cons e1 e2) = 1+max (depth e1) (depth e2)+1
+depth (M2 _ e1 e2) = 1+max (depth e1) (depth e2)+1
+depth (M1 _ e1) = 1+(depth e1) 
+depth (Sig _) = 1
+depth (SigVal _) = 1
+depth _ = 2
+
+ppa :: E-> String
+ppa e | depth e > 1 = "("++pp e++")"
+      | otherwise = pp e
+
+pp :: E->String
+pp (If p c a) = concat ["if ", pp p, " ", ppa c, " else ", ppa a,"}"]
+pp (Lam n e) = concat ["\\", n, "->", pp e]
+pp (Var n) = n
+pp (Const v) = show v
+pp (App f a) = ppa f ++ " " ++ ppa a
+pp (Pair f s) = concat ["(", ppa f , ", ", ppa s, ")"]
+pp (Nil) = "[]"
+pp (Cons car cdr) = ppa car ++ ":" ++ ppa cdr
+pp (Cmp Lt e1 e2) = ppa e1 ++ "<" ++ ppa e2
+pp (Cmp Gt e1 e2) = ppa e1 ++ ">" ++ ppa e2
+pp (Cmp Eq e1 e2) = ppa e1 ++ "==" ++ ppa e2
+pp (Cmp Ne e1 e2) = ppa e1 ++ "!=" ++ ppa e2
+pp (Cmp Le e1 e2) = ppa e1 ++ "<=" ++ ppa e2
+pp (Cmp Ge e1 e2) = ppa e1 ++ ">=" ++ ppa e2
+pp (And e1 e2) = ppa e1 ++ " && " ++ ppa e2
+pp (Or e1 e2) = ppa e1 ++ " || " ++ ppa e2
+pp (Not e1) = "!" ++ ppa e1
+pp (Sig e) = "<<"++pp e++">>"
+pp (SigVal s) = "{"++pp s++"}"
+pp (SigAt t s) = ppa s ++ "@" ++ ppa t
+pp (SigDelay s v) = "delay "++ppa s++" "++ppa v
+pp (M2 Mul e1 e2) = pp2op e1 "*" e2
+pp (M2 Add e1 e2) = pp2op e1 "+" e2
+pp (M2 Sub e1 e2) = pp2op e1 "-" e2
+pp (M2 Div e1 e2) = pp2op e1 "/" e2
+pp (M1 op e) = show op ++ " " ++ ppa 2
+pp (LetE les efinal) = concat ["let ", concat $ ppes les, " in ", ppa efinal]
+    where ppes es = map (\(n,e)-> n++" = "++pp e++";") es 
+
+pp e = show e
+
+pp2op e1 op e2 = ppa e1 ++ op ++ ppa e2
 
 queryE :: (E-> [a]) -> E -> [a]
 queryE q e@(If p c a) = q e ++ m p ++ m c ++m a
@@ -180,6 +233,19 @@ instance Fractional E where
 instance Floating E where
         pi = Const . NumV . NReal $ pi
 	exp = M1 Exp 
+        log = M1 Ln
+        sin = (Var "sin" $>)
+        cos = (Var "cos" $>)
+        tan = (Var "tan" $>)
+        asin = (Var "asin" $>)
+        acos = (Var "acos" $>)
+        atan = (Var "atan" $>)
+        sinh = (Var "sinh" $>)
+        cosh = (Var "cosh" $>)
+        asinh = (Var "asinh" $>)
+        acosh = (Var "acosh" $>)
+        atanh = (Var "atanh" $>)
+
         -- sin = M1 Sin
         -- cos = M1 Cos
 

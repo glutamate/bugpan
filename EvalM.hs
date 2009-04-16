@@ -1,4 +1,4 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving, Rank2Types #-}
+{-# LANGUAGE Rank2Types #-}
 
 module EvalM where
 
@@ -72,6 +72,7 @@ data V  = BoolV Bool
 	| LamV (V->EvalM V)
         | ULamV (forall a. V->(V->a)->a)
 	| SigV (Double->V)
+	| USigV (forall a. Double->(V->a)->a)
         | Unit
 
 instance Eq V where

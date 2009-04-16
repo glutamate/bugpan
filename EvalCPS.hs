@@ -113,36 +113,39 @@ eval es ea@(App lam arg) k
       eval es arg $ \ag ->lf ag k
          --eval es env (subVar nm ag bd) t
 	
-{-
+
 {-eval es env (ShowE e) = do (StrLit . show) `fmap`  eval es env e t
 eval es env (StrCat e1 e2) = do StrLit a <- eval es env e1 t
                                StrLit b <- eval es env e2 t
 			       return $ StrLit (a++b) -}
 
-eval es (SigVal sve) = do --Just t <- cur_t `fmap` ask
-  SigV efun <- eval es sve
+eval es (SigVal sve) k =  --Just t <- cur_t `fmap` ask
+  eval es sve $ \(SigV efun) ->
   {-case cur_t es of
     Just t -> return ()
     Nothing -> error $ "no time in expr "++show sve-}
-  return $ efun (curTime es)
+  k $ efun (curTime es)
 
-eval es (Sig se) 
-    = do let boundVars = map fst $ env es
-         if all (`elem` boundVars) fvars
-            then return . SigV $ \t -> unEvalM (eval (withTime t es) se)
-            else fail $ "unknown free vars: " ++ show (fvars \\ boundVars) ++ "\nEnv: "++(show $ env es)
+
+eval es (Sig se) k
+    = let boundVars = map fst $ env es in
+      if all (`elem` boundVars) fvars
+            then k . USigV $ \t k2-> eval (withTime t es) se k2
+            else error $ "unknown free vars: " ++ show (fvars \\ boundVars) ++ "\nEnv: "++(show $ env es)
     where fvars = freeVars se
           --boundVars = map fst env
-
-
+{-
+ 
 eval es (SigAt offset sve) = 
     do SigV efun <- eval (withoutTime es) sve 
        NumV n <- eval es offset
        return (efun $ (numToDouble n)) 
+-}
+eval es (LetE ses er) k = 
+  let nvs = map (\(n,e)-> (n, eval (extsEnv nvs es) e) k) ses in
+  eval (extsEnv nvs es) er k
 
-eval es (LetE ses er) = do
-  let nvs = map (\(n,e)-> (n, unEvalM $ eval (extsEnv nvs es) e)) ses
-  eval (extsEnv nvs es) er
+{-
 
 {-eval es (SigDelay s p0) = eval es (Sig $ SigAt ((SigVal (Var "seconds"))- dt') s )
     where dt' = Const . NumV . NReal $ dt es
@@ -208,3 +211,4 @@ ta = teval myAdd
 
 --t1 n = unEvalM  extEnv ("x",5) . extEnv ("y",6) $ eval (Var n)
 -}
+
