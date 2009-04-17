@@ -22,15 +22,11 @@ ppe = pp
 mypp n = putStrLn $ pp $ getE n testProg
 ppso = mypp "solveOde'"
 
-pp1 =  putStrLn $ map chr [0x03bb,0x644,32,0x62A,0x62C,0x62F,0x646,32, 0xceb1]
-
-
 getE :: String -> [Declare] -> E
 getE n [] = error "Not Found"
 getE n ((Let n1 e):tl) | n == n1 = e
                        | otherwise = getE n tl
 getE n (_:tl) = getE n tl
-
 
 
 testProg = prelude ++
