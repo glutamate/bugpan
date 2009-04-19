@@ -24,6 +24,10 @@ setIdx _ _ [] = []
 setIdx 0 y (x:xs) = y:xs
 setIdx n y (x:xs) = x:setIdx (n-1) y xs
 
+spliceAt :: Int -> [a]-> [a]->[a]
+spliceAt n ys xs = let (hd, tl) = splitAt n xs in
+                   concat [hd, ys, xs]
+
 runTravM :: [Declare] -> [(String, E)] -> TravM a -> (a, [Declare])
 runTravM decs env tx 
     = let initS = TravS 0 decs env [] 0 []
@@ -55,8 +59,8 @@ withEnv n e tx = do env1 <- env `fmap` get
                     setter $ \s-> s { env = env1 }
                     return x
 
-withBvar n tx  = do bvs <- boundVars `fmap` get
-                    setter $ \s-> s { boundVars = n:bvs }
+withBvars n tx = do bvs <- boundVars `fmap` get
+                    setter $ \s-> s { boundVars = n++bvs }
                     x <- tx
                     setter $ \s-> s { boundVars = bvs }
                     return x
@@ -82,6 +86,11 @@ lookUp nm = do env <- env `fmap` get
 insertAtEnd :: [Declare] -> TravM ()
 insertAtEnd ds = setter $ \s -> s {decls = decls s ++ ds}
 
+insertBefore :: [Declare] -> TravM ()
+insertBefore ds = setter $ \s-> let ln = lineNum s
+                                    ds' = spliceAt ln ds $ decls s
+                               in s { decls = ds', lineNum = ln }
+
 declsToEnv [] = []
 declsToEnv ((Let n e):ds) = (n,e):declsToEnv ds
 declsToEnv (_:ds) = declsToEnv ds 
@@ -96,11 +105,12 @@ queryM :: (E-> TravM [a]) -> E -> TravM [a]
 queryM q e@(If p c a) = concatM [q e,m p, m c,m a]
 	where m = queryM q
 
-queryM q e@(LetE ses er) = concatM [q e, 
+queryM q e@(LetE ses er) = withBvars (map fst ses) $
+                           concatM [q e, 
                                     concat `fmap` mapM m (map snd ses), 
                                     m er]
     where m = queryM q
-queryM q e@(Lam n bd) = withBvar n $ concatM [q e, m bd]
+queryM q e@(Lam n bd) = withBvars [n] $ concatM [q e, m bd]
 	where m = queryM q
 queryM q e@(App le ae) = concatM [q e, m le, m ae]
 	where m = queryM q
@@ -143,7 +153,7 @@ mapEM :: (E-> TravM E)-> E -> TravM E
 mapEM f e = mapEM' e
     where m = withPath e . mapEM f 
           mapEM' (If p c a) =  return If `ap` m p `ap` m c `ap` m a >>= f
-          mapEM' (Lam n bd) = withBvar n $ return (Lam n) `ap` m bd >>= f
+          mapEM' (Lam n bd) = withBvars [n] $ return (Lam n) `ap` m bd >>= f
           mapEM' (App le ae) = return App `ap` m le `ap` m ae >>= f
           mapEM' (Var n) = f $ Var n
           mapEM' (Sig s) = return Sig `ap` m s >>= f
@@ -161,7 +171,8 @@ mapEM f e = mapEM' e
           mapEM' (Event s2) = return Event `ap` m s2 >>= f
           mapEM' (Const c) = f $ Const c
           mapEM' (Nil) = f Nil
-          mapEM' (LetE ses er) = return LetE `ap` mapM (\(n,e)-> do e' <- m e
+          mapEM' (LetE ses er) = withBvars (map fst ses) $ 
+                                 return LetE `ap` mapM (\(n,e)-> do e' <- m e
                                                                     return (n, e')) ses 
                                              `ap` m er >>= f
           mapE f e = error $ "mapE: unknown expr "++show e 

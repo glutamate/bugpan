@@ -25,7 +25,8 @@ prelude = [ "smap" =: (Lam "f" . Lam "s" $ Sig (Var "f" $> (SigVal $ Var "s"))),
 
 testProg  = ["secsp1" =: ((Var "smap") $> (Var "incr") $> (Var "seconds")),
              "aval" =: 5,
-             "secsp1d1" =: ((Var "smap") $> (Var "incr") $> (SigDelay (Var "seconds") (0))) 
+             "secsp1d1" =: ((Var "smap") $> (Var "incr") $> (SigDelay (Var "seconds") (0))),
+             "accsecs" =: ((Var "sscan") $> (Var "add") $> 0 $> (Var "seconds")  )
             ]
 
 ppProg prg = forM_ prg $ \e -> case e of 
@@ -65,6 +66,12 @@ betaContract (App (Lam nm bd) arg) = mapE bar bd
           bar e = e
 betaContract e = e
 
+changeVars :: String -> String -> E-> E
+changeVars n1 n2 e = mapE aux e
+    where aux (Var n) | n == n1 = Var n2
+                      | otherwise = Var n
+          aux e = e
+                     
 
 betaReduce :: E-> E
 betaReduce e = let bce = betaContract e
@@ -74,25 +81,25 @@ betaReduce e = let bce = betaContract e
 
 
 unDelays :: TravM ()
-unDelays = do mapD $ \tle -> mapEM undel tle
+unDelays = mapD $ \tle -> mapEM undel tle
     where undel (SigDelay (Var nm) initE) = do
-            --assumes nm not bound and inite has no bound vars
+            --assumes nm not bound and inite has no bound vars. FIXME
             dnm <- genSym $ nm++"_delay"
-            insertAtEnd [InitVal dnm initE,
-                         Let dnm (Var nm)]
+            insertAtEnd [Let dnm (SigDelay (Var nm) initE)]
             return (Var dnm)
           undel e = return e
             
+letFloating ::TravM ()
+letFloating = mapD letFl
+    where letFl (LetE ses er) = do
+            nes <- forM ses $ \(n,e) -> do
+                                  nn <- genSym n
+                                  return $ Let nn e 
+            insertBefore $ nes
+            return er
+          letFl e = return e
+                
 
-{-
-    mapD $ \tle-> ifM (hasSig tle)
-                      (mapEM subst tle)
-                      (return tle)
-    where subst e@(Lam n bd) = ifM (hasSig bd)
-                                   (do defn <- lookup)
-                                   (return e) 
-          subst e = return e
--}       
 inBoundVars :: String -> TravM Bool
 inBoundVars nm = (nm `elem`) `fmap` boundVars `fmap` get
 
@@ -117,7 +124,7 @@ test = do putStrLn "prelude"
           putStrLn "\ninitial"
           ppProg testProg
           putStrLn "\ntransformed"
-          ppProg (snd . runTM $ substHasSigs >> betaRedHasSigs >> unDelays)
+          ppProg (snd . runTM $ substHasSigs >> betaRedHasSigs)-- >> unDelays)
 
           --return $ hasSigProg testProg
 
