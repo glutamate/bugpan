@@ -4,13 +4,15 @@ import Expr
 import Control.Monad.State.Strict
 import Control.Monad.Identity
 import qualified Data.List as L
+import Debug.Trace
 
 data TravS = TravS { counter :: Int,
                      decls :: [Declare],
                      env ::  [(String, E)],
                      boundVars :: [String],
                      lineNum :: Int,
-                     exprPath :: [E]
+                     exprPath :: [E],
+                     changed :: Bool
                    }
 
 type TravM = StateT TravS Identity
@@ -30,8 +32,8 @@ spliceAt n ys xs = let (hd, tl) = splitAt n xs in
 
 runTravM :: [Declare] -> [(String, E)] -> TravM a -> (a, [Declare])
 runTravM decs env tx 
-    = let initS = TravS 0 decs env [] 0 []
-          (x, TravS _ decsFinal _ _ _ _) = runIdentity $ runStateT tx initS
+    = let initS = TravS 0 decs env [] 0 [] False
+          (x, TravS _ decsFinal _ _ _ _ _) = runIdentity $ runStateT tx initS
       in (x, decsFinal)
 
 mapD :: (E-> TravM E) -> TravM ()
@@ -39,13 +41,14 @@ mapD f = do ds <- decls `fmap` get
             -- let lns = length ds
             setter $ \s-> s { lineNum = 0 }
             untilM (stopCond `fmap` get) $ do
-              lnum <- lineNum `fmap` get
-              ln <- (!!lnum) `fmap` decls `fmap` get
+              ln <- curLine
               case ln of 
                 Let n e -> do 
                         e' <- f e
-                        lnum' <- lineNum `fmap` get -- f may insert lines above
-                        setter $ \s-> s { decls = setIdx lnum' (Let n e') (decls s)}
+                        when (e' /= e) $ do markChange
+                                            trace (pp e++ " /= \n" ++ pp e') $ return ()
+                                            lnum' <- lineNum `fmap` get -- f may insert lines above
+                                            setter $ \s-> s { decls = setIdx lnum' (Let n e') (decls s)}
                 _ -> return ()
               lnum <- lineNum `fmap` get
               setter $ \s-> s { lineNum = lnum+1 }
@@ -55,6 +58,21 @@ mapD f = do ds <- decls `fmap` get
 
            -- forM_ [0..(lns-1)] $ \lnum-> do 
 
+curLine :: TravM Declare
+curLine = do lnum <- lineNum `fmap` get
+             (!!lnum) `fmap` decls `fmap` get
+
+whileChanges :: TravM () -> TravM ()
+whileChanges ma = do eraseChange
+                     ma
+                     whenM (changed `fmap` get)
+                           (whileChanges ma) 
+
+markChange = setter $ \s-> s { changed = True }
+eraseChange = setter $ \s-> s { changed = False }
+
+whenM mp ma = do p<-mp
+                 when p ma
 
 untilM :: Monad m => m Bool -> m () -> m ()
 untilM mp ma = do p <- mp
@@ -96,16 +114,17 @@ lookUp nm = do env <- env `fmap` get
     where lookUpInDecls = do ds <- declsToEnv `fmap` decls `fmap` get
                              case L.lookup nm ds of
                                Just e -> return e
-                               Nothing -> fail $ "lookUp: can't find "++nm
+                               Nothing -> do ln <- curLine
+                                             fail $ "lookUp: can't find "++nm++" in line: "++ show ln
                              
           
 insertAtEnd :: [Declare] -> TravM ()
-insertAtEnd ds = setter $ \s -> s {decls = decls s ++ ds}
+insertAtEnd ds = markChange >> (setter $ \s -> s {decls = decls s ++ ds})
 
 insertBefore :: [Declare] -> TravM ()
-insertBefore ds = setter $ \s-> let ln = lineNum s
-                                    ds' = spliceAt ln ds $ decls s
-                               in s { decls = ds', lineNum = ln+length ds }
+insertBefore ds = markChange >> (setter $ \s-> let ln = lineNum s
+                                                   ds' = spliceAt ln ds $ decls s
+                                               in s { decls = ds', lineNum = ln+length ds })
 
 declsToEnv [] = []
 declsToEnv ((Let n e):ds) = (n,e):declsToEnv ds
@@ -194,3 +213,8 @@ mapEM f e = mapEM' e
           mapE f e = error $ "mapE: unknown expr "++show e 
               
 
+ifM :: Monad m => m Bool -> m a ->  m a -> m a
+ifM mp mc ma = do p <- mp
+                  if p
+                     then mc
+                     else ma

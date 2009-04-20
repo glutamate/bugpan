@@ -19,15 +19,19 @@ prelude = [ "smap" =: (Lam "f" . Lam "s" $ Sig (Var "f" $> (SigVal $ Var "s"))),
             "seconds" =: Sig 1,
             "sscan" =: (Lam "f" . Lam "v0" . Lam "s" $
                         LetE [("sr", (Sig $ (Var "f") $> (SigVal (Var "s")) $> (SigVal $ SigDelay (Var "sr") (Var "v0"))))
-                             ] $ Var "sr")
+                             ] $ Var "sr"),
+            "integrate" =: (Lam "s" $ (Var "sscan" $> (Var "intStep") $> (0) $> Var "s")),
+            "intStep" =: (Lam "new" . Lam "old" $ (Var "old") + (Var "new")*(Var "dt")),
+            "dt" =: 1
  
           ]
 
-testProg  = ["secsp1" =: ((Var "smap") $> (Var "incr") $> (Var "seconds")),
-             "aval" =: 5,
-             "secsp1d1" =: ((Var "smap") $> (Var "incr") $> (SigDelay (Var "seconds") (0))),
-             "accsecsp1" =: ((Var "sscan") $> (Var "add") $> 0 $> ((Var "smap") $> (Var "incr") $> (Var "seconds"))  ),
-             "accsecs" =: ((Var "sscan") $> (Var "add") $> 0 $> (Var "seconds")  )
+testProg  = [--"secsp1" =: ((Var "smap") $> (Var "incr") $> (Var "seconds")),
+             --"aval" =: 5,
+             --"secsp1d1" =: ((Var "smap") $> (Var "incr") $> (SigDelay (Var "seconds") (0))),
+             --"accsecsp1" =: ((Var "sscan") $> (Var "add") $> 0 $> ((Var "smap") $> (Var "incr") $> (Var "seconds"))  ),
+             --"accsecs" =: ((Var "sscan") $> (Var "add") $> 0 $> (Var "seconds")  ),
+             "intsecs" =: ((Var "integrate" $> (Var "seconds")))
             ]
 
 ppProg prg = forM_ prg $ \e -> case e of 
@@ -47,10 +51,12 @@ x =: y = Let x y
 substHasSigs :: TravM ()
 substHasSigs = mapD $ \tle -> mapEM subst tle
     where subst e@(App (Var nm) arg) = do
-            defn <- lookUp nm
-            ifM (hasSig $ stripSig defn)
-                (return $ App (defn) arg)
-                (return e) 
+            ifM (inBoundVars nm)
+                (return e)
+                $ do defn <- lookUp nm
+                     ifM (hasSig $ stripSig defn)
+                         (return $ App (defn) arg)
+                         (return e) 
           subst e = return e
 
 betaRedHasSigs :: TravM ()
@@ -86,8 +92,10 @@ betaReduce e = let bce = betaContract e
 
 
 unDelays :: TravM ()
-unDelays = mapD $ \tle -> mapEM undel tle
-    where undel (SigDelay (Var nm) initE) = do
+unDelays = mapD unDelays' 
+    where unDelays' e@(SigDelay (Var _) _) = return e
+          unDelays' tle = mapEM undel tle
+          undel (SigDelay (Var nm) initE) = do
             --assumes nm not bound and inite has no bound vars. FIXME
             dnm <- genSym $ nm++"_delay"
             insertAtEnd [Let dnm (SigDelay (Var nm) initE)]
@@ -131,7 +139,7 @@ hasBoundVars e = or `fmap` queryM hasBvars e
           hasBvars e = return [] 
                    
 
-
+ 
 
 
 hasSig :: E->TravM Bool
@@ -143,7 +151,7 @@ hasSig e = or `fmap` queryM hasSigAux e
                                    $ do defn <- stripSig `fmap` lookUp nm
                                         queryM hasSigAux defn
           hasSigAux (_) = return [False] 
-
+ 
 
 
 
@@ -152,14 +160,14 @@ test = do putStrLn "prelude"
           putStrLn "\ninitial"
           ppProg testProg
           putStrLn "\ntransformed"
-          ppProg (snd . runTM $ substHasSigs >> betaRedHasSigs >>  letFloating >> sigFloating) -- >> unDelays)
+          ppProg (snd . runTM $ do whileChanges substHasSigs  
+                                   betaRedHasSigs 
+                                   letFloating 
+                                   sigFloating 
+                                   unDelays
+                 )
 
           --return $ hasSigProg testProg
 
 --process :: E-> TravM Process
 
-ifM :: Monad m => m Bool -> m a ->  m a -> m a
-ifM mp mc ma = do p <- mp
-                  if p
-                     then mc
-                     else ma

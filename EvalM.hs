@@ -76,6 +76,11 @@ data V  = BoolV Bool
         | Unit
 
 instance Eq V where
+    BoolV x == BoolV y = x==y
+    NumV x == NumV y = x==y
+    StrV x == StrV y = x==y
+    PairV x w == PairV y z = x==y && w==z
+    Unit == Unit = True
     _ == _ = False
 
 instance Show V where
