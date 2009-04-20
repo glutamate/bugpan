@@ -57,8 +57,6 @@ unifyTypes (PairT t11 t12) (PairT t21 t22)
     = do t1 <- unifyTypes t11 t21 
          t2 <- unifyTypes t12 t22 
          return (PairT t1 t2)
-import Types
-
 unifyTypes (LamT t11 t12) (LamT t21 t22) 
     = do t1 <- unifyTypes t11 t21 
          t2 <- unifyTypes t12 t22 

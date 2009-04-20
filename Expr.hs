@@ -31,8 +31,6 @@ instance Num V where
 
 data E =  If E E E
         | Const V
-	| ShowE E
-	| StrCat E E
 	| Lam String E
 	| App E E
 	| Var String

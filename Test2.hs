@@ -21,8 +21,8 @@ prelude = [ "smap" =: (Lam "f" . Lam "s" $ Sig (Var "f" $> (SigVal $ Var "s"))),
                              ] $ Var "sr"),
             "integrate" =: ((Var "sscan" $> (Var "intStep") $> (0))),
             "intStep" =: (Lam "new" . Lam "old" $ (Var "old") + (Var "new")*(Var "dt")),
-            "seconds" =: Sig 1,
-            "dt" =: 1
+            "seconds" =: Sig 1, --dummy
+            "dt" =: 1 --dummy
           ]
 
 testProg  = [--"secsp1" =: ((Var "smap") $> (Var "incr") $> (Var "seconds")),
@@ -30,7 +30,7 @@ testProg  = [--"secsp1" =: ((Var "smap") $> (Var "incr") $> (Var "seconds")),
              --"secsp1d1" =: ((Var "smap") $> (Var "incr") $> (SigDelay (Var "seconds") (0))),
              "accum_secs_plus1" =: ((Var "sscan") $> (Var "add") $> 0 $> ((Var "smap") $> (Var "incr") $> (Var "seconds"))  ),
              --"accsecs" =: ((Var "sscan") $> (Var "add") $> 0 $> (Var "seconds")  ),
-             "intsecs" =: ((Var "integrate" $> (Var "seconds")))
+             "intsecs" =: ((Var "integrate" $> (Var "accum_secs_plus1")))
             ]
 
 ppProg prg = forM_ prg $ \e -> case e of 
