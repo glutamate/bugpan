@@ -36,9 +36,10 @@ runTravM decs env tx
 
 mapD :: (E-> TravM E) -> TravM ()
 mapD f = do ds <- decls `fmap` get
-            let lns = length ds
-            forM_ [0..(lns-1)] $ \lnum-> do 
-              setter $ \s-> s { lineNum = lnum }
+            -- let lns = length ds
+            setter $ \s-> s { lineNum = 0 }
+            untilM (stopCond `fmap` get) $ do
+              lnum <- lineNum `fmap` get
               ln <- (!!lnum) `fmap` decls `fmap` get
               case ln of 
                 Let n e -> do 
@@ -46,6 +47,21 @@ mapD f = do ds <- decls `fmap` get
                         lnum' <- lineNum `fmap` get -- f may insert lines above
                         setter $ \s-> s { decls = setIdx lnum' (Let n e') (decls s)}
                 _ -> return ()
+              lnum <- lineNum `fmap` get
+              setter $ \s-> s { lineNum = lnum+1 }
+                     
+    where stopCond :: TravS -> Bool
+          stopCond s = lineNum s >= length ( decls s)
+
+           -- forM_ [0..(lns-1)] $ \lnum-> do 
+
+
+untilM :: Monad m => m Bool -> m () -> m ()
+untilM mp ma = do p <- mp
+                  if p 
+                     then return ()
+                     else ma >> untilM mp ma
+                     
 
 genSym :: String -> TravM String
 genSym base = do tok <- counter `fmap` get

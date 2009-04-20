@@ -26,6 +26,7 @@ prelude = [ "smap" =: (Lam "f" . Lam "s" $ Sig (Var "f" $> (SigVal $ Var "s"))),
 testProg  = ["secsp1" =: ((Var "smap") $> (Var "incr") $> (Var "seconds")),
              "aval" =: 5,
              "secsp1d1" =: ((Var "smap") $> (Var "incr") $> (SigDelay (Var "seconds") (0))),
+             "accsecsp1" =: ((Var "sscan") $> (Var "add") $> 0 $> ((Var "smap") $> (Var "incr") $> (Var "seconds"))  ),
              "accsecs" =: ((Var "sscan") $> (Var "add") $> 0 $> (Var "seconds")  )
             ]
 
@@ -101,9 +102,22 @@ letFloating = mapD letFl
             nes <- forM (zip ses nns) $ \((n,e), nn) -> do
                                   return $ Let nn (changeVars nonns e)
             insertBefore nes
-            return (changeVars nonns er)
+            return (changeVars nonns er) 
+
           letFl e = return e
                 
+sigFloating :: TravM ()
+sigFloating = mapD sigFl
+    where sigFl (Sig se) = Sig `fmap` mapEM sigFloat se
+          sigFl e = mapEM sigFloat e
+          sigFloat (Sig se) = do
+            ifM (hasBoundVars se)
+                (error "not sure what to do with bound vars in sig floating")
+                $ do sn <- genSym "sigfl"
+                     insertBefore [Let sn (Sig se)]
+                     return (Var sn)
+          sigFloat e = return e
+
 
 inBoundVars :: String -> TravM Bool
 inBoundVars nm = (nm `elem`) `fmap` boundVars `fmap` get
@@ -111,25 +125,34 @@ inBoundVars nm = (nm `elem`) `fmap` boundVars `fmap` get
 stripSig (Sig se) = se
 stripSig e = e
 
-hasSigAux :: E -> TravM [Bool]
-hasSigAux (Sig _) = return [True]
-hasSigAux (Var nm) = ifM (inBoundVars nm)
-                            (return [False])
-                            $ do defn <- stripSig `fmap` lookUp nm
-                                 queryM hasSigAux defn
-                        --return $ or bs
-                     
-hasSigAux (_) = return [False] 
+hasBoundVars :: E-> TravM Bool
+hasBoundVars e = or `fmap` queryM hasBvars e
+    where hasBvars (Var nm) = (:[]) `fmap` inBoundVars nm
+          hasBvars e = return [] 
+                   
+
+
+
 
 hasSig :: E->TravM Bool
-hasSig e = do or `fmap` queryM hasSigAux e
+hasSig e = or `fmap` queryM hasSigAux e
+    where hasSigAux :: E -> TravM [Bool]
+          hasSigAux (Sig _) = return [True]
+          hasSigAux (Var nm) = ifM (inBoundVars nm)
+                                   (return [False])
+                                   $ do defn <- stripSig `fmap` lookUp nm
+                                        queryM hasSigAux defn
+          hasSigAux (_) = return [False] 
 
-test = do --putStrLn "prelude"
-          --ppProg prelude
+
+
+
+test = do putStrLn "prelude"
+          ppProg prelude
           putStrLn "\ninitial"
           ppProg testProg
           putStrLn "\ntransformed"
-          ppProg (snd . runTM $ substHasSigs >> betaRedHasSigs >>  letFloating >> unDelays)
+          ppProg (snd . runTM $ substHasSigs >> betaRedHasSigs >>  letFloating >> sigFloating) -- >> unDelays)
 
           --return $ hasSigProg testProg
 
