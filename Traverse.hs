@@ -46,7 +46,7 @@ mapD f = do ds <- decls `fmap` get
                 Let n e -> do 
                         e' <- f e
                         when (e' /= e) $ do markChange
-                                            trace (pp e++ " /= \n" ++ pp e') $ return ()
+                                            -- trace (pp e++ " /= \n" ++ pp e') $ return ()
                                             lnum' <- lineNum `fmap` get -- f may insert lines above
                                             setter $ \s-> s { decls = setIdx lnum' (Let n e') (decls s)}
                 _ -> return ()

@@ -16,20 +16,19 @@ type Program = [Declare]
 prelude = [ "smap" =: (Lam "f" . Lam "s" $ Sig (Var "f" $> (SigVal $ Var "s"))),
             "incr" =: (Lam "x" (Var "x" + 1)),
              "add" =: (Lam "x" $ Lam "y" $ Var "x" + Var "y"),
-            "seconds" =: Sig 1,
             "sscan" =: (Lam "f" . Lam "v0" . Lam "s" $
                         LetE [("sr", (Sig $ (Var "f") $> (SigVal (Var "s")) $> (SigVal $ SigDelay (Var "sr") (Var "v0"))))
                              ] $ Var "sr"),
-            "integrate" =: (Lam "s" $ (Var "sscan" $> (Var "intStep") $> (0) $> Var "s")),
+            "integrate" =: ((Var "sscan" $> (Var "intStep") $> (0))),
             "intStep" =: (Lam "new" . Lam "old" $ (Var "old") + (Var "new")*(Var "dt")),
+            "seconds" =: Sig 1,
             "dt" =: 1
- 
           ]
 
 testProg  = [--"secsp1" =: ((Var "smap") $> (Var "incr") $> (Var "seconds")),
              --"aval" =: 5,
              --"secsp1d1" =: ((Var "smap") $> (Var "incr") $> (SigDelay (Var "seconds") (0))),
-             --"accsecsp1" =: ((Var "sscan") $> (Var "add") $> 0 $> ((Var "smap") $> (Var "incr") $> (Var "seconds"))  ),
+             "accum_secs_plus1" =: ((Var "sscan") $> (Var "add") $> 0 $> ((Var "smap") $> (Var "incr") $> (Var "seconds"))  ),
              --"accsecs" =: ((Var "sscan") $> (Var "add") $> 0 $> (Var "seconds")  ),
              "intsecs" =: ((Var "integrate" $> (Var "seconds")))
             ]
