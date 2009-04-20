@@ -60,7 +60,6 @@ data Declare
 	| LetRec String E
 	| Import String (Maybe String)
 	| SinkConnect E String
-        | InitVal String E
 	deriving (Show, Eq)
 
 depth :: E->Int

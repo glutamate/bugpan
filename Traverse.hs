@@ -26,7 +26,7 @@ setIdx n y (x:xs) = x:setIdx (n-1) y xs
 
 spliceAt :: Int -> [a]-> [a]->[a]
 spliceAt n ys xs = let (hd, tl) = splitAt n xs in
-                   concat [hd, ys, xs]
+                   concat [hd, ys, tl]
 
 runTravM :: [Declare] -> [(String, E)] -> TravM a -> (a, [Declare])
 runTravM decs env tx 
@@ -89,7 +89,7 @@ insertAtEnd ds = setter $ \s -> s {decls = decls s ++ ds}
 insertBefore :: [Declare] -> TravM ()
 insertBefore ds = setter $ \s-> let ln = lineNum s
                                     ds' = spliceAt ln ds $ decls s
-                               in s { decls = ds', lineNum = ln }
+                               in s { decls = ds', lineNum = ln+length ds }
 
 declsToEnv [] = []
 declsToEnv ((Let n e):ds) = (n,e):declsToEnv ds

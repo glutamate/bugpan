@@ -31,7 +31,7 @@ testProg  = ["secsp1" =: ((Var "smap") $> (Var "incr") $> (Var "seconds")),
 
 ppProg prg = forM_ prg $ \e -> case e of 
                                  Let n e-> putStrLn (n++" = " ++ pp e)
-                                 InitVal n e -> putStrLn (n++"(0) = " ++ pp e)
+                                 
 
 hasSigProg :: Program -> [(String, Bool)]
 hasSigProg p = fst . runTM $ 
@@ -66,12 +66,16 @@ betaContract (App (Lam nm bd) arg) = mapE bar bd
           bar e = e
 betaContract e = e
 
-changeVars :: String -> String -> E-> E
-changeVars n1 n2 e = mapE aux e
+changeVar :: String -> String -> E-> E
+changeVar n1 n2 e = mapE aux e
     where aux (Var n) | n == n1 = Var n2
                       | otherwise = Var n
           aux e = e
-                     
+
+changeVars :: [(String,String)] -> E-> E
+changeVars [] e = e
+changeVars ((no,nn):ns) e = changeVar no nn (changeVars ns e)
+                   
 
 betaReduce :: E-> E
 betaReduce e = let bce = betaContract e
@@ -92,11 +96,12 @@ unDelays = mapD $ \tle -> mapEM undel tle
 letFloating ::TravM ()
 letFloating = mapD letFl
     where letFl (LetE ses er) = do
-            nes <- forM ses $ \(n,e) -> do
-                                  nn <- genSym n
-                                  return $ Let nn e 
-            insertBefore $ nes
-            return er
+            nns <- mapM genSym (map fst ses)
+            let nonns = zip (map fst ses) nns
+            nes <- forM (zip ses nns) $ \((n,e), nn) -> do
+                                  return $ Let nn (changeVars nonns e)
+            insertBefore nes
+            return (changeVars nonns er)
           letFl e = return e
                 
 
@@ -114,17 +119,17 @@ hasSigAux (Var nm) = ifM (inBoundVars nm)
                                  queryM hasSigAux defn
                         --return $ or bs
                      
-hasSigAux (_) = return [False]
+hasSigAux (_) = return [False] 
 
 hasSig :: E->TravM Bool
 hasSig e = do or `fmap` queryM hasSigAux e
 
-test = do putStrLn "prelude"
-          ppProg prelude
+test = do --putStrLn "prelude"
+          --ppProg prelude
           putStrLn "\ninitial"
           ppProg testProg
           putStrLn "\ntransformed"
-          ppProg (snd . runTM $ substHasSigs >> betaRedHasSigs)-- >> unDelays)
+          ppProg (snd . runTM $ substHasSigs >> betaRedHasSigs >>  letFloating >> unDelays)
 
           --return $ hasSigProg testProg
 
