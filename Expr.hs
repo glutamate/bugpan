@@ -60,6 +60,7 @@ data Declare
 	| SinkConnect E String
 	deriving (Show, Eq)
 
+--for display purposes only
 depth :: E->Int
 depth (Const _) = 1
 depth (Lam _ b) = 1+depth b
@@ -67,6 +68,7 @@ depth (App f b) = 1+ max (depth f) (depth b)
 depth (Var _) = 1
 depth (Pair e1 e2) = 1+ max (depth e1) (depth e2)
 depth (Nil) = 1
+depth (Cons e1 Nil) = 1
 depth (Cons e1 e2) = 1+max (depth e1) (depth e2)+1
 depth (M2 _ e1 e2) = 1+max (depth e1) (depth e2)+1
 depth (M1 _ e1) = 1+(depth e1) 
@@ -79,20 +81,21 @@ ppa e | depth e > 1 = "("++pp e++")"
       | otherwise = pp e
 
 pp :: E->String
-pp (If p c a) = concat ["if ", pp p, " ", ppa c, " else ", ppa a,"}"]
+pp (If p c a) = concat ["if ", pp p, " then ", ppa c, " else ", ppa a]
 pp (Lam n e) = concat ["\\", n, "->", pp e]
 pp (Var n) = n
 pp (Const v) = show v
 pp (App f a) = ppa f ++ " " ++ ppa a
 pp (Pair f s) = concat ["(", ppa f , ", ", ppa s, ")"]
 pp (Nil) = "[]"
+pp (Cons car Nil) = "[ "++pp car++" ]" -- ppa car ++ ":" ++ ppa cdr
 pp (Cons car cdr) = ppa car ++ ":" ++ ppa cdr
-pp (Cmp Lt e1 e2) = ppa e1 ++ "<" ++ ppa e2
-pp (Cmp Gt e1 e2) = ppa e1 ++ ">" ++ ppa e2
-pp (Cmp Eq e1 e2) = ppa e1 ++ "==" ++ ppa e2
-pp (Cmp Ne e1 e2) = ppa e1 ++ "!=" ++ ppa e2
-pp (Cmp Le e1 e2) = ppa e1 ++ "<=" ++ ppa e2
-pp (Cmp Ge e1 e2) = ppa e1 ++ ">=" ++ ppa e2
+pp (Cmp Lt e1 e2) = ppa e1 ++ " < " ++ ppa e2
+pp (Cmp Gt e1 e2) = ppa e1 ++ " > " ++ ppa e2
+pp (Cmp Eq e1 e2) = ppa e1 ++ " == " ++ ppa e2
+pp (Cmp Ne e1 e2) = ppa e1 ++ " != " ++ ppa e2
+pp (Cmp Le e1 e2) = ppa e1 ++ " <= " ++ ppa e2
+pp (Cmp Ge e1 e2) = ppa e1 ++ " >= " ++ ppa e2
 pp (And e1 e2) = ppa e1 ++ " && " ++ ppa e2
 pp (Or e1 e2) = ppa e1 ++ " || " ++ ppa e2
 pp (Not e1) = "!" ++ ppa e1
@@ -100,6 +103,7 @@ pp (Sig e) = "{: "++pp e++" :}"
 pp (SigVal s) = "<: "++pp s++" :>"
 pp (SigAt t s) = ppa s ++ "@" ++ ppa t
 pp (SigDelay s v) = "delay "++ppa s++" "++ppa v
+pp (Event e) = "[: "++pp e++" :]"
 pp (M2 Mul e1 e2) = pp2op e1 "*" e2
 pp (M2 Add e1 e2) = pp2op e1 "+" e2
 pp (M2 Sub e1 e2) = pp2op e1 "-" e2

@@ -21,16 +21,24 @@ prelude = [ "smap" =: (Lam "f" . Lam "s" $ Sig (Var "f" $> (SigVal $ Var "s"))),
                              ] $ Var "sr"),
             "integrate" =: ((Var "sscan" $> (Var "intStep") $> (0))),
             "intStep" =: (Lam "new" . Lam "old" $ (Var "old") + (Var "new")*(Var "dt")),
+            "crosses" =: (Lam "val" . Lam "sig" $ Event (If 
+                                                         (SigVal (Var "sig") .>=. (Var "val") .&. 
+                                                          (SigVal (SigDelay (Var "sig") 0)) .<. (Var "val")) --not 0!
+                                                         (Cons (Pair (SigVal (Var "seconds")) (Const Unit)) Nil) 
+                                                         (Nil))),
             "seconds" =: Sig 1, --dummy
             "dt" =: 1 --dummy
           ]
 
 testProg  = [--"secsp1" =: ((Var "smap") $> (Var "incr") $> (Var "seconds")),
-             --"aval" =: 5,
+             "aval" =: 5,
              --"secsp1d1" =: ((Var "smap") $> (Var "incr") $> (SigDelay (Var "seconds") (0))),
              "accum_secs_plus1" =: ((Var "sscan") $> (Var "add") $> 0 $> ((Var "smap") $> (Var "incr") $> (Var "seconds"))  ),
              --"accsecs" =: ((Var "sscan") $> (Var "add") $> 0 $> (Var "seconds")  ),
-             "intsecs" =: ((Var "integrate" $> (Var "accum_secs_plus1")))
+             "intsecs" =: ((Var "integrate" $> (Var "accum_secs_plus1"))),
+             "over5" =: (Var "crosses" $> 5 $> Var "seconds"),
+             "over_intsecs" =: (Var "crosses" $> (SigVal(Var "intsecs")) $> Var "seconds")
+
             ]
 
 ppProg prg = forM_ prg $ \e -> case e of 
@@ -125,26 +133,48 @@ sigFloating = mapD sigFl
                      return (Var sn)
           sigFloat e = return e
 
+explicitCopying :: TravM ()
+explicitCopying = mapD explC
+    where explS  e@(Var nm) = 
+              do isoe <- isSignalOrEvt e
+                 case isoe of
+                   IsSig -> (return $ Sig (SigVal e))
+                   IsEvt -> return $ Event e -- incorrect
+                   IsNeitherSigNorEvt -> (return e)
+          explC e = return e
+
 
 inBoundVars :: String -> TravM Bool
 inBoundVars nm = (nm `elem`) `fmap` boundVars `fmap` get
 
 stripSig (Sig se) = se
+stripSig (Event ee) = ee
 stripSig e = e
+
+data IsSigOrEvent = IsSig | IsEvt | IsNeitherSigNorEvt
+
+isSignalOrEvt :: E -> TravM IsSigOrEvent
+isSignalOrEvt (Sig _) = return IsSig
+isSignalOrEvt (SigDelay _ _) = return IsSig
+isSignalOrEvt (Event _) = return IsEvt
+isSignalOrEvt (Var "seconds") = return IsSig
+isSignalOrEvt (Var "dt") = return IsNeitherSigNorEvt
+isSignalOrEvt (Var nm) = do def <- lookUp nm
+                            isSignalOrEvt def
+
+isSignalOrEvt _ = return IsNeitherSigNorEvt
 
 hasBoundVars :: E-> TravM Bool
 hasBoundVars e = or `fmap` queryM hasBvars e
     where hasBvars (Var nm) = (:[]) `fmap` inBoundVars nm
           hasBvars e = return [] 
-                   
-
- 
 
 
 hasSig :: E->TravM Bool
 hasSig e = or `fmap` queryM hasSigAux e
     where hasSigAux :: E -> TravM [Bool]
           hasSigAux (Sig _) = return [True]
+          hasSigAux (Event _) = return [True]
           hasSigAux (Var nm) = ifM (inBoundVars nm)
                                    (return [False])
                                    $ do defn <- stripSig `fmap` lookUp nm
@@ -164,6 +194,7 @@ test = do putStrLn "prelude"
                                    letFloating 
                                    sigFloating 
                                    unDelays
+                                   explicitCopying
                  )
 
           --return $ hasSigProg testProg
