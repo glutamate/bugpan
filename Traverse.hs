@@ -8,52 +8,80 @@ import qualified Data.List as L
 data TravS = TravS { counter :: Int,
                      decls :: [Declare],
                      env ::  [(String, E)],
-                     boundVars :: [String]
+                     boundVars :: [String],
+                     lineNum :: Int,
+                     exprPath :: [E]
                    }
 
 type TravM = StateT TravS Identity
 
-getEnv = env `fmap` get
+setter :: (TravS -> TravS) -> TravM ()
+setter f = do s <- get
+              put $ f s
 
-getDecls = decls `fmap` get
+setIdx :: Int -> a-> [a]->[a]
+setIdx _ _ [] = []
+setIdx 0 y (x:xs) = y:xs
+setIdx n y (x:xs) = x:setIdx (n-1) y xs
 
 runTravM :: [Declare] -> [(String, E)] -> TravM a -> (a, [Declare])
 runTravM decs env tx 
-    = let initS = TravS 0 decs env []
-          (x, TravS _ decsFinal _ _) = runIdentity $ runStateT tx initS
+    = let initS = TravS 0 decs env [] 0 []
+          (x, TravS _ decsFinal _ _ _ _) = runIdentity $ runStateT tx initS
       in (x, decsFinal)
 
-gensym :: String -> TravM String
-gensym base = do (TravS ctr d env bvs) <- get
-                 put (TravS (ctr+1) d env bvs)
-                 return $ base ++ "_" ++ (show ctr)
+mapD :: (E-> TravM E) -> TravM ()
+mapD f = do ds <- decls `fmap` get
+            let lns = length ds
+            forM_ [0..(lns-1)] $ \lnum-> do 
+              setter $ \s-> s { lineNum = lnum }
+              ln <- (!!lnum) `fmap` decls `fmap` get
+              case ln of 
+                Let n e -> do 
+                        e' <- f e
+                        lnum' <- lineNum `fmap` get -- f may insert lines above
+                        setter $ \s-> s { decls = setIdx lnum' (Let n e') (decls s)}
+                _ -> return ()
+
+genSym :: String -> TravM String
+genSym base = do tok <- counter `fmap` get
+                 setter $ \s->s {counter = tok+1}
+                 return $ base ++ "_" ++ (show tok)
 
 withEnv :: String -> E -> TravM a -> TravM a
-withEnv n e tx = do (TravS ctr d env bvs) <- get
-                    put (TravS ctr d ((n,e):env) bvs)
+withEnv n e tx = do env1 <- env `fmap` get
+                    setter $ \s-> s { env = (n,e):env1 }
                     x <- tx
-                    (TravS ctr' d' _ bvs) <- get
-                    put (TravS ctr' d' env bvs)
+                    setter $ \s-> s { env = env1 }
                     return x
 
-withBvar n tx  = do (TravS ctr d env bvs) <- get
-                    put (TravS ctr d env (n:bvs))
+withBvar n tx  = do bvs <- boundVars `fmap` get
+                    setter $ \s-> s { boundVars = n:bvs }
                     x <- tx
-                    (TravS ctr' d' env' _) <- get
-                    put (TravS ctr' d' env' bvs)
+                    setter $ \s-> s { boundVars = bvs }
                     return x
+
+withPath :: E -> TravM a -> TravM a
+withPath e tx = do p <- exprPath `fmap` get
+                   setter $ \s-> s {exprPath = e:p}
+                   x<- tx
+                   setter $ \s-> s {exprPath = p}
+                   return x
 
 lookUp :: String -> TravM (E)
-lookUp nm = do env <- getEnv
+lookUp nm = do env <- env `fmap` get
                case L.lookup nm env of
                  Just e -> return e
                  Nothing -> lookUpInDecls
-    where lookUpInDecls = do ds <- declsToEnv `fmap` getDecls
+    where lookUpInDecls = do ds <- declsToEnv `fmap` decls `fmap` get
                              case L.lookup nm ds of
                                Just e -> return e
                                Nothing -> fail $ "lookUp: can't find "++nm
                              
           
+insertAtEnd :: [Declare] -> TravM ()
+insertAtEnd ds = setter $ \s -> s {decls = decls s ++ ds}
+
 declsToEnv [] = []
 declsToEnv ((Let n e):ds) = (n,e):declsToEnv ds
 declsToEnv (_:ds) = declsToEnv ds 
@@ -67,10 +95,11 @@ concatM (mlst:mlsts) = do lst <- mlst
 queryM :: (E-> TravM [a]) -> E -> TravM [a]
 queryM q e@(If p c a) = concatM [q e,m p, m c,m a]
 	where m = queryM q
-{-
-queryM q e@(LetE ses er) = q e ++ m er ++ concatMap (m . snd) ses  
-	where m = queryM q-}
 
+queryM q e@(LetE ses er) = concatM [q e, 
+                                    concat `fmap` mapM m (map snd ses), 
+                                    m er]
+    where m = queryM q
 queryM q e@(Lam n bd) = withBvar n $ concatM [q e, m bd]
 	where m = queryM q
 queryM q e@(App le ae) = concatM [q e, m le, m ae]
@@ -109,9 +138,32 @@ queryM q e@(Var _) = concatM [q e]
 queryM q e@(Nil) = concatM [q e]
 queryM q e = fail $ "queryM: unknown expr "++show  e 
 
+
 mapEM :: (E-> TravM E)-> E -> TravM E
 mapEM f e = mapEM' e
-    where m = mapEM f 
+    where m = withPath e . mapEM f 
           mapEM' (If p c a) =  return If `ap` m p `ap` m c `ap` m a >>= f
+          mapEM' (Lam n bd) = withBvar n $ return (Lam n) `ap` m bd >>= f
+          mapEM' (App le ae) = return App `ap` m le `ap` m ae >>= f
+          mapEM' (Var n) = f $ Var n
+          mapEM' (Sig s) = return Sig `ap` m s >>= f
+          mapEM' (SigVal s) = return SigVal `ap` m s >>= f
+          mapEM' (SigDelay s1 s2) = return SigDelay `ap` m s1 `ap` m s2 >>= f
+          mapEM' (SigAt s1 s2) = return SigAt `ap` m s1 `ap` m s2 >>= f
+          mapEM' (M1 op s) = return (M1 op) `ap` m s >>= f
+          mapEM' (M2 op s1 s2) = return (M2 op) `ap` m s1 `ap` m s2  >>= f
+          mapEM' (And s1 s2) = return And `ap` m s1 `ap` m s2 >>= f
+          mapEM' (Or s1 s2) = return Or `ap` m s1 `ap` m s2 >>= f
+          mapEM' (Cons s1 s2) = return Cons `ap` m s1 `ap` m s2 >>= f
+          mapEM' (Not s) = return Not `ap` m s >>= f
+          mapEM' (Cmp o s1 s2) = return (Cmp o) `ap` m s1 `ap` m s2 >>= f
+          mapEM' (Pair s1 s2) = return Pair `ap` m s1 `ap` m s2 >>= f
+          mapEM' (Event s2) = return Event `ap` m s2 >>= f
+          mapEM' (Const c) = f $ Const c
+          mapEM' (Nil) = f Nil
+          mapEM' (LetE ses er) = return LetE `ap` mapM (\(n,e)-> do e' <- m e
+                                                                    return (n, e')) ses 
+                                             `ap` m er >>= f
+          mapE f e = error $ "mapE: unknown expr "++show e 
               
 
