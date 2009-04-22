@@ -55,9 +55,10 @@ data E =  If E E E
 data Declare 
 	= Let String E
 --	| LetEvt String E
-	| LetRec String E
+--	| LetRec String E
 	| Import String (Maybe String)
 	| SinkConnect E String
+        | Nop
 	deriving (Show, Eq)
 
 --for display purposes only

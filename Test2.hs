@@ -11,6 +11,7 @@ import Traverse
 import Control.Monad.State.Strict
 import Debug.Trace
 import Transform
+import Compiler
 
 type Program = [Declare]
 
@@ -62,13 +63,11 @@ test = do putStrLn "prelude"
           putStrLn "\ninitial"
           ppProg testProg
           putStrLn "\ntransformed"
-          ppProg (snd . runTM $ do whileChanges substHasSigs  
-                                   betaRedHasSigs 
-                                   letFloating 
-                                   sigFloating 
-                                   unDelays
-                                   explicitCopying
-                 )
+          let prg = snd . runTM $ transform
+          let complPrel =  fst . runTM $ compilablePrelude
+          ppProg (prg)
+          putStrLn "\ncompiled"
+          mapM_ (putStrLn . ppStmt) $ compile (complPrel++prg)
 
           --return $ hasSigProg testProg
 

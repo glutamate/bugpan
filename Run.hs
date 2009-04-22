@@ -217,7 +217,7 @@ justSnds ((x,Just y):rest) = (x,y):(justSnds rest)
 
 declExprs (Let _ e) = [e]
 --declExprs (LetSig _ e) = [e]
-declExprs (LetRec _ e) = [e]
+--declExprs (LetRec _ e) = [e]
 declExprs (SinkConnect e _) = [e]
 -- declExprs (LetEvt _ e) = [e]
 

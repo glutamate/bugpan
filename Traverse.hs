@@ -36,8 +36,8 @@ runTravM decs env tx
           (x, TravS _ decsFinal _ _ _ _ _) = runIdentity $ runStateT tx initS
       in (x, decsFinal)
 
-mapD :: (E-> TravM E) -> TravM ()
-mapD f = do ds <- decls `fmap` get
+mapDE :: (E-> TravM E) -> TravM ()
+mapDE f =do ds <- decls `fmap` get
             -- let lns = length ds
             setter $ \s-> s { lineNum = 0 }
             untilM (stopCond `fmap` get) $ do
@@ -53,10 +53,37 @@ mapD f = do ds <- decls `fmap` get
               lnum <- lineNum `fmap` get
               setter $ \s-> s { lineNum = lnum+1 }
                      
-    where stopCond :: TravS -> Bool
-          stopCond s = lineNum s >= length ( decls s)
+stopCond :: TravS -> Bool
+stopCond s = lineNum s >= length ( decls s)
 
            -- forM_ [0..(lns-1)] $ \lnum-> do 
+
+mapD :: (Declare -> TravM Declare)  -> TravM ()
+mapD f = do ds <- decls `fmap` get
+            -- let lns = length ds
+            setter $ \s-> s { lineNum = 0 }
+            untilM (stopCond `fmap` get) $ do
+              ln <- curLine
+              ln' <- f ln
+              when (ln /= ln') $ do markChange
+                                    lnum' <- lineNum `fmap` get -- f may insert lines above
+                                    setter $ \s-> s { decls = setIdx lnum' (ln') (decls s)}
+              lnum <- lineNum `fmap` get
+              setter $ \s-> s { lineNum = lnum+1 }
+
+
+renameEverywhere :: String -> String -> TravM ()
+renameEverywhere oldn newn 
+    = do ds <- decls `fmap` get
+         setter $ \s-> s { decls = map rnm ds}
+    where rnm (Let nm e) | nm == oldn = Let newn $ mapE rne e
+                         | otherwise =  Let nm $ mapE rne e
+          rnm (SinkConnect e nm) = SinkConnect (mapE rne e) nm
+          rnm d = d
+          
+          rne (Var n) | n == oldn = Var newn
+                      | otherwise = Var n
+          rne e = e
 
 curLine :: TravM Declare
 curLine = do lnum <- lineNum `fmap` get

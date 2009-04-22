@@ -2,17 +2,16 @@ module Transform where
 
 import Expr
 import Eval
-import EvalM
 import Run
 import Control.Monad
 import Numbers
-import Data.Char
+import Data.Char 
 import Traverse
 import Control.Monad.State.Strict
 import Debug.Trace
 
 substHasSigs :: TravM ()
-substHasSigs = mapD $ \tle -> mapEM subst tle
+substHasSigs = mapDE $ \tle -> mapEM subst tle
     where subst e@(App (Var nm) arg) = do
             ifM (inBoundVars nm)
                 (return e)
@@ -23,7 +22,7 @@ substHasSigs = mapD $ \tle -> mapEM subst tle
           subst e = return e
 
 betaRedHasSigs :: TravM ()
-betaRedHasSigs = mapD $ \tle -> mapEM brhs tle
+betaRedHasSigs = mapDE $ \tle -> mapEM brhs tle
     where brhs e = ifM (hasSig e)
                        (return . betaContract $ e)
                        (return e)
@@ -55,7 +54,7 @@ betaReduce e = let bce = betaContract e
 
 
 unDelays :: TravM ()
-unDelays = mapD unDelays' 
+unDelays = mapDE unDelays' 
     where unDelays' e@(SigDelay (Var _) _) = return e
           unDelays' tle = mapEM undel tle
           undel (SigDelay (Var nm) initE) = do
@@ -66,7 +65,7 @@ unDelays = mapD unDelays'
           undel e = return e
             
 letFloating ::TravM ()
-letFloating = mapD letFl
+letFloating = mapDE letFl
     where letFl (LetE ses er) = do
             nns <- mapM genSym (map fst ses)
             let nonns = zip (map fst ses) nns
@@ -78,7 +77,7 @@ letFloating = mapD letFl
           letFl e = return e
                 
 sigFloating :: TravM ()
-sigFloating = mapD sigFl
+sigFloating = mapDE sigFl
     where sigFl (Sig se) = Sig `fmap` mapEM sigFloat se
           sigFl e = mapEM sigFloat e
           sigFloat (Sig se) = do
@@ -89,16 +88,34 @@ sigFloating = mapD sigFl
                      return (Var sn)
           sigFloat e = return e
 
-explicitCopying :: TravM ()
-explicitCopying = mapD explC
+explicitSignalCopying :: TravM ()
+explicitSignalCopying = mapDE explC
     where explS  e@(Var nm) = 
               do isoe <- isSignalOrEvt e
                  case isoe of
                    IsSig -> (return $ Sig (SigVal e))
-                   IsEvt -> return $ Event e -- incorrect
-                   IsNeitherSigNorEvt -> (return e)
+                   _ -> return e 
           explC e = return e
 
+renameCopiedEvents :: TravM ()
+renameCopiedEvents = mapD rnmCE
+    where rnmCE (Let nm (Var nm')) = renameEverywhere nm nm' >> return Nop
+          rnmCE d = return d 
+
+removeNops :: TravM ()
+removeNops = setter $ \s-> s{ decls = filter (not . isNop) $ decls s}
+    where isNop Nop = True
+          isNop _ = False
+
+transform :: TravM ()
+transform = do  whileChanges substHasSigs  
+                betaRedHasSigs 
+                letFloating 
+                sigFloating 
+                unDelays
+                explicitSignalCopying
+                renameCopiedEvents
+                removeNops
 
 inBoundVars :: String -> TravM Bool
 inBoundVars nm = (nm `elem`) `fmap` boundVars `fmap` get
@@ -137,5 +154,8 @@ hasSig e = or `fmap` queryM hasSigAux e
                                         queryM hasSigAux defn
           hasSigAux (_) = return [False] 
  
-
-
+compilablePrelude :: TravM [Declare]
+compilablePrelude = 
+    do prel <- env `fmap` get
+       compPrel <- filterM (\(n,e) -> ifM (hasSig e) (return False) (return True)) prel
+       return $ map (\(n,e)->Let n e) compPrel
