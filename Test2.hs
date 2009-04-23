@@ -18,7 +18,7 @@ type Program = [Declare]
 
 prelude = [ "smap" =: (Lam "f" . Lam "s" $ Sig (Var "f" $> (SigVal $ Var "s"))),
             "incr" =: (Lam "x" (Var "x" + 1)),
-             "add" =: (Lam "x" $ Lam "y" $ Var "x" + Var "y"),
+            "add" =: (Lam "x" $ Lam "y" $ Var "x" + Var "y"),
             "sscan" =: (Lam "f" . Lam "v0" . Lam "s" $
                         LetE [("sr", (Sig $ (Var "f") $> (SigVal (Var "s")) $> (SigVal $ SigDelay (Var "sr") (Var "v0"))))
                              ] $ Var "sr"),
@@ -27,7 +27,7 @@ prelude = [ "smap" =: (Lam "f" . Lam "s" $ Sig (Var "f" $> (SigVal $ Var "s"))),
             "crosses" =: (Lam "val" . Lam "sig" $ Event (If 
                                                          (SigVal (Var "sig") .>=. (Var "val") .&. 
                                                           (SigVal (SigDelay (Var "sig") 0)) .<. (Var "val")) --not 0!
-                                                         (Cons (Pair (SigVal (Var "seconds")) (Const Unit)) Nil) 
+                                                         (Cons (Pair (SigVal (Var "seconds")) (SigVal (Var "sig"))) Nil) 
                                                          (Nil))),
             "seconds" =: Sig 1, --dummy
             "dt" =: 1 --dummy
@@ -41,8 +41,10 @@ testProg  = [--"secsp1" =: ((Var "smap") $> (Var "incr") $> (Var "seconds")),
              "intsecs" =: ((Var "integrate" $> (Var "accum_secs_plus1"))),
              "overp5" =: (Var "crosses" $> 0.5 $> Var "seconds"),
              "over_intsecs" =: (Var "crosses" $> (SigVal(Var "intsecs")) $> Var "seconds"),
-             SinkConnect (Var "intsecs") "print" {-,
-             "intfire" =: (LetE [("spike", Var "crosses" $> -0.04 $> Var "vm"),
+             SinkConnect (Var "intsecs") "print",
+             "swsig" =: (Switch [(Var "overp5", Lam "x" $ Sig (Var "x"))] (Sig 1))
+
+           {-"intfire" =: (LetE [("spike", Var "crosses" $> -0.04 $> Var "vm"),
                                  ("vm", 
                                 ] (Var "vm")) -}
             ]

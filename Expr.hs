@@ -104,6 +104,8 @@ pp (Sig e) = "{: "++pp e++" :}"
 pp (SigVal s) = "<: "++pp s++" :>"
 pp (SigAt t s) = ppa s ++ "@" ++ ppa t
 pp (SigDelay s v) = "delay "++ppa s++" "++ppa v
+pp (Switch swsgs sig1) = ppa sig1 ++ " switch { " ++ passocs ++ "}"
+    where passocs = concatMap (\(e,slam)-> pp e ++ " ~> " ++ pp slam++";") swsgs
 pp (Event e) = "[: "++pp e++" :]"
 pp (M2 Mul e1 e2) = pp2op e1 "*" e2
 pp (M2 Add e1 e2) = pp2op e1 "+" e2
@@ -122,6 +124,10 @@ queryE q e@(If p c a) = q e ++ m p ++ m c ++m a
 	where m = queryE q
 
 queryE q e@(LetE ses er) = q e ++ m er ++ concatMap (m . snd) ses  
+	where m = queryE q
+queryE q e@(Switch ses er) = concat [q e, m er, 
+                                     concatMap (m . fst) ses,
+                                     concatMap (m . snd) ses]
 	where m = queryE q
 
 queryE q e@(Lam n bd) = q e ++ m bd
@@ -160,7 +166,7 @@ queryE q e@(Case ce cs) = q e++q ce++concatMap (m . snd) cs
 	where m = queryE q
 queryE q e@(Var _) = q e
 queryE q e@(Nil) = q e
-queryE q e = error $ "queryE: unknown expr "++show e 
+--queryE q e = error $ "queryE: unknown expr "++show e 
 
 freeVars :: E -> [String]
 freeVars e = fv [] e
@@ -210,7 +216,10 @@ mapE f (Pair s1 s2) = f (Pair (mapE f s1) (mapE f s2))
 mapE f (Event s2) = f (Event (mapE f s2))
 mapE f (Const c) = f (Const c)
 mapE f (Nil) = f (Nil)
-mapE f (LetE ses er) = f (LetE (map (\(n,e)-> (n, mapE f e)) ses) (mapE f er))
+mapE f (LetE ses er) = 
+    f (LetE (map (\(n,e)-> (n, mapE f e)) ses) (mapE f er))
+mapE f (Switch ses er) = 
+    f (Switch (map (\(e1,e2)-> (mapE f e1, mapE f e2)) ses) (mapE f er))
 mapE f e = error $ "mapE: unknown expr "++show e 
 
 --mapE f e = f e

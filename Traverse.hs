@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances #-}
 module Traverse where
 
 import Expr
@@ -5,6 +6,8 @@ import Control.Monad.State.Strict
 import Control.Monad.Identity
 import qualified Data.List as L
 import Debug.Trace
+import Data.Maybe
+
 
 data TravS = TravS { counter :: Int,
                      decls :: [Declare],
@@ -15,7 +18,10 @@ data TravS = TravS { counter :: Int,
                      changed :: Bool
                    }
 
-type TravM = StateT TravS Identity
+type TravM = StateT TravS Maybe
+
+guardM :: MonadPlus m => m Bool -> m ()
+guardM mb = mb >>= guard
 
 setter :: (TravS -> TravS) -> TravM ()
 setter f = do s <- get
@@ -33,7 +39,7 @@ spliceAt n ys xs = let (hd, tl) = splitAt n xs in
 runTravM :: [Declare] -> [(String, E)] -> TravM a -> (a, [Declare])
 runTravM decs env tx 
     = let initS = TravS 0 decs env [] 0 [] False
-          (x, TravS _ decsFinal _ _ _ _ _) = runIdentity $ runStateT tx initS
+          (x, TravS _ decsFinal _ _ _ _ _) = fromJust $ runStateT tx initS
       in (x, decsFinal)
 
 mapDE :: (E-> TravM E) -> TravM ()
@@ -133,6 +139,11 @@ withPath e tx = do p <- exprPath `fmap` get
                    setter $ \s-> s {exprPath = p}
                    return x
 
+insideSwitch :: TravM Bool
+insideSwitch  = (any isSwitch . exprPath) `fmap` get
+    where isSwitch (Switch _ _) = True
+          isSwitch _ = False
+
 lookUp :: String -> TravM (E)
 lookUp nm = do env <- env `fmap` get
                case L.lookup nm env of
@@ -171,6 +182,11 @@ queryM q e@(LetE ses er) = withBvars (map fst ses) $
                            concatM [q e, 
                                     concat `fmap` mapM m (map snd ses), 
                                     m er]
+    where m = queryM q
+queryM q e@(Switch ses er) = concatM [q e, 
+                                      concat `fmap` mapM m (map fst ses), 
+                                      concat `fmap` mapM m (map snd ses), 
+                                      m er]
     where m = queryM q
 queryM q e@(Lam n bd) = withBvars [n] $ concatM [q e, m bd]
 	where m = queryM q
@@ -233,10 +249,16 @@ mapEM f e = mapEM' e
           mapEM' (Event s2) = return Event `ap` m s2 >>= f
           mapEM' (Const c) = f $ Const c
           mapEM' (Nil) = f Nil
-          mapEM' (LetE ses er) = withBvars (map fst ses) $ 
-                                 return LetE `ap` mapM (\(n,e)-> do e' <- m e
-                                                                    return (n, e')) ses 
-                                             `ap` m er >>= f
+          mapEM' (LetE ses er) = 
+              withBvars (map fst ses) $ 
+              return LetE `ap` mapM (\(n,e)-> do e' <- m e
+                                                 return (n, e')) ses 
+                          `ap` m er >>= f
+          mapEM' (Switch ses er) = 
+              return Switch `ap` mapM (\(e1,e2)-> do e1' <- m e1
+                                                     e2' <- m e2
+                                                     return (e1',e2')) ses 
+                            `ap` m er >>= f
           mapE f e = error $ "mapE: unknown expr "++show e 
               
 

@@ -81,12 +81,19 @@ sigFloating = mapDE sigFl
     where sigFl (Sig se) = Sig `fmap` mapEM sigFloat se
           sigFl e = mapEM sigFloat e
           sigFloat (Sig se) = do
-            ifM (hasBoundVars se)
-                (error "not sure what to do with bound vars in sig floating")
-                $ do sn <- genSym "sigfl"
-                     insertBefore [Let sn (Sig se)]
-                     return (Var sn)
+            inSw <- insideSwitch
+            hasBV <-  hasBoundVars se
+            if hasBV && not inSw
+               then error "not sure what to do with bound vars in sig floating"
+               else if inSw
+                       then return (Sig se)
+                       else reallyFloatSig se
           sigFloat e = return e
+          reallyFloatSig se = do 
+            sn <- genSym "sigfl"
+            insertBefore [Let sn (Sig se)]
+            return (Var sn)
+
 
 explicitSignalCopying :: TravM ()
 explicitSignalCopying = mapDE explC
