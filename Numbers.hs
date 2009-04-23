@@ -3,7 +3,7 @@
 module Numbers where
 
 import Data.Complex
-
+import Text.Printf
 data NumVl = NInt Int
 	   -- | NRat Int Int
 	   | NReal Double
@@ -22,7 +22,7 @@ nearlyZero n = (n<1e-18) && (n>(-1e-18))
 
 instance Show NumVl where
     show (NInt i) = show i
-    show (NReal f) = show f
+    show (NReal f) = printf "%5.2g" f
     show (NCmplx (r:+c)) = show r++" + i*"++show c
 
 data Ntype = NI | NR | NC deriving (Show,Eq, Enum, Ord)

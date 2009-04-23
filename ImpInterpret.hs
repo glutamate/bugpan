@@ -25,26 +25,30 @@ exec stmts dt tmax =
         nsteps :: Int
         nsteps = round $ tmax/dt
         ts = map ((*dt) . realToFrac) [0..nsteps] in
-    do sigsEvtsHT <- H.fromList H.hashString (initSigs++initEvts++fixEnv)
+    do envHT <- H.fromList H.hashString (initSigs++initEvts++fixEnv)
        forM_ outNms $ putStr . (++"\t")
        putStr "\n"
-       forM_ ts $ \t-> 
-            do forM_ prg $ \stm -> do 
-                 sevals <- H.toList sigsEvtsHT
-                 let es = evalS $ ("seconds", NumV . NReal $ t):sevals 
-                 case stm of 
-                   SigUpdateRule nm e -> do
-                                     H.update sigsEvtsHT nm $ unEvalM $ eval es e
-                                     return ()
-                   EventAddRule  nm e -> do
-                                     evs<-fromJust `fmap` H.lookup sigsEvtsHT nm
-                                     let newevs = unEvalM $ eval es e
-                                     H.update sigsEvtsHT nm (appVs newevs evs) 
-                                     return ()
-                   SigSnkConn nm "print" -> do 
-                                     v <-fromJust `fmap` H.lookup sigsEvtsHT nm
-                                     print v
-                                     return ()                                     
-                   _ -> return ()
+       forM_ ts $ \t-> do
+         forM_ prg $ \stm -> do 
+                         sevals <- H.toList envHT
+                         let es = evalS $ ("seconds", NumV . NReal $ t):sevals 
+                         case stm of 
+                           SigUpdateRule nm e -> do
+                                    H.update envHT nm $ unEvalM $ eval es e
+                                    return ()
+                           EventAddRule  nm e -> do
+                                    evs<-fromJust `fmap` H.lookup envHT nm
+                                    let newevs = unEvalM $ eval es e
+                                    H.update envHT nm (appVs newevs evs) 
+                                    return ()
+                           SigSnkConn nm "print" -> do 
+                                    v <-fromJust `fmap` H.lookup envHT nm
+                                    print v
+                                    return ()                                     
+                           _ -> return ()
+       forM_ (map fst initEvts) $ \enm-> do
+         es <- fromJust `fmap` H.lookup envHT enm
+         putStrLn $ concat [enm , " -> ", show es]
+         
 
 appVs (ListV ws) (ListV vs) = ListV (ws++vs) 

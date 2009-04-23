@@ -39,9 +39,12 @@ testProg  = [--"secsp1" =: ((Var "smap") $> (Var "incr") $> (Var "seconds")),
              "accum_secs_plus1" =: ((Var "sscan") $> (Var "add") $> 0 $> ((Var "smap") $> (Var "incr") $> (Var "seconds"))  ),
              --"accsecs" =: ((Var "sscan") $> (Var "add") $> 0 $> (Var "seconds")  ),
              "intsecs" =: ((Var "integrate" $> (Var "accum_secs_plus1"))),
-             "over5" =: (Var "crosses" $> 5 $> Var "seconds"),
+             "overp5" =: (Var "crosses" $> 0.5 $> Var "seconds"),
              "over_intsecs" =: (Var "crosses" $> (SigVal(Var "intsecs")) $> Var "seconds"),
-             SinkConnect (Var "intsecs") "print"
+             SinkConnect (Var "intsecs") "print" {-,
+             "intfire" =: (LetE [("spike", Var "crosses" $> -0.04 $> Var "vm"),
+                                 ("vm", 
+                                ] (Var "vm")) -}
             ]
 
 ppProg prg = forM_ prg $ \e -> case e of 
@@ -60,9 +63,8 @@ infixl 1 =:
 x =: y = Let x y 
 
 
-test = do putStrLn "prelude"
+test = do putStrLn "\ninitial"
           ppProg prelude
-          putStrLn "\ninitial"
           ppProg testProg
           putStrLn "\ntransformed"
           let prg = snd . runTM $ transform
