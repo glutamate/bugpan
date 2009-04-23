@@ -7,33 +7,44 @@ import Compiler
 import Numbers
 import Control.Monad.State.Strict
 import Data.IORef
+import qualified Data.HashTable as H
+import Data.Maybe
 
 data InterpState = IS { sigs :: [(String, V)],
                         evts :: [(String, [(Double,V)])] }
 
 exec :: [Stmt] -> Double -> Double -> IO ()
 exec stmts dt tmax = 
-    let prg =  filter isSigOrEvtS stmts 
+    let prg =  filter inMainLoop stmts 
         fixEnvEs = ("dt",Const . NumV . NReal$ dt):[(nm,v) | en@(Env nm v) <-  stmts]
-        emptyEvalS = EvalS 1 1 Nothing []
-        fixEnv = map (\(n,e)->(n,unEvalM $ eval fixEvalS e)) fixEnvEs
-        fixEvalS =  extsEnv fixEnv emptyEvalS
-        initSigs = [(nm, unEvalM $ eval fixEvalS e) | InitSig nm e <-  stmts]
-        initEvts = [ (nm,[]) | EventUpdateRule nm _ <- stmts]
+        fixEnv = map (\(n,e)->(n,unEvalM $ eval (evalS fixEnv) e)) fixEnvEs
+        evalS e =  extsEnv e $ EvalS 1 1 Nothing []
+        initSigs = [ (nm, unEvalM $ eval (evalS fixEnv) e) | InitSig nm e <-  stmts]
+        initEvts = [ (nm,ListV []) | EventAddRule nm _ <- stmts]
+        outNms = [ nm | SigSnkConn nm "print" <- prg ]
         nsteps :: Int
         nsteps = round $ tmax/dt
         ts = map ((*dt) . realToFrac) [0..nsteps] in
-    do sigs <- newIORef initSigs
-       evts <- newIORef initEvts
-       forM ts $ \t-> 
-            do forM prg $ \stm -> do
+    do sigsEvtsHT <- H.fromList H.hashString (initSigs++initEvts++fixEnv)
+       forM_ outNms $ putStr . (++"\t")
+       putStr "\n"
+       forM_ ts $ \t-> 
+            do forM_ prg $ \stm -> do 
+                 sevals <- H.toList sigsEvtsHT
+                 let es = evalS $ ("seconds", NumV . NReal $ t):sevals 
                  case stm of 
-                   SigUpdateRule nm e -> 
+                   SigUpdateRule nm e -> do
+                                     H.update sigsEvtsHT nm $ unEvalM $ eval es e
+                                     return ()
+                   EventAddRule  nm e -> do
+                                     evs<-fromJust `fmap` H.lookup sigsEvtsHT nm
+                                     let newevs = unEvalM $ eval es e
+                                     H.update sigsEvtsHT nm (appVs newevs evs) 
+                                     return ()
+                   SigSnkConn nm "print" -> do 
+                                     v <-fromJust `fmap` H.lookup sigsEvtsHT nm
+                                     print v
+                                     return ()                                     
+                   _ -> return ()
 
-updateEvent :: EvalS -> E -> [V]
-updateEvent es e = case unEvalM $ eval es e of 
-                      ListV [] -> []
-                      ListV vs -> vs
-                      _ -> []
-
-
+appVs (ListV ws) (ListV vs) = ListV (ws++vs) 

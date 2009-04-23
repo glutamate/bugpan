@@ -99,7 +99,8 @@ explicitSignalCopying = mapDE explC
 
 renameCopiedEvents :: TravM ()
 renameCopiedEvents = mapD rnmCE
-    where rnmCE (Let nm (Var nm')) = renameEverywhere nm nm' >> return Nop
+    where rnmCE (Let nm (Var nm')) = do renameEverywhere nm' nm -- ideally check which one
+                                        return Nop
           rnmCE d = return d 
 
 removeNops :: TravM ()
@@ -107,8 +108,17 @@ removeNops = setter $ \s-> s{ decls = filter (not . isNop) $ decls s}
     where isNop Nop = True
           isNop _ = False
 
+floatConnectedSignals :: TravM ()
+floatConnectedSignals = mapD fCS
+    where fCS e@(SinkConnect (Var nm) snm) = return e
+          fCS e@(SinkConnect se snm) = do sn <- genSym snm
+                                          insertBefore [Let sn se]
+                                          return (SinkConnect (Var sn) snm)
+          fCS e = return e
+
 transform :: TravM ()
-transform = do  whileChanges substHasSigs  
+transform = do  floatConnectedSignals
+                whileChanges substHasSigs  
                 betaRedHasSigs 
                 letFloating 
                 sigFloating 
@@ -116,6 +126,7 @@ transform = do  whileChanges substHasSigs
                 explicitSignalCopying
                 renameCopiedEvents
                 removeNops
+                
 
 inBoundVars :: String -> TravM Bool
 inBoundVars nm = (nm `elem`) `fmap` boundVars `fmap` get

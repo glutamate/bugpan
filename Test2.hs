@@ -12,6 +12,7 @@ import Control.Monad.State.Strict
 import Debug.Trace
 import Transform
 import Compiler
+import ImpInterpret
 
 type Program = [Declare]
 
@@ -39,12 +40,13 @@ testProg  = [--"secsp1" =: ((Var "smap") $> (Var "incr") $> (Var "seconds")),
              --"accsecs" =: ((Var "sscan") $> (Var "add") $> 0 $> (Var "seconds")  ),
              "intsecs" =: ((Var "integrate" $> (Var "accum_secs_plus1"))),
              "over5" =: (Var "crosses" $> 5 $> Var "seconds"),
-             "over_intsecs" =: (Var "crosses" $> (SigVal(Var "intsecs")) $> Var "seconds")
-
+             "over_intsecs" =: (Var "crosses" $> (SigVal(Var "intsecs")) $> Var "seconds"),
+             SinkConnect (Var "intsecs") "print"
             ]
 
 ppProg prg = forM_ prg $ \e -> case e of 
                                  Let n e-> putStrLn (n++" = " ++ pp e)
+                                 SinkConnect e sn -> putStrLn (pp e++" *> " ++ sn)
                                  
 
 hasSigProg :: Program -> [(String, Bool)]
@@ -67,7 +69,10 @@ test = do putStrLn "prelude"
           let complPrel =  fst . runTM $ compilablePrelude
           ppProg (prg)
           putStrLn "\ncompiled"
-          mapM_ (putStrLn . ppStmt) $ compile (complPrel++prg)
+          let stmts = compile (complPrel++prg)
+          mapM_ (putStrLn . ppStmt) $ stmts
+          putStrLn "\nrunning"
+          exec stmts 0.1 1
 
           --return $ hasSigProg testProg
 
