@@ -33,6 +33,8 @@ exec stmts dt tmax =
                          sevals <- H.toList envHT
                          let es = evalS $ ("seconds", NumV . NReal $ t):sevals 
                          case stm of 
+                          -- SigUpdateRule nm (Switch ess er) -> do
+                                    
                            SigUpdateRule nm e -> do
                                     H.update envHT nm $ unEvalM $ eval es e
                                     return ()

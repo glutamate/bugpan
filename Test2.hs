@@ -14,7 +14,7 @@ import Transform
 import Compiler
 import ImpInterpret
 
-type Program = [Declare]
+type Program = [Declare] 
 
 prelude = [ "smap" =: (Lam "f" . Lam "s" $ Sig (Var "f" $> (SigVal $ Var "s"))),
             "incr" =: (Lam "x" (Var "x" + 1)),

@@ -123,12 +123,29 @@ floatConnectedSignals = mapD fCS
                                           return (SinkConnect (Var sn) snm)
           fCS e = return e
 
+globalizeE :: String -> E -> TravM String
+globalizeE s e = do gs <- genSym s
+                    insertBefore [Let gs e]
+                    return gs
+
+floatSwitchEvents :: TravM ()
+floatSwitchEvents = mapDE fSE
+    where fSE (Switch ess er) = do ess' <- mapM rnmSE ess
+                                   return $ Switch ess' er
+          fSE e = return e
+          rnmSE e@(Var en, lse) = return e
+          rnmSE (ee, lse) = ifM (hasBoundVars ee)
+                                (fail $ "bound vars in switch event")
+                                (do en <- globalizeE "flE" ee
+                                    return (Var en, lse))
+
 transform :: TravM ()
 transform = do  floatConnectedSignals
                 whileChanges substHasSigs  
                 betaRedHasSigs 
                 letFloating 
                 sigFloating 
+                floatSwitchEvents
                 unDelays
                 explicitSignalCopying
                 renameCopiedEvents
