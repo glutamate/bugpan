@@ -33,8 +33,20 @@ exec stmts dt tmax =
                          sevals <- H.toList envHT
                          let es = evalS $ ("seconds", NumV . NReal $ t):sevals 
                          case stm of 
-                          -- SigUpdateRule nm (Switch ess er) -> do
-                                    
+                           SigUpdateRule nm (Switch ess er) -> do
+                                    eslams <- forM ess (\(Var en, slam) -> do
+                                      es <- unListV =<< fromJust `fmap` H.lookup envHT en 
+                                      return (es, slam)) 
+                                    let eslams' = map (onFst toHsTime . onFst head) . 
+                                                  filter (not . null . fst) $ eslams
+                                    if null eslams'
+                                       then do H.update envHT nm $ unEvalM $ eval es er
+                                               return ()
+                                       else do
+                                         let idx = maxIdx (map (fst. fst) eslams')
+                                         let ((t,v), Lam vn se) =  eslams'!!idx
+                                         H.update envHT nm $ unEvalM $ eval (extEnv (vn,v) es) se
+                                         return ()
                            SigUpdateRule nm e -> do
                                     H.update envHT nm $ unEvalM $ eval es e
                                     return ()
@@ -45,12 +57,31 @@ exec stmts dt tmax =
                                     return ()
                            SigSnkConn nm "print" -> do 
                                     v <-fromJust `fmap` H.lookup envHT nm
-                                    print v
+                                    putStr $ show v++"\t"
                                     return ()                                     
                            _ -> return ()
+         putStr "\n"
        forM_ (map fst initEvts) $ \enm-> do
          es <- fromJust `fmap` H.lookup envHT enm
          putStrLn $ concat [enm , " -> ", show es]
          
 
+onFst :: (a->b) -> (a,c)->(b,c)
+onFst f (x,y) = (f x, y)
+
+onSnd :: (a->b) -> (c,a)->(c,b)
+onSnd f (x,y) = (x, f y)
+
+toHsTime :: V->(Double,V)
+toHsTime (PairV (NumV nv) v) = (numToDouble nv,v)
+
 appVs (ListV ws) (ListV vs) = ListV (ws++vs) 
+
+maxIdx :: Ord a => [a] -> Int
+maxIdx (x:xs) = mxIxAcc 1 0 x xs
+    where mxIxAcc curI mI mV [] = mI
+          mxIxAcc curI mI mV (x:xs) = if x>mV
+                                        then mxIxAcc (curI+1) curI x xs
+                                        else mxIxAcc (curI+1) mI mV xs
+
+--lastEvent

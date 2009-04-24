@@ -8,6 +8,7 @@ data Stmt = InitSig String E
           | SigUpdateRule String E
           | EventAddRule String E
           | SigSnkConn String String
+          | SigSwitch String [(String, E)] E
             deriving (Eq, Show)
 
 compile :: [Declare] -> [Stmt]

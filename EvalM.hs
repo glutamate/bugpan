@@ -108,7 +108,6 @@ extEnv p@(n,v) es = es {env=(p:env es)}
 extsEnv :: [(String,V)] -> EvalS -> EvalS
 extsEnv ps es = es {env=(ps++env es)}
 
-
 type Env = [(String, V)]
 
 instance Show (a->b) where

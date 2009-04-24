@@ -42,7 +42,8 @@ testProg  = [--"secsp1" =: ((Var "smap") $> (Var "incr") $> (Var "seconds")),
              "overp5" =: (Var "crosses" $> 0.5 $> Var "seconds"),
              "over_intsecs" =: (Var "crosses" $> (SigVal(Var "intsecs")) $> Var "seconds"),
              SinkConnect (Var "intsecs") "print",
-             "swsig" =: (Switch [(Var "overp5", Lam "x" $ Sig (Var "x"))] (Sig 1))
+             "swsig" =: (Switch [(Var "overp5", Lam "x" $ Sig (Var "x"))] (Sig 1)),
+             SinkConnect (Var "swsig") "print"
 
            {-"intfire" =: (LetE [("spike", Var "crosses" $> -0.04 $> Var "vm"),
                                  ("vm", 
