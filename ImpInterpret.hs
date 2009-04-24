@@ -59,6 +59,13 @@ exec stmts dt tmax =
                                     v <-fromJust `fmap` H.lookup envHT nm
                                     putStr $ show v++"\t"
                                     return ()                                     
+                           SigSnkConn sn bn@('#':bufnm) -> do 
+                                    buf <- H.lookup envHT bn
+                                    val <- fromJust `fmap` H.lookup envHT sn
+                                    case buf of
+                                      Just (ListV vs) -> H.update envHT bn $ ListV (val:vs)
+                                      Nothing -> H.update envHT bn $ ListV [val]
+                                    return ()
                            _ -> return ()
          putStr "\n"
        forM_ (map fst initEvts) $ \enm-> do
