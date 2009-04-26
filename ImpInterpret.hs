@@ -9,11 +9,12 @@ import Control.Monad.State.Strict
 import Data.IORef
 import qualified Data.HashTable as H
 import Data.Maybe
+import Array
 
 data InterpState = IS { sigs :: [(String, V)],
                         evts :: [(String, [(Double,V)])] }
 
-exec :: [Stmt] -> Double -> Double -> IO ()
+exec :: [Stmt] -> Double -> Double -> IO [(String, V)]
 exec stmts dt tmax = 
     let prg =  filter inMainLoop stmts 
         fixEnvEs = ("dt",Const . NumV . NReal$ dt):[(nm,v) | en@(Env nm v) <-  stmts]
@@ -21,6 +22,7 @@ exec stmts dt tmax =
         evalS e =  extsEnv e $ EvalS 1 1 Nothing []
         initSigs = [ (nm, unEvalM $ eval (evalS fixEnv) e) | InitSig nm e <-  stmts]
         initEvts = [ (nm,ListV []) | EventAddRule nm _ <- stmts]
+        bufnms = [ bnm | SigSnkConn _ ('#':bnm) <- prg ]
         outNms = [ nm | SigSnkConn nm "print" <- prg ]
         nsteps :: Int
         nsteps = round $ tmax/dt
@@ -34,9 +36,9 @@ exec stmts dt tmax =
                          let es = evalS $ ("seconds", NumV . NReal $ t):sevals 
                          case stm of 
                            SigUpdateRule nm (Switch ess er) -> do
-                                    eslams <- forM ess (\(Var en, slam) -> do
-                                      es <- unListV =<< fromJust `fmap` H.lookup envHT en 
-                                      return (es, slam)) 
+                                    eslams <- forM ess (\(Var en, slam) -> (`pair` slam) 
+                                                        `fmap` (unListV =<< fromJust `fmap` 
+                                                                          H.lookup envHT en))
                                     let eslams' = map (onFst toHsTime . onFst head) . 
                                                   filter (not . null . fst) $ eslams
                                     if null eslams'
@@ -71,7 +73,14 @@ exec stmts dt tmax =
        forM_ (map fst initEvts) $ \enm-> do
          es <- fromJust `fmap` H.lookup envHT enm
          putStrLn $ concat [enm , " -> ", show es]
+       forM_ bufnms $ \bufn-> do 
+         Just (ListV buf) <- H.lookup envHT bufn
+         let arr = array (0,nsteps-1) $ zip [0..nsteps-1] $ reverse buf
+         H.update envHT bufn . SigV $ \t-> arr!(round $ t/dt)
+       H.toList envHT
          
+
+pair a b = (a,b)
 
 onFst :: (a->b) -> (a,c)->(b,c)
 onFst f (x,y) = (f x, y)

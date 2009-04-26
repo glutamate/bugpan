@@ -58,6 +58,7 @@ data Declare
 --	| LetRec String E
 	| Import String (Maybe String)
 	| SinkConnect E String
+        | Stage String Int
         | Nop
 	deriving (Show, Eq)
 
