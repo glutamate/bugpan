@@ -62,6 +62,10 @@ data Declare
         | Nop
 	deriving (Show, Eq)
 
+ppDecl (Let nm e ) = nm++" = " ++ pp e
+ppDecl ( SinkConnect e sn) = (pp e++" *> " ++ sn)
+ppDecl s = show s
+
 --for display purposes only
 depth :: E->Int
 depth (Const _) = 1
@@ -110,6 +114,7 @@ pp (Switch swsgs sig1) = "switch {"++ ppa sig1 ++"; " ++ passocs ++ "}"
 pp (Event e) = "[: "++pp e++" :]"
 pp (M2 Mul e1 e2) = pp2op e1 "*" e2
 pp (M2 Add e1 e2) = pp2op e1 "+" e2
+pp (M2 Sub (Const (NumV (NInt 0))) e2) = "-" ++ppa e2
 pp (M2 Sub e1 e2) = pp2op e1 "-" e2
 pp (M2 Div e1 e2) = pp2op e1 "/" e2
 pp (M1 op e) = show op ++ " " ++ ppa 2

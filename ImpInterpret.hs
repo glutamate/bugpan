@@ -9,7 +9,7 @@ import Control.Monad.State.Strict
 import Data.IORef
 import qualified Data.HashTable as H
 import Data.Maybe
-import Array
+--import Array
 
 data InterpState = IS { sigs :: [(String, V)],
                         evts :: [(String, [(Double,V)])] }
@@ -75,8 +75,9 @@ exec stmts dt tmax =
          putStrLn $ concat [enm , " -> ", show es]
        forM_ bufnms $ \bufn-> do 
          Just (ListV buf) <- H.lookup envHT bufn
-         let arr = array (0,nsteps-1) $ zip [0..nsteps-1] $ reverse buf
-         H.update envHT bufn . SigV $ \t-> arr!(round $ t/dt)
+         --let arr = array (0,nsteps-1) $ zip [0..nsteps-1] $ reverse buf
+         let arr = reverse buf
+         H.update envHT bufn . SigV $ \t-> arr!!(round $ t/dt)
        H.toList envHT
          
 

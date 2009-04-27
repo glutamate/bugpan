@@ -18,7 +18,7 @@ data TravS = TravS { counter :: Int,
                      changed :: Bool
                    }
 
-type TravM = StateT TravS Maybe
+type TravM = StateT TravS Identity
 
 guardM :: MonadPlus m => m Bool -> m ()
 guardM mb = mb >>= guard
@@ -39,7 +39,10 @@ spliceAt n ys xs = let (hd, tl) = splitAt n xs in
 runTravM :: [Declare] -> [(String, E)] -> TravM a -> (a, [Declare])
 runTravM decs env tx 
     = let initS = TravS 0 decs env [] 0 [] False
-          (x, TravS _ decsFinal _ _ _ _ _) = fromJust $ runStateT tx initS
+          (x, TravS _ decsFinal _ _ _ _ _) = runIdentity $ runStateT tx initS 
+                                               -- Just x -> x
+                                               -- Nothing -> error "runTravM returns mzero"
+                                             
       in (x, decsFinal)
 
 mapDE :: (E-> TravM E) -> TravM ()

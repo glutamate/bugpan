@@ -9,7 +9,7 @@ import Numbers
 import Data.Char
 import Traverse
 import Control.Monad.State.Strict
-import Debug.Trace
+--import Debug.Trace
 import Transform
 import Compiler
 import ImpInterpret
@@ -29,9 +29,10 @@ prelude = [ "smap" =: (Lam "f" . Lam "s" $ Sig (Var "f" $> (SigVal $ Var "s"))),
                                                           (SigVal (SigDelay (Var "sig") 0)) .<. (Var "val")) --not 0!
                                                          (Cons (Pair (SigVal (Var "seconds")) (SigVal (Var "sig"))) Nil) 
                                                          (Nil))),
+            "alpha" =: let tau = Var "tau" in (Lam "tau" . Lam "t" $ If (Var "t" .<. 0) 0 (tau*tau*t *exp (negate tau * t))),
             "seconds" =: Sig 1, --dummy
             "dt" =: 1 --dummy
-          ]
+          ]++solvers
 
 testProg  = [--"secsp1" =: ((Var "smap") $> (Var "incr") $> (Var "seconds")),
              "aval" =: 5,
@@ -43,17 +44,35 @@ testProg  = [--"secsp1" =: ((Var "smap") $> (Var "incr") $> (Var "seconds")),
              "over_intsecs" =: (Var "crosses" $> (SigVal(Var "intsecs")) $> Var "seconds"),
              SinkConnect (Var "intsecs") "print",
              "swsig" =: (Switch [(Var "overp5", Lam "x" $ Sig (Var "x"))] (Sig 1)),
-             SinkConnect (Var "swsig") "print"
+             SinkConnect (Var "swsig") "print",
+             "myOde" =: (Var "solveOde" $> (Lam "y" $ Sig (0-Var "y")) $> 1)
 
            {-"intfire" =: (LetE [("spike", Var "crosses" $> -0.04 $> Var "vm"),
                                  ("vm", 
                                 ] (Var "vm")) -}
             ]
 
-ppProg prg = forM_ prg $ \e -> case e of 
-                                 Let n e-> putStrLn (n++" = " ++ pp e)
-                                 SinkConnect e sn -> putStrLn (pp e++" *> " ++ sn)
-                                 
+solvers =  [
+ "iterate" =: (Lam "f" $ Lam "s0" $ 
+          LetE ["s" #= ( 
+                        Sig (If (time .<=. (dt/2)) 
+                                    (Var "s0")
+                                    (Var "f" $> SigVal (SigDelay (Var "s") (Var "s0"))))
+                       )] (Var "s")),
+
+ "solveStep" =: (Lam "sf" . Lam "v0" . Lam "old" $ (Var "old") + ( SigVal (SigDelay (Var "sf" $> Var "old") (Var "v0"))) * Var "dt"),
+ "solveOde" =: (Lam "sf" . Lam "v0" $ Var "iterate" $> (Var "solveStep" $> Var "sf" $> Var "v0") $> Var "v0")]
+    where x #= y = (x,y) 
+          dt = (Var "dt")
+          time = Var "seconds"
+
+
+
+infixl 1 #=                                         
+x #= y = (x,y) 
+
+
+ppProg = mapM (putStrLn . ppDecl) 
 
 hasSigProg :: Program -> [(String, Bool)]
 hasSigProg p = fst . runTM $ 
@@ -83,3 +102,4 @@ test = do putStrLn "\ninitial"
 
 --process :: E-> TravM Process
 
+-- :set -fbreak-on-exception

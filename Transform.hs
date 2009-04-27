@@ -21,6 +21,18 @@ substHasSigs = mapDE $ \tle -> mapEM subst tle
                          (return e) 
           subst e = return e
 
+substGetsSigs :: TravM ()
+substGetsSigs = mapDE $ \tle -> mapEM subst tle
+    where subst e@(App (Var nm) arg) = do
+            ifM (inBoundVars nm)
+                (return e)
+                $ do defn <- lookUp nm
+                     ifM (hasSig arg)
+                         (return $ App (defn) arg)
+                         (return e) 
+          subst e = return e
+
+
 betaRedHasSigs :: TravM ()
 betaRedHasSigs = mapDE $ \tle -> mapEM brhs tle
     where brhs e = ifM (hasSig e)
@@ -84,7 +96,8 @@ sigFloating = mapDE sigFl
             inSw <- insideSwitch
             hasBV <-  hasBoundVars se
             if hasBV && not inSw
-               then error "not sure what to do with bound vars in sig floating"
+               then do ln <- curLine
+                       error $ "not sure what to do with bound var in sig floating in line \n"++ppDecl ln
                else if inSw
                        then return (Sig se)
                        else reallyFloatSig se
@@ -143,6 +156,8 @@ transform :: TravM ()
 transform = do  floatConnectedSignals
                 whileChanges substHasSigs  
                 betaRedHasSigs 
+                substGetsSigs
+                whileChanges betaRedHasSigs 
                 letFloating 
                 sigFloating 
                 floatSwitchEvents
