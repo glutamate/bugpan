@@ -46,9 +46,11 @@ prelude = [
  "every" =: (Lam "ivl" $ Var "eventIf" $> (Var "fraction" $> ((SigVal $ Var "seconds")/Var "ivl") .<. Var "dt")),
  "map" =: (Const mapV),
  "sum" =: (Const . LamV $ \vs -> sum `fmap` unListV vs),
- --"convolve" =: 
- --   (Lam "s" . Lam "es" $ Sig (Var "sum" $> (Var "map" $> 
- --   (Lam "e" (SigAt (Var "seconds" - (Var "fst" $> Var "e" )) (Var "s"))) $> Var "es"))),
+ "fst" =: (Const. LamV $ \(PairV v1 v2) -> return v1),
+ "snd" =: (Const. LamV $ \(PairV v1 v2) -> return v2),
+ "convolve" =: 
+    (Lam "s" . Lam "es" $ Sig (Var "sum" $> (Var "map" $> 
+    (Lam "e" (SigAt (Var "seconds" - (Var "fst" $> Var "e" )) (Var "s"))) $> Var "es"))),
 
  "seconds" =: Sig 1, --dummy
  "dt" =: 1 --dummy
@@ -70,11 +72,12 @@ testProg  = [
  SinkConnect (Var "swsig") "print",
  "myOde" =: (Var "solveOde" $> (Lam "y" $ Sig (0-Var "y")) $> 1),
  "preSpike" =: (Var "every" $> 0.01),
-
  "gsyn" =: (Var "smap" $> (Var "alpha" $> 300) $> (Var "seconds")),
  SinkConnect (Var "gsyn") "print",
  "fr" =: (Sig ((Var "fraction" $> (SigVal (Var "seconds"))/0.01))),
- SinkConnect (Var "fr") "print"
+ SinkConnect (Var "fr") "print",
+ "gcell" =: (Var "convolve" $> Var "gsyn" $> Var "preSpike"),
+ Stage "gsyn" (-1)
 {-"intfire" =: (LetE [("spike", Var "crosses" $> -0.04 $> Var "vm"),
   ("vm", 
   ] (Var "vm")) -}
