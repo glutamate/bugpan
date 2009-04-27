@@ -117,7 +117,7 @@ pp (M2 Add e1 e2) = pp2op e1 "+" e2
 pp (M2 Sub (Const (NumV (NInt 0))) e2) = "-" ++ppa e2
 pp (M2 Sub e1 e2) = pp2op e1 "-" e2
 pp (M2 Div e1 e2) = pp2op e1 "/" e2
-pp (M1 op e) = show op ++ " " ++ ppa 2
+pp (M1 op e) = show op ++ " " ++ ppa e
 pp (LetE les efinal) = concat ["let ", concat $ ppes les, " in ", ppa efinal]
     where ppes es = map (\(n,e)-> n++" = "++pp e++";") es 
 

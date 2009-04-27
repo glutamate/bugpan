@@ -42,7 +42,7 @@ testProg = prelude ++
      Let "syn1" (Var "alpha" $> 10 $> 1),
      Let "gsyn" (Var "smap" $> (Var "alpha" $> 300) $> (Var "seconds")),
      Let "intsyn" $ Var "integrate" $> (Var "gsyn"),
-      "preSpike" =: (Var "every" $> 0.01),
+     "preSpike" =: (Var "every" $> 0.01),
      "sum_1_10" =: (Var "sum" $> (Var "oneToTen")),
      "gcell" =: (Var "convolve" $> Var "gsyn" $> Var "preSpike"),
      "isig" =: (Var "smap" $> (Var "mul" $> 1e-14 ) $> (Var "gcell")),

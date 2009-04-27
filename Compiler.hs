@@ -12,8 +12,14 @@ data Stmt = InitSig String E
             deriving (Eq, Show)
 
 compile :: [Declare] -> [Stmt]
-compile ds = let c = concatMap compileDec ds in
+compile ds = let c = concatMap compileDec (filter noDtSeconds ds) in
              concat [constEnv c, initSigVals c, mainLoop c] 
+
+noDtSeconds :: Declare -> Bool
+noDtSeconds (Let "dt" _) = False
+noDtSeconds (Let "seconds" _) = False
+noDtSeconds _ = True
+                 
 
 compileDec :: Declare -> [Stmt]
 compileDec (Let nm (Sig se)) = [SigUpdateRule nm $ unVal se] 

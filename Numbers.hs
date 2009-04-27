@@ -104,3 +104,10 @@ applyNumFun2 f n1 n2 = let (v1, v2) = sameize n1 n2 in applyNumFun2 f v1 v2
 
 natlog = applyRealFun1 log
 natexp = applyRealFun1 exp
+
+roundNum :: NumVl -> NumVl
+roundNum n = numCast n NI
+
+floorNum :: NumVl -> NumVl
+floorNum (NInt i ) = NInt i
+floorNum (NReal r) = NInt $ floor r

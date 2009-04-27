@@ -31,9 +31,10 @@ exec stmts dt tmax =
        forM_ outNms $ putStr . (++"\t")
        putStr "\n"
        forM_ ts $ \t-> do
+         H.update envHT "seconds" (NumV . NReal $ t)
          forM_ prg $ \stm -> do 
-                         sevals <- H.toList envHT
-                         let es = evalS $ ("seconds", NumV . NReal $ t):sevals 
+                         sevals <- H.toList envHT                       
+                         let es = evalS sevals 
                          case stm of 
                            SigUpdateRule nm (Switch ess er) -> do
                                     eslams <- forM ess (\(Var en, slam) -> (`pair` slam) 
@@ -71,8 +72,8 @@ exec stmts dt tmax =
                            _ -> return ()
          putStr "\n"
        forM_ (map fst initEvts) $ \enm-> do
-         es <- fromJust `fmap` H.lookup envHT enm
-         putStrLn $ concat [enm , " -> ", show es]
+         ListV es <- fromJust `fmap` H.lookup envHT enm
+         putStrLn $ concat [enm , " -> ", show $ reverse es]
        forM_ bufnms $ \bufn-> do 
          Just (ListV buf) <- H.lookup envHT bufn
          --let arr = array (0,nsteps-1) $ zip [0..nsteps-1] $ reverse buf
