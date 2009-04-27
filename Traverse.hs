@@ -88,6 +88,8 @@ renameEverywhere oldn newn
     where rnm (Let nm e) | nm == oldn = Let newn $ mapE rne e
                          | otherwise =  Let nm $ mapE rne e
           rnm (SinkConnect e nm) = SinkConnect (mapE rne e) nm
+          rnm (Stage nm s) | nm == oldn = Stage newn s
+                           | otherwise = Stage nm s
           rnm d = d
           
           rne (Var n) | n == oldn = Var newn

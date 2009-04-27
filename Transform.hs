@@ -6,6 +6,7 @@ import Run
 import Control.Monad
 import Numbers
 import Data.Char 
+import Data.List (partition)
 import Traverse
 import Control.Monad.State.Strict
 import Debug.Trace
@@ -152,8 +153,34 @@ floatSwitchEvents = mapDE fSE
                                 (do en <- globalizeE "flE" ee
                                     return (Var en, lse))
 
+connectsLast :: TravM ()
+connectsLast = do ds <- decls `fmap` get 
+                  let (ds2, ds1) = partition isConnect ds
+                  setter $ \s-> s { decls = ds1++ds2 }
+                  where isConnect (SinkConnect _ _) = True
+                        isConnect _ = False
+
+addStageAnnotations = whileChanges $ do
+  ds <- decls `fmap` get
+  let sAnnos = [ (nm, stage) | Stage nm stage <- ds ]
+  let allSigs = [ nm | Let nm _ <- filter declInMainLoop ds ]
+  forM_ sAnnos $ \(nm, stage)-> do 
+    defn <- lookUp nm
+    let depSigs = filter ((`isSubTermIn` defn) .  Var) $ allSigs
+    forM_ depSigs $ \depSig-> do
+      let sAnn =[ stage | Stage nmDs stageDs <- ds, 
+                          nmDs==depSig, stageDs<=stage  ]
+      when (null sAnn) $ insertAtEnd [Stage depSig stage]
+
+declInMainLoop  (Let _ (Sig _)) = True
+declInMainLoop  (Let _ (Event _)) = True
+declInMainLoop  (Let _ (Switch _ _)) = True
+declInMainLoop  _ = False
+
+
 transform :: TravM ()
-transform = do  floatConnectedSignals
+transform = do  connectsLast
+                floatConnectedSignals
                 whileChanges substHasSigs  
                 betaRedHasSigs 
                 substGetsSigs
@@ -165,6 +192,7 @@ transform = do  floatConnectedSignals
                 explicitSignalCopying
                 renameCopiedEvents
                 removeNops
+                addStageAnnotations
                 
 
 inBoundVars :: String -> TravM Bool

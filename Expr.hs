@@ -125,6 +125,11 @@ pp e = show e
 
 pp2op e1 op e2 = ppa e1 ++ op ++ ppa e2
 
+isSubTermIn :: E-> E-> Bool
+isSubTermIn small big = not . null $ queryE tst big
+    where tst someE | someE == small = [someE]
+                    | otherwise = []
+
 queryE :: (E-> [a]) -> E -> [a]
 queryE q e@(If p c a) = q e ++ m p ++ m c ++m a
 	where m = queryE q
