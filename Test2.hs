@@ -81,12 +81,13 @@ testProg  = [
  SinkConnect (Var "gcell") "print",
  "gcell" =: (Var "convolve" $> Var "gsyn" $> Var "preSpike"),
  "cellOde" =: (Lam "v" $ Sig $ ((SigVal $ Var "gcell")*(1e-12)-((Var "v"+0.07)/1e9))/(2.5e-12)),
- "vm" =: (Var "solveOde" $> Var "cellOde" $> (-0.07)),
+ --"vm" =: (Var "solveOde" $> Var "cellOde" $> (-0.07)),
  --"vm" =: (Var "solveOde" $> ((Lam "v" $ Sig $ ((SigVal $ Var "gcell")*(1e-12)-((Var "v"+0.07)/1e9))/(2.5e-12))) $> (-0.07)),
- SinkConnect (Var "vm") "print"
- {-"intfire" =: (LetE [("spike", Var "crosses" $> -0.04 $> Var "vmif"),
-                     ("vmif", =  
-  ] (Var "vm")) -}
+ SinkConnect (Var "vm") "print",
+ "intfire" =: (LetE [("spike", Var "crosses" $> (-0.04) $> Var "vm"),
+                     ("vm", Switch [(Var "spike", Lam "_" $ (Var "solveOde" $> Var "cellOde" $> (-0.07)))
+                                     ] $ (Var "solveOde" $> Var "cellOde" $> (-0.07))  )
+                     ] (Var "vm")) 
             ]
 
 solvers =  [

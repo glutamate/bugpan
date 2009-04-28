@@ -225,19 +225,20 @@ hasBoundVars e = or `fmap` queryM hasBvars e
 
 
 hasSig :: E->TravM Bool
-hasSig e = {- trace (pp e ) $ -} or `fmap` queryM hasSigAux e
-    where hasSigAux :: E -> TravM [Bool]
-          hasSigAux (Sig _) = return [True]
-          hasSigAux (Event _) = return [True]
-          hasSigAux (SigDelay _ _) = return [True]
-          hasSigAux v@(Var nm) = ifM (inBoundVars nm)
-                                     (return [False])
-                                     $ do defn <- stripSig `fmap` lookUp nm
-                                          if v `isSubTermIn` defn
-                                             then return [False] -- not sure about this but need to break loop
-                                             {-trace (nm++": "++pp defn) $ -} 
-                                             else queryM hasSigAux defn
-          hasSigAux (_) = return [False] 
+hasSig e = {- trace (pp e ) $ -} or `fmap` queryM (hasSigAux []) e
+    where hasSigAux :: [String] -> E -> TravM [Bool]
+          hasSigAux _ (Sig _) = return [True]
+          hasSigAux _ (Event _) = return [True]
+          hasSigAux _ (SigDelay _ _) = return [True]
+          hasSigAux lu v@(Var nm) = 
+              ifM (inBoundVars nm)
+                  (return [False])
+                  $ do defn <- stripSig `fmap` lookUp nm
+                       --pth <- exprPath `fmap` get
+                       if v `isSubTermIn` defn ||  nm `elem` lu
+                          then return [False] -- not sure about this but need to break loop
+                          else {- trace (nm++": "++pp defn) $ -} queryM (hasSigAux $ nm:lu) defn
+          hasSigAux _ (_) = return [False] 
  
 compilablePrelude :: TravM [Declare]
 compilablePrelude = 
