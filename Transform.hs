@@ -42,8 +42,8 @@ betaRedHasSigs = mapDE $ \tle -> mapEM brhs tle
 
 
 betaContract :: E -> E
-betaContract (App (Lam nm bd) arg) = mapE bar bd
-    where bar e@(Var n') | n' == nm = arg -- doesnt work if shadows
+betaContract eo@(App (Lam nm bd) arg) = mapE bar bd
+    where bar e@(Var n') | n' == nm =  arg -- doesnt work if shadows
                          | otherwise = e
           bar e = e
 betaContract e = e
@@ -89,9 +89,10 @@ letFloating = mapDE letFl
 
           letFl e = return e
                 
-sigFloating :: TravM ()
+sigFloating :: TravM () -- only sigFloat in values of type sig a. FIXME
 sigFloating = mapDE sigFl
-    where sigFl (Sig se) = Sig `fmap` mapEM sigFloat se
+    where sigFl e@(Lam bd arg) = return e -- cheap hack to fix above issue
+          sigFl (Sig se) = Sig `fmap` mapEM sigFloat se
           sigFl e = mapEM sigFloat e
           sigFloat (Sig se) = do
             inSw <- insideSwitch
@@ -193,23 +194,8 @@ declInMainLoop  (Let _ (SigDelay _ _)) = True
 declInMainLoop  (SinkConnect _ _) = True
 declInMainLoop  _ = False
 
-
 transform :: TravM ()
-transform = do  connectsLast
-                floatConnectedSignals
-                whileChanges substHasSigs  
-                betaRedHasSigs 
-                substGetsSigs
-                whileChanges betaRedHasSigs 
-                letFloating 
-                sigFloating 
-                floatSwitchEvents
-                unDelays
-                explicitSignalCopying
-                renameCopiedEvents
-                removeNops
-                addStageAnnotations
-                sigAtRefersToBuffer
+transform = sequence_ $ map fst transforms
                 
 
 inBoundVars :: String -> TravM Bool
@@ -239,14 +225,18 @@ hasBoundVars e = or `fmap` queryM hasBvars e
 
 
 hasSig :: E->TravM Bool
-hasSig e = or `fmap` queryM hasSigAux e
+hasSig e = {- trace (pp e ) $ -} or `fmap` queryM hasSigAux e
     where hasSigAux :: E -> TravM [Bool]
           hasSigAux (Sig _) = return [True]
           hasSigAux (Event _) = return [True]
-          hasSigAux (Var nm) = ifM (inBoundVars nm)
-                                   (return [False])
-                                   $ do defn <- stripSig `fmap` lookUp nm
-                                        queryM hasSigAux defn
+          hasSigAux (SigDelay _ _) = return [True]
+          hasSigAux v@(Var nm) = ifM (inBoundVars nm)
+                                     (return [False])
+                                     $ do defn <- stripSig `fmap` lookUp nm
+                                          if v `isSubTermIn` defn
+                                             then return [False] -- not sure about this but need to break loop
+                                             {-trace (nm++": "++pp defn) $ -} 
+                                             else queryM hasSigAux defn
           hasSigAux (_) = return [False] 
  
 compilablePrelude :: TravM [Declare]
@@ -254,3 +244,23 @@ compilablePrelude =
     do prel <- env `fmap` get
        compPrel <- filterM (\(n,e) -> ifM (hasSig e) (return False) (return True)) prel
        return $ map (\(n,e)->Let n e) compPrel
+
+transforms =   [(connectsLast, "connectsLast")
+                ,(floatConnectedSignals, "floatConnectedSignals")
+                ,(whileChanges substHasSigs, "substHasSigs")
+                ,(betaRedHasSigs, "betaRedHasSigs")
+                ,(substGetsSigs, "substGetsSigs")
+                ,(whileChanges betaRedHasSigs, "betaRedHasSigs")
+                ,(letFloating, "letFloating")
+                ,(sigFloating, "sigFloating")
+                ,(floatSwitchEvents, "floatSwitchEvents")
+                ,(substHasSigs, "substHasSigs")
+                ,(betaRedHasSigs , "betaRedHasSigs")
+                ,(sigFloating, "sigFloating")
+                ,(unDelays, "unDelays")
+                ,(explicitSignalCopying, "explicitSignalCopying")
+                ,(renameCopiedEvents, "renameCopiedEvents")
+                ,(removeNops, "removeNops")
+                ,(addStageAnnotations, "addStageAnnotations")
+                ,(sigAtRefersToBuffer, "sigAtRefersToBuffer")
+               ]

@@ -31,14 +31,14 @@ execInStages :: [Declare] -> Double -> Double -> IO ()
 execInStages ds dt tmax = do
   let (env:stageDs) = splitByStages ds
   envAdd <- newIORef []
-  putStrLn "\nenvironment"
-  mapM (putStrLn . ppDecl ) env
+  --putStrLn "\nenvironment"
+  --mapM (putStrLn . ppDecl ) env
   forM_ stageDs $ \decls -> do
                             envAdded <- readIORef envAdd -- also change sigat nm to sigat #nm
                             let copyEnvSigs = [ Let nm (Sig $ SigAt (Var "seconds") (Var ('#':nm))) | ('#':nm,_) <- envAdded ]
                             let stmts = compile $ env++copyEnvSigs++map envToDecl envAdded++decls
-                            putStrLn "\na stage"
-                            mapM (putStrLn . ppStmt ) stmts
+                            --putStrLn "\na stage"
+                            --mapM (putStrLn . ppStmt ) stmts
                             let saved = [ nm | SinkConnect (Var _) ('#':nm)<- decls ]
                             ress <- exec stmts dt tmax
                             let savedRess = [('#':nm, val) | ('#':nm, val) <- ress, nm `elem` saved ]

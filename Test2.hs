@@ -61,33 +61,33 @@ testProg  = [
  SinkConnect (Var "seconds") "print",
  "alpha" =: let tau = Var "tau" 
                 t = Var "t" in (Lam "tau" . Lam "t" $ If (Var "t" .<. 0) 0 (tau*tau*t * (exp . negate $ (tau * t)))),
- "aval" =: 5,
+ --"aval" =: 5,
  --"secsp1d1" =: ((Var "smap") $> (Var "incr") $> (SigDelay (Var "seconds") (0))),
- "accum_secs_plus1" =: ((Var "sscan") $> (Var "add") $> 0 $> ((Var "smap") $> (Var "incr") $> (Var "seconds"))  ),
+ --"accum_secs_plus1" =: ((Var "sscan") $> (Var "add") $> 0 $> ((Var "smap") $> (Var "incr") $> (Var "seconds"))  ),
  --"accsecs" =: ((Var "sscan") $> (Var "add") $> 0 $> (Var "seconds")  ),
- "intsecs" =: ((Var "integrate" $> (Var "accum_secs_plus1"))),
- "overp5" =: (Var "crosses" $> 0.5 $> Var "seconds"),
- "over_intsecs" =: (Var "crosses" $> (SigVal(Var "intsecs")) $> Var "seconds"),
- SinkConnect (Var "intsecs") "print",
- "swsig" =: (Switch [(Var "overp5", Lam "x" $ Sig (Var "x"))] (Sig 1)),
- SinkConnect (Var "swsig") "print",
- "myOde" =: (Var "solveOde" $> (Lam "y" $ Sig (0-Var "y")) $> 1),
+ --"intsecs" =: ((Var "integrate" $> (Var "accum_secs_plus1"))),
+ --"overp5" =: (Var "crosses" $> 0.02 $> Var "seconds"),
+ --"over_intsecs" =: (Var "crosses" $> (SigVal(Var "intsecs")) $> Var "seconds"),
+ --SinkConnect (Var "intsecs") "print",
+ --"swsig" =: (Switch [(Var "overp5", Lam "x" $ Sig (Var "x"))] (Sig 1)),
+ --SinkConnect (Var "swsig") "print",
+ --"myOde" =: (Var "solveOde" $> (Lam "y" $ Sig (0-Var "y")) $> 1),
  "preSpike" =: (Var "every" $> 0.01),
  "gsyn" =: (Var "smap" $> (Var "alpha" $> 300) $> (Var "seconds")),
  SinkConnect (Var "gsyn") "print",
- "fr" =: (Sig ((Var "fraction" $> (SigVal (Var "seconds"))/0.01))),
- SinkConnect (Var "fr") "print",
+ --"fr" =: (Sig ((Var "fraction" $> (SigVal (Var "seconds"))/0.01))),
+ --SinkConnect (Var "fr") "print",
  Stage "gsyn" (-1),
  SinkConnect (Var "gcell") "print",
- "gcell" =: (Var "convolve" $> Var "gsyn" $> Var "preSpike")
-{-"intfire" =: (LetE [("spike", Var "crosses" $> -0.04 $> Var "vm"),
-  ("vm", 
+ "gcell" =: (Var "convolve" $> Var "gsyn" $> Var "preSpike"),
+ "cellOde" =: (Lam "v" $ Sig $ ((SigVal $ Var "gcell")*(1e-12)-((Var "v"+0.07)/1e9))/(2.5e-12)),
+ "vm" =: (Var "solveOde" $> Var "cellOde" $> (-0.07)),
+ --"vm" =: (Var "solveOde" $> ((Lam "v" $ Sig $ ((SigVal $ Var "gcell")*(1e-12)-((Var "v"+0.07)/1e9))/(2.5e-12))) $> (-0.07)),
+ SinkConnect (Var "vm") "print"
+ {-"intfire" =: (LetE [("spike", Var "crosses" $> -0.04 $> Var "vmif"),
+                     ("vmif", =  
   ] (Var "vm")) -}
             ]
-
-gcell = [--"preSpike" =: (Var "every" $> 0.01),
-         --"gsyn" =: (Var "smap" $> (Var "alpha" $> 300) $> (Var "seconds")), 
-         "gcell" =: (Var "convolve" $> Var "gsyn" $> Var "preSpike")]
 
 solvers =  [
  "iterate" =: (Lam "f" $ Lam "s0" $ 
@@ -124,8 +124,6 @@ x =: y = Let x y
 testTransform :: TravM () -> [Declare] -> [Declare]
 testTransform tr ds = snd . runTravM ds (declsToEnv prelude) $ tr
 
-test1 = mapM print $ testTransform sigAtRefersToBuffer gcell
-
 
 test = do putStrLn "\ninitial"
           ppProg prelude
@@ -135,10 +133,10 @@ test = do putStrLn "\ninitial"
           let complPrel =  fst . runTM $ compilablePrelude
           ppProg (prg)
           putStrLn "\ncompiled"
-          let stmts = compile (complPrel++prg)
+          --let stmts = compile (complPrel++prg)
           --mapM_ (putStrLn . ppStmt) $ stmts
           --putStrLn "\nrunning"
-          execInStages (complPrel++prg) 0.001 0.03
+          --execInStages (complPrel++prg) 0.001 0.03
           --exec stmts 0.001 0.01
 
           --return $ hasSigProg testProg
