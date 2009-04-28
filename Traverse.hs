@@ -51,11 +51,12 @@ mapDE f =do ds <- decls `fmap` get
             setter $ \s-> s { lineNum = 0 }
             untilM (stopCond `fmap` get) $ do
               ln <- curLine
+              --trace ("now doing line "++show ln) $ return ()
               case ln of 
                 Let n e -> do 
                         e' <- f e
                         when (e' /= e) $ do markChange
-                                            -- trace (pp e++ " /= \n" ++ pp e') $ return ()
+                                            --trace (pp e++ " /= \n" ++ pp e') $ return ()
                                             lnum' <- lineNum `fmap` get -- f may insert lines above
                                             setter $ \s-> s { decls = setIdx lnum' (Let n e') (decls s)}
                 _ -> return ()
@@ -237,36 +238,36 @@ queryM q e = fail $ "queryM: unknown expr "++show  e
 mapEM :: (E-> TravM E)-> E -> TravM E
 mapEM f e = mapEM' e
     where m = withPath e . mapEM f 
-          mapEM' (If p c a) =  return If `ap` m p `ap` m c `ap` m a >>= f
-          mapEM' (Lam n bd) = withBvars [n] $ return (Lam n) `ap` m bd >>= f
-          mapEM' (App le ae) = return App `ap` m le `ap` m ae >>= f
+          mapEM' (If p c a) = ( return If `ap` m p `ap` m c `ap` m a) >>= f
+          mapEM' (Lam n bd) = (withBvars [n] $ return (Lam n) `ap` m bd) >>= f
+          mapEM' (App le ae) = (return App `ap` m le `ap` m ae) >>= f
           mapEM' (Var n) = f $ Var n
-          mapEM' (Sig s) = return Sig `ap` m s >>= f
-          mapEM' (SigVal s) = return SigVal `ap` m s >>= f
-          mapEM' (SigDelay s1 s2) = return SigDelay `ap` m s1 `ap` m s2 >>= f
-          mapEM' (SigAt s1 s2) = return SigAt `ap` m s1 `ap` m s2 >>= f
-          mapEM' (M1 op s) = return (M1 op) `ap` m s >>= f
-          mapEM' (M2 op s1 s2) = return (M2 op) `ap` m s1 `ap` m s2  >>= f
-          mapEM' (And s1 s2) = return And `ap` m s1 `ap` m s2 >>= f
-          mapEM' (Or s1 s2) = return Or `ap` m s1 `ap` m s2 >>= f
-          mapEM' (Cons s1 s2) = return Cons `ap` m s1 `ap` m s2 >>= f
-          mapEM' (Not s) = return Not `ap` m s >>= f
-          mapEM' (Cmp o s1 s2) = return (Cmp o) `ap` m s1 `ap` m s2 >>= f
-          mapEM' (Pair s1 s2) = return Pair `ap` m s1 `ap` m s2 >>= f
-          mapEM' (Event s2) = return Event `ap` m s2 >>= f
+          mapEM' (Sig s) = (return Sig `ap` m s) >>= f
+          mapEM' (SigVal s) = (return SigVal `ap` m s) >>= f
+          mapEM' (SigDelay s1 s2) = (return SigDelay `ap` m s1 `ap` m s2) >>= f
+          mapEM' (SigAt s1 s2) = (return SigAt `ap` m s1 `ap` m s2) >>= f
+          mapEM' (M1 op s) = (return (M1 op) `ap` m s) >>= f
+          mapEM' (M2 op s1 s2) = (return (M2 op) `ap` m s1 `ap` m s2 ) >>= f
+          mapEM' (And s1 s2) = (return And `ap` m s1 `ap` m s2) >>= f
+          mapEM' (Or s1 s2) = (return Or `ap` m s1 `ap` m s2) >>= f
+          mapEM' (Cons s1 s2) = (return Cons `ap` m s1 `ap` m s2) >>= f
+          mapEM' (Not s) = (return Not `ap` m s) >>= f
+          mapEM' (Cmp o s1 s2) = (return (Cmp o) `ap` m s1 `ap` m s2) >>= f
+          mapEM' (Pair s1 s2) = (return Pair `ap` m s1 `ap` m s2) >>= f
+          mapEM' (Event s2) = (return Event `ap` m s2) >>= f
           mapEM' (Const c) = f $ Const c
-          mapEM' (Nil) = f Nil
-          mapEM' (LetE ses er) = 
+          mapEM' (Nil) = (f Nil)
+          mapEM' (LetE ses er) = (
               withBvars (map fst ses) $ 
               return LetE `ap` mapM (\(n,e)-> do e' <- m e
                                                  return (n, e')) ses 
-                          `ap` m er >>= f
-          mapEM' (Switch ses er) = 
+                          `ap` m er) >>= f
+          mapEM' (Switch ses er) = (
               return Switch `ap` mapM (\(e1,e2)-> do e1' <- m e1
                                                      e2' <- m e2
                                                      return (e1',e2')) ses 
-                            `ap` m er >>= f
-          mapE f e = error $ "mapE: unknown expr "++show e 
+                            `ap` m er) >>= f
+          -- mapE f e = error $ "mapE: unknown expr "++show e 
               
 
 ifM :: Monad m => m Bool -> m a ->  m a -> m a

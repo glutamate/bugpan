@@ -51,7 +51,7 @@ prelude = [
  "snd" =: (Const. LamV $ \(PairV v1 v2) -> return v2),
  "convolve" =: 
     (Lam "s" . Lam "es" $ Sig (Var "sum" $> (Var "map" $> 
-    (Lam "e" (SigAt (Var "seconds" - (Var "fst" $> Var "e" )) (Var "s"))) $> Var "es"))),
+    (Lam "e" (SigAt (SigVal (Var "seconds") - (Var "fst" $> Var "e" )) (Var "s"))) $> Var "es"))),
 
  "seconds" =: Sig 1, --dummy
  "dt" =: 1 --dummy
@@ -77,12 +77,17 @@ testProg  = [
  SinkConnect (Var "gsyn") "print",
  "fr" =: (Sig ((Var "fraction" $> (SigVal (Var "seconds"))/0.01))),
  SinkConnect (Var "fr") "print",
- "gcell" =: (Var "convolve" $> Var "gsyn" $> Var "preSpike"),
- Stage "gsyn" (-1)
+ Stage "gsyn" (-1),
+ SinkConnect (Var "gcell") "print",
+ "gcell" =: (Var "convolve" $> Var "gsyn" $> Var "preSpike")
 {-"intfire" =: (LetE [("spike", Var "crosses" $> -0.04 $> Var "vm"),
   ("vm", 
   ] (Var "vm")) -}
             ]
+
+gcell = [--"preSpike" =: (Var "every" $> 0.01),
+         --"gsyn" =: (Var "smap" $> (Var "alpha" $> 300) $> (Var "seconds")), 
+         "gcell" =: (Var "convolve" $> Var "gsyn" $> Var "preSpike")]
 
 solvers =  [
  "iterate" =: (Lam "f" $ Lam "s0" $ 
@@ -116,6 +121,11 @@ runTM = runTravM testProg (declsToEnv prelude)
 infixl 1 =:                                         
 x =: y = Let x y 
 
+testTransform :: TravM () -> [Declare] -> [Declare]
+testTransform tr ds = snd . runTravM ds (declsToEnv prelude) $ tr
+
+test1 = mapM print $ testTransform sigAtRefersToBuffer gcell
+
 
 test = do putStrLn "\ninitial"
           ppProg prelude
@@ -124,11 +134,11 @@ test = do putStrLn "\ninitial"
           let prg = snd . runTM $ transform
           let complPrel =  fst . runTM $ compilablePrelude
           ppProg (prg)
-          --putStrLn "\ncompiled"
-          --let stmts = compile (complPrel++prg)
+          putStrLn "\ncompiled"
+          let stmts = compile (complPrel++prg)
           --mapM_ (putStrLn . ppStmt) $ stmts
-          putStrLn "\nrunning"
-          execInStages (complPrel++prg) 0.001 0.01
+          --putStrLn "\nrunning"
+          execInStages (complPrel++prg) 0.001 0.03
           --exec stmts 0.001 0.01
 
           --return $ hasSigProg testProg

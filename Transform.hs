@@ -175,6 +175,17 @@ addStageAnnotations = whileChanges $ do
       when (null sAnn) $ insertAtEnd [Stage depSig stage]
   insertAtEnd newSnks
 
+sigAtRefersToBuffer :: TravM ()
+sigAtRefersToBuffer = mapDE $ \tle -> mapEM sAbuf tle
+    where sAbuf e@(SigAt t (Var ('#':nm))) = return e
+          sAbuf e@(SigAt t (Var nm)) =  return (SigAt t (Var $ '#':nm))
+          sAbuf e = return e
+
+--sAbuf e@(SigAt t (Var ('#':nm))) =fail ("i1 see "++show e) >> return e
+          --sAbuf e@(SigAt t (Var nm)) = fail ("i2 see "++show e) >> return (SigAt t (Var $ '#':nm))
+          -- sAbuf e@(SigAt t s) = error ("i3 see "++show e) -- >> return e -- (SigAt t (Var $ '#':nm))
+          
+
 declInMainLoop  (Let _ (Sig _)) = True
 declInMainLoop  (Let _ (Event _)) = True
 declInMainLoop  (Let _ (Switch _ _)) = True
@@ -198,6 +209,7 @@ transform = do  connectsLast
                 renameCopiedEvents
                 removeNops
                 addStageAnnotations
+                sigAtRefersToBuffer
                 
 
 inBoundVars :: String -> TravM Bool
