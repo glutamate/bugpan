@@ -35,6 +35,7 @@ compileDec (Let nm (Switch ses ser)) =
 
 compileDec (Let nm e) = [Env nm e]
 compileDec (SinkConnect (Var nm) snkNm) = [SigSnkConn nm snkNm]
+compileDec (Stage _ _) = []
 
 unVal :: E -> E
 unVal = mapE f

@@ -164,6 +164,8 @@ addStageAnnotations = whileChanges $ do
   ds <- decls `fmap` get
   let sAnnos = [ (nm, stage) | Stage nm stage <- ds ]
   let allSigs = [ nm | Let nm _ <- filter declInMainLoop ds ]
+  let existSnks = [n | SinkConnect (Var n1) ('#':n) <- ds, n1==n]
+  let newSnks =[SinkConnect (Var nm) ('#':nm) | Stage nm _ <- ds, not $ nm `elem` existSnks  ]
   forM_ sAnnos $ \(nm, stage)-> do 
     defn <- lookUp nm
     let depSigs = filter ((`isSubTermIn` defn) .  Var) $ allSigs
@@ -171,10 +173,13 @@ addStageAnnotations = whileChanges $ do
       let sAnn =[ stage | Stage nmDs stageDs <- ds, 
                           nmDs==depSig, stageDs<=stage  ]
       when (null sAnn) $ insertAtEnd [Stage depSig stage]
+  insertAtEnd newSnks
 
 declInMainLoop  (Let _ (Sig _)) = True
 declInMainLoop  (Let _ (Event _)) = True
 declInMainLoop  (Let _ (Switch _ _)) = True
+declInMainLoop  (Let _ (SigDelay _ _)) = True
+declInMainLoop  (SinkConnect _ _) = True
 declInMainLoop  _ = False
 
 

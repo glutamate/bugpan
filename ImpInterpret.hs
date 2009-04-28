@@ -65,20 +65,22 @@ exec stmts dt tmax =
                            SigSnkConn sn bn@('#':bufnm) -> do 
                                     buf <- H.lookup envHT bn
                                     val <- fromJust `fmap` H.lookup envHT sn
+                                    -- putStrLn $ "writing "++show val++"to buffer "++bufnm
                                     case buf of
                                       Just (ListV vs) -> H.update envHT bn $ ListV (val:vs)
                                       Nothing -> H.update envHT bn $ ListV [val]
                                     return ()
                            _ -> return ()
-         putStr "\n"
+         when (not . null $ outNms) $ putStr "\n"
        forM_ (map fst initEvts) $ \enm-> do
          ListV es <- fromJust `fmap` H.lookup envHT enm
          putStrLn $ concat [enm , " -> ", show $ reverse es]
        forM_ bufnms $ \bufn-> do 
-         Just (ListV buf) <- H.lookup envHT bufn
+         --H.lookup envHT bufn >>= print
+         Just (ListV buf) <- H.lookup envHT ('#':bufn)
          --let arr = array (0,nsteps-1) $ zip [0..nsteps-1] $ reverse buf
          let arr = reverse buf
-         H.update envHT bufn . SigV $ \t-> arr!!(round $ t/dt)
+         H.update envHT ('#':bufn) . SigV $ \t-> arr!!(round $ t/dt)
        H.toList envHT
          
 

@@ -125,9 +125,11 @@ eval es (Sig se)
 
 
 eval es (SigAt offset sve) = 
-    do SigV efun <- eval (withoutTime es) sve 
-       NumV n <- eval es offset
-       return (efun $ (numToDouble n)) 
+    do s<- eval (withoutTime es) sve 
+       case s of 
+         SigV efun  -> do NumV n <- eval es offset
+                          return (efun $ (numToDouble n)) 
+         v -> fail $ "expected sigv, got "++show v
 
 eval es (LetE ses er) = do
   let nvs = map (\(n,e)-> (n, unEvalM $ eval (extsEnv nvs es) e)) ses

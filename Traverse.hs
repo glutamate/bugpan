@@ -162,9 +162,11 @@ lookUp nm = do env <- env `fmap` get
                              
           
 insertAtEnd :: [Declare] -> TravM ()
+insertAtEnd [] = return ()
 insertAtEnd ds = markChange >> (setter $ \s -> s {decls = decls s ++ ds})
 
 insertBefore :: [Declare] -> TravM ()
+insertBefore [] = return ()
 insertBefore ds = markChange >> (setter $ \s-> let ln = lineNum s
                                                    ds' = spliceAt ln ds $ decls s
                                                in s { decls = ds', lineNum = ln+length ds })

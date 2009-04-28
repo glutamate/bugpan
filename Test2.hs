@@ -13,6 +13,7 @@ import Control.Monad.State.Strict
 import Transform
 import Compiler
 import ImpInterpret
+import Stages
 
 type Program = [Declare] 
 
@@ -123,11 +124,12 @@ test = do putStrLn "\ninitial"
           let prg = snd . runTM $ transform
           let complPrel =  fst . runTM $ compilablePrelude
           ppProg (prg)
-          putStrLn "\ncompiled"
-          let stmts = compile (complPrel++prg)
-          mapM_ (putStrLn . ppStmt) $ stmts
+          --putStrLn "\ncompiled"
+          --let stmts = compile (complPrel++prg)
+          --mapM_ (putStrLn . ppStmt) $ stmts
           putStrLn "\nrunning"
-          exec stmts 0.001 0.01
+          execInStages (complPrel++prg) 0.001 0.01
+          --exec stmts 0.001 0.01
 
           --return $ hasSigProg testProg
 
