@@ -182,6 +182,12 @@ sigAtRefersToBuffer = mapDE $ \tle -> mapEM sAbuf tle
           sAbuf e@(SigAt t (Var nm)) =  return (SigAt t (Var $ '#':nm))
           sAbuf e = return e
 
+simplifySomeLets :: TravM ()
+simplifySomeLets = mapDE $ \tle -> mapEM sSL tle
+    where sSL e@(LetE [(n1,e1)] (Var n2)) | n1 == n2 && (not $ Var n1 `isSubTermIn` e1)= return e1
+                                          | otherwise = return e
+          sSL e = return e
+
 --sAbuf e@(SigAt t (Var ('#':nm))) =fail ("i1 see "++show e) >> return e
           --sAbuf e@(SigAt t (Var nm)) = fail ("i2 see "++show e) >> return (SigAt t (Var $ '#':nm))
           -- sAbuf e@(SigAt t s) = error ("i3 see "++show e) -- >> return e -- (SigAt t (Var $ '#':nm))
@@ -264,4 +270,9 @@ transforms =   [(connectsLast, "connectsLast")
                 ,(removeNops, "removeNops")
                 ,(addStageAnnotations, "addStageAnnotations")
                 ,(sigAtRefersToBuffer, "sigAtRefersToBuffer")
+                ,(simplifySomeLets, "simplifySomeLets")
+                ,(sigFloating, "sigFloating")
+                ,(unDelays, "unDelays")
+--                ,(sigFloating, "sigFloating")
+--                ,(unDelays, "unDelays")
                ]

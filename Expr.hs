@@ -244,6 +244,7 @@ instance Num E where
 	e1 + e2 = M2 Add e1 e2
 	e1 - e2 = M2 Sub e1 e2
 	e1 * e2 = M2 Mul e1 e2
+        negate (Const (NumV nv)) = Const $ NumV (negate nv)
 	negate e = M2 Mul (Const . NumV . NInt $ (-1)) e
 	abs e = If (Cmp Lt e 0) (negate e) (e)
 	signum e = If (Cmp Lt e 0) (-1) (1)

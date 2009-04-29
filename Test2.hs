@@ -14,6 +14,7 @@ import Transform
 import Compiler
 import ImpInterpret
 import Stages
+import Data.List
 
 type Program = [Declare] 
 
@@ -85,7 +86,7 @@ testProg  = [
  --"vm" =: (Var "solveOde" $> ((Lam "v" $ Sig $ ((SigVal $ Var "gcell")*(1e-12)-((Var "v"+0.07)/1e9))/(2.5e-12))) $> (-0.07)),
  SinkConnect (Var "vm") "print",
  "intfire" =: (LetE [("spike", Var "crosses" $> (-0.04) $> Var "vm"),
-                     ("vm", Switch [(Var "spike", Lam "_" $ (Var "solveOde" $> Var "cellOde" $> (-0.07)))
+                     ("vm", Switch [(Var "spike", Lam "tsp" . Lam "_" $ (Var "solveOdeFrom" $> Var "tsp" $> Var "cellOde" $> (-0.07)))
                                      ] $ (Var "solveOde" $> Var "cellOde" $> (-0.07))  )
                      ] (Var "vm")) 
             ]
@@ -97,9 +98,15 @@ solvers =  [
                                     (Var "s0")
                                     (Var "f" $> SigVal (SigDelay (Var "s") (Var "s0"))))
                        )] (Var "s")),
-
+ "iterateFrom" =: (Lam "t0" $ Lam "f" $ Lam "s0" $ 
+          LetE ["s" #= ( 
+                        Sig (If (time .<=. (Var "t0"+(dt/2))) 
+                                    (Var "s0")
+                                    (Var "f" $> SigVal (SigDelay (Var "s") (Var "s0"))))
+                       )] (Var "s")),
  "solveStep" =: (Lam "sf" . Lam "v0" . Lam "old" $ (Var "old") + ( SigVal (SigDelay (Var "sf" $> Var "old") (Var "v0"))) * Var "dt"),
- "solveOde" =: (Lam "sf" . Lam "v0" $ Var "iterate" $> (Var "solveStep" $> Var "sf" $> Var "v0") $> Var "v0")]
+ "solveOde" =: (Lam "sf" . Lam "v0" $ Var "iterate" $> (Var "solveStep" $> Var "sf" $> Var "v0") $> Var "v0"),
+ "solveOdeFrom" =: (Lam "t0" .Lam "sf" . Lam "v0" $ Var "iterateFrom" $> Var "t0" $> (Var "solveStep" $> Var "sf" $> Var "v0") $> Var "v0")]
     where x #= y = (x,y) 
           dt = (Var "dt")
           time = Var "seconds"
@@ -124,6 +131,21 @@ x =: y = Let x y
 
 testTransform :: TravM () -> [Declare] -> [Declare]
 testTransform tr ds = snd . runTravM ds (declsToEnv prelude) $ tr
+
+takeMoreAndMore :: [a] -> [[a]]
+takeMoreAndMore xs = map (`take` xs) [1..length xs] 
+
+
+allTransforms :: IO ()
+allTransforms = do
+  putStrLn "\nprelude"
+  ppProg prelude
+  putStrLn "\ninitial"
+  ppProg testProg
+  forM_ (takeMoreAndMore transforms) $ \trnsfs -> do 
+      putStrLn $ "\nafter: "++(intercalate ", " $ map snd trnsfs)
+      ppProg (snd . runTM $ sequence_ (map fst trnsfs))
+  return ()
 
 
 test = do putStrLn "\ninitial"
