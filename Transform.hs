@@ -70,11 +70,13 @@ unDelays :: TravM ()
 unDelays = mapDE unDelays' 
     where unDelays' e@(SigDelay (Var _) _) = return e
           unDelays' tle = mapEM undel tle
-          undel (SigDelay (Var nm) initE) = do
-            --assumes nm not bound and inite has no bound vars. FIXME
-            dnm <- genSym $ nm++"_delay"
-            insertAtEnd [Let dnm (SigDelay (Var nm) initE)]
-            return (Var dnm)
+          undel e@(SigDelay (Var nm) initE) = do
+            --assumes inite has no bound vars. FIXME
+            ifM (inBoundVars nm)
+                (return e)
+                (do dnm <- genSym $ nm++"_delay"
+                    insertAtEnd [Let dnm (SigDelay (Var nm) initE)]
+                    return (Var dnm))
           undel e = return e
             
 letFloating ::TravM ()
@@ -185,16 +187,27 @@ sigAtRefersToBuffer = mapDE $ \tle -> mapEM sAbuf tle
           sAbuf e@(SigAt t (Var nm)) =  return (SigAt t (Var $ '#':nm))
           sAbuf e = return e
 
+
+--what if n2 is referred to?
 simplifySomeLets :: TravM ()
 simplifySomeLets = mapDE $ \tle -> mapEM sSL tle
     where sSL e@(LetE [(n1,e1)] (Var n2)) | n1 == n2 && (not $ Var n1 `isSubTermIn` e1)= return e1
                                           | otherwise = return e
           sSL e = return e
 
---sAbuf e@(SigAt t (Var ('#':nm))) =fail ("i1 see "++show e) >> return e
-          --sAbuf e@(SigAt t (Var nm)) = fail ("i2 see "++show e) >> return (SigAt t (Var $ '#':nm))
-          -- sAbuf e@(SigAt t s) = error ("i3 see "++show e) -- >> return e -- (SigAt t (Var $ '#':nm))
-          
+massageDelayRefsInSwitch :: TravM ()
+massageDelayRefsInSwitch = mapD mDRIS
+    where mDRIS d@(Let gn (Switch mes le@(LetE [(n1, s1)] (Var n2)))) 
+                           | n1 == n2  = return (Let gn $ Switch (mDris2 gn mes) $ mapE (sub n1 gn) le)
+                           | otherwise = return d 
+          mDRIS d = return d
+          mDris2 gn [] = []
+          mDris2 gn ((ev, ls@(Lam tn (Lam vn (LetE [(n1, s1)] (Var n2))))):tl) = (ev, mapE (sub n1 gn) ls):mDris2 gn tl
+          mDris2 gn (hd:tl) = hd:mDris2 gn tl
+          sub sn tn e@(SigDelay (Var sn1) v0) | sn1 == sn = SigDelay (Var tn) v0
+                                              | otherwise = e
+          sub _ _ e = e
+
 
 declInMainLoop  (Let _ (Sig _)) = True
 declInMainLoop  (Let _ (Event _)) = True
@@ -265,6 +278,7 @@ transforms =   [(connectsLast, "connectsLast")
                 ,(betaRedHasSigs , "betaRedHasSigs")
                 ,(sigFloating, "sigFloating")
                 ,(unDelays, "unDelays")
+                ,(massageDelayRefsInSwitch, "massageDelayRefsInSwitch")
                 ,(explicitSignalCopying, "explicitSignalCopying")
                 ,(renameCopiedEvents, "renameCopiedEvents")
                 ,(removeNops, "removeNops")
@@ -273,8 +287,8 @@ transforms =   [(connectsLast, "connectsLast")
                 ,(simplifySomeLets, "simplifySomeLets")
                 ,(sigFloating, "sigFloating")
                 ,(unDelays, "unDelays")
-                -- ,(sigFloating, "sigFloating")
-                -- ,(unDelays, "unDelays")
+                 ,(sigFloating, "sigFloating")
+                 ,(unDelays, "unDelays")
                ]
 
 transform :: TravM ()

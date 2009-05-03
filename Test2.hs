@@ -85,10 +85,14 @@ testProg  = [
  --"vm" =: (Var "solveOde" $> Var "cellOde" $> (-0.07)),
  --"vm" =: (Var "solveOde" $> ((Lam "v" $ Sig $ ((SigVal $ Var "gcell")*(1e-12)-((Var "v"+0.07)/1e9))/(2.5e-12))) $> (-0.07)),
  SinkConnect (Var "vm") "print",
- "intfire" =: (LetE [("spike", Var "crosses" $> (-0.04) $> Var "vm"),
+ {-"intfire" =: (LetE [("spike", Var "crosses" $> (-0.04) $> Var "vm"),
                      ("vm", Switch [(Var "spike", Lam "tsp" . Lam "_" $ (Var "solveOdeFrom" $> Var "tsp" $> Var "cellOde" $> (-0.07)))
                                      ] $ (Var "solveOde" $> Var "cellOde" $> (-0.07))  )
-                     ] (Var "vm")) 
+                     ] (Var "vm")), -}
+
+ "vm" =: (Switch [(Var "spike", Lam "tsp" . Lam "_" $ (Var "solveOdeFrom" $> Var "tsp" $> Var "cellOde" $> (-0.07)))
+                  ] $ (Var "solveOde" $> Var "cellOde" $> (-0.07))),
+ "spike" =: (Var "crosses" $> (-0.04) $> Var "vm")
             ]
 
 solvers =  [
@@ -155,7 +159,7 @@ test = do putStrLn "\ninitial"
           let prg = snd . runTM $ transform
           let complPrel =  fst . runTM $ compilablePrelude
           ppProg (prg)
-          putStrLn "\ncompiled"
+          --putStrLn "\ncompiled"
           --let stmts = compile (complPrel++prg)
           --mapM_ (putStrLn . ppStmt) $ stmts
           --putStrLn "\nrunning"
