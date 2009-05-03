@@ -146,7 +146,7 @@ withPath e tx = do p <- exprPath `fmap` get
                    return x
 
 insideSwitch :: TravM Bool
-insideSwitch  = (any isSwitch . exprPath) `fmap` get
+insideSwitch  = (isSwitch . head . exprPath) `fmap` get
     where isSwitch (Switch _ _) = True
           isSwitch _ = False
 
@@ -159,7 +159,7 @@ lookUp nm = do env <- env `fmap` get
                              case L.lookup nm ds of
                                Just e -> return e
                                Nothing -> do ln <- curLine
-                                             fail $ "lookUp: can't find "++nm++" in line: "++ show ln
+                                             fail $ "lookUp: can't find "++nm++" in line: "++ ppDecl ln
                              
           
 insertAtEnd :: [Declare] -> TravM ()

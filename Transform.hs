@@ -6,7 +6,7 @@ import Run
 import Control.Monad
 import Numbers
 import Data.Char 
-import Data.List (partition)
+import Data.List (partition, intercalate)
 import Traverse
 import Control.Monad.State.Strict
 import Debug.Trace
@@ -97,12 +97,15 @@ sigFloating = mapDE sigFl
           sigFloat (Sig se) = do
             inSw <- insideSwitch
             hasBV <-  hasBoundVars se
-            if hasBV && not inSw
-               then do ln <- curLine
-                       error $ "not sure what to do with bound var in sig floating in line \n"++ppDecl ln
-               else if inSw
+            ep <- exprPath `fmap` get
+            -- trace (concat ["considring sigfloat on ", pp se, ": ", show hasBV, show inSw, "\n"]) return ()
+            -- trace (concat ["exprPath: ", intercalate ", " $ map pp ep, "\n"]) return ()
+            if  hasBV || inSw
+               then return (Sig se) {-do ln <- curLine
+                       error $ "not sure what to do with bound var in sig floating in line \n"++ppDecl ln -}
+               else {-if inSw
                        then return (Sig se)
-                       else reallyFloatSig se
+                       else-} reallyFloatSig se
           sigFloat e = return e
           reallyFloatSig se = do 
             sn <- genSym "sigfl"
@@ -200,9 +203,6 @@ declInMainLoop  (Let _ (SigDelay _ _)) = True
 declInMainLoop  (SinkConnect _ _) = True
 declInMainLoop  _ = False
 
-transform :: TravM ()
-transform = sequence_ $ map fst transforms
-                
 
 inBoundVars :: String -> TravM Bool
 inBoundVars nm = (nm `elem`) `fmap` boundVars `fmap` get
@@ -273,6 +273,10 @@ transforms =   [(connectsLast, "connectsLast")
                 ,(simplifySomeLets, "simplifySomeLets")
                 ,(sigFloating, "sigFloating")
                 ,(unDelays, "unDelays")
---                ,(sigFloating, "sigFloating")
---                ,(unDelays, "unDelays")
+                -- ,(sigFloating, "sigFloating")
+                -- ,(unDelays, "unDelays")
                ]
+
+transform :: TravM ()
+transform = sequence_ $ map fst transforms
+                
