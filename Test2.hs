@@ -50,13 +50,22 @@ prelude = [
  "sum" =: (Const . LamV $ \vs -> sum `fmap` unListV vs),
  "fst" =: (Const. LamV $ \(PairV v1 v2) -> return v1),
  "snd" =: (Const. LamV $ \(PairV v1 v2) -> return v2),
+ "enow" =: (Lam "es" $ (Var "enowAux" $> (SigVal $ Var "seconds") $> Var "dt" $> Var "es")),
+ "enowAux" =: (Const . LamV $ \(NumV t) -> return $ LamV $ \(NumV dt) -> return $ LamV $ \(ListV es) -> do
+                                      let dropF (PairV (NumV te) _) = nstep te dt > nstep t dt
+                                      let takeF (PairV (NumV te) _) = nstep te dt == nstep t dt
+                                      return $ ListV (takeWhile takeF $ dropWhile dropF es)),
+ "emap" =: (Lam "f" . Lam "evs" $ Event (Var "map" $> Var "f" $> (Var "enow" $> Var "evs"))),
  "convolve" =: 
     (Lam "s" . Lam "es" $ Sig (Var "sum" $> (Var "map" $> 
     (Lam "e" (SigAt (SigVal (Var "seconds") - (Var "fst" $> Var "e" )) (Var "s"))) $> Var "es"))),
-
+ "laterF" =: (Lam "t" . Lam "e" $ Pair ((Var "fst" $> Var "e")+Var "t") (Var "snd" $> Var "e")),
+ "later" =: (Lam "t" . Lam "es" $ Var "emap" $> (Var "laterF" $> Var "t") $> Var "es"),
  "seconds" =: Sig 1, --dummy
  "dt" =: 1 --dummy
           ]++solvers
+
+nstep t dt = roundNum (t/dt)
 
 testProg  = [
  SinkConnect (Var "seconds") "print",
@@ -81,7 +90,7 @@ testProg  = [
  Stage "gsyn" (-1),
  SinkConnect (Var "gcell") "print",
  "gcell" =: (Var "convolve" $> Var "gsyn" $> Var "preSpike"),
- "cellOde" =: (Lam "v" $ Sig $ ((SigVal $ Var "gcell")*(1e-12)-((Var "v"+0.07)/1e9))/(2.5e-12)),
+ "cellOde" =: (Lam "v" $ Sig $ ((SigVal $ Var "gcell")*(0.3e-12)-((Var "v"+0.07)/1e9))/(2.5e-12)),
  --"vm" =: (Var "solveOde" $> Var "cellOde" $> (-0.07)),
  --"vm" =: (Var "solveOde" $> ((Lam "v" $ Sig $ ((SigVal $ Var "gcell")*(1e-12)-((Var "v"+0.07)/1e9))/(2.5e-12))) $> (-0.07)),
  SinkConnect (Var "vm") "print",
@@ -90,9 +99,11 @@ testProg  = [
                                      ] $ (Var "solveOde" $> Var "cellOde" $> (-0.07))  )
                      ] (Var "vm")), -}
 
- "vm" =: (Switch [(Var "spike", Lam "tsp" . Lam "_" $ (Var "solveOdeFrom" $> (Var "tsp"+Var "dt") $> Var "cellOde" $> (-0.07)))
+ "vm" =: (Switch [(Var "spike",  Lam "_" . Lam "_" $ Sig (-0.07)),
+                  (Var "refrac_end", Lam "tsp" . Lam "_" $ (Var "solveOdeFrom" $> (Var "tsp"+Var "dt") $> Var "cellOde" $> (-0.07)))
                   ] $ (Var "solveOde" $> Var "cellOde" $> (-0.07))),
- "spike" =: (Var "crosses" $> (-0.04) $> Var "vm")
+ "spike" =: (Var "crosses" $> (-0.04) $> Var "vm"),
+ "refrac_end" =: (Var "later" $> 0.002 $> Var "spike")
             ]
 
 solvers =  [

@@ -58,12 +58,14 @@ data Declare
 --	| LetRec String E
 	| Import String (Maybe String)
 	| SinkConnect E String
+        | ReadSource String String
         | Stage String Int
         | Nop
 	deriving (Show, Eq)
 
 ppDecl (Let nm e ) = nm++" = " ++ pp e
-ppDecl ( SinkConnect e sn) = (pp e++" *> " ++ sn)
+ppDecl (SinkConnect e sn) = (pp e++" *> " ++ sn)
+ppDecl (ReadSource varNm srcNm) = (pp e++" <- " ++ sn)
 ppDecl s = show s
 
 --for display purposes only
