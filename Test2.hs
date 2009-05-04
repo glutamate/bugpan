@@ -90,7 +90,7 @@ testProg  = [
                                      ] $ (Var "solveOde" $> Var "cellOde" $> (-0.07))  )
                      ] (Var "vm")), -}
 
- "vm" =: (Switch [(Var "spike", Lam "tsp" . Lam "_" $ (Var "solveOdeFrom" $> Var "tsp" $> Var "cellOde" $> (-0.07)))
+ "vm" =: (Switch [(Var "spike", Lam "tsp" . Lam "_" $ (Var "solveOdeFrom" $> (Var "tsp"+Var "dt") $> Var "cellOde" $> (-0.07)))
                   ] $ (Var "solveOde" $> Var "cellOde" $> (-0.07))),
  "spike" =: (Var "crosses" $> (-0.04) $> Var "vm")
             ]
@@ -159,11 +159,11 @@ test = do putStrLn "\ninitial"
           let prg = snd . runTM $ transform
           let complPrel =  fst . runTM $ compilablePrelude
           ppProg (prg)
-          --putStrLn "\ncompiled"
-          --let stmts = compile (complPrel++prg)
-          --mapM_ (putStrLn . ppStmt) $ stmts
-          --putStrLn "\nrunning"
-          --execInStages (complPrel++prg) 0.001 0.03
+          putStrLn "\ncompiled"
+          let stmts = compile (complPrel++prg)
+          mapM_ (putStrLn . ppStmt) $ stmts
+          putStrLn "\nrunning"
+          execInStages (complPrel++prg) 0.001 0.03
           --exec stmts 0.001 0.01
 
           --return $ hasSigProg testProg

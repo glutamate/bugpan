@@ -27,8 +27,8 @@ compileDec (Let nm (SigDelay (Var sn) v0)) = [SigUpdateRule nm (Var sn),
                                               InitSig nm v0]
 compileDec (Let nm (Event ee)) = [EventAddRule nm $ unVal ee]
 compileDec (Let nm (Switch ses ser)) = 
-               [SigUpdateRule nm (Switch (map noSig ses) $ unSig ser)]
-    where noSig (e,s) = (e, mapE unSig s)
+               [SigUpdateRule nm (Switch (map noSig ses) $ unSig (mapE unVal ser))]
+    where noSig (e,s) = (e, mapE unVal $ mapE unSig s)
           unSig (Sig se) = se
           unSig e = e
 

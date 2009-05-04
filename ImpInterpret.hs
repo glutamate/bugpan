@@ -47,8 +47,8 @@ exec stmts dt tmax =
                                                return ()
                                        else do
                                          let idx = maxIdx (map (fst. fst) eslams')
-                                         let ((t,v), Lam vn se) =  eslams'!!idx
-                                         H.update envHT nm $ unEvalM $ eval (extEnv (vn,v) es) se
+                                         let ((t,v), Lam tn (Lam vn se)) =  eslams'!!idx
+                                         H.update envHT nm $ unEvalM $ eval (extsEnv [(vn,v), (tn, NumV. NReal $ t)] es) se
                                          return ()
                            SigUpdateRule nm e -> do
                                     H.update envHT nm $ unEvalM $ eval es e
