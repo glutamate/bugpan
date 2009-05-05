@@ -17,10 +17,13 @@ import Control.Monad
 data Session = Session { events :: [(String, [(Double,V)])],
                          sigSegments :: [(String, [(Double, Double, Double->V)])],
                          programsRun :: [(Double, Double, [Declare])],
-                         qenv :: [(String, V)]
+                         qenv :: [(String, V)],
+                         sessPrelude :: [(String, V)]
                        }
 
-emptySession = Session [] [] []
+emptySession = Session [] [] [] [] 
+
+sessEvalState s = EvalS 0 0 Nothing (sessPrelude s)
 
 addRunToSession :: [Declare] -> Double -> Double -> [(String, V)] -> Session -> Session
 addRunToSession decls t0 tmax ress sess 
@@ -39,7 +42,7 @@ addRunToSession decls t0 tmax ress sess
                                     Nothing
           newEvs = spliceAssocs evtsToStore (events sess)
           newSigSegs = spliceAssocs sigsToStore (sigSegments sess)
-      in Session newEvs newSigSegs ((t0,t0+tmax, decls):programsRun sess) (qenv sess)
+      in Session newEvs newSigSegs ((t0,t0+tmax, decls):programsRun sess) (qenv sess) (sessPrelude sess)
 
 spliceAssocs :: Eq a => [(a,[b])] ->[(a,[b])]->[(a,[b])]
 spliceAssocs = spliceAssocs' []
@@ -51,9 +54,10 @@ spliceAssocs' accum assoc1 ((key,vls):assoc2)
                         $ ((key,vls++moreVls)):accum 
         Nothing -> spliceAssocs' assoc1 (assoc2) $ ((key,vls)):accum 
 
-runOnce :: Double -> Double -> Double -> [Declare] -> [Declare] -> Session -> IO Session
-runOnce dt t0 tmax prel ds sess = do
-  let runTM = runTravM ds (declsToEnv prel)
+runOnce :: Double -> Double -> Double -> [Declare] -> Session -> IO Session
+runOnce dt t0 tmax ds sess = do
+  let prel = map (\(n,v)->(n,Const v)) (sessPrelude sess)
+  let runTM = runTravM ds prel
   let prg = snd . runTM $ transform
   let complPrel =  fst . runTM $ compilablePrelude
   ress <- execInStages (complPrel++prg) dt tmax
@@ -82,7 +86,9 @@ ask sess (QVar nm)
                             Just vls -> return $ map (\(t,v)-> PairV (NumV . NReal $ t) (v)) vls
                             Nothing -> return []
 ask sess (Apply lame q) = do vs <- ask sess q
-                             mkList `fmap` eval (undefined) (App lame (Const $ ListV vs))
+                             mkList `fmap` eval (sessEvalState sess) (App lame (Const $ ListV vs))
+ask sess (Bind nm q qrest) = do vs <- ask sess q
+                                ask (sess {qenv = (nm,ListV vs): qenv sess}) qrest
 
 mkList :: V -> [V]
 mkList (ListV vs) = vs
