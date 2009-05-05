@@ -8,6 +8,7 @@ import ImpInterpret
 import Compiler
 import Data.IORef
 import Control.Monad
+import EvalM
 
 --data RelPos = At | Before | After
 
@@ -27,7 +28,7 @@ splitByStages ds =
         unstagedDecls = mainL \\ (concat stagedDecls)
     in (env : stagedDecls) ++ [unstagedDecls]
 
-execInStages :: [Declare] -> Double -> Double -> IO ()
+execInStages :: [Declare] -> Double -> Double -> IO [(String,V)]
 execInStages ds dt tmax = do
   let (env:stageDs) = splitByStages ds
   envAdd <- newIORef []
@@ -43,6 +44,8 @@ execInStages ds dt tmax = do
                             ress <- exec stmts dt tmax
                             let savedRess = [('#':nm, val) | ('#':nm, val) <- ress, nm `elem` saved ]
                             addToIORefList envAdd savedRess
+
+  readIORef envAdd
                             
 
 

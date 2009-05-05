@@ -91,7 +91,7 @@ testProg  = [
  --SinkConnect (Var "fr") "print",
  Stage "gsyn" (-1),
  SinkConnect (Var "gcell") "print",
- "gcell" =: (Var "convolve" $> Var "gsyn" $> Var "preSpike"),
+ "gcell" =: (Var "convolve" $> Var "gsyn" $> Var "rndSpike"),
  "cellOde" =: (Lam "v" $ Sig $ ((SigVal $ Var "gcell")*(0.3e-12)-((Var "v"+0.07)/1e9))/(2.5e-12)),
  --"vm" =: (Var "solveOde" $> Var "cellOde" $> (-0.07)),
  --"vm" =: (Var "solveOde" $> ((Lam "v" $ Sig $ ((SigVal $ Var "gcell")*(1e-12)-((Var "v"+0.07)/1e9))/(2.5e-12))) $> (-0.07)),

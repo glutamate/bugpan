@@ -208,7 +208,6 @@ massageDelayRefsInSwitch = mapD mDRIS
                                               | otherwise = e
           sub _ _ e = e
 
-
 declInMainLoop  (Let _ (Sig _)) = True
 declInMainLoop  (Let _ (Event _)) = True
 declInMainLoop  (Let _ (Switch _ _)) = True
