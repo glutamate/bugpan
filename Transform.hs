@@ -250,7 +250,7 @@ hasSig e = {- trace (pp e ) $ -} or `fmap` queryM (hasSigAux []) e
           hasSigAux _ (Event _) = return [True]
           hasSigAux _ (SigDelay _ _) = return [True]
           hasSigAux lu v@(Var nm) = 
-              ifM (inBoundVars nm)
+              ifM (mor (inBoundVars nm) (isDefBySrc nm))
                   (return [False])
                   $ do defn <- stripSig `fmap` lookUp nm
                        --pth <- exprPath `fmap` get
@@ -258,6 +258,13 @@ hasSig e = {- trace (pp e ) $ -} or `fmap` queryM (hasSigAux []) e
                           then return [False] -- not sure about this but need to break loop
                           else {- trace (nm++": "++pp defn) $ -} queryM (hasSigAux $ nm:lu) defn
           hasSigAux _ (_) = return [False] 
+
+mor = liftM2 (||)
+
+isDefBySrc nm = do ds <- decls `fmap` get
+                   return $ any test ds
+    where test (ReadSource n _) = n == nm
+          test _ = False
  
 compilablePrelude :: TravM [Declare]
 compilablePrelude = 
