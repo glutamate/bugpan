@@ -1,6 +1,7 @@
 module Database where
 
 import EvalM
+import Eval
 import Expr
 import Data.Maybe
 import Data.List
@@ -10,11 +11,13 @@ import Compiler
 import Stages
 import Traverse
 import Transform
+import Control.Monad
 
 
 data Session = Session { events :: [(String, [(Double,V)])],
                          sigSegments :: [(String, [(Double, Double, Double->V)])],
-                         programsRun :: [(Double, [Declare])]
+                         programsRun :: [(Double, Double, [Declare])],
+                         qenv :: [(String, V)]
                        }
 
 emptySession = Session [] [] []
@@ -36,7 +39,7 @@ addRunToSession decls t0 tmax ress sess
                                     Nothing
           newEvs = spliceAssocs evtsToStore (events sess)
           newSigSegs = spliceAssocs sigsToStore (sigSegments sess)
-      in Session newEvs newSigSegs $ (t0,decls):programsRun sess
+      in Session newEvs newSigSegs ((t0,t0+tmax, decls):programsRun sess) (qenv sess)
 
 spliceAssocs :: Eq a => [(a,[b])] ->[(a,[b])]->[(a,[b])]
 spliceAssocs = spliceAssocs' []
@@ -48,11 +51,39 @@ spliceAssocs' accum assoc1 ((key,vls):assoc2)
                         $ ((key,vls++moreVls)):accum 
         Nothing -> spliceAssocs' assoc1 (assoc2) $ ((key,vls)):accum 
 
-run :: Double -> Double -> [Declare] -> [Declare] -> Session -> IO Session
-run dt tmax prel ds sess = do
+runOnce :: Double -> Double -> Double -> [Declare] -> [Declare] -> Session -> IO Session
+runOnce dt t0 tmax prel ds sess = do
   let runTM = runTravM ds (declsToEnv prel)
   let prg = snd . runTM $ transform
   let complPrel =  fst . runTM $ compilablePrelude
   ress <- execInStages (complPrel++prg) dt tmax
-  let nsess = addRunToSession ds 0 tmax ress sess
+  let nsess = addRunToSession ds t0 tmax ress sess
   return sess
+
+data Q = QVar String 
+       -- | Filter E Q
+       -- | Map E Q
+       | Apply E Q
+       | Has Q Q
+       | In Q Q
+       | Around Q Q
+       | Bind String Q Q
+
+ask :: Session -> Q -> EvalM [V]
+ask sess (QVar nm) 
+    = case lookup nm $ qenv sess of
+        Just (ListV vs) -> return vs
+        Just v -> return [v]
+        Nothing -> lookupInSigs
+    where lookupInSigs =  case lookup nm $ sigSegments sess of
+                            Just vls -> return $ map (\(_,_,sf)-> SigV sf) vls
+                            Nothing -> lookupInEvts
+          lookupInEvts = case lookup nm $ events sess of
+                            Just vls -> return $ map (\(t,v)-> PairV (NumV . NReal $ t) (v)) vls
+                            Nothing -> return []
+ask sess (Apply lame q) = do vs <- ask sess q
+                             mkList `fmap` eval (undefined) (App lame (Const $ ListV vs))
+
+mkList :: V -> [V]
+mkList (ListV vs) = vs
+mkList v = [v]
