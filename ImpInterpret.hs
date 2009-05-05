@@ -70,6 +70,9 @@ exec stmts dt tmax =
                                       Just (ListV vs) -> H.update envHT bn $ ListV (val:vs)
                                       Nothing -> H.update envHT bn $ ListV [val]
                                     return ()
+                           ReadSrcAction nm src -> do vl <- src t dt
+                                                      H.update envHT nm vl
+                                                      return ()
                            _ -> return ()
          when (not . null $ outNms) $ putStr "\n"
        forM_ (map fst initEvts) $ \enm-> do

@@ -82,6 +82,8 @@ testProg  = [
  --"swsig" =: (Switch [(Var "overp5", Lam "x" $ Sig (Var "x"))] (Sig 1)),
  --SinkConnect (Var "swsig") "print",
  --"myOde" =: (Var "solveOde" $> (Lam "y" $ Sig (0-Var "y")) $> 1),
+ ReadSource "rndSpikeSig" ["bernoulli", "100"],
+ "rndSpike" =: (Var "eventIf" $> SigVal (Var "rndSpikeSig")),
  "preSpike" =: (Var "every" $> 0.01),
  "gsyn" =: (Var "smap" $> (Var "alpha" $> 300) $> (Var "seconds")),
  SinkConnect (Var "gsyn") "print",

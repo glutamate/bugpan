@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances #-}
+{- needed? LANGUAGE FlexibleInstances -}
 module Traverse where
 
 import Expr

@@ -6,6 +6,7 @@ import Control.Monad
 import Control.Monad.Reader
 import Numbers
 import EvalM
+import Data.List
 
 data Math1 = Ln | Exp | Re | Im deriving (Show, Eq)
 data Math2 = Add | Sub | Mul | Div deriving (Show, Eq)
@@ -58,14 +59,14 @@ data Declare
 --	| LetRec String E
 	| Import String (Maybe String)
 	| SinkConnect E String
-        | ReadSource String String
+        | ReadSource String [String]
         | Stage String Int
         | Nop
 	deriving (Show, Eq)
 
 ppDecl (Let nm e ) = nm++" = " ++ pp e
 ppDecl (SinkConnect e sn) = (pp e++" *> " ++ sn)
-ppDecl (ReadSource varNm srcNm) = (pp e++" <- " ++ sn)
+ppDecl (ReadSource varNm srcNm) = (varNm++" <- " ++ (intercalate " " srcNm))
 ppDecl s = show s
 
 --for display purposes only

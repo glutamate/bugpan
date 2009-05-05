@@ -2,13 +2,15 @@ module Compiler where
 
 import Expr
 import EvalM
+import System.Random
 
 data Stmt = InitSig String E
           | Env String E
           | SigUpdateRule String E
           | EventAddRule String E
           | SigSnkConn String String
-          | SigSwitch String [(String, E)] E
+          -- | SigSwitch String [(String, E)] E
+          | ReadSrcAction String (Double -> Double -> IO V)
             deriving (Eq, Show)
 
 compile :: [Declare] -> [Stmt]
@@ -32,7 +34,7 @@ compileDec (Let nm (Switch ses ser)) =
           unSig (Sig se) = se
           unSig e = e
 
-
+compileDec (ReadSource nm srcSpec) = [ReadSrcAction nm $ genSrc srcSpec]
 compileDec (Let nm e) = [Env nm e]
 compileDec (SinkConnect (Var nm) snkNm) = [SigSnkConn nm snkNm]
 compileDec (Stage _ _) = []
@@ -45,6 +47,7 @@ unVal = mapE f
 inMainLoop (SigUpdateRule _ _) = True
 inMainLoop (EventAddRule _ _) = True
 inMainLoop (SigSnkConn _ _) = True 
+inMainLoop (ReadSrcAction _ _) = True
 inMainLoop _ = False
 
 ppStmt :: Stmt -> String
@@ -53,10 +56,17 @@ ppStmt (Env n e) =  concat [n, " = ", pp e]
 ppStmt (SigUpdateRule n e) =  concat [n, " = {: ", pp e, " :}"]
 ppStmt (EventAddRule n e) =  concat [n, " = [: ", pp e, " :]"]
 ppStmt (SigSnkConn vn sn) = concat [vn, " *> ", sn]
+ppStmt (ReadSrcAction nm _) = nm ++ " <- <signal source>"
 
 initSigVals stmts = [is | is@(InitSig nm v) <-  stmts]
 constEnv stmts = [en | en@(Env nm v) <-  stmts]
 mainLoop  stmts =  filter inMainLoop stmts
+
+genSrc :: [String] -> (Double -> Double -> IO V)
+genSrc ("bernoulli":rateS:_) t dt = 
+    do rnd <- randomRIO (0,1)
+       return . BoolV $ rnd < (read rateS)*dt
+genSrc nms _ _ = error $ "unknown source: "++show nms
 
 {- note: Now, 
 
