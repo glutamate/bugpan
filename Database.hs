@@ -16,12 +16,13 @@ import Control.Monad
 
 data Session = Session { events :: [(String, [(Double,V)])],
                          sigSegments :: [(String, [(Double, Double, Double->V)])],
+                         epochs :: [(String, [(Double, Double, V)])],
                          programsRun :: [(Double, Double, [Declare])],
                          qenv :: [(String, V)],
                          sessPrelude :: [(String, V)]
                        }
 
-emptySession = Session [] [] [] [] 
+emptySession = Session [] [] [] [] []
 
 sessEvalState s = EvalS 0 0 Nothing (sessPrelude s)
 
@@ -40,9 +41,18 @@ addRunToSession decls t0 tmax ress sess
                                     Just (nm, map (\(PairV (NumV (NReal tm)) v)-> (tm+t0,v)) evs)
                                 _ -> 
                                     Nothing
+          epsToStore = catMaybes . 
+                        flip map nmsToStore $ 
+                        \nm-> case lookup nm ress of
+                                Just (ListV eps) -> 
+                                    Just (nm, map (\(PairV (PairV (NumV (NReal t1)) ((NumV (NReal t2)))) v) ->
+                                                         (t1+t0, t2+t0, v)) eps)
+                                _ -> 
+                                    Nothing
           newEvs = spliceAssocs evtsToStore (events sess)
           newSigSegs = spliceAssocs sigsToStore (sigSegments sess)
-      in Session newEvs newSigSegs ((t0,t0+tmax, decls):programsRun sess) (qenv sess) (sessPrelude sess)
+          newEps = spliceAssocs epsToStore (epochs sess)
+      in Session newEvs newSigSegs newEps ((t0,t0+tmax, decls):programsRun sess) (qenv sess) (sessPrelude sess)
 
 spliceAssocs :: Eq a => [(a,[b])] ->[(a,[b])]->[(a,[b])]
 spliceAssocs = spliceAssocs' []
@@ -64,11 +74,12 @@ runOnce dt t0 tmax ds sess = do
   let nsess = addRunToSession ds t0 tmax ress sess
   return sess
 
-data Q = QVar String 
+data Q = QVar String
        -- | Filter E Q
        -- | Map E Q
        | ApplyToAll E Q
-       | ApplyToEach E Q
+       | Filter E Q
+       | Map E Q
        | Has Q Q
        | In Q Q
        | Around Q Q
@@ -88,22 +99,50 @@ ask sess (QVar nm)
                             Nothing -> return []
 ask sess (ApplyToAll lame q) = do vs <- ask sess q
                                   mkList `fmap` eval (sessEvalState sess) (App lame (Const $ ListV vs))
-ask sess (ApplyToEach lame q) = do vs <- ask sess q
-                                   forM vs $ \v-> eval (sessEvalState sess) (App lame (Const v))
+ask sess (Map lame q) = do 
+  vs <- ask sess q
+  forM vs $ \v-> eval (sessEvalState sess) (App lame (Const v))
 ask sess (Bind nm q qrest) = do vs <- ask sess q
                                 ask (sess {qenv = (nm,ListV vs): qenv sess}) qrest
-ask sess (Around qsig qevt) = do sigs <- ask sess qsig
-                                 let sigDefnInTm t (SigV t1 t2 _) = t<t2 && t>t1
-                                 let inRanges t = any (sigDefnInTm t) sigs
-                                 evts <-  filter (inRanges . evTime) `fmap` ask sess qevt
-                                 return $ map (\e-> let sig = head . filter (sigDefnInTm $ evTime e) $ sigs
-                                                    in shiftSig sig $ evTime e) evts
+ask sess (Around qsig qevt) = do 
+  sigs <- ask sess qsig
+  let sigDefnInTm t (SigV t1 t2 _) = t<t2 && t>t1
+  let inRanges t = any (sigDefnInTm t) sigs
+  evts <-  filter (inRanges . evTime) `fmap` ask sess qevt
+  return $ map (\e-> let sig = head . filter (sigDefnInTm $ evTime e) $ sigs
+                     in shiftSig sig $ evTime e) evts
 
+ask sess (Has qep qevs) = do 
+  evs <- ask sess qevs
+  filter (\ep-> any (`evInEpoch` ep) evs) `fmap` ask sess qep
+ask sess (In qevOrSig qep) = do 
+  eps <- ask sess qep
+  evOrSig <- ask sess qevOrSig
+  let ress = for evOrSig $ \eos-> case eos of
+                                     s@(SigV t1 t2 sf) -> sigInEps s eps 
+                                     ev@(PairV (NumV (NReal t1)) v) -> if any (evInEpoch ev) eps
+                                                                         then [ev]
+                                                                         else []
+  return $ concat ress
+
+for = flip map
+
+isTrue (BoolV True) = True
+
+sigInEps s@(SigV ts1 ts2 sf) eps = 
+    catMaybes $ for eps $ \ep-> let (tep1,tep2) = epTs ep in
+                                cond [(ts1<tep1 && ts2>tep2, Just $ SigV tep1 tep2 $ \t->sf(t-tep1))]
 
 evTime (PairV (NumV (NReal t)) _) = t
+
+epTs (PairV (PairV (NumV (NReal t1)) ((NumV (NReal t2)))) _) = (t1,t2)
 
 shiftSig (SigV t1 t2 sf) ts = SigV (t1+ts) (t2+ts) $ \t->sf(t-ts)
 
 mkList :: V -> [V]
 mkList (ListV vs) = vs
 mkList v = [v]
+
+evInEpoch ev ep = let (t1, t2) = epTs ep 
+                      tev = evTime ev
+                  in tev<t2 && tev>t1
