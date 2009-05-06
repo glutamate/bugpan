@@ -58,9 +58,10 @@ applyVlToSnk vls (Device _ _ _ _ _  (SnkAllInOneGoAnytimeAnyRate teio))
 
 
 getVlsFromSig :: Device SigSrc -> IO V
-getVlsFromSig (Device _ _ _ _ _  (SrcAnyTimePure srcfun))
-    = return $ SigV srcfun
+--getVlsFromSig (Device _ _ _ _ _  (SrcAnyTimePure srcfun))
+--    = return $ SigV srcfun
 getVlsFromSig (Device _ _ _ _ _  (SrcAllInOneGo vlio hz)) = do 
   vls <- vlio
-  return (SigV $ \t-> vls!!(round $  t * realToFrac hz))
+  let dt = 1/realToFrac hz
+  return (SigV 0 ((realToFrac $ length vls)*dt) $ \t-> vls!!(round $  t * realToFrac hz))
 

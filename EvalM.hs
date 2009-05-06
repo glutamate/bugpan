@@ -71,7 +71,7 @@ data V  = BoolV Bool
         | ListV [V]
 	| LamV (V->EvalM V)
         | ULamV (forall a. V->(V->a)->a)
-	| SigV (Double->V)
+	| SigV Double Double(Double->V)
 	| USigV (forall a. Double->(V->a)->a)
         | Unit
 
@@ -89,7 +89,7 @@ instance Show V where
     show (NumV v) = show v
     show (StrV s) = show s
     show (LamV _) = "<lambda value>"
-    show (SigV _) = "<signal value>"
+    show (SigV t1 t2 _) = "<signal value "++show t1++" to  "++show t2++">"
     show (PairV v w) = "("++show v++","++show w++")"
     show (Unit) = "()"
     show (ListV vs) =  "["++slist vs++"]"

@@ -108,27 +108,30 @@ eval es env (StrCat e1 e2) = do StrLit a <- eval es env e1 t
                                StrLit b <- eval es env e2 t
 			       return $ StrLit (a++b) -}
 
-eval es (SigVal sve) = do --Just t <- cur_t `fmap` ask
-  SigV efun <- eval es sve
+{-eval es (SigVal sve) = do --Just t <- cur_t `fmap` ask
+  SigV t1 t2 efun <- eval es sve
   {-case cur_t es of
     Just t -> return ()
     Nothing -> error $ "no time in expr "++show sve-}
-  return $ efun (curTime es)
+  return $ efun (curTime es) -}
 
-eval es (Sig se) 
+{-eval es (Sig se) 
     = do let boundVars = map fst $ env es
          if all (`elem` boundVars) fvars
             then return . SigV $ \t -> unEvalM (eval (withTime t es) se)
             else fail $ "unknown free vars: " ++ show (fvars \\ boundVars) ++ "\nEnv: "++(show $ env es)
     where fvars = freeVars se
           --boundVars = map fst env
-
+-}
 
 eval es (SigAt offset sve) = 
     do s<- eval (withoutTime es) sve 
        case s of 
-         SigV efun  -> do NumV n <- eval es offset
-                          return (efun $ (numToDouble n)) 
+         SigV t1 t2 efun  -> do NumV n <- eval es offset
+                                let tdbl = numToDouble n
+                                cond [(tdbl < t1, return (efun t1)),
+                                      (tdbl > t2, return (efun t2)),
+                                      (otherwise, return (efun tdbl))]
          v -> fail $ "expected sigv, got "++show v
 
 eval es (LetE ses er) = do
@@ -138,12 +141,12 @@ eval es (LetE ses er) = do
 {-eval es (SigDelay s p0) = eval es (Sig $ SigAt ((SigVal (Var "seconds"))- dt') s )
     where dt' = Const . NumV . NReal $ dt es
 -}
-eval es (SigDelay s p0) 
+{-eval es (SigDelay s p0) 
     = return . SigV $ \t -> if round (t/dt es)==0
                                then unEvalM $ eval es p0
                                else unEvalM $ eval (withTime t es) $ SigAt ((SigVal (Var "seconds"))- dt') s
     where dt' = Const . NumV . NReal $ dt es
-
+-}
 eval es (Event evexp) = do
   let evalEvt t = case unEvalM $ eval (withTime t es) evexp of
                              ListV l -> l
@@ -191,6 +194,11 @@ applyNumM2  es e1 e2 f
                                                    show e2,
                                                    "; FYI 9 op 8=",
                                                    show (f 9 8) ]
+
+
+cond :: [(Bool, a)] -> a
+cond ((True, x):_) = x
+cond ((False, _):conds) = cond conds
 
 
 --test = teval (1+1.5) 

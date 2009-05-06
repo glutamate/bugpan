@@ -31,7 +31,7 @@ addRunToSession decls t0 tmax ress sess
           sigsToStore = catMaybes . 
                         flip map nmsToStore $ 
                         \nm-> case lookup nm ress of
-                                Just (SigV sf) -> Just (nm, [(t0,tmax, \t->sf (t-t0))])
+                                Just (SigV t1 t2 sf) -> Just (nm, [(t1+t0,t2+t0, \t->sf (t-t0))])
                                 _ -> Nothing
           evtsToStore = catMaybes . 
                         flip map nmsToStore $ 
@@ -67,7 +67,8 @@ runOnce dt t0 tmax ds sess = do
 data Q = QVar String 
        -- | Filter E Q
        -- | Map E Q
-       | Apply E Q
+       | ApplyToAll E Q
+       | ApplyToEach E Q
        | Has Q Q
        | In Q Q
        | Around Q Q
@@ -80,15 +81,19 @@ ask sess (QVar nm)
         Just v -> return [v]
         Nothing -> lookupInSigs
     where lookupInSigs =  case lookup nm $ sigSegments sess of
-                            Just vls -> return $ map (\(_,_,sf)-> SigV sf) vls
+                            Just vls -> return $ map (\(t1,t2,sf)-> SigV t1 t2 sf) vls
                             Nothing -> lookupInEvts
           lookupInEvts = case lookup nm $ events sess of
                             Just vls -> return $ map (\(t,v)-> PairV (NumV . NReal $ t) (v)) vls
                             Nothing -> return []
-ask sess (Apply lame q) = do vs <- ask sess q
-                             mkList `fmap` eval (sessEvalState sess) (App lame (Const $ ListV vs))
+ask sess (ApplyToAll lame q) = do vs <- ask sess q
+                                  mkList `fmap` eval (sessEvalState sess) (App lame (Const $ ListV vs))
+ask sess (ApplyToEach lame q) = do vs <- ask sess q
+                                   forM vs $ \v-> eval (sessEvalState sess) (App lame (Const v))
 ask sess (Bind nm q qrest) = do vs <- ask sess q
                                 ask (sess {qenv = (nm,ListV vs): qenv sess}) qrest
+--ask sess (Around qsig qevt) = do
+  
 
 mkList :: V -> [V]
 mkList (ListV vs) = vs

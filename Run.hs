@@ -127,7 +127,7 @@ run prelude decls dt tmax
 	 -- put all the outputs
 
 	 forM_ snksNow $ \(s,e) -> do 
-           SigV sigf <- evalIO e
+           SigV _ _ sigf <- evalIO e
            let vls = map (\t->(t, sigf t)) [0,dt..tmax]
            applyVlToSnk vls s
 	 -- trigger
@@ -155,7 +155,7 @@ run prelude decls dt tmax
          --rest of sinks
          envNow <- readIORef env
 	 forM_ snksLater $ \(s,e) -> do
-		 (SigV sig) <- evalIO e -- case eval envNow e Nothing of
+		 (SigV _ _ sig) <- evalIO e -- case eval envNow e Nothing of
                  let tms = [0,dt..tmax]
                  let vals = zip tms $ map sig tms
                  applyVlToSnk vals s

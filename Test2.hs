@@ -3,7 +3,7 @@ module Test2 where
 import Expr
 import Eval
 import EvalM
-import Run
+--import Run
 import Control.Monad
 import Numbers
 import Data.Char
