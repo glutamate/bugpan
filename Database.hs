@@ -92,8 +92,17 @@ ask sess (ApplyToEach lame q) = do vs <- ask sess q
                                    forM vs $ \v-> eval (sessEvalState sess) (App lame (Const v))
 ask sess (Bind nm q qrest) = do vs <- ask sess q
                                 ask (sess {qenv = (nm,ListV vs): qenv sess}) qrest
---ask sess (Around qsig qevt) = do
-  
+ask sess (Around qsig qevt) = do sigs <- ask sess qsig
+                                 let sigDefnInTm t (SigV t1 t2 _) = t<t2 && t>t1
+                                 let inRanges t = any (sigDefnInTm t) sigs
+                                 evts <-  filter (inRanges . evTime) `fmap` ask sess qevt
+                                 return $ map (\e-> let sig = head . filter (sigDefnInTm $ evTime e) $ sigs
+                                                    in shiftSig sig $ evTime e) evts
+
+
+evTime (PairV (NumV (NReal t)) _) = t
+
+shiftSig (SigV t1 t2 sf) ts = SigV (t1+ts) (t2+ts) $ \t->sf(t-ts)
 
 mkList :: V -> [V]
 mkList (ListV vs) = vs
