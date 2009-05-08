@@ -11,6 +11,8 @@ import qualified Data.HashTable as H
 import Data.Maybe
 --import Array
 
+evalS e =  extsEnv e $ EvalS 1 1 Nothing []
+
 data InterpState = IS { sigs :: [(String, V)],
                         evts :: [(String, [(Double,V)])] }
 
@@ -19,7 +21,6 @@ exec stmts dt tmax =
     let prg =  filter inMainLoop stmts 
         fixEnvEs = ("dt",Const . NumV . NReal$ dt):[(nm,v) | en@(Env nm v) <-  stmts]
         fixEnv = map (\(n,e)->(n,unEvalM $ eval (evalS fixEnv) e)) fixEnvEs
-        evalS e =  extsEnv e $ EvalS 1 1 Nothing []
         initSigs = [ (nm, unEvalM $ eval (evalS fixEnv) e) | InitSig nm e <-  stmts]
         initEvts = [ (nm,ListV []) | EventAddRule nm _ <- stmts]
         bufnms = [ bnm | SigSnkConn _ ('#':bnm) <- prg ]

@@ -15,6 +15,7 @@ import Compiler
 import ImpInterpret
 import Stages
 import Data.List
+import Database
 
 type Program = [Declare] 
 
@@ -105,7 +106,11 @@ testProg  = [
                   (Var "refrac_end", Lam "tsp" . Lam "_" $ (Var "solveOdeFrom" $> (Var "tsp"+Var "dt") $> Var "cellOde" $> (-0.07)))
                   ] $ (Var "solveOde" $> Var "cellOde" $> (-0.07))),
  "spike" =: (Var "crosses" $> (-0.04) $> Var "vm"),
- "refrac_end" =: (Var "later" $> 0.002 $> Var "spike")
+ "refrac_end" =: (Var "later" $> 0.002 $> Var "spike"),
+ 
+ SinkConnect (Var "vm") "store",
+ SinkConnect (Var "spike") "store"
+
             ]
 
 solvers =  [
@@ -165,7 +170,9 @@ allTransforms = do
   return ()
 
 
-test = do putStrLn "\ninitial"
+prelEnv = declsToEnv prelude
+
+test1= do putStrLn "\ninitial"
           ppProg prelude
           ppProg testProg
           putStrLn "\ntransformed"
@@ -181,6 +188,11 @@ test = do putStrLn "\ninitial"
 
           --return $ hasSigProg testProg
 
+test = runNtimes 3 0.001 0.03 0.1 testProg prelEnv 
+  --let compPrel = evalManyAtOnce prelEnv
+  --let sess = emptySession {sessPrelude = prelEnv}
+  --runOnce 0.001 0 0.03 testProg sess 
+
 --process :: E-> TravM Process
 
--- :set -fbreak-on-exception
+-- :set -fbreak-on-exception 

@@ -208,6 +208,15 @@ massageDelayRefsInSwitch = mapD mDRIS
                                               | otherwise = e
           sub _ _ e = e
 
+addBuffersToStore :: TravM ()
+addBuffersToStore = mapD aBTS
+    where aBTS sc@(SinkConnect (Var nm) "store") =  do
+            whenM ((==IsSig) `fmap` isSignalOrEvt (Var nm))
+                $ insertAfter [SinkConnect (Var nm) ('#':nm)]
+                
+            return sc
+          aBTS d = return d
+
 declInMainLoop  (Let _ (Sig _)) = True
 declInMainLoop  (Let _ (Event _)) = True
 declInMainLoop  (Let _ (Switch _ _)) = True
@@ -223,12 +232,13 @@ stripSig (Sig se) = se
 stripSig (Event ee) = ee
 stripSig e = e
 
-data IsSigOrEvent = IsSig | IsEvt | IsNeitherSigNorEvt
+data IsSigOrEvent = IsSig | IsEvt | IsNeitherSigNorEvt deriving (Show, Eq)
 
 isSignalOrEvt :: E -> TravM IsSigOrEvent
 isSignalOrEvt (Sig _) = return IsSig
 isSignalOrEvt (SigDelay _ _) = return IsSig
 isSignalOrEvt (Event _) = return IsEvt
+isSignalOrEvt (Switch _ _) = return IsSig
 isSignalOrEvt (Var "seconds") = return IsSig
 isSignalOrEvt (Var "dt") = return IsNeitherSigNorEvt
 isSignalOrEvt (Var nm) = do def <- lookUp nm
@@ -293,8 +303,9 @@ transforms =   [(connectsLast, "connectsLast")
                 ,(simplifySomeLets, "simplifySomeLets")
                 ,(sigFloating, "sigFloating")
                 ,(unDelays, "unDelays")
-                 ,(sigFloating, "sigFloating")
-                 ,(unDelays, "unDelays")
+                ,(sigFloating, "sigFloating")
+                ,(unDelays, "unDelays")
+                ,(addBuffersToStore, "addBuffersToStore")
                ]
 
 transform :: TravM ()

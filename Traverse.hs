@@ -159,7 +159,7 @@ lookUp nm = do env <- env `fmap` get
                              case L.lookup nm ds of
                                Just e -> return e
                                Nothing -> do ln <- curLine
-                                             fail $ "lookUp: can't find "++nm++" in line: "++ ppDecl ln
+                                             fail $ "lookUp: can't find "++nm++" in line: "++ ppDecl ln++"\nin env"++show (map fst ds)
                              
           
 insertAtEnd :: [Declare] -> TravM ()
@@ -171,6 +171,11 @@ insertBefore [] = return ()
 insertBefore ds = markChange >> (setter $ \s-> let ln = lineNum s
                                                    ds' = spliceAt ln ds $ decls s
                                                in s { decls = ds', lineNum = ln+length ds })
+insertAfter :: [Declare] -> TravM ()
+insertAfter [] = return ()
+insertAfter ds = markChange >> (setter $ \s-> let ln = lineNum s
+                                                  ds' = spliceAt (ln+1) ds $ decls s
+                                              in s { decls = ds', lineNum = ln+length ds })
 
 declsToEnv [] = []
 declsToEnv ((Let n e):ds) = (n,e):declsToEnv ds

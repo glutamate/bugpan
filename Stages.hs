@@ -40,10 +40,15 @@ execInStages ds dt tmax = do
                             let stmts = compile $ env++copyEnvSigs++map envToDecl envAdded++decls
                             --putStrLn "\na stage"
                             --mapM (putStrLn . ppStmt ) stmts
-                            let saved = [ nm | SinkConnect (Var _) ('#':nm)<- decls ]
+                            let buffered = [ nm | SinkConnect (Var _) ('#':nm)<- decls ]
                             ress <- exec stmts dt tmax
-                            let savedRess = [('#':nm, val) | ('#':nm, val) <- ress, nm `elem` saved ]
+                            let savedRess = [('#':nm, val) | ('#':nm, val) <- ress, nm `elem` buffered ]
                             addToIORefList envAdd savedRess
+                            let storeResNms = [nm | SinkConnect (Var nm) "store" <- decls ]  
+                            let storeResVls = [(nm, val) | (nm, val) <- ress, 
+                                                                        nm `elem` storeResNms, 
+                                                                        not $ nm `elem` buffered]
+                            addToIORefList envAdd storeResVls
 
   readIORef envAdd
                             
