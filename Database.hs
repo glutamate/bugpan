@@ -39,7 +39,7 @@ addRunToSession decls t0 tmax ress sess
                         \nm-> case lookup ('#':nm) ress of
                                 Just (SigV t1 t2 sf) -> Just (nm, [(t1+t0,t2+t0, \t->sf (t-t0))])
                                 _ -> Nothing
-          evtsToStore = catMaybes . 
+          evtsToStore = reverse . catMaybes . 
                         flip map nmsToStore $ 
                         \nm-> case lookup nm ress `guardBy` isEvents of
                                 Just (ListV evs) -> 
@@ -95,7 +95,10 @@ runNtimes n dt tmax tsep ds prel =
 
 runNtimes' 0 _ _ _ _ sess = return sess
 runNtimes' n dt tmax tsep ds sess = do
-  runOnce dt (prevTrialStart sess + tsep) tmax ds sess >>=
+  let tstart = case programsRun sess of 
+                        [] -> 0
+                        ((t1,t2,_):_) -> t1+tsep
+  runOnce dt tstart tmax ds sess >>=
       runNtimes' (n-1) dt tmax tsep ds
 
 
