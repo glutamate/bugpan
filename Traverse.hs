@@ -237,6 +237,16 @@ queryM q e@(SigAt e1 e2) = concatM [q e, m e1, m e2]
 --	where m = queryM q
 queryM q e@(Var _) = concatM [q e]
 queryM q e@(Nil) = concatM [q e]
+
+queryM q e@(Box e1) = concatM [q e, m e1]
+	where m = queryM q
+queryM q e@(Translate e1 e2) = concatM [q e, m e1, m e2]
+	where m = queryM q
+queryM q e@(Colour e1 e2) = concatM [q e, m e1, m e2]
+	where m = queryM q
+queryM q e@(HasType _ e1) = concatM [q e, m e1]
+	where m = queryM q
+
 queryM q e = fail $ "queryM: unknown expr "++show  e 
 
 
@@ -262,6 +272,12 @@ mapEM f e = mapEM' e
           mapEM' (Event s2) = (return Event `ap` m s2) >>= f
           mapEM' (Const c) = f $ Const c
           mapEM' (Nil) = (f Nil)
+
+          mapEM' (Box s1) = (return Box `ap` m s1) >>= f
+          mapEM' (Translate s1 s2) = (return Translate `ap` m s1 `ap` m s2) >>= f
+          mapEM' (Colour s1 s2) = (return Colour `ap` m s1 `ap` m s2) >>= f
+          mapEM' (HasType t s2) = (return (HasType t) `ap` m s2) >>= f
+
           mapEM' (LetE ses er) = (
               withBvars (map fst ses) $ 
               return LetE `ap` mapM (\(n,e)-> do e' <- m e

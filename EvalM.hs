@@ -73,7 +73,7 @@ data V  = BoolV Bool
         | ULamV (forall a. V->(V->a)->a)
 	| SigV Double Double (Double->V)
 	| USigV (forall a. Double->(V->a)->a)
-        | CubeV V V V --loc and shape
+        | BoxV V V V --shape,loc,  colour
         | Unit
 
 data T  = BoolT
@@ -104,12 +104,15 @@ instance Show V where
     show (StrV s) = show s
     show (LamV _) = "<lambda value>"
     show (SigV t1 t2 _) = "<signal value "++show t1++" to  "++show t2++">"
+    show (PairV (PairV x y) z) = "("++show x++","++show y++","++show z++")"
     show (PairV v w) = "("++show v++","++show w++")"
     show (Unit) = "()"
     show (ListV vs) =  "["++slist vs++"]"
         where slist [] = ""
               slist (x:[]) = show x
               slist (x:xs) = show x ++ ", " ++ slist xs
+    show (BoxV shp loc col) = "Box " ++show shp++" @"++show loc++" RGB"++show col
+
 
 
 withTime t  es =  es {cur_t=Just t}
@@ -154,3 +157,6 @@ fromMaybe Nothing errs = fail errs
 
 guardF True s = return ()
 guardF False s = fail s
+
+
+pair3 x y z = (PairV (PairV x y) z)

@@ -53,6 +53,9 @@ prelude = [
  "sum" =: (Const . LamV $ \vs -> sum `fmap` unListV vs),
  "fst" =: (Const. LamV $ \(PairV v1 v2) -> return v1),
  "snd" =: (Const. LamV $ \(PairV v1 v2) -> return v2),
+ "min x y" =: (If ("x" .>. "y") "y" "x"),
+ "max x y" =: (If ("x" .<. "y") "y" "x"),
+ "pair3 x y z" =: (Pair (Pair "x" "y") "z"),
  "enow es" =: (("enowAux" $> (val $ "seconds") $> "dt" $> "es")),
  "enowAux" =: (Const . LamV $ \(NumV t) -> return $ LamV $ \(NumV dt) -> return $ LamV $ \(ListV es) -> do
                                       let dropF (PairV (NumV te) _) = nstep te dt > nstep t dt
@@ -85,20 +88,31 @@ testProg  = [
  "cellOde v" =: (Sig $ ((val $ "gcell")*(0.3e-12)-(("v"+0.07)/1e9))/(2.5e-12)),
  --"vm" =: ("solveOde" $> "cellOde" $> (-0.07)),
  --"vm" =: ("solveOde" $> ((Lam "v" $ Sig $ ((val $ "gcell")*(1e-12)-(("v"+0.07)/1e9))/(2.5e-12))) $> (-0.07)),
- "vm" *> "print",
+ --"vm" *> "print",
  {-"intfire" =: (LetE [("spike", "crosses" $> (-0.04) $> "vm"),
                      ("vm", Switch [("spike", Lam "tsp" . Lam "_" $ ("solveOdeFrom" $> "tsp" $> "cellOde" $> (-0.07)))
                                      ] $ ("solveOde" $> "cellOde" $> (-0.07))  )
                      ] ("vm")), -}
 
- "vm" =: (Switch ["spike" ~> (lam "_ _" $ sig (-0.07)),
-                  "refrac_end" ~> (lam "tsp _" $ ("solveOdeFrom" $> ("tsp"+"dt") $> "cellOde" $> (-0.07)))
-                 ] ("solveOde" $> "cellOde" $> (-0.07))),
- "spike" =: ("crosses" $> (-0.04) $> "vm"),
- "refrac_end" =: ("later" $> 0.002 $> "spike"),
+ --"vm" =: (Switch ["spike" ~> (lam "_ _" $ sig (-0.07)),
+ --                 "refrac_end" ~> (lam "tsp _" $ ("solveOdeFrom" $> ("tsp"+"dt") $> "cellOde" $> (-0.07)))
+ --                ] ("solveOde" $> "cellOde" $> (-0.07))),
+ --"spike" =: ("crosses" $> (-0.04) $> "vm"),
+ --"refrac_end" =: ("later" $> 0.002 $> "spike"),
  
- "vm" *> "store",
- "spike" *> "store"
+ --"vm" *> "store",
+ --"spike" *> "store",
+
+ --looming
+ "lov" =: 0.04,
+ "l" =: 0.298,
+ "v" =: ("l"/("lov"*2)),
+ "centreCube l" =: (Translate ("pair3" $>(-"l"/2) $> (-"l"/2) $> 0) $ Box ("pair3" $> "l" $> "l" $> "l")),
+
+ "distance" =: sig ("min" $> ("v"*(val "seconds"-5)) $> (-0.17)),
+ "black" =: Pair (Pair 0 0) 0,
+ "loomObj" =: sig (Colour "black" $ Translate (Pair (Pair 0 0) (val "distance")) ("centreCube" $> "l")),
+ "loomObj" *> "print"
             ]
 
 solvers =  [
@@ -155,23 +169,20 @@ allTransforms = do
 
 prelEnv = declsToEnv prelude
 
-test1= do putStrLn "\ninitial"
-          ppProg prelude
-          ppProg testProg
+test = do putStrLn "\ninitial"
+          --ppProg prelude
+          --ppProg testProg
           putStrLn "\ntransformed"
           let prg = snd . runTM $ transform
           let complPrel =  fst . runTM $ compilablePrelude
-          ppProg (prg)
+          --ppProg (prg)
           putStrLn "\ncompiled"
           let stmts = compile (complPrel++prg)
           mapM_ (putStrLn . ppStmt) $ stmts
           putStrLn "\nrunning"
           execInStages (complPrel++prg) 0.001 0.03
-          --exec stmts 0.001 0.01
-
-          --return $ hasSigProg testProg
-
-test = runNtimes 3 0.001 0.03 0.1 testProg prelEnv 
+        
+test1 = runNtimes 3 0.001 0.03 0.1 testProg prelEnv 
   --let compPrel = evalManyAtOnce prelEnv
   --let sess = emptySession {sessPrelude = prelEnv}
   --runOnce 0.001 0 0.03 testProg sess 

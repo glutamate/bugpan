@@ -29,13 +29,13 @@ compileDec (Let nm (SigDelay (Var sn) v0)) = [SigUpdateRule nm (Var sn),
                                               InitSig nm v0]
 compileDec (Let nm (Event ee)) = [EventAddRule nm $ unVal ee]
 compileDec (Let nm (Switch ses ser)) = 
-               [SigUpdateRule nm (Switch (map noSig ses) $ unSig (mapE unVal ser))]
-    where noSig (e,s) = (e, mapE unVal $ mapE unSig s)
+               [SigUpdateRule nm (Switch (map noSig ses) $ unSig (unVal ser))]
+    where noSig (e,s) = (e, unVal $ mapE unSig s)
           unSig (Sig se) = se
           unSig e = e
 
 compileDec (ReadSource nm srcSpec) = [ReadSrcAction nm $ genSrc srcSpec]
-compileDec (Let nm e) = [Env nm e]
+compileDec (Let nm e) = [Env nm $ unVal e]
 compileDec (SinkConnect (Var nm) snkNm) = [SigSnkConn nm snkNm]
 compileDec (Stage _ _) = []
 

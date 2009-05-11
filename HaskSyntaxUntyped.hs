@@ -80,3 +80,4 @@ infixl 1 <*
 
 x *> y = SinkConnect x y            
 x <* y = ReadSource x $ splitBySpaces y            
+

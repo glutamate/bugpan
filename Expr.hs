@@ -51,7 +51,7 @@ data E =  If E E E
         | Switch [(E,E)] E
         | Event E
         | LetE [(String, E)] E
-        | Cube E E
+        | Box E
         | Translate E E
         | Colour E E
         | HasType T E
@@ -127,7 +127,9 @@ pp (M2 Div e1 e2) = pp2op e1 "/" e2
 pp (M1 op e) = show op ++ " " ++ ppa e
 pp (LetE les efinal) = concat ["let ", concat $ ppes les, " in ", ppa efinal]
     where ppes es = map (\(n,e)-> n++" = "++pp e++";") es 
-
+pp (Box d) = "cube "++ppa d
+pp (Translate t e) = "translate "++ppa t++" "++ppa e
+pp (Colour t e) = "colour "++ppa t++" "++ppa e
 pp e = show e
 
 pp2op e1 op e2 = ppa e1 ++ op ++ ppa e2
@@ -184,6 +186,16 @@ queryE q e@(Case ce cs) = q e++q ce++concatMap (m . snd) cs
 	where m = queryE q
 queryE q e@(Var _) = q e
 queryE q e@(Nil) = q e
+queryE q e@(Box e1) = q e++m e1
+	where m = queryE q
+queryE q e@(Translate e1 e2) = q e++m e1++m e2
+	where m = queryE q
+queryE q e@(Colour e1 e2) = q e++m e1++m e2
+	where m = queryE q
+queryE q e@(HasType _ e1) = q e++m e1
+	where m = queryE q
+
+
 --queryE q e = error $ "queryE: unknown expr "++show e 
 
 freeVars :: E -> [String]
@@ -205,6 +217,10 @@ freeVars e = fv [] e
           fv e (Cons s1 s2) = fv e s1 ++ fv e s2
           fv e (Pair s1 s2) = fv e s1 ++ fv e s2
           fv e (SigDelay s1 s2) = fv e s1++ fv e s2
+          fv e (Box s1) = fv e s1
+          fv e (Translate s1 s2) = fv e s1++ fv e s2
+          fv e (Colour s1 s2) = fv e s1++ fv e s2
+          fv e (HasType _ s2) =fv e s2
           fv e (Event s1) = fv e s1
           fv e (Const _) = []
           fv e (Nil) = []
@@ -238,6 +254,13 @@ mapE f (LetE ses er) =
     f (LetE (map (\(n,e)-> (n, mapE f e)) ses) (mapE f er))
 mapE f (Switch ses er) = 
     f (Switch (map (\(e1,e2)-> (mapE f e1, mapE f e2)) ses) (mapE f er))
+
+mapE f (Box s1) = f (Box (mapE f s1))
+mapE f (Translate s1 s2) = f (Translate (mapE f s1) (mapE f s2))
+mapE f (Colour s1 s2) = f (Colour (mapE f s1) (mapE f s2))
+mapE f (HasType t s2) = f (HasType t (mapE f s2))
+
+
 mapE f e = error $ "mapE: unknown expr "++show e 
 
 --mapE f e = f e

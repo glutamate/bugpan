@@ -45,7 +45,7 @@ eval es e@(If p c a)
 	    then eval es c
 	    else eval es a
 eval es v@(Var nm) = 
-    fromMaybe (lookup nm $ env es) $ "undefined symbol: "++nm -- ++ "\nEnv: "++show env
+    fromMaybe (lookup nm $ env es) $ ("undefined symbol: "++nm ) -- ++ "\nEnv: "++(show $ env es))
 
 eval es (Not be) = (boolToV . not ) `fmap` (vToBool =<< eval es be)
 eval es (And b1 b2) 
@@ -153,9 +153,23 @@ eval es (Event evexp) = do
                              _ -> []
   return $ ListV $ concatMap evalEvt [0,dt es..tmax es]
          
-
+ 
 
 --Case
+
+eval es (Box dims) = do
+  dimV <- eval es dims
+  return $ BoxV dimV (pair3 0 0 0) (pair3 0 0 0)
+
+eval es (Translate xyz shp) = do
+  (BoxV dims (PairV (PairV x y) z) col) <- eval es shp
+  (PairV (PairV x' y') z') <- eval es xyz
+  return $ BoxV dims (pair3 (x+x') (y+y') (z+z')) col
+
+eval es (Colour col shp) = do
+  (BoxV dims loc _) <- eval es shp
+  (PairV (PairV r g) b) <- eval es col
+  return $ BoxV dims loc (pair3 r g b)
 
 
 eval es (Const v) = return v 
@@ -164,6 +178,7 @@ eval es e = fail $"unknown expr: "++show e
 
 --applyEq :: E -> E ->(forall a. Eq a => a->a->Bool) -> E
 --applyEq (CNum n1) (CNum n2) op = liftBool $ op n1 n2 
+
 
 applyCmp :: EvalS -> E -> E ->(NumVl->NumVl->Bool) -> EvalM V
 applyCmp es (e1) (e2) op
