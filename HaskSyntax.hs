@@ -91,6 +91,8 @@ instance TAssignable U.Declare where
 
 infixl 1 =:, ~=
 
+s@t = U.SigAt t s
+
 class Assignable s where
     (=:) :: String -> U.E -> s
 

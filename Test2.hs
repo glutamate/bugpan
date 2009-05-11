@@ -36,35 +36,34 @@ prelude = [
  "sscan f v0 s" =: LetE ["sr" =: (sig $ "f" $> (val "s") $> (val $ delay "sr" "v0"))
                   ] "sr",
  "integrate" =: "sscan" $> "intStep" $> 0,
- "intStep" =: (Lam "new" . Lam "old" $ ("old") + ("new")*("dt")),
- "crosses" =: (Lam "val" . Lam "sig" $ Event 
+ "intStep new old" =: ("old" + "new"*"dt"),
+ "crosses val sig" =: (Event 
                        (If (val ("sig") .>=. ("val") .&. 
                             (val (delay ("sig") 0)) .<. ("val")) --not 0!
                         (Cons (Pair (val ("seconds")) (val ("sig"))) Nil) 
                         (Nil))),
- "eventIf" =: (Lam "p" $ Event (If ("p") 
+ "eventIf p" =: (Event (If ("p") 
                                    (Cons (Pair (val ("seconds")) (Const Unit)) Nil) 
                                    (Nil))), 
  "round" =: (Const . LamV $ \(NumV n)->return . NumV $ roundNum n),
  "floor" =: (Const . LamV $ \(NumV n)->return . NumV $ floorNum n),
- "fraction" =: (Lam "x" $ "x" - ("floor" $> "x")),
- "every" =: (Lam "ivl" $ "eventIf" $> ("fraction" $> ((val $ "seconds")/"ivl") .<. "dt")),
+ "fraction x" =: ("x" - ("floor" $> "x")),
+ "every ivl" =: ("eventIf" $> ("fraction" $> ((val $ "seconds")/"ivl") .<. "dt")),
  "map" =: (Const mapV),
  "sum" =: (Const . LamV $ \vs -> sum `fmap` unListV vs),
  "fst" =: (Const. LamV $ \(PairV v1 v2) -> return v1),
  "snd" =: (Const. LamV $ \(PairV v1 v2) -> return v2),
- "enow" =: (Lam "es" $ ("enowAux" $> (val $ "seconds") $> "dt" $> "es")),
+ "enow es" =: (("enowAux" $> (val $ "seconds") $> "dt" $> "es")),
  "enowAux" =: (Const . LamV $ \(NumV t) -> return $ LamV $ \(NumV dt) -> return $ LamV $ \(ListV es) -> do
                                       let dropF (PairV (NumV te) _) = nstep te dt > nstep t dt
                                       let takeF (PairV (NumV te) _) = nstep te dt == nstep t dt
                                       return $ ListV (takeWhile takeF $ dropWhile dropF es)),
- "emap" =: (Lam "f" . Lam "evs" $ Event ("map" $> "f" $> ("enow" $> "evs"))),
- "convolve" =: 
-    (Lam "s" . Lam "es" $ Sig ("sum" $> ("map" $> 
-    (Lam "e" (SigAt (val ("seconds") - ("fst" $> "e" )) ("s"))) $> "es"))),
- "laterF" =: (Lam "t" . Lam "e" $ Pair (("fst" $> "e")+"t") ("snd" $> "e")),
- "later" =: (Lam "t" . Lam "es" $ "emap" $> ("laterF" $> "t") $> "es"),
- "seconds" =: Sig 1, --dummy
+ "emap f evs" =: (Event ("map" $> "f" $> ("enow" $> "evs"))),
+ "convolve s es" =: (sig ("sum" $> ("map" $> 
+    (Lam "e" (SigAt (val "seconds" - ("fst" $> "e" )) "s")) $> "es"))),
+ "laterF t e" =: (Pair (("fst" $> "e")+"t") ("snd" $> "e")),
+ "later t es" =: ("emap" $> ("laterF" $> "t") $> "es"),
+ "seconds" =: sig 1, --dummy
  "dt" =: 1 --dummy
           ]++solvers
 
@@ -77,16 +76,16 @@ testProg  = [
  "rndSpike" =: ("eventIf" $> val ("rndSpikeSig")),
  "preSpike" =: ("every" $> 0.01),
  "gsyn" =: ("smap" $> ("alpha" $> 300) $> ("seconds")),
- SinkConnect ("gsyn") "print",
+ "gsyn" *> "print",
  --"fr" =: (Sig (("fraction" $> (val ("seconds"))/0.01))),
  --SinkConnect ("fr") "print",
  Stage "gsyn" (-1),
- SinkConnect ("gcell") "print",
+ "gcell" *> "print",
  "gcell" =: ("convolve" $> "gsyn" $> "rndSpike"),
- "cellOde" =: (Lam "v" $ Sig $ ((val $ "gcell")*(0.3e-12)-(("v"+0.07)/1e9))/(2.5e-12)),
+ "cellOde v" =: (Sig $ ((val $ "gcell")*(0.3e-12)-(("v"+0.07)/1e9))/(2.5e-12)),
  --"vm" =: ("solveOde" $> "cellOde" $> (-0.07)),
  --"vm" =: ("solveOde" $> ((Lam "v" $ Sig $ ((val $ "gcell")*(1e-12)-(("v"+0.07)/1e9))/(2.5e-12))) $> (-0.07)),
- SinkConnect ("vm") "print",
+ "vm" *> "print",
  {-"intfire" =: (LetE [("spike", "crosses" $> (-0.04) $> "vm"),
                      ("vm", Switch [("spike", Lam "tsp" . Lam "_" $ ("solveOdeFrom" $> "tsp" $> "cellOde" $> (-0.07)))
                                      ] $ ("solveOde" $> "cellOde" $> (-0.07))  )
@@ -100,7 +99,6 @@ testProg  = [
  
  "vm" *> "store",
  "spike" *> "store"
-
             ]
 
 solvers =  [
