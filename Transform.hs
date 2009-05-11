@@ -2,7 +2,7 @@ module Transform where
 
 import Expr
 import Eval
-import Run
+--import Run 
 import Control.Monad
 import Numbers
 import Data.Char 
@@ -33,10 +33,27 @@ substGetsSigs = mapDE $ \tle -> mapEM subst tle
                          (return e) 
           subst e = return e
 
+substMakesShape :: TravM ()
+substMakesShape = mapDE $ \tle -> mapEM subst tle
+    where subst e@(App (Var nm) arg) = do
+            ifM (inBoundVars nm)
+                (return e)
+                $ do defn <- lookUp nm
+                     ifM (makesShape defn)
+                         (return $ App (defn) arg)
+                         (return e) 
+          subst e = return e
+
 
 betaRedHasSigs :: TravM ()
 betaRedHasSigs = mapDE $ \tle -> mapEM brhs tle
     where brhs e = ifM (hasSig e)
+                       (return . betaContract $ e)
+                       (return e)
+
+betaRedMakesShape :: TravM ()
+betaRedMakesShape = mapDE $ \tle -> mapEM brms tle
+    where brms e = ifM (makesShape e)
                        (return . betaContract $ e)
                        (return e)
 
@@ -268,6 +285,21 @@ hasSig e = {- trace (pp e ) $ -} or `fmap` queryM (hasSigAux []) e
                           else {- trace (nm++": "++pp defn) $ -} queryM (hasSigAux $ nm:lu) defn
           hasSigAux _ (_) = return [False] 
 
+makesShape :: E->TravM Bool
+makesShape e =  or `fmap` queryM (makesShapeAux []) e
+    where makesShapeAux :: [String] -> E -> TravM [Bool]
+          makesShapeAux _ (Box _) = return [True]
+          makesShapeAux _ (Translate _ _) = return [True]
+          makesShapeAux _ (Colour _ _) = return [True]
+          makesShapeAux lu v@(Var nm) = 
+              ifM (mor (inBoundVars nm) (isDefBySrc nm)) 
+                  (return [False])
+                  $ do defn <-  lookUp nm
+                       if v `isSubTermIn` defn ||  nm `elem` lu
+                          then return [False] -- not sure about this but need to break loop
+                          else queryM (makesShapeAux $ nm:lu) defn
+          makesShapeAux _ (_) = return [False] 
+
 mor = liftM2 (||)
 
 isDefBySrc nm = do ds <- decls `fmap` get
@@ -287,6 +319,8 @@ transforms =   [(connectsLast, "connectsLast")
                 ,(betaRedHasSigs, "betaRedHasSigs")
                 ,(substGetsSigs, "substGetsSigs")
                 ,(whileChanges betaRedHasSigs, "betaRedHasSigs")
+                ,(substMakesShape, "substMakesShape")
+                ,(whileChanges betaRedMakesShape, "betaRedMakesShape")
                 ,(letFloating, "letFloating")
                 ,(sigFloating, "sigFloating")
                 ,(floatSwitchEvents, "floatSwitchEvents")

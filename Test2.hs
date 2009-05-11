@@ -55,7 +55,6 @@ prelude = [
  "snd" =: (Const. LamV $ \(PairV v1 v2) -> return v2),
  "min x y" =: (If ("x" .>. "y") "y" "x"),
  "max x y" =: (If ("x" .<. "y") "y" "x"),
- "pair3 x y z" =: (Pair (Pair "x" "y") "z"),
  "enow es" =: (("enowAux" $> (val $ "seconds") $> "dt" $> "es")),
  "enowAux" =: (Const . LamV $ \(NumV t) -> return $ LamV $ \(NumV dt) -> return $ LamV $ \(ListV es) -> do
                                       let dropF (PairV (NumV te) _) = nstep te dt > nstep t dt
@@ -69,6 +68,8 @@ prelude = [
  "seconds" =: sig 1, --dummy
  "dt" =: 1 --dummy
           ]++solvers
+
+pair3e e1 e2 e3 = Pair (Pair e1 e2) e3
 
 nstep t dt = roundNum (t/dt)
 
@@ -107,7 +108,7 @@ testProg  = [
  "lov" =: 0.04,
  "l" =: 0.298,
  "v" =: ("l"/("lov"*2)),
- "centreCube l" =: (Translate ("pair3" $>(-"l"/2) $> (-"l"/2) $> 0) $ Box ("pair3" $> "l" $> "l" $> "l")),
+ "centreCube l" =: (Translate (pair3e (-"l"/2) (-"l"/2) 0) $ Box (pair3e "l" "l" "l")),
 
  "distance" =: sig ("min" $> ("v"*(val "seconds"-5)) $> (-0.17)),
  "black" =: Pair (Pair 0 0) 0,
@@ -180,7 +181,7 @@ test = do putStrLn "\ninitial"
           let stmts = compile (complPrel++prg)
           mapM_ (putStrLn . ppStmt) $ stmts
           putStrLn "\nrunning"
-          execInStages (complPrel++prg) 0.001 0.03
+          --execInStages (complPrel++prg) 0.001 0.03
         
 test1 = runNtimes 3 0.001 0.03 0.1 testProg prelEnv 
   --let compPrel = evalManyAtOnce prelEnv

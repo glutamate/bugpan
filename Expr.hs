@@ -100,8 +100,8 @@ pp (Lam n e) = concat ["\\", n, "->", pp e]
 pp (Var n) = n
 pp (Const v) = show v
 pp (App f a) = ppa f ++ " " ++ ppa a
-pp (Pair (Pair x y) z) = concat ["(", ppa x , ", ", ppa y,", ", ppa z, ")"]
-pp (Pair f s) = concat ["(", ppa f , ", ", ppa s, ")"]
+pp (Pair (Pair x y) z) = concat ["(", pp x , ", ", pp y,", ", pp z, ")"]
+pp (Pair f s) = concat ["(", pp f , ", ", pp s, ")"]
 pp (Nil) = "[]"
 pp (Cons car Nil) = "[ "++pp car++" ]" -- ppa car ++ ":" ++ ppa cdr
 pp (Cons car cdr) = ppa car ++ ":" ++ ppa cdr
@@ -132,6 +132,7 @@ pp (LetE les efinal) = concat ["let ", concat $ ppes les, " in ", ppa efinal]
 pp (Box d) = "cube "++ppa d
 pp (Translate t e) = "translate "++ppa t++" "++ppa e
 pp (Colour t e) = "colour "++ppa t++" "++ppa e
+
 pp e = show e
 
 pp2op e1 op e2 = ppa e1 ++ op ++ ppa e2
@@ -313,7 +314,7 @@ data Pat = 	  PatAny String
 		| PatPair Pat Pat
 		| PatNil
 		| PatCons Pat Pat
-		| PatGuard E Pat
+		-- | PatGuard E Pat
 		deriving (Show, Eq)
 
 --sugar
