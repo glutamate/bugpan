@@ -54,7 +54,7 @@ data E =  If E E E
         | Cube E E
         | Translate E E
         | Colour E E
-        -- | HasType T E
+        | HasType T E
 	deriving (Show, Eq)
 
 data Declare 
