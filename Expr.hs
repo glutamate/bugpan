@@ -7,6 +7,7 @@ import Control.Monad.Reader
 import Numbers
 import EvalM
 import Data.List
+--import Types
 
 data Math1 = Ln | Exp | Re | Im deriving (Show, Eq)
 data Math2 = Add | Sub | Mul | Div deriving (Show, Eq)
@@ -50,7 +51,10 @@ data E =  If E E E
         | Switch [(E,E)] E
         | Event E
         | LetE [(String, E)] E
---	| NamedSig E
+        | Cube E E
+        | Translate E E
+        | Colour E E
+        -- | HasType T E
 	deriving (Show, Eq)
 
 data Declare 
@@ -289,6 +293,9 @@ data Pat = 	  PatAny String
 
 --sugar
 
+($>) = App
+
+
 infixl 6 .>.
 infixl 6 .<.
 infixl 6 .>=.
@@ -309,9 +316,8 @@ e1 .==. e2 = Cmp Eq e1 e2
 e1 .&. e2 = And e1 e2
 e1 .|. e2 = Or e1 e2
 
-($>) = App
 
-
+{-
 t = Const $ BoolV True
 f = Const $ BoolV False
 
@@ -335,3 +341,5 @@ sigDelay :: (ToE a, ToE b) => a -> b-> E
 sigDelay x y = SigDelay (toExpr x) (toExpr y)
 
 x ^$> y = (toExpr x) $> (toExpr y)
+
+-}

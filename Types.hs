@@ -1,18 +1,9 @@
 module Types where
 
 import Expr
-
-data T  = BoolT
-	| NumT
-	| PairT T T
-	| LamT T T
-	| ListT T
-	| AnyT
-	| StringT
-	| SignalT T
-	| EventT T
-	| EpochT T
-	deriving (Show, Eq)
+import EvalM
+--import Numbers
+import Control.Monad
 
 type TEnv = [(String, T)]
 
@@ -23,9 +14,8 @@ exprType e (If p c a) = do pt <- exprType e p
                            at <- exprType e a
                            unifyTypes ct at
 
-exprType e (CNum _) = Just NumT
-exprType e (T) = Just BoolT
-exprType e (F) = Just BoolT
+exprType e (Const (NumV _)) = Just NumT
+exprType e (Const (BoolV _)) = Just BoolT
 --exprType e (Lam nm t ex) = LamT t `fmap` exprType ((nm,t):e) ex
 exprType e (Var nm) = lookup nm e
 exprType e (App le arge) 
@@ -42,7 +32,7 @@ exprType e (Cons hd tl)
     = do ht <- exprType e hd
          tt <- exprType e tl
          ListT `fmap` unifyTypes (ht) (tt)
-exprType e (Case ex pts) 
+exprType e (Case ex pts)  
     = do (pat:pats) <- sequence $ map (exprType e . snd) pts
          foldM (unifyTypes) pat pats
 --and or not

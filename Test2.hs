@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Test2 where
 
 import Expr
@@ -16,6 +18,7 @@ import ImpInterpret
 import Stages
 import Data.List
 import Database
+import HaskSyntaxUntyped
 
 type Program = [Declare] 
 
@@ -27,13 +30,12 @@ mapV = LamV (\lf -> do f <- unLamV lf
                                                   return $ ListV vs)
 
 prelude = [
- "smap" =: (Lam "f" . Lam "s" $ Sig (Var "f" $> (SigVal $ Var "s"))),
- "incr" =: (Lam "x" (Var "x" + 1)),
- "add" =: (Lam "x" $ Lam "y" $ Var "x" + Var "y"),
- "sscan" =: (Lam "f" . Lam "v0" . Lam "s" $
-             LetE [("sr", (Sig $ (Var "f") $> (SigVal (Var "s")) $> (SigVal $ SigDelay (Var "sr") (Var "v0"))))
-                  ] $ Var "sr"),
- "integrate" =: ((Var "sscan" $> (Var "intStep") $> (0))),
+ "smap f s" =: (sig $ "f" $> val "s"),
+ "incr x" =: "x" + 1,
+ "add x y" =: "x" + "y",
+ "sscan f v0 s" =: LetE ["sr" =: (sig $ "f" $> (val "s") $> (val $ delay "sr" "v0"))
+                  ] "sr",
+ "integrate" =: "sscan" $> "intStep" $> 0,
  "intStep" =: (Lam "new" . Lam "old" $ (Var "old") + (Var "new")*(Var "dt")),
  "crosses" =: (Lam "val" . Lam "sig" $ Event 
                        (If (SigVal (Var "sig") .>=. (Var "val") .&. 
@@ -69,9 +71,8 @@ prelude = [
 nstep t dt = roundNum (t/dt)
 
 testProg  = [
- SinkConnect (Var "seconds") "print",
- "alpha" =: let tau = Var "tau" 
-                t = Var "t" in (Lam "tau" . Lam "t" $ If (Var "t" .<. 0) 0 (tau*tau*t * (exp . negate $ (tau * t)))),
+ "seconds" *> "print",
+ "alpha tau t " =: (If ("t" .<. 0) 0 ("tau"*"tau"*"t" * (exp . negate $ ("tau" * "t")))),
  --"aval" =: 5,
  --"secsp1d1" =: ((Var "smap") $> (Var "incr") $> (SigDelay (Var "seconds") (0))),
  --"accum_secs_plus1" =: ((Var "sscan") $> (Var "add") $> 0 $> ((Var "smap") $> (Var "incr") $> (Var "seconds"))  ),
@@ -83,7 +84,7 @@ testProg  = [
  --"swsig" =: (Switch [(Var "overp5", Lam "x" $ Sig (Var "x"))] (Sig 1)),
  --SinkConnect (Var "swsig") "print",
  --"myOde" =: (Var "solveOde" $> (Lam "y" $ Sig (0-Var "y")) $> 1),
- ReadSource "rndSpikeSig" ["bernoulli", "100"],
+ "rndSpikeSig" <* "bernoulli 100",
  "rndSpike" =: (Var "eventIf" $> SigVal (Var "rndSpikeSig")),
  "preSpike" =: (Var "every" $> 0.01),
  "gsyn" =: (Var "smap" $> (Var "alpha" $> 300) $> (Var "seconds")),
@@ -102,24 +103,23 @@ testProg  = [
                                      ] $ (Var "solveOde" $> Var "cellOde" $> (-0.07))  )
                      ] (Var "vm")), -}
 
- "vm" =: (Switch [(Var "spike",  Lam "_" . Lam "_" $ Sig (-0.07)),
-                  (Var "refrac_end", Lam "tsp" . Lam "_" $ (Var "solveOdeFrom" $> (Var "tsp"+Var "dt") $> Var "cellOde" $> (-0.07)))
-                  ] $ (Var "solveOde" $> Var "cellOde" $> (-0.07))),
- "spike" =: (Var "crosses" $> (-0.04) $> Var "vm"),
- "refrac_end" =: (Var "later" $> 0.002 $> Var "spike"),
+ "vm" =: (Switch ["spike" ~> (lam "_ _" $ sig (-0.07)),
+                  "refrac_end" ~> (lam "tsp _" $ ("solveOdeFrom" $> ("tsp"+"dt") $> "cellOde" $> (-0.07)))
+                 ] ("solveOde" $> "cellOde" $> (-0.07))),
+ "spike" =: ("crosses" $> (-0.04) $> "vm"),
+ "refrac_end" =: ("later" $> 0.002 $> "spike"),
  
- SinkConnect (Var "vm") "store",
- SinkConnect (Var "spike") "store"
+ "vm" *> "store",
+ "spike" *> "store"
 
             ]
 
 solvers =  [
- "iterate" =: (Lam "f" $ Lam "s0" $ 
-          LetE ["s" #= ( 
-                        Sig (If (time .<=. (dt/2)) 
-                                    (Var "s0")
-                                    (Var "f" $> SigVal (SigDelay (Var "s") (Var "s0"))))
-                       )] (Var "s")),
+ "iterate f s0" =:
+          LetE ["s" =:  Sig (If (val "seconds" .<=. ("dt"/2)) 
+                                    ("s0")
+                                    ("f" $> val (delay "s" "s0")))
+                       ] ("s"),
  "iterateFrom" =: (Lam "t0" $ Lam "f" $ Lam "s0" $ 
           LetE ["s" #= ( 
                         Sig (If (time .<=. (Var "t0"+(dt/2))) 
@@ -148,8 +148,8 @@ hasSigProg p = fst . runTM $
 
 runTM = runTravM testProg (declsToEnv prelude)
 
-infixl 1 =:                                         
-x =: y = Let x y 
+--infixl 1 =:                                         
+--x =: y = Let x y 
 
 testTransform :: TravM () -> [Declare] -> [Declare]
 testTransform tr ds = snd . runTravM ds (declsToEnv prelude) $ tr

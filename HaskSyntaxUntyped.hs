@@ -1,12 +1,13 @@
-{-# LANGUAGE FlexibleInstances, UndecidableInstances #-} -- , MultiParamTypeClasses, FunctionalDependencies, UndecidableInstances, FlexibleContexts, GeneralizedNewtypeDeriving, NoMonomorphismRestriction  give up on types -}
+{-# LANGUAGE FlexibleInstances, OverloadedStrings #-} -- , MultiParamTypeClasses, FunctionalDependencies, UndecidableInstances, FlexibleContexts, GeneralizedNewtypeDeriving, NoMonomorphismRestriction  give up on types -}
 
-module HaskSyntax where
+module HaskSyntaxUntyped where
 
-import Expr hiding (($>))
+import Expr 
 import qualified Expr as E
 import EvalM
 import Data.List
 import Numbers
+import Data.String
 
 default (Int, Double)
 
@@ -22,6 +23,11 @@ instance Assignable Declare where
 instance Assignable (String, E) where -- LetE
     x =: y = (x, y)
 
+instance Assignable (E, E) where -- LetE
+    x =: y = (Var x, y)
+
+
+
 addLams [] e = e
 addLams (v:vs) e = addLams vs $ Lam v e
 
@@ -31,56 +37,46 @@ splitBySpaces = filter (not. null) . splitBySpaces'
 
 splitBySpaces' [] = []
 splitBySpaces' (' ':s) = splitBySpaces s
-splitBySpaces' s = let (hd, tl) = partition (/=' ') s 
+splitBySpaces' s = let (hd, tl) = span (/=' ') s 
                    in hd : splitBySpaces tl
 
-
-class ToE a where
-    toExpr :: a -> E
-
-instance ToE E where
-    toExpr = id
-
-instance ToE [Char] where
-    toExpr = Var
-
-instance ToE Int where
-    toExpr i = Const . NumV . NInt $ i
-
-instance ToE Double where
-    toExpr i = Const . NumV . NReal $ i
-
-
-sig :: ToE a => a -> E
-sig = Sig . toExpr
-
-sigVal :: ToE a => a -> E
-sigVal = SigVal . toExpr
-
-sigDelay :: (ToE a, ToE b) => a -> b-> E
-sigDelay x y = SigDelay (toExpr x) (toExpr y)
-
-x $> y = (toExpr x) E.$> (toExpr y)
-
+instance IsString E where
+    fromString s = Var s
 
 
 infixl 1 ~>                    
 
 x ~> y = (x, y)            
 
-
 true, false :: E 
 true = Const . BoolV $ True
 false = Const . BoolV $ False
 
-iff ::  (ToE p, ToE c, ToE a) =>p -> c -> a -> E
-iff p c a = If (toExpr p) (toExpr c)  (toExpr a) 
+lam :: String -> E -> E
+lam vn bod = let vars = splitBySpaces vn in 
+             addLams (reverse vars) bod
+             
+sig = Sig
+delay = SigDelay
+val = SigVal
 
-lam :: ToE b => String -> b -> E
-lam vn bod = --let vars = splitBySpaces vn in  .. addLams (reverse vars) 
-             Lam vn (toExpr bod)
 
-foo = iff true "x" "y"
+list :: [E] -> E
+list [] = Nil
+list (x:xs) = Cons x (list xs)
+
+pair x y = Pair x y
+
+foo = If true "x" "y"
 
 bar :: E
-bar = (lam "x" "x") $> 1
+bar = (lam "x y z" "x") $> 1
+
+baz :: Declare
+baz = "f x" =: "x"
+
+infixl 1 *>
+infixl 1 <*                   
+
+x *> y = SinkConnect x y            
+x <* y = ReadSource x $ splitBySpaces y            

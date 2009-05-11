@@ -71,9 +71,23 @@ data V  = BoolV Bool
         | ListV [V]
 	| LamV (V->EvalM V)
         | ULamV (forall a. V->(V->a)->a)
-	| SigV Double Double(Double->V)
+	| SigV Double Double (Double->V)
 	| USigV (forall a. Double->(V->a)->a)
+        | CubeV V V V --loc and shape
         | Unit
+
+data T  = BoolT
+	| NumT
+	| PairT T T
+	| LamT T T
+	| ListT T
+	| AnyT
+	| StringT
+	| SignalT T
+	| EventT T
+	| EpochT T
+        | ShapeT 
+	deriving (Show, Eq)
 
 instance Eq V where
     BoolV x == BoolV y = x==y
