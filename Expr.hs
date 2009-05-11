@@ -90,6 +90,7 @@ depth (SigVal _) = 1
 depth _ = 2
 
 ppa :: E-> String
+ppa p@(Pair _ _) = pp p 
 ppa e | depth e > 1 = "("++pp e++")"
       | otherwise = pp e
 
@@ -98,7 +99,8 @@ pp (If p c a) = concat ["if ", pp p, " then ", ppa c, " else ", ppa a]
 pp (Lam n e) = concat ["\\", n, "->", pp e]
 pp (Var n) = n
 pp (Const v) = show v
-pp (App f a) = ppa f ++ " $ " ++ ppa a
+pp (App f a) = ppa f ++ " " ++ ppa a
+pp (Pair (Pair x y) z) = concat ["(", ppa x , ", ", ppa y,", ", ppa z, ")"]
 pp (Pair f s) = concat ["(", ppa f , ", ", ppa s, ")"]
 pp (Nil) = "[]"
 pp (Cons car Nil) = "[ "++pp car++" ]" -- ppa car ++ ":" ++ ppa cdr
