@@ -132,7 +132,7 @@ pp (LetE les efinal) = concat ["let ", concat $ ppes les, " in ", ppa efinal]
 pp (Box d) = "cube "++ppa d
 pp (Translate t e) = "translate "++ppa t++" "++ppa e
 pp (Colour t e) = "colour "++ppa t++" "++ppa e
-
+pp (Case tst pats) = "case "++pp tst++" of "++ concatMap (\(pat,e)-> ppPat pat++" -> "++pp e++"; ") pats
 pp e = show e
 
 pp2op e1 op e2 = ppa e1 ++ op ++ ppa e2
@@ -228,6 +228,8 @@ freeVars e = fv [] e
           fv e (Const _) = []
           fv e (Nil) = []
           fv e (LetE ses er) = fv (map fst ses++e) er ++ concatMap (fv (map fst ses++e) . snd) ses 
+          --fv e (Case te pats) = fv (map snd pats++e) er ++ concatMap (fv (map fst ses++e) . snd) ses 
+          
           --fv e (expr) = []
 
 mapE :: (E-> E)-> E -> E
@@ -257,6 +259,9 @@ mapE f (LetE ses er) =
     f (LetE (map (\(n,e)-> (n, mapE f e)) ses) (mapE f er))
 mapE f (Switch ses er) = 
     f (Switch (map (\(e1,e2)-> (mapE f e1, mapE f e2)) ses) (mapE f er))
+mapE f (Case te pats) = 
+    f (Case (mapE f te) (map (\(p,e)-> (p, mapE f e)) pats))
+
 
 mapE f (Box s1) = f (Box (mapE f s1))
 mapE f (Translate s1 s2) = f (Translate (mapE f s1) (mapE f s2))
@@ -264,7 +269,7 @@ mapE f (Colour s1 s2) = f (Colour (mapE f s1) (mapE f s2))
 mapE f (HasType t s2) = f (HasType t (mapE f s2))
 
 
-mapE f e = error $ "mapE: unknown expr "++show e 
+--mapE f e = error $ "mapE: unknown expr "++show e 
 
 --mapE f e = f e
 
@@ -308,7 +313,7 @@ instance Floating E where
 
 
 
-data Pat = 	  PatAny String
+data Pat = 	  PatVar String
 		| PatIgnore
 		| PatLit E
 		| PatPair Pat Pat
@@ -316,6 +321,13 @@ data Pat = 	  PatAny String
 		| PatCons Pat Pat
 		-- | PatGuard E Pat
 		deriving (Show, Eq)
+
+ppPat (PatVar n) = n
+ppPat (PatIgnore ) = "_"
+ppPat (PatLit e) = pp e
+ppPat (PatPair x y) = "("++ppPat x++","++ppPat y++")"
+ppPat (PatNil) = "[]"
+ppPat (PatCons x xs) = "("++ppPat x++":"++ppPat xs++")"
 
 --sugar
 
