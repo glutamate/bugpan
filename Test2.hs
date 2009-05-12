@@ -19,8 +19,16 @@ import Stages
 import Data.List
 import Database
 import HaskSyntaxUntyped
+import UnitTesting hiding (evalsTo)
 
-type Program = [Declare] 
+evalsTo = evalsToInContext (evalManyAtOnce $ declsToEnv prelude)
+
+test_map_fst = runTests [
+                  "map" $> "incr" $> list [1,2,3] `evalsTo` ListV [2, 3, 4]
+                 ,"fst" $> (Pair 1 2) `evalsTo` 1
+                 ,"snd" $> (Pair 1 2) `evalsTo` 2]
+
+type Program = [Declare]
 
 
 mapV = LamV (\lf -> do f <- unLamV lf
@@ -51,8 +59,8 @@ prelude = [
  "every ivl" =: ("eventIf" $> ("fraction" $> ((val $ "seconds")/"ivl") .<. "dt")),
  "map" =: (Const mapV),
  "sum" =: (Const . LamV $ \vs -> sum `fmap` unListV vs),
- "fst" =: (Const. LamV $ \(PairV v1 v2) -> return v1),
- "snd" =: (Const. LamV $ \(PairV v1 v2) -> return v2),
+ "fst pr" =: (Case "pr" [(PatPair (PatVar "x") (PatIgnore), "x")]),
+ "snd pr" =: (Case "pr" [(PatPair (PatIgnore) (PatVar "x"), "x")]),
  "min x y" =: (If ("x" .>. "y") "y" "x"),
  "max x y" =: (If ("x" .<. "y") "y" "x"),
  "enow es" =: (("enowAux" $> (val $ "seconds") $> "dt" $> "es")),
