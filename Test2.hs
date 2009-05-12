@@ -28,14 +28,10 @@ test_map_fst = runTests [
                  ,"fst" $> (Pair 1 2) `evalsTo` 1
                  ,"snd" $> (Pair 1 2) `evalsTo` 2]
 
+test_sum = runTests ["sum" $> list [1,2,3] `evalsTo` 6]
+
 type Program = [Declare]
 
-
-mapV = LamV (\lf -> do f <- unLamV lf
-                            --return (LamV (unListV >>= sequence. map f >>= return . ListV))
-                       return . LamV $ \lst -> do ls <- unListV lst
-                                                  vs <- sequence $ map f ls
-                                                  return $ ListV vs)
 
 prelude = [
  "smap f s" =: (sig $ "f" $> val "s"),
@@ -57,8 +53,11 @@ prelude = [
  "floor" =: (Const . LamV $ \(NumV n)->return . NumV $ floorNum n),
  "fraction x" =: ("x" - ("floor" $> "x")),
  "every ivl" =: ("eventIf" $> ("fraction" $> ((val $ "seconds")/"ivl") .<. "dt")),
- "map" =: (Const mapV),
- "sum" =: (Const . LamV $ \vs -> sum `fmap` unListV vs),
+ "map f lst" =: (Case "lst" [(PatNil, Nil),
+                             (PatCons (PatVar "x") (PatVar "xs"), Cons ("f" $> "x") ("map" $> "f" $> "xs"))]),
+ "sum lst" =: (Case "lst" [(PatNil, 0),
+                           (PatCons (PatVar "x") (PatVar "xs"), "x"+("sum" $> "xs"))]),
+ --"sum" =: (Const . LamV $ \vs -> sum `fmap` unListV vs),
  "fst pr" =: (Case "pr" [(PatPair (PatVar "x") (PatIgnore), "x")]),
  "snd pr" =: (Case "pr" [(PatPair (PatIgnore) (PatVar "x"), "x")]),
  "min x y" =: (If ("x" .>. "y") "y" "x"),
