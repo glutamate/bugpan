@@ -211,7 +211,7 @@ queryM q e@(Cons e1 e2) =concatM [ q e, m e1, m e2]
 	where m = queryM q
 queryM q e@(M1 _ e1) = concatM [q e, m e1]
 	where m = queryM q
-queryM q e@(M2 _ e1 e2) = concatM [q e, m e1, m e2]
+queryM q e@(M2 _ e1 e2) = concatM [q e, m e1, m e2] 
 	where m = queryM q
 queryM q e@(Cmp _ e1 e2) = concatM [q e, m e1, m e2]
 	where m = queryM q
@@ -246,8 +246,10 @@ queryM q e@(Colour e1 e2) = concatM [q e, m e1, m e2]
 	where m = queryM q
 queryM q e@(HasType _ e1) = concatM [q e, m e1]
 	where m = queryM q
+queryM q e@(Case ce cs) = concatM [q e, q ce, concat `fmap` mapM (\(p,ep)-> withBvars (patIntroducedVars p) $ m ep) cs]
+	where m = queryM q 
 
-queryM q e = fail $ "queryM: unknown expr "++show  e 
+--queryM q e = fail $ "queryM: unknown expr "++show  e 
 
 
 mapEM :: (E-> TravM E)-> E -> TravM E
@@ -283,11 +285,17 @@ mapEM f e = mapEM' e
               return LetE `ap` mapM (\(n,e)-> do e' <- m e
                                                  return (n, e')) ses 
                           `ap` m er) >>= f
+          mapEM' (Case e pats) = (return Case `ap` 
+                                         m e `ap` 
+                                         mapM (\(pat, ep)-> 
+                                               (pair pat) `fmap` (withBvars (patIntroducedVars pat) $ m ep)) pats 
+                          ) >>= f
           mapEM' (Switch ses er) = (
               return Switch `ap` mapM (\(e1,e2)-> do e1' <- m e1
                                                      e2' <- m e2
                                                      return (e1',e2')) ses 
                             `ap` m er) >>= f
+          pair x y = (x,y)
           -- mapE f e = error $ "mapE: unknown expr "++show e 
               
 

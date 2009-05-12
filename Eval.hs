@@ -173,12 +173,36 @@ eval es (Colour col shp) = do
 
 
 eval es (Const v) = return v 
+
+eval es (Case e []) = fail $ "error in pattern match"
+eval es (Case e ((pat, e'):pats)) = do
+  v <- eval es e
+  case match pat v of
+    Just env -> eval (extsEnv env es) e'
+    Nothing -> eval es (Case (Const v) pats)
+
 eval es e = fail $"unknown expr: "++show e
 
 
 --applyEq :: E -> E ->(forall a. Eq a => a->a->Bool) -> E
 --applyEq (CNum n1) (CNum n2) op = liftBool $ op n1 n2 
 
+match :: Pat -> V -> Maybe [(String, V)]
+match (PatVar nm) vl = Just [(nm, vl)]
+match (PatIgnore) _ = Just []
+match (PatLit vl) vl' | vl == vl' = Just []
+                      | otherwise = Nothing
+match (PatNil) (ListV []) = Just []
+match (PatNil) _ = Nothing
+match (PatPair px py) (PairV vx vy) = do
+  boundx <- match px vx
+  boundy <- match py vy
+  return $ boundx++boundy
+match (PatPair px py) _ = Nothing
+match (PatCons pcar pcdr) (ListV (x:xs)) = do
+  boundx <- match pcar x
+  boundxs <- match pcdr $ ListV xs
+  return $ boundx++boundxs
 
 applyCmp :: EvalS -> E -> E ->(NumVl->NumVl->Bool) -> EvalM V
 applyCmp es (e1) (e2) op

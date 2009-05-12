@@ -228,7 +228,7 @@ freeVars e = fv [] e
           fv e (Const _) = []
           fv e (Nil) = []
           fv e (LetE ses er) = fv (map fst ses++e) er ++ concatMap (fv (map fst ses++e) . snd) ses 
-          --fv e (Case te pats) = fv (map snd pats++e) er ++ concatMap (fv (map fst ses++e) . snd) ses 
+          fv e (Case te pats) = fv e te ++ concatMap (\(pat, ep) -> fv (patIntroducedVars pat++e) ep) pats
           
           --fv e (expr) = []
 
@@ -315,7 +315,7 @@ instance Floating E where
 
 data Pat = 	  PatVar String
 		| PatIgnore
-		| PatLit E
+		| PatLit V
 		| PatPair Pat Pat
 		| PatNil
 		| PatCons Pat Pat
@@ -324,10 +324,16 @@ data Pat = 	  PatVar String
 
 ppPat (PatVar n) = n
 ppPat (PatIgnore ) = "_"
-ppPat (PatLit e) = pp e
+ppPat (PatLit e) = show e
 ppPat (PatPair x y) = "("++ppPat x++","++ppPat y++")"
 ppPat (PatNil) = "[]"
 ppPat (PatCons x xs) = "("++ppPat x++":"++ppPat xs++")"
+
+patIntroducedVars (PatVar nm) = [nm]
+patIntroducedVars (PatCons h t)= patIntroducedVars h ++ patIntroducedVars t
+patIntroducedVars (PatPair h t)= patIntroducedVars h ++ patIntroducedVars t
+patIntroducedVars _ = []
+
 
 --sugar
 
