@@ -67,20 +67,8 @@ rightMouseDown = EvtSrc rightMouseDown'
 
 -}
 
-screenShapesTVar :: TVar V
-{-# NOINLINE screenShapesTVar #-}
-screenShapesTVar = globalTVar $ ListV []
 
-screenPush :: SigSink
-screenPush = SinkRealTime $ writeTV screenShapesTVar 
-
-quitApplicationTVar :: TVar Bool
-{-# NOINLINE quitApplicationTVar #-}
-quitApplicationTVar = unsafePerformIO $ newTVarIO False
-quit = EvtSink $ \t a -> writeTV quitApplicationTVar True 
-
-
-globalTimeStartTVar:: TVar ClockTime
+{-globalTimeStartTVar:: TVar ClockTime
 {-# NOINLINE globalTimeStartTVar #-}
 globalTimeStartTVar = unsafePerformIO $ newTVarIO (undefined)
 
@@ -91,7 +79,7 @@ globalSecsNow = do tnow <- getClockTime
                    tstart <- readTV globalTimeStartTVar
                    return $ diffInS tnow tstart                  
     where diffInS (TOD t1s t1ps) (TOD t2s t2ps) = (fromInteger $ (t1s-t2s)*1000*1000 + ((t1ps-t2ps) `div` (1000*1000))) / 1000000
-                   
+                   -}
 readTV = atomically . readTVar
 writeTV vr vl = atomically $ writeTVar vr vl
 consTV vr vl = atomically $ do vls <- readTVar vr
@@ -101,14 +89,14 @@ takeOutTV p tv = atomically $ do vls <- readTVar tv
                                  writeTVar tv (stay)
                                  return go
 
-runGlSignals = do
+runGlSignals dispPull quitPull = do
   (progname,_) <- getArgsAndInitialize
   initialDisplayMode $= [DoubleBuffered]
   createWindow "Hello World"
   reshapeCallback $= Just reshape
   actionOnWindowClose $= ContinueExectuion
 
-  displayCallback $= display
+  displayCallback $= (display dispPull quitPull)
   idleCallback $= Just idle
   keyboardMouseCallback $= Just keyboardMouse
   motionCallback  $= Just onMouse
@@ -130,14 +118,14 @@ keyboardMouse key state modifiers position = return ()
 onMouse (Position px py) = do writeTV mouseXTVar (fromInteger . toInteger $ px) 
                               writeTV mouseYTVar (fromInteger . toInteger $ py) 
 
-display = do
+display dispPull quitPull = do
  clear [ColorBuffer]
  loadIdentity
- quitApp<-readTV quitApplicationTVar
+ quitApp<-quitPull
  if quitApp 
     then leaveMainLoop
     else return ()
- ListV shps <- readTV screenShapesTVar
+ ListV shps <- dispPull
  mapM_ drawShape shps
 
  swapBuffers
@@ -221,3 +209,5 @@ unitCube = do
     glVertex3f( x,-y, 1.0f);	// Bottom Left Of The Quad (Right)
     glVertex3f( x,-y,-1.0f);	// Bottom Right Of The Quad (Right)
 -}
+
+

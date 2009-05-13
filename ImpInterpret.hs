@@ -9,6 +9,7 @@ import Control.Monad.State.Strict
 import Data.IORef
 import qualified Data.HashTable as H
 import Data.Maybe
+import OpenGL
 --import Array
 
 evalS e =  extsEnv e $ EvalS 1 1 Nothing []
@@ -27,13 +28,25 @@ exec stmts dt tmax =
         outNms = [ nm | SigSnkConn nm "print" <- prg ]
         nsteps :: Int
         nsteps = round $ tmax/dt
-        ts = map ((*dt) . realToFrac) [0..nsteps] in
+        ts = map ((*dt) . realToFrac) [0..nsteps] 
+        screenVars = [ nm | SigSnkConn nm "screen" <- prg ]
+        prgNoScreen = filter (noScreen screenVars) prg
+        prgScreen = catMaybes . map unUpdateRule . filter (not . noScreen screenVars) $  prg
+        runRealTime = True
+    in
     do envHT <- H.fromList H.hashString (initSigs++initEvts++fixEnv)
+       done <- newIORef False
+       let quitPull = readIORef done
+
+           screenPull = do es <- evalS `fmap` H.toList envHT                       
+                           return $ map (unEvalM . eval es) prgScreen
+                             
+
        forM_ outNms $ putStr . (++"\t")
        putStr "\n"
        forM_ ts $ \t-> do
          H.update envHT "seconds" (NumV . NReal $ t)
-         forM_ prg $ \stm -> do 
+         forM_ prgNoScreen $ \stm -> do 
                          sevals <- H.toList envHT                       
                          let es = evalS sevals 
                          case stm of 
@@ -62,7 +75,7 @@ exec stmts dt tmax =
                            SigSnkConn nm "print" -> do 
                                     v <-fromJust `fmap` H.lookup envHT nm
                                     putStr $ show v++"\t"
-                                    return ()                                     
+                                    return ()              
                            SigSnkConn sn bn@('#':bufnm) -> do 
                                     buf <- H.lookup envHT bn
                                     val <- fromJust `fmap` H.lookup envHT sn
@@ -87,6 +100,14 @@ exec stmts dt tmax =
          H.update envHT ('#':bufn) . SigV 0 tmax $ \t-> arr!!(round $ t/dt)
        H.toList envHT
          
+
+noScreen _ (SigSnkConn _ "screen") = False
+noScreen nms (SigUpdateRule nm _) | nm `elem` nms = False
+                                  | otherwise = True
+noScreen _ _ = True
+
+unUpdateRule (SigUpdateRule _ e) = Just e
+unUpdateRule _ = Nothing
 
 pair a b = (a,b)
 
