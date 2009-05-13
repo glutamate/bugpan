@@ -1,7 +1,7 @@
-{-# LANGUAGE GADTs, OverlappingInstances #-}
-{-# OPTIONS -fglasgow-exts -fallow-undecidable-instances -fno-monomorphism-restriction #-}
+{-# LANGUAGE GADTs, OverlappingInstances, UndecidableInstances, NoMonomorphismRestriction #-}
+{-# OPTIONS -fglasgow-exts #-}
 
-module OpenGL where
+module OpenGL where 
 
 import Graphics.Rendering.OpenGL hiding (Sink, get)
 import Graphics.UI.GLUT hiding (Sink, get)

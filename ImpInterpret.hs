@@ -36,7 +36,7 @@ exec stmts dt tmax =
         screenVars = [ nm | SigSnkConn nm "screen" <- prg ]
         prgNoScreen = filter (noScreen screenVars) prg
         prgScreen = catMaybes . map unUpdateRule . filter (not . noScreen screenVars) $  prg
-        runRealTime = True
+        runRealTime = not . null $ prgScreen
     in
     do envHT <- H.fromList H.hashString (initSigs++initEvts++fixEnv)
        started <- newIORef False
@@ -55,15 +55,15 @@ exec stmts dt tmax =
        putStr "\n"
 
        --wait a bit and init screen
+       when (not . null $ prgScreen ) (forkIO (runGlSignals screenPull quitPull)  >> waitSecs 0.5)
        
-       when (not . null $ prgScreen ) (forkIO (runGlSignals screenPull quitPull)  >> return ())
-       --wait 500 ms
-       threadDelay . round $ 500*1000
        --get tnow
-
+       t0 <- getClockTime
 
        forM_ ts $ \t-> do
          -- wait until t
+         when (runRealTime) (waitUntil t0 t)
+
          H.update envHT "seconds" (NumV . NReal $ t)
          writeIORef started True
          forM_ prgNoScreen $ \stm -> do 
@@ -120,13 +120,24 @@ exec stmts dt tmax =
          let arr = reverse buf
          H.update envHT ('#':bufn) . SigV 0 tmax $ \t-> arr!!(round $ t/dt)
        H.toList envHT
+
+waitSecs :: Double -> IO ()
+waitSecs s = threadDelay . round $ s*1000*1000
          
-globalSecsNow :: IO Double
+{-globalSecsNow :: IO Double
 globalSecsNow = do tnow <- getClockTime
                    tstart <- readTV globalTimeStartTVar
-                   return $ diffInS tnow tstart                  
-    where diffInS (TOD t1s t1ps) (TOD t2s t2ps) = (fromInteger $ (t1s-t2s)*1000*1000 + ((t1ps-t2ps) `div` (1000*1000))) / 1000000
+                   return $ diffInS tnow tstart   -}               
 
+diffInS (TOD t1s t1ps) (TOD t2s t2ps) = (fromInteger $ (t1s-t2s)*1000*1000 + ((t1ps-t2ps) `div` (1000*1000))) / 1000000
+
+
+
+waitUntil t0 s = do tn <- getClockTime
+                    let diff = diffInS tn t0
+                    if diff > 0
+                       then return ()
+                      else threadDelay . round $ (diff)*1000*1000
 
 noScreen _ (SigSnkConn _ "screen") = False
 noScreen nms (SigUpdateRule nm _) | nm `elem` nms = False

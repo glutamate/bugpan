@@ -102,15 +102,16 @@ testProg  = [
                                      ] $ ("solveOde" $> "cellOde" $> (-0.07))  )
                      ] ("vm")), -}
 
- --"vm" =: (Switch ["spike" ~> (lam "_ _" $ sig (-0.07)),
- --                 "refrac_end" ~> (lam "tsp _" $ ("solveOdeFrom" $> ("tsp"+"dt") $> "cellOde" $> (-0.07)))
- --                ] ("solveOde" $> "cellOde" $> (-0.07))),
- --"spike" =: ("crosses" $> (-0.04) $> "vm"),
- --"refrac_end" =: ("later" $> 0.002 $> "spike"),
+ "vm" =: (Switch ["spike" ~> (lam "_ _" $ sig (-0.07)),
+                  "refrac_end" ~> (lam "tsp _" $ ("solveOdeFrom" $> ("tsp"+"dt") $> "cellOde" $> (-0.07)))
+                 ] ("solveOde" $> "cellOde" $> (-0.07))),
+ "spike" =: ("crosses" $> (-0.04) $> "vm"),
+ "refrac_end" =: ("later" $> 0.002 $> "spike"),
  
- --"vm" *> "store",
- --"spike" *> "store",
+ "vm" *> "store",
+ "spike" *> "store"]
 
+loomProg = [
  --looming
  "lov" =: 0.04,
  "l" =: 0.298,
@@ -120,8 +121,8 @@ testProg  = [
  "distance" =: sig ("min" $> ("v"*(val "seconds"-5)) $> (-0.17)),
  "black" =: Pair (Pair 0 0) 0,
  "loomObj" =: sig (Colour "black" $ Translate (Pair (Pair 0 0) (val "distance")) ("centreCube" $> "l")),
- "loomObj" *> "print"
-            ]
+ "loomObj" *> "screen",
+ "distance" *> "print"]
 
 solvers =  [
  "iterate f s0" =:
@@ -151,7 +152,7 @@ hasSigProg p = fst . runTM $
                forM p $ \(Let n e)-> do hs <- hasSig e
                                         return (n, hs)
 
-runTM = runTravM testProg (declsToEnv prelude)
+runTM = runTravM loomProg (declsToEnv prelude)
 
 --infixl 1 =:                                         
 --x =: y = Let x y 
@@ -188,7 +189,7 @@ test = do putStrLn "\ninitial"
           let stmts = compile (complPrel++prg)
           mapM_ (putStrLn . ppStmt) $ stmts
           putStrLn "\nrunning"
-          --execInStages (complPrel++prg) 0.001 0.03
+          execInStages (complPrel++prg) 0.001 0.03
         
 test1 = runNtimes 3 0.001 0.03 0.1 testProg prelEnv 
   --let compPrel = evalManyAtOnce prelEnv
