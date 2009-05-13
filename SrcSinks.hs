@@ -23,10 +23,10 @@ emptyDev d = Device ru ru ru ru ru d
 
 secondsSig = emptyDev $ SrcAnyTimePure (\t->NumV $ NReal t)
 
-printSnk = emptyDev $ SnkAnyTime (\t v-> do putStrLn $ "at "++show t++": "++show v)
+printSink = emptyDev $ SinkAnyTime (\t v-> do putStrLn $ "at "++show t++": "++show v)
 
-plotSnk 
-    = emptyDev $ SnkAllInOneGoAnytimeAnyRate 
+plotSink 
+    = emptyDev $ SinkAllInOneGoAnytimeAnyRate 
       (\vpts-> do
          let pts = map (\(t,v) -> (t, unsafeVToDbl v)) vpts
 --         forkIO $ plotGraph (pts%Lines)
@@ -38,22 +38,25 @@ data SigSrc =   SrcAllInOneGo (IO [V]) Int
 		| SrcAnyTime (Double -> IO V)
                 | SrcAnyTimePure (Double -> V)
 
-data SigSnk =   SnkAllInOneGoBefore ([V] -> IO ()) 
-		| SnkAllInOneGoAnytime ([V] -> IO ()) 
-		| SnkAllInOneGoAnytimeAnyRate ([(Double, V)] -> IO ()) 
-		-- | SnkRealTime (a-> IO ())
-		| SnkAnyTime (Double -> V -> IO ())
+data SigSink =   SinkAllInOneGoBefore ([V] -> IO ()) 
+		| SinkAllInOneGoAnytime ([V] -> IO ()) 
+		| SinkAllInOneGoAnytimeAnyRate ([(Double, V)] -> IO ()) 
+		-- | SinkRealTime (a-> IO ())
+		| SinkAnyTime (Double -> V -> IO ())
+                | SinkRealTime (V->IO ())
+                | SinkPull (IO V)
 
-loadBefore (Device _ _ _ _ _ (SnkAllInOneGoBefore _)) = True
+data EventSink = EvtSink (Double -> V -> IO ())
+
+loadBefore (Device _ _ _ _ _ (SinkAllInOneGoBefore _)) = True
 loadBefore _ = False
 
-
-applyVlToSnk :: [(Double, V)] -> Device SigSnk -> IO ()
-applyVlToSnk vls (Device _ _ _ _ _  (SnkAnyTime teio)) 
+applyVlToSink :: [(Double, V)] -> Device SigSink -> IO ()
+applyVlToSink vls (Device _ _ _ _ _  (SinkAnyTime teio)) 
     = forM_ vls $ uncurry teio
-applyVlToSnk vls (Device _ _ _ _ _  (SnkAllInOneGoAnytime teio)) 
+applyVlToSink vls (Device _ _ _ _ _  (SinkAllInOneGoAnytime teio)) 
     = teio $ map snd vls
-applyVlToSnk vls (Device _ _ _ _ _  (SnkAllInOneGoAnytimeAnyRate teio)) 
+applyVlToSink vls (Device _ _ _ _ _  (SinkAllInOneGoAnytimeAnyRate teio)) 
     = teio (vls)
 
 
