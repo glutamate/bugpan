@@ -44,8 +44,10 @@ exec stmts dt tmax =
        let screenPull = do 
              --running <- readIORef started
             
-                 (do es <- evalS `fmap` H.toList envHT                       
-                     return . ListV $ map (unEvalM . eval es) prgScreen)
+                  do es <- evalS `fmap` H.toList envHT
+                     Just t <- H.lookup envHT "seconds"
+                     putStrLn $ "pull at "++ show t
+                     return . ListV $ map (unEvalM . eval es) prgScreen
                  
                              
 
@@ -57,13 +59,12 @@ exec stmts dt tmax =
        
        --get tnow
        t0 <- getClockTime
-
+       --print t0      
        forM_ ts $ \t-> do
          -- wait until t
          when (runRealTime) (waitUntil t0 t)
 
          H.update envHT "seconds" (NumV . NReal $ t)
-         tryPutMVar running ()
          forM_ prgNoScreen $ \stm -> do 
                          sevals <- H.toList envHT                       
                          let es = evalS sevals 
@@ -106,7 +107,9 @@ exec stmts dt tmax =
                                                       H.update envHT nm vl
                                                       return ()
                            _ -> return ()
+         tryPutMVar running ()
          when (not . null $ outNms) $ putStr "\n"
+       --done
        takeMVar running 
        forM_ (map fst initEvts) $ \enm-> do
          ListV es <- fromJust `fmap` H.lookup envHT enm
@@ -119,8 +122,6 @@ exec stmts dt tmax =
          H.update envHT ('#':bufn) . SigV 0 tmax $ \t-> arr!!(round $ t/dt)
        H.toList envHT
 
-waitSecs :: Double -> IO ()
-waitSecs s = threadDelay . round $ s*1000*1000
          
 {-globalSecsNow :: IO Double
 globalSecsNow = do tnow <- getClockTime
@@ -129,14 +130,17 @@ globalSecsNow = do tnow <- getClockTime
 
 diffInS (TOD t1s t1ps) (TOD t2s t2ps) = (fromInteger $ (t1s-t2s)*1000*1000 + ((t1ps-t2ps) `div` (1000*1000))) / 1000000
 
+waitSecs :: Double -> IO ()
+waitSecs s = threadDelay . round $ s*1000*1000
 
 
 waitUntil t0 s = do tn <- getClockTime
                     let diff = diffInS tn t0
-                    if diff > 0
-                       then return ()
-                      else threadDelay . round $ (diff)*1000*1000
-
+                    --print diff
+                    if diff < 0
+                       then return () 
+                       else threadDelay . round $ (diff)*1000*1000
+ 
 noScreen _ (SigSnkConn _ "screen") = False
 noScreen nms (SigUpdateRule nm _) | nm `elem` nms = False
                                   | otherwise = True

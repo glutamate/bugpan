@@ -133,8 +133,9 @@ display dispPull = do
  loadIdentity
  ListV shps <- dispPull
  mapM_ drawShape shps
-
+ --threadDelay $ 1000*1000
  swapBuffers
+ --swapBuffers
 
 
 fromPair3v (PairV (PairV x y) z) = (fromRational . toRational . unsafeVToDbl $ x, unsafeVToDbl $ y, unsafeVToDbl $ z)

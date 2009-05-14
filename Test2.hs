@@ -2,7 +2,7 @@
 
 module Main where
 
-import Expr
+import Expr 
 import Eval
 import EvalM
 --import Run
@@ -122,8 +122,8 @@ loomProg = [
  "black" =: Pair (Pair 0 0) 0,
  "green" =: Pair (Pair 0 1) 0,
  "loomObj" =: sig (Colour "black" $ Translate (Pair (Pair 0 0) (val "distance")) ("centreCube" $> "l")),
- "loomObj" *> "screen",
- "distance" *> "print"
+ "loomObj" *> "screen"
+ --,"seconds" *> "print"
  --"loomObj" *> "print"
   ]
 
