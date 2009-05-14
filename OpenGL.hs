@@ -4,7 +4,7 @@
 module OpenGL where 
 
 import Graphics.Rendering.OpenGL hiding (Sink, get)
-import Graphics.UI.GLUT hiding (Sink, get)
+import Graphics.UI.GLFW -- hiding (Sink, get)
 import Data.IORef
 --import qualified Allegro.Shape as S
 import Control.Concurrent.STM
@@ -19,7 +19,7 @@ import Data.Maybe
 import Data.List (partition)
 import Control.Monad.Trans
 import Control.Monad.State.Strict
-import EvalM
+import EvalM 
 import SrcSinks
 
 --import Allegro.Vector
@@ -89,42 +89,48 @@ takeOutTV p tv = atomically $ do vls <- readTVar tv
                                  writeTVar tv (stay)
                                  return go
 
-runGlSignals dispPull quitPull = do
-  (progname,_) <- getArgsAndInitialize
-  initialDisplayMode $= [DoubleBuffered]
-  createWindow "Hello World"
-  reshapeCallback $= Just reshape
-  actionOnWindowClose $= ContinueExectuion
+runGlSignals dispPull runningMVar = do
+  initialize
+  openWindow (Size 640 480) [
+                  DisplayRGBBits 8 8 8,
+                  DisplayAlphaBits 8,
+                  DisplayDepthBits 24,
+                  DisplayStencilBits 0
+                 ] Window 
+  windowTitle $= "Bugpan screen"
+  swapInterval $= 1
+  clearColor $= Color4 0 0.23 0 0
+  clear [ColorBuffer]
+  swapBuffers
+  --wait until running
+  readMVar runningMVar
+  untilMVEmpty runningMVar $ display dispPull 
 
-  displayCallback $= (display dispPull quitPull)
-  idleCallback $= Just idle
-  keyboardMouseCallback $= Just keyboardMouse
-  motionCallback  $= Just onMouse
-  passiveMotionCallback  $= Just onMouse
-  --forkIO $ runSigProgramIO 0.1 10 testProg
-  mainLoop
+untilMVEmpty mv ma = do empty <- isEmptyMVar mv
+                        if empty
+                           then return ()
+                           else ma >> untilMVEmpty mv ma
+  
 
-reshape s@(Size w h) = do 
+{-reshape s@(Size w h) = do 
   viewport $= (Position 0 0, s)
   postRedisplay Nothing
 
 idle = do
     postRedisplay Nothing
-
+-}
 --keyboardMouse (MouseButton LeftButton) (Down) _ _ = globalSecsNow >>= consTV leftMouseDownTVar
 --keyboardMouse (MouseButton RightButton) (Down) _ _ = globalSecsNow >>= consTV rightMouseDownTVar
-keyboardMouse key state modifiers position = return ()
 
-onMouse (Position px py) = do writeTV mouseXTVar (fromInteger . toInteger $ px) 
-                              writeTV mouseYTVar (fromInteger . toInteger $ py) 
-
-display dispPull quitPull = do
+display dispPull = do
  clear [ColorBuffer]
+ matrixMode $= Projection
  loadIdentity
- quitApp<-quitPull
- if quitApp 
-    then leaveMainLoop
-    else return ()
+ frustum (-0.2)  0.2  (-0.15)  0.15  0.163  100.0
+         
+ matrixMode $= Modelview 0
+-- loadIdentity
+ loadIdentity
  ListV shps <- dispPull
  mapM_ drawShape shps
 
@@ -180,34 +186,3 @@ unitCube = do
     vertex $ vertex3  1.0  1.0  1.0	-- Top Left Of The Quad (Right)
     vertex $ vertex3  1.0 (-1.0)  1.0	-- Bottom Left Of The Quad (Right)
     vertex $ vertex3  1.0 (-1.0) (-1.0)	-- Bottom Right Of The Quad (Right)
-
-
-
-{-
-    glVertex3f( x, y,-1.0f);	// Top Right Of The Quad (Top)
-    glVertex3f(-x, y,-1.0f);	// Top Left Of The Quad (Top)
-    glVertex3f(-x, y, 1.0f);	// Bottom Left Of The Quad (Top)
-    glVertex3f( x, y, 1.0f);	// Bottom Right Of The Quad (Top)
-    glVertex3f( x,-y, 1.0f);	// Top Right Of The Quad (Bottom)
-    glVertex3f(-x,-y, 1.0f);	// Top Left Of The Quad (Bottom)
-    glVertex3f(-x,-y,-1.0f);	// Bottom Left Of The Quad (Bottom)
-    glVertex3f( x,-y,-1.0f);	// Bottom Right Of The Quad (Bottom)
-    glVertex3f( x, y, 1.0f);	// Top Right Of The Quad (Front)
-    glVertex3f(-x, y, 1.0f);	// Top Left Of The Quad (Front)
-    glVertex3f(-x,-y, 1.0f);	// Bottom Left Of The Quad (Front)
-    glVertex3f( x,-y, 1.0f);	// Bottom Right Of The Quad (Front)
-    glVertex3f( x,-y,-1.0f);	// Top Right Of The Quad (Back)
-    glVertex3f(-x,-y,-1.0f);	// Top Left Of The Quad (Back)
-    glVertex3f(-x, y,-1.0f);	// Bottom Left Of The Quad (Back)
-    glVertex3f( x, y,-1.0f);	// Bottom Right Of The Quad (Back)
-    glVertex3f(-x, y, 1.0f);	// Top Right Of The Quad (Left)
-    glVertex3f(-x, y,-1.0f);	// Top Left Of The Quad (Left)
-    glVertex3f(-x,-y,-1.0f);	// Bottom Left Of The Quad (Left)
-    glVertex3f(-x,-y, 1.0f);	// Bottom Right Of The Quad (Left)
-    glVertex3f( x, y,-1.0f);	// Top Right Of The Quad (Right)
-    glVertex3f( x, y, 1.0f);	// Top Left Of The Quad (Right)
-    glVertex3f( x,-y, 1.0f);	// Bottom Left Of The Quad (Right)
-    glVertex3f( x,-y,-1.0f);	// Bottom Right Of The Quad (Right)
--}
-
-

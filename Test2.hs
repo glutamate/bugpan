@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Test2 where
+module Main where
 
 import Expr
 import Eval
@@ -121,9 +121,11 @@ loomProg = [
  "distance" =: sig ("min" $> ("v"*(val "seconds"-5)) $> (-0.17)),
  "black" =: Pair (Pair 0 0) 0,
  "green" =: Pair (Pair 0 1) 0,
- "loomObj" =: sig (Colour "green" $ Translate (Pair (Pair 0 0) (val "distance")) ("centreCube" $> "l")),
+ "loomObj" =: sig (Colour "black" $ Translate (Pair (Pair 0 0) (val "distance")) ("centreCube" $> "l")),
  "loomObj" *> "screen",
- "distance" *> "print"]
+ "distance" *> "print"
+ --"loomObj" *> "print"
+  ]
 
 solvers =  [
  "iterate f s0" =:
@@ -179,7 +181,7 @@ allTransforms = do
 
 prelEnv = declsToEnv prelude
 
-test = do putStrLn "\ninitial"
+main = do putStrLn "\ninitial"
           --ppProg prelude
           --ppProg testProg
           putStrLn "\ntransformed"

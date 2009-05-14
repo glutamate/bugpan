@@ -12,6 +12,7 @@ import qualified Data.HashTable as H
 import Data.Maybe
 import OpenGL
 import Control.Concurrent
+import Control.Concurrent.STM.TMVar
 import System.Time
 
 --import Array
@@ -39,23 +40,20 @@ exec stmts dt tmax =
         runRealTime = not . null $ prgScreen
     in
     do envHT <- H.fromList H.hashString (initSigs++initEvts++fixEnv)
-       started <- newIORef False
-       done <- newIORef False
-       let quitPull = readIORef done
-
-           screenPull = do 
+       running <- newEmptyMVar
+       let screenPull = do 
              --running <- readIORef started
-             ifM (readIORef started)
+            
                  (do es <- evalS `fmap` H.toList envHT                       
                      return . ListV $ map (unEvalM . eval es) prgScreen)
-                 (return $ ListV [])
+                 
                              
 
        forM_ outNms $ putStr . (++"\t")
        putStr "\n"
 
        --wait a bit and init screen
-       when (not . null $ prgScreen ) (forkIO (runGlSignals screenPull quitPull)  >> waitSecs 0.5)
+       when (not . null $ prgScreen ) (forkIO (runGlSignals screenPull running)  >> waitSecs 0.5)
        
        --get tnow
        t0 <- getClockTime
@@ -65,7 +63,7 @@ exec stmts dt tmax =
          when (runRealTime) (waitUntil t0 t)
 
          H.update envHT "seconds" (NumV . NReal $ t)
-         writeIORef started True
+         tryPutMVar running ()
          forM_ prgNoScreen $ \stm -> do 
                          sevals <- H.toList envHT                       
                          let es = evalS sevals 
@@ -109,7 +107,7 @@ exec stmts dt tmax =
                                                       return ()
                            _ -> return ()
          when (not . null $ outNms) $ putStr "\n"
-       writeIORef done True
+       takeMVar running 
        forM_ (map fst initEvts) $ \enm-> do
          ListV es <- fromJust `fmap` H.lookup envHT enm
          putStrLn $ concat [enm , " -> ", show $ reverse es]
