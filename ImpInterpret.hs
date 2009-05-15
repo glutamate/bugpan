@@ -41,15 +41,21 @@ exec stmts dt tmax =
     in
     do envHT <- H.fromList H.hashString (initSigs++initEvts++fixEnv)
        running <- newEmptyMVar
-       let screenPull = do 
+       lastPull <- newIORef 5
+       largestPullLatency <- newIORef 0
+       t0' <- getClockTime
+       let screenPull = 
              --running <- readIORef started
             
                   do es <- evalS `fmap` H.toList envHT
-                     Just t <- H.lookup envHT "seconds"
-                     putStrLn $ "pull at "++ show t
+                     tnow <- secsSince t0' -- (unsafeVToDbl . fromJust) `fmap` H.lookup envHT "seconds"
+                     --putStrLn $ "pull at "++ show t
+                     tlast <- readIORef lastPull
+                     largest <- readIORef largestPullLatency
+                     when ((tnow-tlast)>largest) $ writeIORef largestPullLatency (tnow-tlast)
+                     writeIORef lastPull tnow
                      return . ListV $ map (unEvalM . eval es) prgScreen
-                 
-                             
+
 
        forM_ outNms $ putStr . (++"\t")
        putStr "\n"
@@ -115,12 +121,13 @@ exec stmts dt tmax =
          ListV es <- fromJust `fmap` H.lookup envHT enm
          putStrLn $ concat [enm , " -> ", show $ reverse es]
        forM_ bufnms $ \bufn-> do 
-         --H.lookup envHT bufn >>= print
+         --H.lookup envHT bufn >>= print 
          Just (ListV buf) <- H.lookup envHT ('#':bufn)
          --let arr = array (0,nsteps) $ zip [0..nsteps] $ reverse buf
          let arr = reverse buf
          H.update envHT ('#':bufn) . SigV 0 tmax $ \t-> arr!!(round $ t/dt)
-       H.toList envHT
+       readIORef largestPullLatency >>= putStrLn . ("largest latency: "++) . show
+       H.toList envHT 
 
          
 {-globalSecsNow :: IO Double
@@ -141,6 +148,9 @@ waitUntil t0 s = do tn <- getClockTime
                        then threadDelay . round $ (s-elapsed)*1000*1000
                        else return () 
  
+secsSince t0 =  do tn <- getClockTime
+                   return $  diffInS tn t0
+
 noScreen _ (SigSnkConn _ "screen") = False
 noScreen nms (SigUpdateRule nm _) | nm `elem` nms = False
                                   | otherwise = True
