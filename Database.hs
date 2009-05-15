@@ -2,7 +2,7 @@
 
 module Database where
 
-import EvalM
+import EvalM hiding (ListT)
 import Eval
 import Expr
 import Data.Maybe
@@ -116,6 +116,9 @@ for = flip map
 
 isTrue (BoolV True) = True
 
+isNotFalse (BoolV False) = False
+isNotFalse _ = True
+
 sigInEps s@(SigV ts1 ts2 sf) eps = 
     catMaybes $ for eps $ \ep-> let (tep1,tep2) = epTs ep in
                                 cond [(ts1<tep1 && ts2>tep2, Just $ SigV tep1 tep2 $ \t->sf(t-tep1))]
@@ -153,14 +156,50 @@ evInEpoch ev ep = let (t1, t2) = epTs ep
 
 
 newtype AskM a = AskM { unAskM :: ListT (StateT Session IO) a }
-    deriving (Monad, MonadIO, Functor, MonadState Session)
+    deriving (Monad, MonadIO, Functor, MonadState Session, MonadPlus)
 
 runAskM :: Session -> AskM a -> IO [a]
 runAskM sess (AskM lsioA) = fst `fmap` runStateT (runListT (lsioA)) sess
 
---askM :: Q -> AskM V
---askM (QVar "nm") = do 
+answers :: [a] -> AskM a
+answers xs = AskM (ListT . return $ xs)
+answer x = AskM (ListT . return $ [x])
 
+askM :: Q -> AskM V
+askM (QVar nm) = do
+  sess <- get
+  case lookup nm $ qenv sess of
+        Just (ListV vs) -> answers vs
+        Just v -> answer v
+        Nothing -> lookupInSigs
+            where lookupInSigs =  
+                      case lookup nm $ sigSegments sess of
+                        Just vls -> answers $ map (\(t1,t2,sf)-> SigV t1 t2 sf) vls
+                        Nothing -> lookupInEvts
+                  lookupInEvts = 
+                      case lookup nm $ events sess of
+                        Just vls -> answers $ map (\(t,v)-> PairV (NumV . NReal $ t) (v)) vls
+                        Nothing -> answers []
+
+askM (Map lame q) = do
+  es <- sessEvalState `fmap` get
+  let f v = unEvalM $ eval es (App lame (Const v))
+  f `fmap` askM q
+
+askM (Filter pred q) = do
+  es <- sessEvalState `fmap` get
+  let f v = unEvalM $ eval es (App pred (Const v))
+  vs <- askM q
+  guard (isNotFalse $ f vs)
+  return vs
+
+askM (Has qep qevs) = do 
+  ev <- askM qevs
+  ep <- askM qep
+  guard (ev `evInEpoch` ep)
+  return ep
+                              
+                             
 data Q = QVar String
        -- | Filter E Q
        -- | Map E Q
