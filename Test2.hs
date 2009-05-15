@@ -121,10 +121,10 @@ loomProg = [
  "distance" =: sig ("min" $> ("v"*(val "seconds"-5)) $> (-0.17)),
  "black" =: Pair (Pair 0 0) 0,
  "green" =: Pair (Pair 0 1) 0,
- "loomObj" =: sig (Colour "black" $ Translate (Pair (Pair 0 0) (val "distance")) ("centreCube" $> "l")),
- "loomObj" *> "screen"
+ "loomObj" =: sig (Colour "black" $ Translate (Pair (Pair 0 0) (val "distance")) ("centreCube" $> "l"))
+ ,"loomObj" *> "screen"
  --,"seconds" *> "print"
- --"loomObj" *> "print"
+ --,"loomObj" *> "print"
   ]
 
 solvers =  [
@@ -192,7 +192,7 @@ main = do putStrLn "\ninitial"
           let stmts = compile (complPrel++prg)
           mapM_ (putStrLn . ppStmt) $ stmts
           putStrLn "\nrunning"
-          execInStages (complPrel++prg) 0.01 5
+          execInStages (complPrel++prg) 0.005 5
           waitSecs 1
         
 test1 = runNtimes 3 0.001 0.03 0.1 testProg prelEnv 

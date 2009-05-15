@@ -37,7 +37,7 @@ exec stmts dt tmax =
         screenVars = [ nm | SigSnkConn nm "screen" <- prg ]
         prgNoScreen = filter (noScreen screenVars) prg
         prgScreen = catMaybes . map unUpdateRule . filter (not . noScreen screenVars) $  prg
-        runRealTime = not . null $ prgScreen
+        runRealTime =  not . null $ prgScreen
     in
     do envHT <- H.fromList H.hashString (initSigs++initEvts++fixEnv)
        running <- newEmptyMVar
@@ -55,11 +55,11 @@ exec stmts dt tmax =
        putStr "\n"
 
        --wait a bit and init screen
-       when (not . null $ prgScreen ) (forkIO (runGlSignals screenPull running)  >> waitSecs 0.5)
+       when (not . null $ prgScreen ) (forkOS (runGlSignals screenPull running)  >> waitSecs 0.5)
        
        --get tnow
        t0 <- getClockTime
-       --print t0      
+       --print t0       
        forM_ ts $ \t-> do
          -- wait until t
          when (runRealTime) (waitUntil t0 t)
@@ -76,20 +76,20 @@ exec stmts dt tmax =
                                     let eslams' = map (onFst toHsTime . onFst head) . 
                                                   filter (not . null . fst) $ eslams
                                     if null eslams'
-                                       then do H.update envHT nm $ unEvalM $ eval es er
+                                       then do H.update envHT nm $! unEvalM $ eval es er
                                                return ()
                                        else do
                                          let idx = maxIdx (map (fst. fst) eslams')
                                          let ((t,v), Lam tn (Lam vn se)) =  eslams'!!idx
-                                         H.update envHT nm $ unEvalM $ eval (extsEnv [(vn,v), (tn, NumV. NReal $ t)] es) se
+                                         H.update envHT nm $! unEvalM $ eval (extsEnv [(vn,v), (tn, NumV. NReal $ t)] es) se
                                          return ()
                            SigUpdateRule nm e -> do
-                                    H.update envHT nm $ unEvalM $ eval es e
+                                    H.update envHT nm $! unEvalM $ eval es e
                                     return ()
                            EventAddRule  nm e -> do
                                     evs<-fromJust `fmap` H.lookup envHT nm
                                     let newevs = unEvalM $ eval es e
-                                    H.update envHT nm (appVs newevs evs) 
+                                    H.update envHT nm $! (appVs newevs evs) 
                                     return ()
                            SigSnkConn nm "print" -> do 
                                     v <-fromJust `fmap` H.lookup envHT nm
@@ -135,11 +135,11 @@ waitSecs s = threadDelay . round $ s*1000*1000
 
 
 waitUntil t0 s = do tn <- getClockTime
-                    let diff = diffInS tn t0
-                    --print diff
-                    if diff < 0
-                       then return () 
-                       else threadDelay . round $ (diff)*1000*1000
+                    let elapsed = diffInS tn t0
+                    --print elapsed
+                    if elapsed < s
+                       then threadDelay . round $ (s-elapsed)*1000*1000
+                       else return () 
  
 noScreen _ (SigSnkConn _ "screen") = False
 noScreen nms (SigUpdateRule nm _) | nm `elem` nms = False

@@ -127,15 +127,12 @@ display dispPull = do
  matrixMode $= Projection
  loadIdentity
  frustum (-0.2)  0.2  (-0.15)  0.15  0.163  100.0
-         
  matrixMode $= Modelview 0
--- loadIdentity
  loadIdentity
  ListV shps <- dispPull
- mapM_ drawShape shps
- --threadDelay $ 1000*1000
+ mapM_ drawShape shps 
+ --threadDelay $ 300*1000
  swapBuffers
- --swapBuffers
 
 
 fromPair3v (PairV (PairV x y) z) = (fromRational . toRational . unsafeVToDbl $ x, unsafeVToDbl $ y, unsafeVToDbl $ z)
