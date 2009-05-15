@@ -96,7 +96,7 @@ runGlSignals dispPull runningMVar = do
                   DisplayAlphaBits 8,
                   DisplayDepthBits 24,
                   DisplayStencilBits 0
-                 ] Window 
+                 ] FullScreen
   windowTitle $= "Bugpan screen"
   swapInterval $= 1
   clearColor $= Color4 0 0.23 0 0

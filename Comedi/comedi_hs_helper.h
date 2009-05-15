@@ -1,0 +1,21 @@
+//double read_volts(int subd, int chan, int range);
+
+int new_trial(int subdevice, double freq);
+int setup_read_wave(int subd, int chan, int range, int npnts) ;
+void start_cont_acq();
+void start_cont_output();
+void prepare_cont_acq();
+double* get_wave_ptr(int waven);
+void free_trial_results();
+double readpin(int chan);
+int subdev_type(int sdt);
+int my_find_subdevice_by_type ( int  type, unsigned int start_subdevice);
+void dio_set_bits(int subd,unsigned int write_mask, unsigned int bits);
+double getGlobalFreq();
+int prepare_out_cmd(int subdevice, double freq);
+int setup_write_wave(int subd, int chan, int range, int npnts, double *p);
+int new_trial_out(int subdevice, double freq);
+void test_board_read();
+void internal_trigger();
+void start_cont_output();
+comedi_t* get_comedi_ptr();
