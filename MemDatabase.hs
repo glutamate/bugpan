@@ -8,54 +8,33 @@ import Expr
 import Data.Maybe
 import Data.List
 import Numbers
-{-import ImpInterpret
-import Compiler 
+import ImpInterpret
+import Compiler
 import Stages
 import Traverse
-import Transform-}
+import Transform
 import Control.Monad
 import Control.Monad.List
 import Control.Monad.State.Lazy
-import System.Directory
-import System.Time
-import System.Random
-import System.Info.MAC as MAC
-import Data.Digest.Pure.SHA
-import qualified Data.ByteString.Lazy as BS
-import Data.ByteString.Internal
-import qualified Data.Binary as B
 
-data Session = Session { baseDir :: FilePath
-                       } deriving (Eq, Show)
+data Session = Session { events :: [(String, [(Double,V)])],
+                         sigSegments :: [(String, [(Double, Double, Double->V)])],
+                         epochs :: [(String, [(Double, Double, V)])],
+                         programsRun :: [(Double, Double, [Declare])],
+                         qenv :: [(String, V)],
+                         sessPrelude :: [(String, E)]
+                       } deriving (Eq)
 
-asInt :: Int -> Int
-asInt = id
+instance Show Session where
+    show (Session evts sigs eps progs _ _) 
+        = concat ["Session:\nEvents: ", show evts, "\nSignals: ", show sigs,
+                  "\nEpochs: ", show eps]
 
+emptySession = Session [] [] [] [] [] []
 
-oneTrailingSlash "/" = "/"
-oneTrailingSlash "" = ""
-oneTrailingSlash s = case last s of
-                      '/' -> s
-                      _ -> s++"/"
+sessEvalState s = EvalS 0 0 Nothing (qenv s ++( evalManyAtOnce $ sessPrelude s))
 
-newSession :: FilePath -> IO Session
-newSession rootDir = do
-  TOD t1 t2 <- getClockTime
-  Just mac <- MAC.new
-  rnd <- asInt `fmap` randomIO
-  let longStr = concat [show t1, show t2, show mac, show rnd] 
-  --putStrLn longStr
-  let sha = take 20 . showDigest . sha512 . BS.pack $ map c2w "foo"
-  let baseDir = oneTrailingSlash rootDir++sha
-  --print baseDir
-  createDirectory baseDir
-  createDirectory $ baseDir++"/signals"
-  createDirectory $ baseDir++"/events"
-  createDirectory $ baseDir++"/epochs"
-  return $ Session baseDir
---sessEvalState s = EvalS 0 0 Nothing (qenv s ++( evalManyAtOnce $ sessPrelude s))
-
-addRunToSession :: [Declare] -> Double -> Double -> [(String, V)] -> Session -> IO ()
+addRunToSession :: [Declare] -> Double -> Double -> [(String, V)] -> Session -> Session
 addRunToSession decls t0 tmax ress sess 
     = let nmsToStore = [ nm | SinkConnect (Var nm) "store" <- decls ]
           sigsToStore = catMaybes . 
@@ -78,23 +57,11 @@ addRunToSession decls t0 tmax ress sess
                                                          (t1+t0, t2+t0, v)) eps)
                                 _ -> 
                                     Nothing 
-          --newEvs = spliceAssocs evtsToStore (events sess)
-          --newSigSegs = spliceAssocs sigsToStore (sigSegments sess)
-          --newEps = spliceAssocs epsToStore (epochs sess)  
-      in do -- Session newEvs newSigSegs newEps ((t0,t0+tmax, decls):programsRun sess) (qenv sess) (sessPrelude sess)
-        
+          newEvs = spliceAssocs evtsToStore (events sess)
+          newSigSegs = spliceAssocs sigsToStore (sigSegments sess)
+          newEps = spliceAssocs epsToStore (epochs sess)  
+      in Session newEvs newSigSegs newEps ((t0,t0+tmax, decls):programsRun sess) (qenv sess) (sessPrelude sess)
 
-        return ()
-
-instance B.Binary V where
-    put (BoolV b) = B.put b
-    get _ = undefined
-
-data AsBool = AsBool V
-
-
-
-{-
 spliceAssocs :: Eq a => [(a,[b])] ->[(a,[b])]->[(a,[b])]
 spliceAssocs = spliceAssocs' []
 spliceAssocs' accum assoc1 [] =accum++assoc1
@@ -143,7 +110,7 @@ prevTrialStart sess = case programsRun sess of
                         ((t1,t2,_):_) -> t1
   --return sess
 
--}
+
 
 for = flip map
 
@@ -188,8 +155,6 @@ evInEpoch ev ep = let (t1, t2) = epTs ep
                   in tev<t2 && tev>t1
 
 
-
-{-
 newtype AskM a = AskM { unAskM :: ListT (StateT Session IO) a }
     deriving (Monad, MonadIO, Functor, MonadState Session, MonadPlus)
 
@@ -234,13 +199,54 @@ askM (Has qep qevs) = do
   guard (ev `evInEpoch` ep)
   return ep
                               
-                             -}
+                             
 data Q = QVar String
        -- | Filter E Q
        -- | Map E Q
+       | ApplyToAll E Q
        | Filter E Q
        | Map E Q
        | Has Q Q
        | In Q Q
        | Around Q Q
+       | Bind String Q Q
 
+--ask :: Q -> AskM V
+ask sess (QVar nm) 
+    = case lookup nm $ qenv sess of
+        Just (ListV vs) -> return vs
+        Just v -> return [v]
+        Nothing -> lookupInSigs
+    where lookupInSigs =  case lookup nm $ sigSegments sess of
+                            Just vls -> return $ map (\(t1,t2,sf)-> SigV t1 t2 sf) vls
+                            Nothing -> lookupInEvts
+          lookupInEvts = case lookup nm $ events sess of
+                            Just vls -> return $ map (\(t,v)-> PairV (NumV . NReal $ t) (v)) vls
+                            Nothing -> return []
+ask sess (ApplyToAll lame q) = do vs <- ask sess q
+                                  mkList `fmap` eval (sessEvalState sess) (App lame (Const $ ListV vs))
+ask sess (Map lame q) = do 
+  vs <- ask sess q
+  forM vs $ \v-> eval (sessEvalState sess) (App lame (Const v))
+ask sess (Bind nm q qrest) = do vs <- ask sess q
+                                ask (sess {qenv = (nm,ListV vs): qenv sess}) qrest
+ask sess (Around qsig qevt) = do 
+  sigs <- ask sess qsig
+  let sigDefnInTm t (SigV t1 t2 _) = t<t2 && t>t1
+  let inRanges t = any (sigDefnInTm t) sigs
+  evts <-  filter (inRanges . evTime) `fmap` ask sess qevt
+  return $ map (\e-> let sig = head . filter (sigDefnInTm $ evTime e) $ sigs
+                     in shiftSig sig $ evTime e) evts
+
+ask sess (Has qep qevs) = do 
+  evs <- ask sess qevs
+  filter (\ep-> any (`evInEpoch` ep) evs) `fmap` ask sess qep
+ask sess (In qevOrSig qep) = do 
+  eps <- ask sess qep
+  evOrSig <- ask sess qevOrSig
+  let ress = for evOrSig $ \eos-> case eos of
+                                     s@(SigV t1 t2 sf) -> sigInEps s eps 
+                                     ev@(PairV (NumV (NReal t1)) v) -> if any (evInEpoch ev) eps
+                                                                         then [ev]
+                                                                         else []
+  return $ concat ress

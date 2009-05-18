@@ -66,7 +66,6 @@ sfEvalM (Error s) = Left s
 
 data V  = BoolV Bool
         | NumV NumVl
-        | StrV String
         | PairV V V
         | ListV [V]
 	| LamV (V->EvalM V)
@@ -92,7 +91,6 @@ data T  = BoolT
 instance Eq V where
     BoolV x == BoolV y = x==y
     NumV x == NumV y = x==y
-    StrV x == StrV y = x==y
     PairV x w == PairV y z = x==y && w==z
     Unit == Unit = True
     _ == _ = False
@@ -101,7 +99,6 @@ instance Show V where
     show (BoolV True) = "True"
     show (BoolV False) = "False"
     show (NumV v) = show v
-    show (StrV s) = show s
     show (LamV _) = "<lambda value>"
     show (SigV t1 t2 _) = "<signal value "++show t1++" to  "++show t2++">"
     show (PairV (PairV x y) z) = "("++show x++","++show y++","++show z++")"
