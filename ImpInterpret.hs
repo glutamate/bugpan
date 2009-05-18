@@ -60,11 +60,16 @@ exec stmts dt tmax =
        forM_ outNms $ putStr . (++"\t")
        putStr "\n"
 
+       sequence_ $ map ($envHT) [ rp | RunPrepare rp <- prg ]
+
        --wait a bit and init screen
        when (not . null $ prgScreen ) (forkOS (runGlSignals screenPull running)  >> waitSecs 0.5)
-       
+
        --get tnow
        t0 <- getClockTime
+       sequence_ $ map ($envHT) [ tr | Trigger tr <- prg ]
+
+       forkIO $ sequence_ $ map ($envHT) [ tr | RunAfterGo tr <- prg ]
        --print t0       
        forM_ ts $ \t-> do
          -- wait until t
@@ -117,6 +122,9 @@ exec stmts dt tmax =
          when (not . null $ outNms) $ putStr "\n"
        --done
        takeMVar running 
+
+       sequence_ $ map ($envHT) [ rad | RunAfterDone rad <- prg ]
+
        forM_ (map fst initEvts) $ \enm-> do
          ListV es <- fromJust `fmap` H.lookup envHT enm
          putStrLn $ concat [enm , " -> ", show $ reverse es]

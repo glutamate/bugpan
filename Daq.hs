@@ -25,17 +25,5 @@ setupInputChannel ch tmax = do
 retrieveInputWave :: Int -> Int -> IO [Double]
 retrieveInputWave nprom npnts = do
   ptr <- get_wave_ptr (fromIntegral nprom)
-  fmap realToFrac $ peekArray npnts ptr
+  fmap (map realToFrac) $ peekArray npnts ptr
 
-{-prom2res (WvProm nm nchan npnts delt dn) 
-    = do ptr <- get_wave_ptr (fromInteger nchan)
-         lst <- peekArray npnts ptr
-	 let newUVec = toU $ map toDouble lst
-         --putStr $ "decimate by "++show dn
-         return (nm, AnyRes {-. decimate dn -}$ UVecWave (newUVec) 
-                                                        delt 
-                                                        0.0
-                                                        (lengthU newUVec))
-         where toDouble :: Real a => a -> Double
-               toDouble = realToFrac
--}
