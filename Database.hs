@@ -1,4 +1,4 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-} 
+{-# LANGUAGE GeneralizedNewtypeDeriving, PatternSignatures #-} 
 
 module Database where
 
@@ -30,6 +30,7 @@ import Numeric
 import Traverse
 import Transform
 import Stages
+import Data.Ord
 
 
 data Session = Session { baseDir :: FilePath
@@ -63,29 +64,36 @@ newSession rootDir = do
   return $ Session baseDir
 --sessEvalState s = EvalS 0 0 Nothing (qenv s ++( evalManyAtOnce $ sessPrelude s))
 
+lastSession :: FilePath -> IO Session
+lastSession rootDir = do
+  sesns <- getDirContents rootDir
+  --mapM print sesns
+  sesns <- filterM (\objNm -> do isDir <- doesDirectoryExist $ oneTrailingSlash rootDir++objNm
+                                 return $ isDir) sesns
+  sesnsTm <- mapM (\dirNm-> do tm <- getModificationTime (oneTrailingSlash rootDir++dirNm)
+                               return (oneTrailingSlash rootDir++dirNm, tm)) sesns
+  return . Session . fst $ maximumBy (comparing snd) sesnsTm
+
 addRunToSession :: [Declare] -> Double -> Double -> Double -> [(String, V)] -> Session -> IO ()
 addRunToSession decls t0 tmax dt ress sess@(Session basedir) 
     = let nmsToStore = [ nm | SinkConnect (Var nm) "store" <- decls ]
           sigsToStore = catMaybes . 
                         flip map nmsToStore $ 
                         \nm-> case lookup ('#':nm) ress `guardBy` isSig of
-                                Just s@(SigV t1 t2 _ sf) -> Just (nm,s)
+                                Just s@(SigV t1 t2 _ sf) -> Just (nm,shiftSig t0 s)
                                 _ -> Nothing
           evtsToStore = reverse . catMaybes . 
                         flip map nmsToStore $ 
                         \nm-> case lookup nm ress `guardBy` isEvents of
-                                Just lev@(ListV evs) -> Just (nm,lev)
+                                Just (ListV evs) -> Just (nm, ListV . reverse $ map (shiftEvt t0) evs)
                                     
                                 _ -> 
                                     Nothing
           epsToStore = catMaybes . 
                         flip map nmsToStore $ 
                         \nm-> case lookup nm ress `guardBy` isEpochs of
-                                Just lep@(ListV eps) -> Just (nm,lep)
-                                _ -> Nothing 
-          --newEvs = spliceAssocs evtsToStore (events sess)
-          --newSigSegs = spliceAssocs sigsToStore (sigSegments sess)
-          --newEps = spliceAssocs epsToStore (epochs sess)  
+                                Just (ListV eps) -> Just (nm,ListV $ map (shiftEp t0) eps)
+                                _ -> Nothing           
           saveInSubDir subdir nm obj = do
             let dir = (basedir++"/"++subdir++"/"++nm)
             createDirectoryIfMissing False dir
@@ -107,17 +115,9 @@ saveBinary fp w = L.writeFile fp {-. compress-} . B.encode $ w --writeFile fp . 
 appendBinary :: B.Binary w => FilePath-> w -> IO ()
 appendBinary fp w = L.appendFile fp {-. compress-} . B.encode $ w --writeFile fp . show
 
+loadBinary :: B.Binary w =>FilePath-> IO w
+loadBinary fp = return . B.decode {-. decompress -}=<< L.readFile fp --readFile fp >>= return . read
 
-spliceAssocs :: Eq a => [(a,[b])] ->[(a,[b])]->[(a,[b])]
-spliceAssocs = spliceAssocs' []
-spliceAssocs' accum assoc1 [] =accum++assoc1
-spliceAssocs' accum assoc1 ((key,vls):assoc2) 
-    = case lookup key assoc1 of
-        Just moreVls -> spliceAssocs' ((key,vls++moreVls):accum) 
-                                      (filter ((/=key) . fst) assoc1) 
-                                      (assoc2) 
-                        
-        Nothing -> spliceAssocs' ((key,vls):accum) assoc1 (assoc2) 
 
 runOnce :: Double -> Double -> Double -> [Declare] -> [(String, E)] -> Session -> IO ()
 runOnce dt t0 tmax ds prel sess = do
@@ -174,7 +174,10 @@ guardBy (Just x) p | p x = Just x
                      else Nothing -}
 
 
-shiftSig (SigV t1 t2 dt sf) ts = SigV (t1+ts) (t2+ts) dt $ \t->sf(t-ts)
+shiftSig ts (SigV t1 t2 dt sf) = SigV (t1+ts) (t2+ts) dt $ \t->sf(t-ts)
+shiftEvt ts (PairV (NumV (NReal t)) v) = (PairV (NumV (NReal $ t+ts)) v)
+shiftEp ts (PairV (PairV (NumV (NReal t1)) ((NumV (NReal t2)))) v) = 
+    (PairV (PairV (NumV (NReal $t1+ts)) ((NumV (NReal $t2+ts)))) v)
 
 mkList :: V -> [V]
 mkList (ListV vs) = vs
@@ -184,9 +187,19 @@ evInEpoch ev ep = let (t1, t2) = epTs ep
                       tev = evTime ev
                   in tev<t2 && tev>t1
 
+getDirContents dir = do objs <- liftIO $ getDirectoryContents dir
+                        return $ filter (not . (`elem` [".", ".."])) objs
+
+getSortedDirContents dir = do conts <- getDirContents dir
+                              let sconts = sortBy cmpf conts
+                              liftIO $ print sconts
+                              return sconts
+    where cmpf f1 f2 = case (readsPrec 5 f1, readsPrec 5 f2) of
+                         ((n1::Int,_):_, (n2::Int,_):_) -> compare n1 n2
+                         _ -> EQ
 
 
-{-
+
 newtype AskM a = AskM { unAskM :: ListT (StateT Session IO) a }
     deriving (Monad, MonadIO, Functor, MonadState Session, MonadPlus)
 
@@ -199,28 +212,32 @@ answer x = AskM (ListT . return $ [x])
 
 askM :: Q -> AskM V
 askM (QVar nm) = do
-  sess <- get
-  case lookup nm $ qenv sess of
-        Just (ListV vs) -> answers vs
-        Just v -> answer v
-        Nothing -> lookupInSigs
-            where lookupInSigs =  
-                      case lookup nm $ sigSegments sess of
-                        Just vls -> answers $ map (\(t1,t2,sf)-> SigV t1 t2 sf) vls
-                        Nothing -> lookupInEvts
-                  lookupInEvts = 
-                      case lookup nm $ events sess of
-                        Just vls -> answers $ map (\(t,v)-> PairV (NumV . NReal $ t) (v)) vls
-                        Nothing -> answers []
-
+  Session bdir <- get
+  --liftIO . print $ bdir++"/signals/"++nm
+  ifM (liftIO (doesDirectoryExist (bdir++"/signals/"++nm)))
+      (do fnms <- getSortedDirContents $ bdir++"/signals/"++nm
+          sigs <- forM fnms $ \fn-> liftIO $ loadBinary $ bdir++"/signals/"++nm++"/"++fn
+          answers sigs)
+      (lookupInEvents bdir)
+      where lookupInEvents bdir = 
+                ifM (liftIO (doesDirectoryExist (bdir++"/events/"++nm)))
+                    (do fnms <- getSortedDirContents $ bdir++"/events/"++nm
+                        evs <- forM fnms $ \fn-> liftIO $ loadBinary $ bdir++"/events/"++nm++"/"++fn
+                        answers (concat evs))
+                    (lookupInEpochs bdir)
+            lookupInEpochs bdir = 
+                ifM (liftIO (doesDirectoryExist (bdir++"/epochs/"++nm)))
+                    (do fnms <- getSortedDirContents $ bdir++"/epochs/"++nm
+                        evs <- forM fnms $ \fn-> liftIO $ loadBinary $ bdir++"/epochs/"++nm++"/"++fn
+                        answers evs)
+                    (answers [])
+            
 askM (Map lame q) = do
-  es <- sessEvalState `fmap` get
-  let f v = unEvalM $ eval es (App lame (Const v))
+  let f v = unEvalM $ eval emptyEvalS (App lame (Const v))
   f `fmap` askM q
 
 askM (Filter pred q) = do
-  es <- sessEvalState `fmap` get
-  let f v = unEvalM $ eval es (App pred (Const v))
+  let f v = unEvalM $ eval emptyEvalS (App pred (Const v))
   vs <- askM q
   guard (isNotFalse $ f vs)
   return vs
@@ -230,8 +247,11 @@ askM (Has qep qevs) = do
   ep <- askM qep
   guard (ev `evInEpoch` ep)
   return ep
-                              
-                             -}
+            
+
+--plotQ :: Q -> IO ()
+                  
+                          
 data Q = QVar String
        -- | Filter E Q
        -- | Map E Q

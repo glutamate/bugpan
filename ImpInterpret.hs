@@ -123,6 +123,8 @@ exec stmts dt tmax =
 
        sequence_ $ map ($envHT) [ rad | RunAfterDone rad <- prg ]
 
+       --ideally, reverse (some!) events
+
        forM_ (map fst initEvts) $ \enm-> do
          ListV es <- fromJust `fmap` H.lookup envHT enm
          putStrLn $ concat [enm , " -> ", show $ reverse es]

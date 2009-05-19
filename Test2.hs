@@ -81,17 +81,17 @@ pair3e e1 e2 e3 = Pair (Pair e1 e2) e3
 nstep t dt = roundNum (t/dt)
 
 testProg  = [
- "seconds" *> "print",
+ --"seconds" *> "print",
  "alpha tau t " =: (If ("t" .<. 0) 0 ("tau"*"tau"*"t" * (exp . negate $ ("tau" * "t")))),
  "rndSpikeSig" <* "bernoulli 100",
  "rndSpike" =: ("eventIf" $> val ("rndSpikeSig")),
  "preSpike" =: ("every" $> 0.01),
  "gsyn" =: ("smap" $> ("alpha" $> 300) $> ("seconds")),
- "gsyn" *> "print",
+ -- "gsyn" *> "print",
  --"fr" =: (Sig (("fraction" $> (val ("seconds"))/0.01))),
  --SinkConnect ("fr") "print",
  Stage "gsyn" (-1),
- "gcell" *> "print",
+ -- "gcell" *> "print",
  "gcell" =: ("convolve" $> "gsyn" $> "rndSpike"),
  "cellOde v" =: (Sig $ ((val $ "gcell")*(0.3e-12)-(("v"+0.07)/1e9))/(2.5e-12)),
  --"vm" =: ("solveOde" $> "cellOde" $> (-0.07)),
@@ -181,18 +181,25 @@ allTransforms = do
 
 prelEnv = declsToEnv prelude
 
-main = test1
+main = testQ
+
+testQ = do test1
+           s <- lastSession "/home/tomn/sessions/"
+           print s
+           qres <- runAskM s $ askM (QVar "spike")
+           mapM print qres
+
 
 test = do putStrLn "\ninitial"
           --ppProg prelude
           --ppProg testProg
-          putStrLn "\ntransformed"
+          --putStrLn "\ntransformed"
           let prg = snd . runTM $ transform
           let complPrel =  fst . runTM $ compilablePrelude
           --ppProg (prg)
-          putStrLn "\ncompiled"
+          --putStrLn "\ncompiled"
           let stmts = compile (complPrel++prg)
-          mapM_ (putStrLn . ppStmt) $ stmts
+          --mapM_ (putStrLn . ppStmt) $ stmts
           putStrLn "\nrunning"
           execInStages (complPrel++prg) 0.01 5
           waitSecs 1
