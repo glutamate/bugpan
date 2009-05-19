@@ -17,13 +17,20 @@ import Control.Monad
 import Control.Monad.List
 import Control.Monad.State.Lazy
 import System.Directory
-import System.Time
-import System.Random
-import System.Info.MAC as MAC
-import Data.Digest.Pure.SHA
-import qualified Data.ByteString.Lazy as BS
-import Data.ByteString.Internal
+--import System.Time
+--import System.Random
+--import System.Info.MAC as MAC
+--import Data.Digest.Pure.SHA
+import qualified Data.ByteString.Lazy as L
+--import Data.ByteString.Internal
 import qualified Data.Binary as B
+import Data.UUID
+import Data.UUID.V1
+import Numeric
+import Traverse
+import Transform
+import Stages
+
 
 data Session = Session { baseDir :: FilePath
                        } deriving (Eq, Show)
@@ -40,13 +47,14 @@ oneTrailingSlash s = case last s of
 
 newSession :: FilePath -> IO Session
 newSession rootDir = do
-  TOD t1 t2 <- getClockTime
-  Just mac <- MAC.new
-  rnd <- asInt `fmap` randomIO
-  let longStr = concat [show t1, show t2, show mac, show rnd] 
+  --TOD t1 t2 <- getClockTime
+  --Just mac <- MAC.new
+  ---rnd <- asInt `fmap` randomIO
+  --let longStr = concat [show t1, show t2, show mac, show rnd] 
   --putStrLn longStr
-  let sha = take 20 . showDigest . sha512 . BS.pack $ map c2w "foo"
-  let baseDir = oneTrailingSlash rootDir++sha
+  --let sha = take 20 . showDigest . sha512 . BS.pack $ map c2w "foo"
+  Just uuid <- (fmap (filter (/='-') . toString)) `fmap` nextUUID
+  let baseDir = oneTrailingSlash rootDir++ uuid
   --print baseDir
   createDirectory baseDir
   createDirectory $ baseDir++"/signals"
@@ -55,46 +63,51 @@ newSession rootDir = do
   return $ Session baseDir
 --sessEvalState s = EvalS 0 0 Nothing (qenv s ++( evalManyAtOnce $ sessPrelude s))
 
-addRunToSession :: [Declare] -> Double -> Double -> [(String, V)] -> Session -> IO ()
-addRunToSession decls t0 tmax ress sess 
+addRunToSession :: [Declare] -> Double -> Double -> Double -> [(String, V)] -> Session -> IO ()
+addRunToSession decls t0 tmax dt ress sess@(Session basedir) 
     = let nmsToStore = [ nm | SinkConnect (Var nm) "store" <- decls ]
           sigsToStore = catMaybes . 
                         flip map nmsToStore $ 
-                        \nm-> case lookup ('#':nm) ress of
-                                Just (SigV t1 t2 sf) -> Just (nm, [(t1+t0,t2+t0, \t->sf (t-t0))])
+                        \nm-> case lookup ('#':nm) ress `guardBy` isSig of
+                                Just s@(SigV t1 t2 _ sf) -> Just (nm,s)
                                 _ -> Nothing
           evtsToStore = reverse . catMaybes . 
                         flip map nmsToStore $ 
                         \nm-> case lookup nm ress `guardBy` isEvents of
-                                Just (ListV evs) -> 
-                                    Just (nm, map (\(PairV (NumV (NReal tm)) v)-> (tm+t0,v)) evs)
+                                Just lev@(ListV evs) -> Just (nm,lev)
+                                    
                                 _ -> 
                                     Nothing
           epsToStore = catMaybes . 
                         flip map nmsToStore $ 
                         \nm-> case lookup nm ress `guardBy` isEpochs of
-                                Just (ListV eps) -> 
-                                    Just (nm, map (\(PairV (PairV (NumV (NReal t1)) ((NumV (NReal t2)))) v) ->
-                                                         (t1+t0, t2+t0, v)) eps)
-                                _ -> 
-                                    Nothing 
+                                Just lep@(ListV eps) -> Just (nm,lep)
+                                _ -> Nothing 
           --newEvs = spliceAssocs evtsToStore (events sess)
           --newSigSegs = spliceAssocs sigsToStore (sigSegments sess)
           --newEps = spliceAssocs epsToStore (epochs sess)  
+          saveInSubDir subdir nm obj = do
+            let dir = (basedir++"/"++subdir++"/"++nm)
+            createDirectoryIfMissing False dir
+            let ntics = round $ t0/dt
+            saveBinary (dir++"/"++showHex ntics "") obj
       in do -- Session newEvs newSigSegs newEps ((t0,t0+tmax, decls):programsRun sess) (qenv sess) (sessPrelude sess)
-        
-
+        forM sigsToStore $ \(nm,sig) -> do
+          saveInSubDir "signals" nm sig
+        forM evtsToStore $ \(nm, ListV evs) -> do
+          saveInSubDir "events" nm evs
+        forM epsToStore $ \(nm, ListV eps) -> do
+          saveInSubDir "epochs" nm eps
         return ()
 
-instance B.Binary V where
-    put (BoolV b) = B.put b
-    get _ = undefined
 
-data AsBool = AsBool V
+saveBinary :: B.Binary w => FilePath-> w -> IO ()
+saveBinary fp w = L.writeFile fp {-. compress-} . B.encode $ w --writeFile fp . show
+
+appendBinary :: B.Binary w => FilePath-> w -> IO ()
+appendBinary fp w = L.appendFile fp {-. compress-} . B.encode $ w --writeFile fp . show
 
 
-
-{-
 spliceAssocs :: Eq a => [(a,[b])] ->[(a,[b])]->[(a,[b])]
 spliceAssocs = spliceAssocs' []
 spliceAssocs' accum assoc1 [] =accum++assoc1
@@ -106,44 +119,24 @@ spliceAssocs' accum assoc1 ((key,vls):assoc2)
                         
         Nothing -> spliceAssocs' ((key,vls):accum) assoc1 (assoc2) 
 
-runOnce :: Double -> Double -> Double -> [Declare] -> Session -> IO Session
-runOnce dt t0 tmax ds sess = do
+runOnce :: Double -> Double -> Double -> [Declare] -> [(String, E)] -> Session -> IO ()
+runOnce dt t0 tmax ds prel sess = do
   --let prel = map (\(n,v)->(n,Const v)) (sessPrelude sess)
-  let runTM = runTravM ds $ sessPrelude sess
+  let runTM = runTravM ds prel
   let prg = snd . runTM $ transform
   let complPrel =  fst . runTM $ compilablePrelude
   ress <- execInStages (complPrel++prg) dt tmax
   putStrLn $ "results for this trial: "++show ress
-  let nsess = addRunToSession ds t0 tmax ress sess
-  return nsess
-
-evalManyAtOnce :: [(String, E)] -> [(String, V)]
-evalManyAtOnce es = 
-    let env = map (\(n,e)->(n,unEvalM $ eval (evalS env) e)) es
-    in env
-
-runNtimes :: Int -> Double -> Double -> Double -> [Declare] -> [(String, E)] -> IO Session
-
-runNtimes n dt tmax tsep ds prel = 
-  let sess = emptySession {sessPrelude = prel} in
-  runNtimes' n dt tmax tsep ds sess
-  --print sess >> return sess
-
-runNtimes' 0 _ _ _ _ sess = return sess
-runNtimes' n dt tmax tsep ds sess = do
-  let tstart = case programsRun sess of 
-                        [] -> 0
-                        ((t1,t2,_):_) -> t1+tsep
-  runOnce dt tstart tmax ds sess >>=
-      runNtimes' (n-1) dt tmax tsep ds
+  addRunToSession ds t0 tmax dt ress sess
+  return ()
 
 
-prevTrialStart sess = case programsRun sess of 
-                        [] -> 0
-                        ((t1,t2,_):_) -> t1
-  --return sess
+runNtimes :: Int -> Double -> Double -> Double -> Double -> [Declare] -> [(String, E)] -> Session -> IO ()
+runNtimes 0 _   _    _      _    _  _   _ = return ()
+runNtimes n dt tmax tstart tsep ds prel sess = do
+  runOnce dt tstart tmax ds prel sess 
+  runNtimes (n-1) dt tmax (tstart+tsep+tmax) tsep ds prel sess
 
--}
 
 for = flip map
 
@@ -152,9 +145,9 @@ isTrue (BoolV True) = True
 isNotFalse (BoolV False) = False
 isNotFalse _ = True
 
-sigInEps s@(SigV ts1 ts2 sf) eps = 
+sigInEps s@(SigV ts1 ts2 dt sf) eps = 
     catMaybes $ for eps $ \ep-> let (tep1,tep2) = epTs ep in
-                                cond [(ts1<tep1 && ts2>tep2, Just $ SigV tep1 tep2 $ \t->sf(t-tep1))]
+                                cond [(ts1<tep1 && ts2>tep2, Just $ SigV tep1 tep2 dt $ \t->sf(t-tep1))]
 
 evTime (PairV (NumV (NReal t)) _) = t
 
@@ -165,6 +158,10 @@ isEpochs _ = False
 
 isEvents (ListV ((PairV (NumV (NReal _)) _):_)) = True
 isEvents _ = False
+
+isSig (SigV _ _ _ _) = True
+isSig _ = False
+
 
 --guardBy :: (MonadPlus m) => m a -> (a->Bool) -> m a
 guardBy :: Maybe a -> (a->Bool) -> Maybe a
@@ -177,7 +174,7 @@ guardBy (Just x) p | p x = Just x
                      else Nothing -}
 
 
-shiftSig (SigV t1 t2 sf) ts = SigV (t1+ts) (t2+ts) $ \t->sf(t-ts)
+shiftSig (SigV t1 t2 dt sf) ts = SigV (t1+ts) (t2+ts) dt $ \t->sf(t-ts)
 
 mkList :: V -> [V]
 mkList (ListV vs) = vs

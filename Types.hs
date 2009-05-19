@@ -7,6 +7,8 @@ import Control.Monad
 
 type TEnv = [(String, T)]
 
+
+
 exprType :: TEnv -> E -> Maybe T
 exprType e (If p c a) = do pt <- exprType e p
                            unifyTypes BoolT pt

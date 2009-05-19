@@ -55,7 +55,7 @@ compileDec (ReadSource nm ("adc":chanS:rtHzS:lenS:_)) =
      RunAfterGo $ const start_cont_acq,
      RunAfterDone $ \env -> do Just (NumV (NInt promN)) <- H.lookup env "adc_input_promise_number" 
                                pts <- retrieveInputWave promN (round (len*(realToFrac rtHz)))
-                               H.update env ('#':nm) . SigV 0 len $ \t-> NumV . NReal $ pts!!(round $ t*(realToFrac rtHz))
+                               H.update env ('#':nm) . SigV 0 len (1/(realToFrac rtHz)) $ \t-> NumV . NReal $ pts!!(round $ t*(realToFrac rtHz))
                                return ()
     ]
 compileDec (ReadSource nm srcSpec) = [ReadSrcAction nm $ genSrc srcSpec]

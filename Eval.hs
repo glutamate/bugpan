@@ -127,7 +127,7 @@ eval es env (StrCat e1 e2) = do StrLit a <- eval es env e1 t
 eval es (SigAt offset sve) = 
     do s<- eval (withoutTime es) sve 
        case s of 
-         SigV t1 t2 efun  -> do NumV n <- eval es offset
+         SigV t1 t2 _ efun-> do NumV n <- eval es offset
                                 let tdbl = numToDouble n
                                 cond [(tdbl < t1, return (efun t1)),
                                       (tdbl > t2, return (efun t2)),
@@ -254,3 +254,9 @@ fac n = n * fac (n-1)
 ta = teval myAdd
 
 --t1 n = unEvalM  extEnv ("x",5) . extEnv ("y",6) $ eval (Var n)
+evalManyAtOnce :: [(String, E)] -> [(String, V)]
+evalManyAtOnce es = 
+    let env = map (\(n,e)->(n,unEvalM $ eval (evalS env) e)) es
+    in env
+
+evalS e =  extsEnv e $ EvalS 1 1 Nothing []

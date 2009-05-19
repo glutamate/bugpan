@@ -32,7 +32,7 @@ test_sum =  "sum" $> list [1,2,3] `evalsTo` 6
 
 type Program = [Declare]
 
-
+ 
 prelude = [
  "smap f s" =: (sig $ "f" $> val "s"),
  "incr x" =: "x" + 1,
@@ -181,7 +181,9 @@ allTransforms = do
 
 prelEnv = declsToEnv prelude
 
-main = do putStrLn "\ninitial"
+main = test1
+
+test = do putStrLn "\ninitial"
           --ppProg prelude
           --ppProg testProg
           putStrLn "\ntransformed"
@@ -194,8 +196,9 @@ main = do putStrLn "\ninitial"
           putStrLn "\nrunning"
           execInStages (complPrel++prg) 0.01 5
           waitSecs 1
-        
-test1 = runNtimes 3 0.001 0.03 0.1 testProg prelEnv 
+         
+test1 = do sess <- newSession "/home/tomn/sessions/"
+           runNtimes 3 0.001 0.03 0 0.1 testProg prelEnv sess 
   --let compPrel = evalManyAtOnce prelEnv
   --let sess = emptySession {sessPrelude = prelEnv}
   --runOnce 0.001 0 0.03 testProg sess 

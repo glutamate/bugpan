@@ -1,9 +1,10 @@
-{-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE Rank2Types, PatternSignatures #-}
 
 module EvalM where
 
 import Control.Monad
 import Data.Maybe
+import Data.Binary
 --import Control.Monad.Reader
 --import Control.Monad.Error
 --import Control.Monad.Identity
@@ -70,23 +71,73 @@ data V  = BoolV Bool
         | ListV [V]
 	| LamV (V->EvalM V)
         | ULamV (forall a. V->(V->a)->a)
-	| SigV Double Double (Double->V)
+	| SigV Double Double Double (Double->V)
 	| USigV (forall a. Double->(V->a)->a)
         | BoxV V V V --shape,loc,  colour
         | Unit
 
 data T  = BoolT
-	| NumT
+	| NumT (Maybe NumT)
 	| PairT T T
 	| LamT T T
 	| ListT T
 	| AnyT
-	| StringT
 	| SignalT T
 	| EventT T
 	| EpochT T
         | ShapeT 
+        | UnitT
 	deriving (Show, Eq)
+
+data NumT = IntT | RealT | CmplxT deriving (Eq, Show)
+
+typeTag :: T -> [Word8]
+typeTag BoolT = [1]
+typeTag (NumT (Just IntT)) = [2]
+typeTag (NumT (Just RealT)) = [3]
+typeTag (NumT (Just CmplxT)) = [4]
+typeTag UnitT = [5]
+typeTag (PairT t1 t2) = [6] -- ++ typeTag t1 ++ typeTag t2
+typeTag (ListT t) = [7] -- ++ typeTag t 
+typeTag (SignalT t) = [8]
+
+putTT :: V -> Put 
+putTT v = mapM_ putWord8 . typeTag . typeOfVal $ v
+
+instance Binary V where
+    put v@(BoolV b) = putTT v >> put b
+    put v@(NumV (NInt i)) =  putTT v >>put i
+    put v@(NumV (NReal r)) =  putTT v >>put r
+    put v@(PairV v1 w1) = putTT v >> put v1 >> put w1
+    put v@(ListV xs) = putTT v >> put (length xs) >> put xs
+    put v@(SigV t1 t2 dt sf) = do putTT v 
+                                  put t1 
+                                  put t2
+                                  put dt
+                                  mapM_ (\t->put $ sf t) [t1,t1+dt..t2]
+                                  
+
+    put Unit = putTT Unit
+    --put v@(ListV []) = putTT v >> put 
+
+    get = do tt1::Word8 <- get
+             case tt1 of
+               1 -> BoolV `fmap` get 
+               2 -> (NumV . NInt ) `fmap` get 
+               3 -> (NumV . NReal ) `fmap` get 
+               5 -> return Unit
+               6 -> do p1 <- get
+                       p2 <- get
+                       return $ PairV p1 p2
+               7 -> do (len::Int) <- get
+                       vls <- forM [0..len-1] $ const get
+                       return $ ListV vls
+               8 -> do t1 <- get
+                       t2 <- get
+                       dt <- get
+                       vls <- forM [t1,t1+dt..t2] $ const get
+                       return . SigV t1 t2 dt $ \t->vls!!(round ((t-t1)/dt))
+
 
 instance Eq V where
     BoolV x == BoolV y = x==y
@@ -100,7 +151,7 @@ instance Show V where
     show (BoolV False) = "False"
     show (NumV v) = show v
     show (LamV _) = "<lambda value>"
-    show (SigV t1 t2 _) = "<signal value "++show t1++" to  "++show t2++">"
+    show (SigV t1 t2 dt _) = "<signal value "++show t1++" to  "++show t2++">"
     show (PairV (PairV x y) z) = "("++show x++","++show y++","++show z++")"
     show (PairV v w) = "("++show v++","++show w++")"
     show (Unit) = "()"
@@ -157,3 +208,15 @@ guardF False s = fail s
 
 
 pair3 x y z = (PairV (PairV x y) z)
+
+typeOfVal :: V -> T
+typeOfVal (BoolV _ ) = BoolT 
+typeOfVal (NumV (NInt _)) = NumT $ Just IntT
+typeOfVal (NumV (NReal _)) = NumT $ Just RealT
+typeOfVal (NumV (NCmplx _)) = NumT $ Just CmplxT
+typeOfVal (PairV v w) = PairT (typeOfVal v) (typeOfVal w)
+typeOfVal (ListV []) = ListT AnyT
+typeOfVal (ListV (x:_)) = ListT (typeOfVal x)
+typeOfVal (SigV t1 _ _ sf) = SignalT (typeOfVal $ sf t1)
+typeOfVal (BoxV _ _ _) = ShapeT
+typeOfVal Unit = UnitT

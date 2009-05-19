@@ -17,8 +17,6 @@ import System.Time
 
 --import Array
 
-evalS e =  extsEnv e $ EvalS 1 1 Nothing []
-
 data InterpState = IS { sigs :: [(String, V)],
                         evts :: [(String, [(Double,V)])] }
 
@@ -133,7 +131,7 @@ exec stmts dt tmax =
          Just (ListV buf) <- H.lookup envHT ('#':bufn)
          --let arr = array (0,nsteps) $ zip [0..nsteps] $ reverse buf
          let arr = reverse buf
-         H.update envHT ('#':bufn) . SigV 0 tmax $ \t-> arr!!(round $ t/dt)
+         H.update envHT ('#':bufn) . SigV 0 tmax dt $ \t-> arr!!(round $ t/dt)
        readIORef largestPullLatency >>= putStrLn . ("largest latency: "++) . show
        H.toList envHT 
 
