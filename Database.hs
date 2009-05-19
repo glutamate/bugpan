@@ -31,6 +31,8 @@ import Traverse
 import Transform
 import Stages
 import Data.Ord
+import Charts
+import Control.Concurrent
 
 
 data Session = Session { baseDir :: FilePath
@@ -249,7 +251,13 @@ askM (Has qep qevs) = do
   return ep
             
 
---plotQ :: Q -> IO ()
+plotQ :: Q -> AskM ()
+plotQ q = do ans <- askM q
+             --let g = map ansToPlot ans
+             liftIO (forkIO $ plotGraph (ansToPlot ans) )
+             return ()
+    where ansToPlot (SigV t1 t2 dt sf)= map (\t -> (t, unsafeVToDbl $ sf t)) [t1, t1+dt..t2]
+             
                   
                           
 data Q = QVar String
