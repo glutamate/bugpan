@@ -17,7 +17,7 @@ import Control.Monad
 import Control.Monad.List
 import Control.Monad.State.Lazy
 import System.Directory
---import System.Time
+import System.Time
 --import System.Random
 --import System.Info.MAC as MAC
 --import Data.Digest.Pure.SHA
@@ -35,7 +35,8 @@ import Charts
 import Control.Concurrent
 
 
-data Session = Session { baseDir :: FilePath
+data Session = Session { baseDir :: FilePath,
+                         tSessionStart :: ClockTime
                        } deriving (Eq, Show)
 
 asInt :: Int -> Int
@@ -50,7 +51,7 @@ oneTrailingSlash s = case last s of
 
 newSession :: FilePath -> IO Session
 newSession rootDir = do
-  --TOD t1 t2 <- getClockTime
+  t0@(TOD t1 t2) <- getClockTime  
   --Just mac <- MAC.new
   ---rnd <- asInt `fmap` randomIO
   --let longStr = concat [show t1, show t2, show mac, show rnd] 
@@ -63,7 +64,8 @@ newSession rootDir = do
   createDirectory $ baseDir++"/signals"
   createDirectory $ baseDir++"/events"
   createDirectory $ baseDir++"/epochs"
-  return $ Session baseDir
+  writeFile (baseDir++"/tStart") $ show (t1, t2)
+  return $ Session baseDir t0
 --sessEvalState s = EvalS 0 0 Nothing (qenv s ++( evalManyAtOnce $ sessPrelude s))
 
 lastSession :: FilePath -> IO Session
@@ -74,10 +76,12 @@ lastSession rootDir = do
                                  return $ isDir) sesns
   sesnsTm <- mapM (\dirNm-> do tm <- getModificationTime (oneTrailingSlash rootDir++dirNm)
                                return (oneTrailingSlash rootDir++dirNm, tm)) sesns
-  return . Session . fst $ maximumBy (comparing snd) sesnsTm
+  let dir = fst $ maximumBy (comparing snd) sesnsTm
+  t0 <- read `fmap` readFile (dir++"/tStart")
+  return $ Session dir (TOD (fst t0) (snd t0))
 
 addRunToSession :: [Declare] -> Double -> Double -> Double -> [(String, V)] -> Session -> IO ()
-addRunToSession decls t0 tmax dt ress sess@(Session basedir) 
+addRunToSession decls t0 tmax dt ress sess@(Session basedir sesst0) 
     = let nmsToStore = [ nm | SinkConnect (Var nm) "store" <- decls ]
           sigsToStore = catMaybes . 
                         flip map nmsToStore $ 
@@ -214,7 +218,7 @@ answer x = AskM (ListT . return $ [x])
 
 signals :: String -> AskM V
 signals nm = do
-  Session bdir <- get
+  Session bdir t0 <- get
   --liftIO . print $ bdir++"/signals/"++nm
   ifM (liftIO (doesDirectoryExist (bdir++"/signals/"++nm)))
       (do fnms <- getSortedDirContents $ bdir++"/signals/"++nm
@@ -224,7 +228,7 @@ signals nm = do
 
 events :: String -> AskM V
 events nm = do
-  Session bdir <- get
+  Session bdir t0 <- get
   ifM (liftIO (doesDirectoryExist (bdir++"/events/"++nm)))
       (do fnms <- getSortedDirContents $ bdir++"/events/"++nm
           evs <- forM fnms $ \fn-> liftIO $ loadBinary $ bdir++"/events/"++nm++"/"++fn
@@ -233,7 +237,7 @@ events nm = do
 
 epochs :: String -> AskM V
 epochs nm = do
-  Session bdir <- get
+  Session bdir t0 <- get
   ifM (liftIO (doesDirectoryExist (bdir++"/epochs/"++nm)))
       (do fnms <- getSortedDirContents $ bdir++"/epochs/"++nm
           evs <- forM fnms $ \fn-> liftIO $ loadBinary $ bdir++"/epochs/"++nm++"/"++fn

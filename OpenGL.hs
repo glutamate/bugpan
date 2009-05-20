@@ -89,7 +89,7 @@ takeOutTV p tv = atomically $ do vls <- readTVar tv
                                  writeTVar tv (stay)
                                  return go
 
-runGlSignals dispPull runningMVar = do
+initGlScreen dispFunMVar runningMVar = do
   initialize
   openWindow (Size 640 480) [
                   DisplayRGBBits 8 8 8,
@@ -102,6 +102,14 @@ runGlSignals dispPull runningMVar = do
   clearColor $= Color4 0 0.23 0 0
   clear [ColorBuffer]
   swapBuffers
+  waitLoop dispFunMVar runningMVar
+
+waitLoop dispFunMVar runMV = do
+  dispFun <- readMVar dispFunMVar
+  runGlSignals dispFun runMV
+  waitLoop dispFunMVar runMV
+
+runGlSignals dispPull runningMVar = do
   --wait until running
   readMVar runningMVar
   untilMVEmpty runningMVar $ display dispPull 
