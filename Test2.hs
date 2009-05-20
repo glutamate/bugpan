@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-} 
+{-# LANGUAGE OverloadedStrings #-}  
 
 module Main where
 
@@ -141,7 +141,7 @@ test = do putStrLn "\ninitial"
           let stmts = compile (complPrel++prg)
           --mapM_ (putStrLn . ppStmt) $ stmts
           putStrLn "\nrunning"
-          execInStages (complPrel++prg) 0.01 5
+          execInStages (complPrel++prg) 0.01 5 return
           waitSecs 1
          
 test1 = do sess <- newSession "/home/tomn/sessions/"
@@ -150,7 +150,7 @@ test1 = do sess <- newSession "/home/tomn/sessions/"
   --let sess = emptySession {sessPrelude = prelEnv}
   --runOnce 0.001 0 0.03 testProg sess 
 
---process :: E-> TravM Process
+ --process :: E-> TravM Process
 
 -- :set -fbreak-on-exception 
 

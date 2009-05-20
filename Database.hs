@@ -131,7 +131,7 @@ runOnce dt t0 tmax ds prel sess = do
   let runTM = runTravM ds prel
   let prg = snd . runTM $ transform
   let complPrel =  fst . runTM $ compilablePrelude
-  ress <- execInStages (complPrel++prg) dt tmax
+  ress <- execInStages (complPrel++prg) dt tmax return
   putStrLn $ "results for this trial: "++show ress
   addRunToSession ds t0 tmax dt ress sess
   return ()

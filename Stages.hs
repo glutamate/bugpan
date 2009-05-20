@@ -28,8 +28,8 @@ splitByStages ds =
         unstagedDecls = mainL \\ (concat stagedDecls)
     in (env : stagedDecls) ++ [unstagedDecls]
 
-execInStages :: [Declare] -> Double -> Double -> IO [(String,V)]
-execInStages ds dt tmax = do
+execInStages :: [Declare] -> Double -> Double -> ([Stmt] -> IO [Stmt]) -> IO [(String,V)]
+execInStages ds dt tmax postCompile = do
   let (env:stageDs) = splitByStages ds
   envAdd <- newIORef []
   --putStrLn "\nenvironment"
@@ -37,10 +37,11 @@ execInStages ds dt tmax = do
   forM_ stageDs $ \decls -> do
                             envAdded <- readIORef envAdd -- also change sigat nm to sigat #nm
                             let copyEnvSigs = [ Let nm (Sig $ SigAt (Var "seconds") (Var ('#':nm))) | ('#':nm,_) <- envAdded ]
-                            let stmts = compile $ env++copyEnvSigs++map envToDecl envAdded++decls
+                            let stmts' = compile $ env++copyEnvSigs++map envToDecl envAdded++decls
                             --putStrLn "\na stage"
                             --mapM (putStrLn . ppStmt ) stmts
                             let buffered = [ nm | SinkConnect (Var _) ('#':nm)<- decls ]
+                            stmts <- postCompile stmts'
                             ress <- exec stmts dt tmax
                             let savedRess = [('#':nm, val) | ('#':nm, val) <- ress, nm `elem` buffered ]
                             addToIORefList envAdd savedRess
