@@ -9,9 +9,9 @@ import EvalM
 import Data.List
 --import Types
 
-data Math1 = Ln | Exp | Re | Im deriving (Show, Eq)
-data Math2 = Add | Sub | Mul | Div deriving (Show, Eq)
-data CmpOp = Lt | Gt | Eq | Ne | Le | Ge deriving (Show, Eq)
+data Math1 = Ln | Exp | Re | Im deriving (Show, Eq, Read)
+data Math2 = Add | Sub | Mul | Div deriving (Show, Eq, Read)
+data CmpOp = Lt | Gt | Eq | Ne | Le | Ge deriving (Show, Eq, Read)
 
 --data EvalM a = Res {unEvalM :: a} | Error String
 
@@ -55,7 +55,7 @@ data E =  If E E E
         | Translate E E
         | Colour E E
         | HasType T E
-	deriving (Show, Eq)
+	deriving (Show, Eq, Read)
 
 data Declare 
 	= Let String E
@@ -66,7 +66,7 @@ data Declare
         | ReadSource String [String]
         | Stage String Int
         | Nop
-	deriving (Show, Eq)
+	deriving (Show, Eq, Read)
 
 ppDecl (Let nm e ) = nm++" = " ++ pp e
 ppDecl (SinkConnect e sn) = (pp e++" *> " ++ sn)
@@ -317,10 +317,10 @@ data Pat = 	  PatVar String
 		| PatIgnore
 		| PatLit V
 		| PatPair Pat Pat
-		| PatNil
+		| PatNil 
 		| PatCons Pat Pat
 		-- | PatGuard E Pat
-		deriving (Show, Eq)
+		deriving (Show, Eq, Read)
 
 ppPat (PatVar n) = n
 ppPat (PatIgnore ) = "_"

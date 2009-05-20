@@ -212,28 +212,35 @@ answers :: [a] -> AskM a
 answers xs = AskM (ListT . return $ xs)
 answer x = AskM (ListT . return $ [x])
 
-askM :: Q -> AskM V
-askM (QVar nm) = do
+signals :: String -> AskM V
+signals nm = do
   Session bdir <- get
   --liftIO . print $ bdir++"/signals/"++nm
   ifM (liftIO (doesDirectoryExist (bdir++"/signals/"++nm)))
       (do fnms <- getSortedDirContents $ bdir++"/signals/"++nm
           sigs <- forM fnms $ \fn-> liftIO $ loadBinary $ bdir++"/signals/"++nm++"/"++fn
           answers sigs)
-      (lookupInEvents bdir)
-      where lookupInEvents bdir = 
-                ifM (liftIO (doesDirectoryExist (bdir++"/events/"++nm)))
-                    (do fnms <- getSortedDirContents $ bdir++"/events/"++nm
-                        evs <- forM fnms $ \fn-> liftIO $ loadBinary $ bdir++"/events/"++nm++"/"++fn
-                        answers (concat evs))
-                    (lookupInEpochs bdir)
-            lookupInEpochs bdir = 
-                ifM (liftIO (doesDirectoryExist (bdir++"/epochs/"++nm)))
-                    (do fnms <- getSortedDirContents $ bdir++"/epochs/"++nm
-                        evs <- forM fnms $ \fn-> liftIO $ loadBinary $ bdir++"/epochs/"++nm++"/"++fn
-                        answers evs)
-                    (answers [])
-            
+      (answers [])
+
+events :: String -> AskM V
+events nm = do
+  Session bdir <- get
+  ifM (liftIO (doesDirectoryExist (bdir++"/events/"++nm)))
+      (do fnms <- getSortedDirContents $ bdir++"/events/"++nm
+          evs <- forM fnms $ \fn-> liftIO $ loadBinary $ bdir++"/events/"++nm++"/"++fn
+          answers (concat evs))
+      (answers [])
+
+epochs :: String -> AskM V
+epochs nm = do
+  Session bdir <- get
+  ifM (liftIO (doesDirectoryExist (bdir++"/epochs/"++nm)))
+      (do fnms <- getSortedDirContents $ bdir++"/epochs/"++nm
+          evs <- forM fnms $ \fn-> liftIO $ loadBinary $ bdir++"/epochs/"++nm++"/"++fn
+          answers evs)
+      (answers [])
+
+askM :: Q -> AskM V
 askM (Map lame q) = do
   let f v = unEvalM $ eval emptyEvalS (App lame (Const v))
   f `fmap` askM q
@@ -251,15 +258,16 @@ askM (Has qep qevs) = do
   return ep
             
 
-plotQ :: Q -> AskM ()
-plotQ q = do ans <- askM q
-             --let g = map ansToPlot ans
-             liftIO (forkIO $ plotGraph (ansToPlot ans) )
+plot :: [V] -> IO ()
+plot vs = do --let g = map ansToPlot ans
+             plotGraph (valsToGraph vs)
              return ()
-    where ansToPlot (SigV t1 t2 dt sf)= map (\t -> (t, unsafeVToDbl $ sf t)) [t1, t1+dt..t2]
-             
-                  
-                          
+          
+
+valsToGraph :: [V] -> Graph
+valsToGraph vs = foldl1 (<+>) $ map vToPlot vs
+    where vToPlot (SigV t1 t2 dt sf)= toGraph ((toPlot $map (\t -> (t, unsafeVToDbl $ sf t)) [t1, t1+dt..t2])%Lines)
+
 data Q = QVar String
        -- | Filter E Q
        -- | Map E Q

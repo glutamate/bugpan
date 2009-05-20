@@ -96,8 +96,10 @@ instance ToPlot a => ToGraph a where
     toGraph p = Plots [toPlot p] []
 
 (<+>) :: (ToGraph a, ToGraph b) => a-> b->Graph 
-a <+> b = amal (toGraph a) (toGraph b)
-    where amal (Plots pls1 prb1) (Plots pls2 prb2) = Plots (pls1++pls2) (prb1++prb2)
+a <+> b = amalGraphs (toGraph a) (toGraph b)
+    where amalGraphs (Plots pls1 prb1) (Plots pls2 prb2) = Plots (pls1++pls2) (prb1++prb2)
+
+
 
 infixl 6 %
 infixl 5 <+>

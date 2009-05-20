@@ -8,7 +8,7 @@ data NumVl = NInt Int
 	   -- | NRat Int Int
 	   | NReal Double
 	   | NCmplx (Complex Double)
-		 
+	     deriving (Show, Read)
 
 instance Eq NumVl where
     n1 == n2 = let (x,y) = sameize n1 n2 in x =~= y
@@ -20,10 +20,9 @@ instance Eq NumVl where
 nearlyZero n = (n<1e-18) && (n>(-1e-18))
 
 
-instance Show NumVl where
-    show (NInt i) = show i
-    show (NReal f) = printf "%5.4g" f
-    show (NCmplx (r:+c)) = show r++" + i*"++show c
+ppNum (NInt i) = show i
+ppNum (NReal f) = printf "%5.4g" f
+ppNum (NCmplx (r:+c)) = show r++" + i*"++show c
 
 data Ntype = NI | NR | NC deriving (Show,Eq, Enum, Ord)
 

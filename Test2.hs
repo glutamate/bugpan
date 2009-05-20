@@ -186,9 +186,11 @@ main = testQ
 testQ = do test1
            s <- lastSession "/home/tomn/sessions/"
            print s
-           qres <- runAskM s $ askM (QVar "spike")
-           mapM print qres
-
+           qres <- runAskM s $ signals "vm"
+           plot qres
+                         
+           --mapM print qres
+           return ()
 
 test = do putStrLn "\ninitial"
           --ppProg prelude

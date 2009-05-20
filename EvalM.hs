@@ -70,11 +70,18 @@ data V  = BoolV Bool
         | PairV V V
         | ListV [V]
 	| LamV (V->EvalM V)
-        | ULamV (forall a. V->(V->a)->a)
 	| SigV Double Double Double (Double->V)
-	| USigV (forall a. Double->(V->a)->a)
         | BoxV V V V --shape,loc,  colour
         | Unit
+	deriving (Show, Read)
+
+instance Read (a->b) 
+instance Show (a->b) where
+    show _ = "<fun>"
+
+instance Eq (a->b) where
+    _ == _ = undefined
+
 
 data T  = BoolT
 	| NumT (Maybe NumT)
@@ -87,9 +94,9 @@ data T  = BoolT
 	| EpochT T
         | ShapeT 
         | UnitT
-	deriving (Show, Eq)
+	deriving (Show, Eq, Read)
 
-data NumT = IntT | RealT | CmplxT deriving (Eq, Show)
+data NumT = IntT | RealT | CmplxT deriving (Eq, Show, Read)
 
 typeTag :: T -> [Word8]
 typeTag BoolT = [1]
@@ -146,20 +153,19 @@ instance Eq V where
     Unit == Unit = True
     _ == _ = False
 
-instance Show V where
-    show (BoolV True) = "True"
-    show (BoolV False) = "False"
-    show (NumV v) = show v
-    show (LamV _) = "<lambda value>"
-    show (SigV t1 t2 dt _) = "<signal value "++show t1++" to  "++show t2++">"
-    show (PairV (PairV x y) z) = "("++show x++","++show y++","++show z++")"
-    show (PairV v w) = "("++show v++","++show w++")"
-    show (Unit) = "()"
-    show (ListV vs) =  "["++slist vs++"]"
+ppVal (BoolV True) = "True"
+ppVal (BoolV False) = "False"
+ppVal (NumV v) = ppNum v
+ppVal (LamV _) = "<lambda value>"
+ppVal (SigV t1 t2 dt _) = "<signal value "++show t1++" to  "++show t2++">"
+ppVal (PairV (PairV x y) z) = "("++ppVal x++","++ppVal y++","++ppVal z++")"
+ppVal (PairV v w) = "("++ppVal v++","++ppVal w++")"
+ppVal (Unit) = "()"
+ppVal (ListV vs) =  "["++slist vs++"]"
         where slist [] = ""
-              slist (x:[]) = show x
-              slist (x:xs) = show x ++ ", " ++ slist xs
-    show (BoxV shp loc col) = "Box " ++show shp++" @"++show loc++" RGB"++show col
+              slist (x:[]) = ppVal x
+              slist (x:xs) = ppVal x ++ ", " ++ slist xs
+ppVal (BoxV shp loc col) = "Box " ++ppVal shp++" @"++ppVal loc++" RGB"++ppVal col
 
 
 
@@ -174,12 +180,6 @@ extsEnv :: [(String,V)] -> EvalS -> EvalS
 extsEnv ps es = es {env=(ps++env es)}
 
 type Env = [(String, V)]
-
-instance Show (a->b) where
-    show _ = "<fun>"
-
-instance Eq (a->b) where
-    _ == _ = undefined
 
 boolToV = BoolV
 
