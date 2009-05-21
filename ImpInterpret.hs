@@ -20,6 +20,10 @@ import System.Time
 data InterpState = IS { sigs :: [(String, V)],
                         evts :: [(String, [(Double,V)])] }
 
+safeHead [] = Nothing
+safeHead (x:_) = Just x
+
+
 exec :: [Stmt] -> Double -> Double -> IO [(String, V)]
 exec stmts dt tmax = 
     let prg =  filter inMainLoop stmts 
@@ -36,9 +40,11 @@ exec stmts dt tmax =
         prgNoScreen = filter (noScreen screenVars) prg
         prgScreen = catMaybes . map unUpdateRule . filter (not . noScreen screenVars) $  prg
         runRealTime =  not . null $ prgScreen
+        runningMV = safeHead [ runmv | GLParams _ runmv <- prg]
+        dispPullMV = safeHead [ dpmv | GLParams dpmv _ <- prg]
     in
     do envHT <- H.fromList H.hashString (initSigs++initEvts++fixEnv)
-       running <- newEmptyMVar
+       --
        lastPull <- newIORef 5
        largestPullLatency <- newIORef 0
        t0' <- getClockTime
@@ -60,8 +66,23 @@ exec stmts dt tmax =
 
        sequence_ $ map ($envHT) [ rp | RunPrepare rp <- prg ]
 
+       (runMV, dispMV) <- cond [
+                             (null prgScreen, return (Nothing,Nothing))
+                           , (isJust dispPullMV && isJust runningMV, return (runningMV, dispPullMV))
+                           , (True, do
+                                rMV <- newEmptyMVar
+                                scrPl <- newEmptyMVar
+                                forkOS (initGlScreen scrPl rMV) 
+                                waitSecs 0.5
+                                return (Just rMV, Just scrPl)
+                             )
+                          ]
+       maybeM dispMV $  \dpmv -> putMVar dpmv screenPull
+
+--if ((not . null $ prgScreen) && isNothing (dispPullMV) 
+  --         then
        --wait a bit and init screen
-       when (not . null $ prgScreen ) (forkOS (runGlSignals screenPull running)  >> waitSecs 0.5)
+       -- when ((not . null $ prgScreen) && isNothing (dispPullMV) ) (
 
        --get tnow
        t0 <- getClockTime
@@ -116,10 +137,13 @@ exec stmts dt tmax =
                                                       H.update envHT nm vl
                                                       return ()
                            _ -> return ()
-         tryPutMVar running ()
+         maybeM runMV (\mv-> tryPutMVar mv ())
          when (not . null $ outNms) $ putStr "\n"
        --done
-       takeMVar running 
+
+       maybeM runMV takeMVar
+
+       maybeM dispMV $  \dpmv -> takeMVar dpmv 
 
        sequence_ $ map ($envHT) [ rad | RunAfterDone rad <- prg ]
 
@@ -137,6 +161,10 @@ exec stmts dt tmax =
        readIORef largestPullLatency >>= putStrLn . ("largest latency: "++) . show
        H.toList envHT 
 
+
+maybeM :: Monad m => Maybe a -> (a -> m b) -> m ()
+maybeM Nothing _ = return ()
+maybeM (Just x) a = a x >> return ()
          
 {-globalSecsNow :: IO Double
 globalSecsNow = do tnow <- getClockTime

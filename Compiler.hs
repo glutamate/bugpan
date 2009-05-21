@@ -7,6 +7,7 @@ import Data.HashTable as H
 import Daq
 import Comedi.Comedi
 import Numbers
+import Control.Concurrent
 
 data Stmt = InitSig String E
           | Env String E
@@ -17,9 +18,13 @@ data Stmt = InitSig String E
           | RunAfterDone (H.HashTable String V -> IO ())
           | RunAfterGo (H.HashTable String V -> IO ())
           | Trigger (H.HashTable String V -> IO ())
+          | GLParams (MVar (IO V)) (MVar ())
           -- | SigSwitch String [(String, E)] E
           | ReadSrcAction String (Double -> Double -> IO V)
             deriving (Eq, Show)    
+
+instance Show (MVar a) where
+    show mv = "<mvar>"
 
 compile :: [Declare] -> [Stmt]
 compile ds = let c = concatMap compileDec (filter noDtSeconds ds) in
@@ -85,6 +90,7 @@ ppStmt (RunPrepare _) = "prepare something"
 ppStmt (RunAfterDone _) = "run something after done"
 ppStmt (RunAfterGo _) = "run something after go"
 ppStmt (Trigger _) = "trigger somehow"
+ppStmt (GLParams _ _) = "gl parameters"
 
 initSigVals stmts = [is | is@(InitSig nm v) <-  stmts]
 constEnv stmts = [en | en@(Env nm v) <-  stmts]
