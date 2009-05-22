@@ -59,6 +59,7 @@ data E =  If E E E
 
 data Declare 
 	= Let String E
+        | DeclareType String T
 --	| LetEvt String E
 --	| LetRec String E
 	| Import String (Maybe String)

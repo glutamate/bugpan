@@ -2,8 +2,8 @@ Prog. Program ::= [Declare] ;
 
 DLet. Declare ::= Ident "=" Exp ;
 DType. Declare ::= Ident ":" Type ;
-DSinkConn.Declare ::= Exp "*>" [Ident] ;
-DReadSrc.Declare ::= Ident "<*" [Ident] ;
+DSinkConn.Declare ::= Exp "*>" String ;
+DReadSrc.Declare ::= Ident "<*" String ;
 DStage.Declare ::= "stage" Ident Integer;
 
 Add. Exp1 ::= Exp2 "+" Exp3 ;
@@ -60,7 +60,7 @@ TLam. Type ::= Type "->" Type ;
 Lt. CmpOp ::= "<" ;
 Gt. CmpOp ::= ">" ;
 Eq. CmpOp ::= "==" ;
-Nn. CmpOp ::= "!=" ;
+Ne. CmpOp ::= "!=" ;
 
 coercions Exp 4;
 --coercions Const 0 ;
