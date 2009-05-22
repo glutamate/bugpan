@@ -1,0 +1,79 @@
+Prog. Program ::= [Declare] ;
+
+DLet. Declare ::= Ident "=" Exp ;
+DType. Declare ::= Ident ":" Type ;
+DSinkConn.Declare ::= Exp "*>" [Ident] ;
+DReadSrc.Declare ::= Ident "<*" [Ident] ;
+DStage.Declare ::= "stage" Ident Integer;
+
+Add. Exp1 ::= Exp2 "+" Exp3 ;
+Sub. Exp1 ::= Exp2 "-" Exp3 ;
+Mul. Exp2 ::= Exp3 "*" Exp4 ;
+Div. Exp2 ::= Exp3 "/" Exp4 ;
+
+ECmp.Exp1 ::= Exp2 CmpOp Exp2 ;
+
+If. Exp ::= "if" Exp1 "then" Exp1 "else" Exp1 ;
+
+Lam. Exp ::= "\\" Pat "->" Exp ;
+App. Exp4 ::= Exp Exp ;
+
+
+Pair. Exp4 ::= "(" Exp "," Exp ")" ;
+Nil. Exp4 ::= "[]" ;
+Cons. Exp ::= Exp "::" Exp ;
+ListLit.Exp4 ::= "[" [Exp] "]" ;
+
+Var. Exp4 ::= Ident ;
+EConst. Exp4 ::= Const ;
+
+Sig. Exp4 ::= "{:" Exp ":}" ;
+SigVal. Exp4 ::= "<:" Exp ":>" ;
+SigAt. Exp3 ::= Exp1 "@" Exp1 ;
+SigDelay. Exp3 ::= "delay" Exp Exp  ;
+
+Event. Exp4 ::= "[:" Exp ":]" ;
+Switch. Exp ::= "switch" "{" Exp ";" [SwitchLine] ;
+ELet.Exp ::= "let" [LetLine] Exp ;
+ECase.Exp ::= "case" Exp "of" [CaseLine] ;
+
+SwitchLine. SwitchLine ::= Exp "~>" Exp ;
+LetLine. LetLine ::= Ident "=" Exp ;
+CaseLine. CaseLine ::= Pat "->" Exp ;
+
+PVar. Pat ::= Ident ;
+PWild. Pat ::= "_" ;
+PLit. Pat ::= Const ;
+PPair. Pat ::= "(" Pat "," Pat ")" ;
+PNil. Pat ::= "[]" ;
+PCons. Pat ::= Pat "::" Pat ;
+
+CInt. Const ::= Integer ;
+CDbl. Const ::= Double ;
+CUnit. Const ::= "()" ;
+CTrue. Const ::= "true" ;
+CFalse. Const ::= "false" ;
+
+TUnit. Type ::= "()" ;
+TLam. Type ::= Type "->" Type ;
+
+Lt. CmpOp ::= "<" ;
+Gt. CmpOp ::= ">" ;
+Eq. CmpOp ::= "==" ;
+Nn. CmpOp ::= "!=" ;
+
+coercions Exp 4;
+--coercions Const 0 ;
+
+terminator Declare ";"  ;
+terminator SwitchLine ";"  ;
+terminator LetLine ";"  ;
+terminator CaseLine ";"  ;
+
+separator Exp ","  ;
+
+separator Ident " " ;
+
+comment "--" ;
+
+layout toplevel ;
