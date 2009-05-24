@@ -155,14 +155,23 @@ sigInEps s@(SigV ts1 ts2 dt sf) eps =
                                 cond [(ts1<tep1 && ts2>tep2, Just $ SigV tep1 tep2 dt $ \t->sf(t-tep1))]
 
 evTime (PairV (NumV (NReal t)) _) = t
+evTag (PairV (NumV (NReal t)) v) = v
 
 epTs (PairV (PairV (NumV (NReal t1)) ((NumV (NReal t2)))) _) = (t1,t2)
+epTag (PairV (PairV (NumV (NReal t1)) ((NumV (NReal t2)))) v) = v
 
-isEpochs (ListV ((PairV (PairV (NumV (NReal _)) ((NumV (NReal _)))) _):_)) = True
+isEpoch (PairV (PairV (NumV (NReal _)) ((NumV (NReal _)))) _) = True
+isEpoch _ = False
+
+isEvent (PairV (NumV (NReal _)) _) = True
+isEvent _ = False
+
+isEvents (ListV vs) = all isEvent vs
+isEvents _ = False
+
+isEpochs (ListV vs) = all isEpoch vs
 isEpochs _ = False
 
-isEvents (ListV ((PairV (NumV (NReal _)) _):_)) = True
-isEvents _ = False
 
 isSig (SigV _ _ _ _) = True
 isSig _ = False
@@ -260,7 +269,7 @@ askM (Has qep qevs) = do
   guard (ev `evInEpoch` ep)
   return ep
             
-{-
+
 plot :: [V] -> IO ()
 plot vs = do --let g = map ansToPlot ans
              plotGraph (valsToGraph vs)
@@ -270,7 +279,13 @@ plot vs = do --let g = map ansToPlot ans
 valsToGraph :: [V] -> Graph
 valsToGraph vs = foldl1 (<+>) $ map vToPlot vs
     where vToPlot (SigV t1 t2 dt sf)= toGraph ((toPlot $map (\t -> (t, unsafeVToDbl $ sf t)) [t1, t1+dt..t2])%Lines)
--}
+          vToPlot vs | all isEvent vs = toGraph ((toPlot $ map (\e-> (evTime e, unsafeVToDbl $ evTag e)) vs)%FilledCircles)
+          vToPlot vs | all isEpoch vs = 
+                         toGraph ((toPlot $ concatMap (\ep-> let (t1,t2) = epTs ep 
+                                                                 epvl = unsafeVToDbl $ epTag ep in
+                                                             [(t1, epvl), (t2, epvl)]))%Lines) --should be broken lines
+
+
 data Q = QVar String
        -- | Filter E Q
        -- | Map E Q
