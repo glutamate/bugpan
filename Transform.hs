@@ -307,11 +307,11 @@ isDefBySrc nm = do ds <- decls `fmap` get
     where test (ReadSource n _) = n == nm
           test _ = False
  
-compilablePrelude :: TravM [Declare]
+{-compilablePrelude :: TravM [Declare]
 compilablePrelude = 
     do prel <- env `fmap` get
        compPrel <- filterM (\(n,e) -> ifM (hasSig e) (return False) (return True)) prel
-       return $ map (\(n,e)->Let n e) compPrel
+       return $ map (\(n,e)->Let n e) compPrel -}
 
 transforms =   [(connectsLast, "connectsLast")
                 ,(floatConnectedSignals, "floatConnectedSignals")

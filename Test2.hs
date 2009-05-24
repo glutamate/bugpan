@@ -46,7 +46,7 @@ testProg  = [
  --SinkConnect ("fr") "print",
  Stage "gsyn" (-1),
  -- "gcell" *> "print",
- "gcell" =: ("convolve" $> "gsyn" $> "rndSpike"),
+ "gcell" =: ("convolve" $> "gsyn" $> "rndSpike"), 
  "cellOde v" =: (Sig $ ((val $ "gcell")*(0.3e-12)-(("v"+0.07)/1e9))/(2.5e-12)),
  --"vm" =: ("solveOde" $> "cellOde" $> (-0.07)),
  --"vm" =: ("solveOde" $> ((Lam "v" $ Sig $ ((val $ "gcell")*(1e-12)-(("v"+0.07)/1e9))/(2.5e-12))) $> (-0.07)),
@@ -93,7 +93,7 @@ hasSigProg p = fst . runTM $
                forM p $ \(Let n e)-> do hs <- hasSig e
                                         return (n, hs)
 
-runTM = runTravM loomProg (declsToEnv prelude)
+runTM = runTravM (loomProg++ prelude) []
 
 --infixl 1 =:                                         
 --x =: y = Let x y 
@@ -117,7 +117,7 @@ allTransforms = do
   return ()
 
 
-prelEnv = declsToEnv prelude
+--prelEnv = declsToEnv prelude
 
 main = testQ
 
@@ -125,7 +125,7 @@ testQ = do test1
            s <- lastSession "/home/tomn/sessions/"
            print s
            qres <- runAskM s $ signals "vm"
-           plot qres
+           --plot qres
                          
            --mapM print qres
            return ()
@@ -134,18 +134,18 @@ test = do putStrLn "\ninitial"
           --ppProg prelude
           --ppProg testProg
           --putStrLn "\ntransformed"
-          let prg = snd . runTM $ transform
-          let complPrel =  fst . runTM $ compilablePrelude
+          let prg = snd . runTM $ transform 
+          
           --ppProg (prg)
           --putStrLn "\ncompiled"
-          let stmts = compile (complPrel++prg)
+          let stmts = compile (prg)
           --mapM_ (putStrLn . ppStmt) $ stmts
           putStrLn "\nrunning"
-          execInStages (complPrel++prg) 0.01 5 return
+          execInStages (prg) 0.01 5 return
           waitSecs 1
          
 test1 = do sess <- newSession "/home/tomn/sessions/"
-           runNtimes 3 0.001 0.03 0 0.1 testProg prelEnv sess 
+           runNtimes 3 0.001 0.03 0 0.1 (prelude++testProg) sess 
   --let compPrel = evalManyAtOnce prelEnv
   --let sess = emptySession {sessPrelude = prelEnv}
   --runOnce 0.001 0 0.03 testProg sess 

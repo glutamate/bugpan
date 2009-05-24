@@ -17,9 +17,6 @@ import System.Time
 
 --import Array
 
-data InterpState = IS { sigs :: [(String, V)],
-                        evts :: [(String, [(Double,V)])] }
-
 safeHead [] = Nothing
 safeHead (x:_) = Just x
 

@@ -31,7 +31,7 @@ import Traverse
 import Transform
 import Stages
 import Data.Ord
-import Charts
+--import Charts
 import Control.Concurrent
 
 
@@ -125,23 +125,22 @@ loadBinary :: B.Binary w =>FilePath-> IO w
 loadBinary fp = return . B.decode {-. decompress -}=<< L.readFile fp --readFile fp >>= return . read
 
 
-runOnce :: Double -> Double -> Double -> [Declare] -> [(String, E)] -> Session -> IO ()
-runOnce dt t0 tmax ds prel sess = do
+runOnce :: Double -> Double -> Double -> [Declare] -> Session -> IO ()
+runOnce dt t0 tmax ds sess = do
   --let prel = map (\(n,v)->(n,Const v)) (sessPrelude sess)
-  let runTM = runTravM ds prel
+  let runTM = runTravM ds []
   let prg = snd . runTM $ transform
-  let complPrel =  fst . runTM $ compilablePrelude
-  ress <- execInStages (complPrel++prg) dt tmax return
+  ress <- execInStages prg dt tmax return
   putStrLn $ "results for this trial: "++show ress
   addRunToSession ds t0 tmax dt ress sess
   return ()
 
 
-runNtimes :: Int -> Double -> Double -> Double -> Double -> [Declare] -> [(String, E)] -> Session -> IO ()
-runNtimes 0 _   _    _      _    _  _   _ = return ()
-runNtimes n dt tmax tstart tsep ds prel sess = do
-  runOnce dt tstart tmax ds prel sess 
-  runNtimes (n-1) dt tmax (tstart+tsep+tmax) tsep ds prel sess
+runNtimes :: Int -> Double -> Double -> Double -> Double -> [Declare] -> Session -> IO ()
+runNtimes 0 _   _    _      _    _  _  = return ()
+runNtimes n dt tmax tstart tsep ds sess = do
+  runOnce dt tstart tmax ds sess 
+  runNtimes (n-1) dt tmax (tstart+tsep+tmax) tsep ds sess
 
 
 for = flip map
@@ -261,7 +260,7 @@ askM (Has qep qevs) = do
   guard (ev `evInEpoch` ep)
   return ep
             
-
+{-
 plot :: [V] -> IO ()
 plot vs = do --let g = map ansToPlot ans
              plotGraph (valsToGraph vs)
@@ -271,7 +270,7 @@ plot vs = do --let g = map ansToPlot ans
 valsToGraph :: [V] -> Graph
 valsToGraph vs = foldl1 (<+>) $ map vToPlot vs
     where vToPlot (SigV t1 t2 dt sf)= toGraph ((toPlot $map (\t -> (t, unsafeVToDbl $ sf t)) [t1, t1+dt..t2])%Lines)
-
+-}
 data Q = QVar String
        -- | Filter E Q
        -- | Map E Q
