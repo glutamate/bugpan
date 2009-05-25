@@ -5,26 +5,10 @@ import EvalM
 import System.Random
 import Data.HashTable as H
 import Daq
-import Comedi.Comedi
 import Numbers
 import Control.Concurrent
+import Statement
 
-data Stmt = InitSig String E
-          | Env String E
-          | SigUpdateRule String E
-          | EventAddRule String E
-          | SigSnkConn String String
-          | RunPrepare (H.HashTable String V -> IO ())
-          | RunAfterDone (H.HashTable String V -> IO ())
-          | RunAfterGo (H.HashTable String V -> IO ())
-          | Trigger (H.HashTable String V -> IO ())
-          | GLParams (MVar (IO V)) (MVar ())
-          -- | SigSwitch String [(String, E)] E
-          | ReadSrcAction String (Double -> Double -> IO V)
-            deriving (Eq, Show)    
-
-instance Show (MVar a) where
-    show mv = "<mvar>"
 
 compile :: [Declare] -> [Stmt]
 compile ds = let c = concatMap compileDec (filter noDtSeconds ds) in
@@ -44,25 +28,10 @@ compileDec (Let nm (Event ee)) = [EventAddRule nm $ unVal ee]
 compileDec (Let nm (Switch ses ser)) = 
                [SigUpdateRule nm (Switch (map noSig ses) $ unSig (unVal ser))]
     where noSig (e,s) = (e, unVal $ mapE unSig s)
-          unSig (Sig se) = se
+          unSig (Sig se) = se 
           unSig e = e
 
-compileDec (ReadSource nm ("adc":chanS:rtHzS:lenS:_)) = 
-    let rtHz= read rtHzS 
-        chanNum = read chanS
-        len = read lenS
-    in [
-     RunPrepare $ \env -> do setupInput rtHz
-                             promN <- setupInputChannel (AnalogChannel AnalogInput (-10,10) rtHz chanNum) len
-                             H.update env "adc_input_promise_number" (NumV . NInt $ promN)
-                             return (),
-     Trigger $ const internal_trigger,
-     RunAfterGo $ const start_cont_acq,
-     RunAfterDone $ \env -> do Just (NumV (NInt promN)) <- H.lookup env "adc_input_promise_number" 
-                               pts <- retrieveInputWave promN (round (len*(realToFrac rtHz)))
-                               H.update env ('#':nm) . SigV 0 len (1/(realToFrac rtHz)) $ \t-> NumV . NReal $ pts!!(round $ t*(realToFrac rtHz))
-                               return ()
-    ]
+compileDec rs@(ReadSource nm ("adc":chanS:rtHzS:lenS:_)) = compileAdcSrc rs
 compileDec (ReadSource nm srcSpec) = [ReadSrcAction nm $ genSrc srcSpec]
 compileDec (Let nm e) = [Env nm $ unVal e]
 compileDec (SinkConnect (Var nm) snkNm) = [SigSnkConn nm snkNm]

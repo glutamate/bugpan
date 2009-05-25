@@ -2,7 +2,11 @@ module Daq where
 import Foreign.C
 import Foreign.Ptr
 import Foreign.Marshal.Array
-
+import Statement
+import Expr
+import Numbers
+import Data.HashTable as H
+import EvalM
 import Comedi.Comedi
 
 setupInput ::  Int -> IO ()
@@ -27,3 +31,19 @@ retrieveInputWave nprom npnts = do
   ptr <- get_wave_ptr (fromIntegral nprom)
   fmap (map realToFrac) $ peekArray npnts ptr
 
+compileAdcSrc rs@(ReadSource nm ("adc":chanS:rtHzS:lenS:_)) = 
+    let rtHz= read rtHzS 
+        chanNum = read chanS
+        len = read lenS
+    in [
+     RunPrepare $ \env -> do setupInput rtHz
+                             promN <- setupInputChannel (AnalogChannel AnalogInput (-10,10) rtHz chanNum) len
+                             H.update env "adc_input_promise_number" (NumV . NInt $ promN)
+                             return (),
+     Trigger $ const internal_trigger,
+     RunAfterGo $ const start_cont_acq,
+     RunAfterDone $ \env -> do Just (NumV (NInt promN)) <- H.lookup env "adc_input_promise_number" 
+                               pts <- retrieveInputWave promN (round (len*(realToFrac rtHz)))
+                               H.update env ('#':nm) . SigV 0 len (1/(realToFrac rtHz)) $ \t-> NumV . NReal $ pts!!(round $ t*(realToFrac rtHz))
+                               return ()
+    ]
