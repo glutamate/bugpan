@@ -5,6 +5,15 @@ import Expr
 import Numbers
 import EvalM
 import Data.List 
+import BNFC.LexBugpan
+import BNFC.ParBugpan
+import BNFC.SkelBugpan
+import BNFC.PrintBugpan
+import BNFC.LayoutBugpan
+import BNFC.ErrM
+import Data.List.HT (partitionMaybe)
+
+
 
 convertProgram :: B.Program -> [Declare]
 convertProgram (B.Prog ds) = map convDecl ds
@@ -74,4 +83,24 @@ cPat (B.PCons p1 p2) = PatCons (cPat p1) (cPat p2)
 
 
 cType (B.TUnit) = UnitT
+
+processImports :: [Declare] -> IO [Declare]
+processImports ds = 
+    let importNm (Import nm) = Just nm
+        importNm _ = Nothing
+        (impNms, prog) = partitionMaybe importNm ds
+    in do extraDs <- mapM fileDecls impNms
+          return $ (concat extraDs)++prog
+
+fileDecls fnm = do
+  conts <- readFile $ fnm++".bug"
+  case pProgram $ myLLexer conts of 
+    Bad s -> fail $ fnm++": "++s
+    Ok ast -> processImports $ convertProgram ast
+                
+
+--from TestBugPan.hs, generated  by BNFC
+
+myLLexer = resolveLayout True . myLexer
+
 

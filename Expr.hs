@@ -62,7 +62,7 @@ data Declare
         | DeclareType String T
 --	| LetEvt String E
 --	| LetRec String E
-	| Import String (Maybe String)
+	| Import String
 	| SinkConnect E String
         | ReadSource String [String]
         | Stage String Int
