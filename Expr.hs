@@ -71,7 +71,7 @@ data Declare
 
 ppDecl (Let nm e ) = nm++" = " ++ pp e
 ppDecl (SinkConnect e sn) = (pp e++" *> " ++ sn)
-ppDecl (ReadSource varNm srcNm) = (varNm++" <- " ++ (intercalate " " srcNm))
+ppDecl (ReadSource varNm srcNm) = (varNm++" <* " ++ (intercalate " " srcNm))
 ppDecl (Import nm subst) = "use "++nm 
 ppDecl s = show s
 

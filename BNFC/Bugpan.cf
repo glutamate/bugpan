@@ -1,16 +1,21 @@
 Prog. Program ::= [Declare] ;
 
 DLet. Declare ::= BIdent [Arg] "=" Exp ;
-DImport. Declare ::= "use" BIdent [ImpSubstLine] ;
+DImport. Declare ::= "use" BIdent ;
+DImportSubst. Declare ::= "use" BIdent "{" [ImpSubstLine] "}";
 DType. Declare ::= BIdent ":" Type ;
 DSinkConn.Declare ::= Exp "*>" String ;
 DReadSrc.Declare ::= BIdent "<*" String ;
-DStage.Declare ::= "stage" BIdent Integer;
+DStage.Declare ::= "stage" BIdent String;
 
-Add. Exp1 ::= Exp2 "+" Exp3 ;
-Sub. Exp1 ::= Exp2 "-" Exp3 ;
-Mul. Exp2 ::= Exp3 "*" Exp4 ;
-Div. Exp2 ::= Exp3 "/" Exp4 ;
+Add. Exp3 ::= Exp2 "+" Exp3 ;
+Sub. Exp3 ::= Exp2 "-" Exp3 ;
+Mul. Exp4 ::= Exp3 "*" Exp4 ;
+Div. Exp4 ::= Exp3 "/" Exp4 ;
+Natexp. Exp5 ::= "exp" Exp ;
+Natlog. Exp5 ::= "ln" Exp ;
+Realpart. Exp5 ::= "re" Exp ;
+Imagpart. Exp5 ::= "im" Exp ;
 
 And. Exp1 ::= Exp2 "&&" Exp2 ;
 Or. Exp1 ::= Exp2 "||" Exp2 ;
@@ -21,7 +26,7 @@ ECmp.Exp1 ::= Exp2 CmpOp Exp2 ;
 If. Exp ::= "if" Exp1 "then" Exp1 "else" Exp1 ;
 
 Lam. Exp ::= "\\" Pat "->" Exp ;
-App. Exp4 ::= Exp Exp ;
+App. Exp5 ::= Exp Exp ;
 
 
 Pair. Exp4 ::= "(" Exp "," Exp ")" ;
@@ -38,7 +43,7 @@ SigAt. Exp3 ::= Exp1 "@" Exp1 ;
 SigDelay. Exp3 ::= "delay" Exp Exp  ;
 
 Event. Exp4 ::= "[:" Exp ":]" ;
-Switch. Exp ::= "switch" "{" Exp ";" [SwitchLine] ;
+Switch. Exp ::= "switch" "{" Exp ";" [SwitchLine] "}";
 ELet.Exp ::= "let" [LetLine] "in" Exp ;
 ECase.Exp ::= "case" Exp "of" [CaseLine] ;
 
@@ -72,7 +77,7 @@ Ge. CmpOp ::= ">=" ;
 Eq. CmpOp ::= "==" ;
 Ne. CmpOp ::= "!=" ;
 
-coercions Exp 4;
+coercions Exp 5;
 coercions Pat 1;
 --coercions Const 0 ;
 

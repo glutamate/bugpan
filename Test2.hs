@@ -119,8 +119,8 @@ allTransforms = do
 
 --prelEnv = declsToEnv prelude
 
-main = testQ
-
+main = test
+{-
 testQ = do test1
            s <- lastSession "/home/tomn/sessions/"
            print s
@@ -129,7 +129,7 @@ testQ = do test1
                          
            --mapM print qres
            return ()
-
+-}
 test = do putStrLn "\ninitial"
           --ppProg prelude
           --ppProg testProg

@@ -1,4 +1,4 @@
-bnfc:
+bnfc: BNFC/Bugpan.cf
 	rm -f BNFC/*.hs
 	cd BNFC && bnfc -m -haskell Bugpan.cf
 	cd BNFC && happy -gca ParBugpan.y
@@ -10,5 +10,11 @@ bnfc:
 	cd BNFC && sed -i -e 's/import ErrM/import BNFC.ErrM/' *.hs
 	ghc --make BNFC/TestBugpan
 
-RunBugpan: bnfc
+runbugpan: bnfc comedi_helper
 	ghc --make RunBugpan -threaded -lcomedi Comedi/comedi_hs_helper.o
+
+nodaq: bnfc
+	ghc --make RunBugpan -threaded
+
+comedi_helper: 
+	gcc -c -g -o Comedi/comedi_hs_helper.o Comedi/comedi_hs_helper.c

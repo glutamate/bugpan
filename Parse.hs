@@ -12,6 +12,7 @@ import BNFC.PrintBugpan
 --import BNFC.LayoutBugpan
 import BNFC.ErrM
 import Data.List.HT (partitionMaybe)
+import HaskSyntaxUntyped (splitBySpaces)
 
 ident nm=nm
 
@@ -22,7 +23,13 @@ convertProgram (B.Prog ds) = map convDecl ds
 convDecl (B.DLet (B.BIdent b) args e) = Let (ident b) . addLamsP (reverse args) $ cE e
 convDecl (B.DType (B.BIdent b) t) = DeclareType (ident b) $cType t
 convDecl (B.DSinkConn e idts) = SinkConnect (cE e) idts
-convDecl (B.DImport (B.BIdent b) substs) = Import (ident b) [] 
+convDecl (B.DImport (B.BIdent b)) = Import (ident b) [] 
+convDecl (B.DImportSubst (B.BIdent b) substs) = Import (ident b) $ map unSubst substs
+convDecl (B.DReadSrc (B.BIdent b) spec) = ReadSource (ident b) $ splitBySpaces spec
+convDecl (B.DStage (B.BIdent b) intStr) = Stage (ident b) $ read intStr
+--convDecl b = error $"convDecl: "++show b
+
+unSubst (B.ImpSubstLine (B.BIdent b) e) = (ident b, cE e)
 
 addLamsP [] e = e
 addLamsP (B.Arg (B.PVar (B.BIdent b)):vs) e = addLamsP vs $ Lam (ident b) e
@@ -34,11 +41,18 @@ cE (B.Sub e1 e2) = M2 Sub (cE e1) (cE e2)
 cE (B.Mul e1 e2) = M2 Mul (cE e1) (cE e2)
 cE (B.Div e1 e2) = M2 Div (cE e1) (cE e2)
 cE (B.And e1 e2) = And (cE e1) (cE e2)
+cE (B.Natexp e1) = M1 Exp (cE e1)
+cE (B.Natlog e1) = M1 Ln (cE e1)
+cE (B.Realpart e1) = M1 Re (cE e1)
+cE (B.Imagpart e1) = M1 Im (cE e1)
+
 cE (B.Or e1 e2) = Or (cE e1) (cE e2)
 cE (B.Not e2) = Not (cE e2)
 cE (B.ECmp e1 op e2) = Cmp (cCmpOp op) (cE e1) (cE e2)
 cE (B.If p c a) = If (cE p) (cE c) (cE a)
 cE (B.Lam (B.PVar (B.BIdent b)) e) = Lam (ident b) $ cE e
+cE (B.Lam (B.PWild) e) = Lam "_" $ cE e
+
 cE (B.App e1 e2) = App (cE e1) (cE e2)
 cE (B.Pair e1 e2) = Pair (cE e1) (cE e2)
 cE (B.Cons e1 e2) = Cons (cE e1) (cE e2)
@@ -67,6 +81,7 @@ cE (B.ECase e pats) =
     Case (cE e)
        (map (\(B.CaseLine pat ep) -> (cPat pat, cE ep)) pats)
       
+cE e = error $"cE: "++show e
 
 cCmpOp op = case op of
               B.Lt -> Lt

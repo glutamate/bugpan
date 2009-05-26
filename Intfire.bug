@@ -1,0 +1,22 @@
+use Prelude; -- { vm => 0.07, rm => 1e9 };
+
+alpha tau t = if t<0 then 0 else tau*tau*t*(exp (0-t*tau)) ;
+
+rndSpikeSig <* "bernoulli 100";
+rndSpike = eventIf <: rndSpikeSig :> ;
+
+gsyn = (smap (alpha 300)) seconds;
+
+stage gsyn "-1" ;
+
+gcell = (convolve gsyn) rndSpike ;
+cellOde = \v->{: ((<: gcell :>*3.0000e-13)-((v+7.0000e-2)/1.0000e9))/2.5000e-12 :} ;
+vm = switch {
+((solveOde cellOde) (0-7.0000e-2)); 
+spike ~> \_->\_->{: 0-7.0000e-2 :};
+refrac_end ~> \tsp->\_->((solveOdeFrom (tsp+dt)) cellOde) (0-7.0000e-2);
+} ;
+spike = (crosses (0-4.0000e-2)) vm;
+refrac_end = (later 2.0000e-3) spike;
+vm *> "store";
+spike *> "store";
