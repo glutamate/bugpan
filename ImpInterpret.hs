@@ -14,6 +14,7 @@ import OpenGL
 import Control.Concurrent
 import Control.Concurrent.STM.TMVar
 import System.Time
+import Statement
 
 --import Array
 

@@ -9,6 +9,7 @@ import Compiler
 import Data.IORef
 import Control.Monad
 import EvalM
+import Statement
 
 --data RelPos = At | Before | After
 

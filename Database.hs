@@ -31,7 +31,7 @@ import Traverse
 import Transform
 import Stages
 import Data.Ord
---import Charts
+import Charts
 import Control.Concurrent
 
 
@@ -279,11 +279,11 @@ plot vs = do --let g = map ansToPlot ans
 valsToGraph :: [V] -> Graph
 valsToGraph vs = foldl1 (<+>) $ map vToPlot vs
     where vToPlot (SigV t1 t2 dt sf)= toGraph ((toPlot $map (\t -> (t, unsafeVToDbl $ sf t)) [t1, t1+dt..t2])%Lines)
-          vToPlot vs | all isEvent vs = toGraph ((toPlot $ map (\e-> (evTime e, unsafeVToDbl $ evTag e)) vs)%FilledCircles)
-          vToPlot vs | all isEpoch vs = 
-                         toGraph ((toPlot $ concatMap (\ep-> let (t1,t2) = epTs ep 
-                                                                 epvl = unsafeVToDbl $ epTag ep in
-                                                             [(t1, epvl), (t2, epvl)]))%Lines) --should be broken lines
+          vToPlot e  | isEvent e = toGraph ((toPlot [(evTime e, unsafeVToDbl $ evTag e)])%FilledCircles)
+          vToPlot ep | isEpoch ep = 
+                         let (t1,t2) = epTs ep 
+                             epvl = unsafeVToDbl $ epTag ep in
+                         toGraph ((toPlot [(t1, epvl), (t2, epvl)])%Lines) 
 
 
 data Q = QVar String
