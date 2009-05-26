@@ -10,11 +10,12 @@ import Data.List (partition, intercalate)
 import Traverse
 import Control.Monad.State.Strict
 import Debug.Trace
+import BuiltIn
 
 substHasSigs :: TravM ()
 substHasSigs = mapDE $ \tle -> mapEM subst tle
     where subst e@(App (Var nm) arg) = do
-            ifM (inBoundVars nm)
+            ifM (dontLookUp nm)
                 (return e)
                 $ do defn <- lookUp nm
                      ifM (hasSig $ stripSig defn)
@@ -25,7 +26,7 @@ substHasSigs = mapDE $ \tle -> mapEM subst tle
 substGetsSigs :: TravM ()
 substGetsSigs = mapDE $ \tle -> mapEM subst tle
     where subst e@(App (Var nm) arg) = do
-            ifM (inBoundVars nm)
+            ifM (dontLookUp nm)
                 (return e)
                 $ do defn <- lookUp nm
                      ifM (hasSig arg)
@@ -36,7 +37,7 @@ substGetsSigs = mapDE $ \tle -> mapEM subst tle
 substMakesShape :: TravM ()
 substMakesShape = mapDE $ \tle -> mapEM subst tle
     where subst e@(App (Var nm) arg) = do
-            ifM (inBoundVars nm)
+            ifM (dontLookUp nm)
                 (return e)
                 $ do defn <- lookUp nm
                      ifM (makesShape defn)
@@ -190,7 +191,7 @@ addStageAnnotations = whileChanges $ do
   let existSnks = [n | SinkConnect (Var n1) ('#':n) <- ds, n1==n]
   let newSnks =[SinkConnect (Var nm) ('#':nm) | Stage nm _ <- ds, not $ nm `elem` existSnks  ]
   forM_ sAnnos $ \(nm, stage)-> do 
-    defn <- lookUp nm
+    defn <- lookUp nm 
     let depSigs = filter ((`isSubTermIn` defn) .  Var) $ allSigs
     forM_ depSigs $ \depSig-> do
       let sAnn =[ stage | Stage nmDs stageDs <- ds, 
@@ -276,7 +277,7 @@ hasSig e = {- trace (pp e ) $ -} or `fmap` queryM (hasSigAux []) e
           hasSigAux _ (Event _) = return [True]
           hasSigAux _ (SigDelay _ _) = return [True]
           hasSigAux lu v@(Var nm) = 
-              ifM (mor (inBoundVars nm) (isDefBySrc nm))
+              ifM (dontLookUp nm)
                   (return [False])
                   $ do defn <- stripSig `fmap` lookUp nm
                        --pth <- exprPath `fmap` get
@@ -285,6 +286,12 @@ hasSig e = {- trace (pp e ) $ -} or `fmap` queryM (hasSigAux []) e
                           else {- trace (nm++": "++pp defn) $ -} queryM (hasSigAux $ nm:lu) defn
           hasSigAux _ (_) = return [False] 
 
+dontLookUp nm = do conds <- sequence [ (inBoundVars nm),
+                                       (isDefBySrc nm),
+                                       (return $ nm `elem` bivNms)
+                                     ]
+                   return $ or conds
+
 makesShape :: E->TravM Bool
 makesShape e =  or `fmap` queryM (makesShapeAux []) e
     where makesShapeAux :: [String] -> E -> TravM [Bool]
@@ -292,7 +299,7 @@ makesShape e =  or `fmap` queryM (makesShapeAux []) e
           makesShapeAux _ (Translate _ _) = return [True]
           makesShapeAux _ (Colour _ _) = return [True]
           makesShapeAux lu v@(Var nm) = 
-              ifM (mor (inBoundVars nm) (isDefBySrc nm)) 
+              ifM (dontLookUp nm) 
                   (return [False])
                   $ do defn <-  lookUp nm
                        if v `isSubTermIn` defn ||  nm `elem` lu
@@ -300,7 +307,6 @@ makesShape e =  or `fmap` queryM (makesShapeAux []) e
                           else queryM (makesShapeAux $ nm:lu) defn
           makesShapeAux _ (_) = return [False] 
 
-mor = liftM2 (||)
 
 isDefBySrc nm = do ds <- decls `fmap` get
                    return $ any test ds

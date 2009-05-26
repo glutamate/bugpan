@@ -2,3 +2,10 @@
 *.o
 *~
 *.bak
+BNFC/*.hs
+BNFC/DocBugpan.tex
+BNFC/*.x
+BNFC/*.y
+BNFC/Makefile
+BNFC/TestBugpan
+*.exe

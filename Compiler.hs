@@ -8,10 +8,10 @@ import Daq
 import Numbers
 import Control.Concurrent
 import Statement
-
+import BuiltIn
 
 compile :: [Declare] -> [Stmt]
-compile ds = let c = concatMap compileDec (filter noDtSeconds ds) in
+compile ds = let c = concatMap compileDec (filter noDtSeconds (bivDecls++ds)) in 
              concat [constEnv c, initSigVals c, mainLoop c] 
 
 noDtSeconds :: Declare -> Bool

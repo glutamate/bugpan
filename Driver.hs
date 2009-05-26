@@ -16,6 +16,7 @@ import Data.Maybe
 import EvalM
 import System.Posix.Files
 import System.Directory
+import Statement
 
 data DriverState = DS {
       dsSession :: Maybe (Session),
@@ -56,8 +57,8 @@ loop  ds = do
 dispatch (DS msess dpmv rmv dt _ _) (Prepare prg' tmax) = do
   let runTM = runTravM prg' (declsToEnv prelude)
   let prg = snd . runTM $ transform
-  let complPrel =  fst . runTM $ compilablePrelude
-  return $ DS msess dpmv rmv dt  tmax (complPrel++prg)
+  --let complPrel =  fst . runTM $ compilablePrelude
+  return $ DS msess dpmv rmv dt  tmax prg
 
 dispatch ds@(DS (Just sess) dpmv rmv dt tmax prg) Go = do
   tnow <- getClockTime
