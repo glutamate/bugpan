@@ -62,7 +62,7 @@ data Declare
         | DeclareType String T
 --	| LetEvt String E
 --	| LetRec String E
-	| Import String
+	| Import String [(String, E)]
 	| SinkConnect E String
         | ReadSource String [String]
         | Stage String Int
@@ -72,6 +72,7 @@ data Declare
 ppDecl (Let nm e ) = nm++" = " ++ pp e
 ppDecl (SinkConnect e sn) = (pp e++" *> " ++ sn)
 ppDecl (ReadSource varNm srcNm) = (varNm++" <- " ++ (intercalate " " srcNm))
+ppDecl (Import nm subst) = "use "++nm 
 ppDecl s = show s
 
 --for display purposes only

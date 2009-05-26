@@ -1,6 +1,7 @@
 Prog. Program ::= [Declare] ;
 
 DLet. Declare ::= BIdent [Arg] "=" Exp ;
+DImport. Declare ::= "use" BIdent [ImpSubstLine] ;
 DType. Declare ::= BIdent ":" Type ;
 DSinkConn.Declare ::= Exp "*>" String ;
 DReadSrc.Declare ::= BIdent "<*" String ;
@@ -46,6 +47,8 @@ LetLine. LetLine ::= BIdent "=" Exp ;
 CaseLine. CaseLine ::= Pat "->" Exp ;
 Arg. Arg ::= Pat1 ;
 
+ImpSubstLine. ImpSubstLine ::= BIdent "=>" Exp ; 
+
 PVar. Pat1 ::= BIdent ;
 PWild. Pat1 ::= "_" ;
 PLit. Pat1 ::= Const ;
@@ -83,7 +86,7 @@ separator Exp ","  ;
 separator BIdent " " ;
 
 separator Arg "" ;
-
+separator ImpSubstLine "," ;
 comment "--" ;
 
 --layout toplevel ;

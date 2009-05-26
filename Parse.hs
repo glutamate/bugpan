@@ -22,6 +22,7 @@ convertProgram (B.Prog ds) = map convDecl ds
 convDecl (B.DLet (B.BIdent b) args e) = Let (ident b) . addLamsP (reverse args) $ cE e
 convDecl (B.DType (B.BIdent b) t) = DeclareType (ident b) $cType t
 convDecl (B.DSinkConn e idts) = SinkConnect (cE e) idts
+convDecl (B.DImport (B.BIdent b) substs) = Import (ident b) [] 
 
 addLamsP [] e = e
 addLamsP (B.Arg (B.PVar (B.BIdent b)):vs) e = addLamsP vs $ Lam (ident b) e
@@ -94,7 +95,7 @@ cType (B.TUnit) = UnitT
 
 processImports :: [Declare] -> IO [Declare]
 processImports ds = 
-    let importNm (Import nm) = Just nm
+    let importNm (Import nm _) = Just nm
         importNm _ = Nothing
         (impNms, prog) = partitionMaybe importNm ds
     in do extraDs <- mapM fileDecls impNms
