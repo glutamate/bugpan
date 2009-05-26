@@ -9,33 +9,40 @@ import BNFC.LexBugpan
 import BNFC.ParBugpan
 import BNFC.SkelBugpan
 import BNFC.PrintBugpan
-import BNFC.LayoutBugpan
+--import BNFC.LayoutBugpan
 import BNFC.ErrM
 import Data.List.HT (partitionMaybe)
 
+ident nm=nm
 
 
 convertProgram :: B.Program -> [Declare]
 convertProgram (B.Prog ds) = map convDecl ds
 
-convDecl (B.DLet (B.Ident nm) e) = Let nm $ cE e
-convDecl (B.DType (B.Ident nm) t) = DeclareType nm $cType t
+convDecl (B.DLet (B.BIdent b) args e) = Let (ident b) . addLamsP (reverse args) $ cE e
+convDecl (B.DType (B.BIdent b) t) = DeclareType (ident b) $cType t
 convDecl (B.DSinkConn e idts) = SinkConnect (cE e) idts
 
-unIdent (B.Ident nm) = nm
+addLamsP [] e = e
+addLamsP (B.Arg (B.PVar (B.BIdent b)):vs) e = addLamsP vs $ Lam (ident b) e
+
+unIdent (B.BIdent b) = (ident b)
 
 cE (B.Add e1 e2) = M2 Add (cE e1) (cE e2)
 cE (B.Sub e1 e2) = M2 Sub (cE e1) (cE e2)
 cE (B.Mul e1 e2) = M2 Mul (cE e1) (cE e2)
 cE (B.Div e1 e2) = M2 Div (cE e1) (cE e2)
+cE (B.And e1 e2) = And (cE e1) (cE e2)
+cE (B.Or e1 e2) = Or (cE e1) (cE e2)
+cE (B.Not e2) = Not (cE e2)
 cE (B.ECmp e1 op e2) = Cmp (cCmpOp op) (cE e1) (cE e2)
 cE (B.If p c a) = If (cE p) (cE c) (cE a)
-cE (B.Lam (B.PVar (B.Ident nm)) e) = Lam nm $ cE e
+cE (B.Lam (B.PVar (B.BIdent b)) e) = Lam (ident b) $ cE e
 cE (B.App e1 e2) = App (cE e1) (cE e2)
 cE (B.Pair e1 e2) = Pair (cE e1) (cE e2)
 cE (B.Cons e1 e2) = Cons (cE e1) (cE e2)
 cE (B.Nil) = Nil
-cE (B.Var (B.Ident nm)) = Var nm
+cE (B.Var (B.BIdent b)) = Var (ident b)
 cE (B.EConst c) = Const (conToV c)
 
 cE (B.ListLit es) = foldl (Cons) Nil $ map cE es
@@ -53,7 +60,7 @@ cE (B.Switch s1 ses) =
 
 cE (B.ELet les e) = 
     LetE
-       (map (\(B.LetLine (B.Ident nm) es) -> (nm, cE es)) les)
+       (map (\(B.LetLine (B.BIdent b) es) -> ((ident b), cE es)) les)
        (cE e)
 cE (B.ECase e pats) = 
     Case (cE e)
@@ -65,7 +72,8 @@ cCmpOp op = case op of
               B.Gt -> Gt
               B.Eq -> Eq
               B.Ne -> Ne
-              --B.Lt -> Lt
+              B.Le -> Lt
+              B.Ge -> Ge
 
 
 conToV (B.CInt i) = NumV (NInt $ fromInteger i)
@@ -74,7 +82,7 @@ conToV B.CUnit = Unit
 conToV B.CTrue = BoolV True
 conToV B.CFalse = BoolV False
 
-cPat (B.PVar (B.Ident nm)) = PatVar nm
+cPat (B.PVar (B.BIdent b)) = PatVar (ident b)
 cPat (B.PWild) = PatIgnore
 cPat (B.PLit con) = PatLit $ conToV con
 cPat (B.PPair p1 p2) = PatPair (cPat p1) (cPat p2)
@@ -101,6 +109,6 @@ fileDecls fnm = do
 
 --from TestBugPan.hs, generated  by BNFC
 
-myLLexer = resolveLayout True . myLexer
+myLLexer = {-resolveLayout True .-} myLexer
 
 

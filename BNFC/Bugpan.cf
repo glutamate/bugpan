@@ -1,15 +1,19 @@
 Prog. Program ::= [Declare] ;
 
-DLet. Declare ::= Ident "=" Exp ;
-DType. Declare ::= Ident ":" Type ;
+DLet. Declare ::= BIdent [Arg] "=" Exp ;
+DType. Declare ::= BIdent ":" Type ;
 DSinkConn.Declare ::= Exp "*>" String ;
-DReadSrc.Declare ::= Ident "<*" String ;
-DStage.Declare ::= "stage" Ident Integer;
+DReadSrc.Declare ::= BIdent "<*" String ;
+DStage.Declare ::= "stage" BIdent Integer;
 
 Add. Exp1 ::= Exp2 "+" Exp3 ;
 Sub. Exp1 ::= Exp2 "-" Exp3 ;
 Mul. Exp2 ::= Exp3 "*" Exp4 ;
 Div. Exp2 ::= Exp3 "/" Exp4 ;
+
+And. Exp1 ::= Exp2 "&&" Exp2 ;
+Or. Exp1 ::= Exp2 "||" Exp2 ;
+Not. Exp2 ::= "!" Exp3 ;
 
 ECmp.Exp1 ::= Exp2 CmpOp Exp2 ;
 
@@ -24,7 +28,7 @@ Nil. Exp4 ::= "[]" ;
 Cons. Exp ::= Exp "::" Exp ;
 ListLit.Exp4 ::= "[" [Exp] "]" ;
 
-Var. Exp4 ::= Ident ;
+Var. Exp4 ::= BIdent ;
 EConst. Exp4 ::= Const ;
 
 Sig. Exp4 ::= "{:" Exp ":}" ;
@@ -34,18 +38,19 @@ SigDelay. Exp3 ::= "delay" Exp Exp  ;
 
 Event. Exp4 ::= "[:" Exp ":]" ;
 Switch. Exp ::= "switch" "{" Exp ";" [SwitchLine] ;
-ELet.Exp ::= "let" [LetLine] Exp ;
+ELet.Exp ::= "let" [LetLine] "in" Exp ;
 ECase.Exp ::= "case" Exp "of" [CaseLine] ;
 
 SwitchLine. SwitchLine ::= Exp "~>" Exp ;
-LetLine. LetLine ::= Ident "=" Exp ;
+LetLine. LetLine ::= BIdent "=" Exp ;
 CaseLine. CaseLine ::= Pat "->" Exp ;
+Arg. Arg ::= Pat1 ;
 
-PVar. Pat ::= Ident ;
-PWild. Pat ::= "_" ;
-PLit. Pat ::= Const ;
-PPair. Pat ::= "(" Pat "," Pat ")" ;
-PNil. Pat ::= "[]" ;
+PVar. Pat1 ::= BIdent ;
+PWild. Pat1 ::= "_" ;
+PLit. Pat1 ::= Const ;
+PPair. Pat1 ::= "(" Pat "," Pat ")" ;
+PNil. Pat1 ::= "[]" ;
 PCons. Pat ::= Pat "::" Pat ;
 
 CInt. Const ::= Integer ;
@@ -59,10 +64,13 @@ TLam. Type ::= Type "->" Type ;
 
 Lt. CmpOp ::= "<" ;
 Gt. CmpOp ::= ">" ;
+Le. CmpOp ::= "<=" ;
+Ge. CmpOp ::= ">=" ;
 Eq. CmpOp ::= "==" ;
 Ne. CmpOp ::= "!=" ;
 
 coercions Exp 4;
+coercions Pat 1;
 --coercions Const 0 ;
 
 terminator Declare ";"  ;
@@ -72,8 +80,12 @@ terminator CaseLine ";"  ;
 
 separator Exp ","  ;
 
-separator Ident " " ;
+separator BIdent " " ;
+
+separator Arg "" ;
 
 comment "--" ;
 
-layout toplevel ;
+--layout toplevel ;
+
+token BIdent (letter (letter|digit|'_'|'\'')*) ;

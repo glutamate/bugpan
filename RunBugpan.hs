@@ -46,6 +46,7 @@ dispatch rst (file:args) | head file /= '-' = do
 dispatch rst [] = go rst
 
 go (RS ds Nothing dt tmax) = do
+  mapM (putStrLn . ppDecl) ds
   let runTM = runTravM ds []
   let prg = snd . runTM $ transform
   ress <- execInStages prg dt tmax return

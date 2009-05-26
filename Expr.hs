@@ -99,13 +99,13 @@ pp :: E->String
 pp (If p c a) = concat ["if ", pp p, " then ", ppa c, " else ", ppa a]
 pp (Lam n e) = concat ["\\", n, "->", pp e]
 pp (Var n) = n
-pp (Const v) = show v
+pp (Const v) = ppVal v
 pp (App f a) = ppa f ++ " " ++ ppa a
 pp (Pair (Pair x y) z) = concat ["(", pp x , ", ", pp y,", ", pp z, ")"]
 pp (Pair f s) = concat ["(", pp f , ", ", pp s, ")"]
 pp (Nil) = "[]"
 pp (Cons car Nil) = "[ "++pp car++" ]" -- ppa car ++ ":" ++ ppa cdr
-pp (Cons car cdr) = ppa car ++ ":" ++ ppa cdr
+pp (Cons car cdr) = ppa car ++ "::" ++ ppa cdr
 pp (Cmp Lt e1 e2) = ppa e1 ++ " < " ++ ppa e2
 pp (Cmp Gt e1 e2) = ppa e1 ++ " > " ++ ppa e2
 pp (Cmp Eq e1 e2) = ppa e1 ++ " == " ++ ppa e2
@@ -328,7 +328,7 @@ ppPat (PatIgnore ) = "_"
 ppPat (PatLit e) = show e
 ppPat (PatPair x y) = "("++ppPat x++","++ppPat y++")"
 ppPat (PatNil) = "[]"
-ppPat (PatCons x xs) = "("++ppPat x++":"++ppPat xs++")"
+ppPat (PatCons x xs) = "("++ppPat x++"::"++ppPat xs++")"
 
 patIntroducedVars (PatVar nm) = [nm]
 patIntroducedVars (PatCons h t)= patIntroducedVars h ++ patIntroducedVars t
