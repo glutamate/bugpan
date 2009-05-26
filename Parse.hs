@@ -1,4 +1,4 @@
-module ConvertToExpr where
+module Parse where
 
 import qualified BNFC.AbsBugpan as B
 import Expr
