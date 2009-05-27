@@ -127,17 +127,20 @@ loadBinary fp = return . B.decode {-. decompress -}=<< L.readFile fp --readFile 
 runOnce :: Double -> Double -> Double -> [Declare] -> Session -> IO ()
 runOnce dt t0 tmax ds sess = do
   --let prel = map (\(n,v)->(n,Const v)) (sessPrelude sess)
-  let runTM = runTravM ds []
-  let prg = snd . runTM $ transform
-  ress <- execInStages prg dt tmax return
-  putStrLn $ "results for this trial: "++show ress
-  addRunToSession ds t0 tmax dt ress sess
+  --let runTM = runTravM ds []
+  --mapM (putStrLn . ppDecl) ds
+  let prg = snd . runTravM ds [] $ transform
+  --print prg
+  --ress <- execInStages prg dt tmax return
+  --putStrLn $ "results for this trial: "++show ress
+  --addRunToSession ds t0 tmax dt ress sess
   return ()
 
 
 runNtimes :: Int -> Double -> Double -> Double -> Double -> [Declare] -> Session -> IO ()
 runNtimes 0 _   _    _      _    _  _  = return ()
 runNtimes n dt tmax tstart tsep ds sess = do
+  --print "first"
   runOnce dt tstart tmax ds sess 
   runNtimes (n-1) dt tmax (tstart+tsep+tmax) tsep ds sess
 

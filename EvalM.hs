@@ -195,7 +195,7 @@ unLamV (LamV f) = return f
 unLamV _ = fail "expected function argument"
 
 unListV (ListV vs) = return vs
-unListV _ = fail "expected list argument"
+unListV v = fail $ "expected list argument, got: "++show v
 
 unPairV (PairV x y)= return $ (x,y)
 unPairV pr = fail $ "expected PairV, got "++show pr

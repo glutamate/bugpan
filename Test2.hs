@@ -61,7 +61,8 @@ testProg  = [
                  ] ("solveOde" $> "cellOde" $> (-0.07))),
  "spike" =: ("crosses" $> (-0.04) $> "vm"),
  "refrac_end" =: ("later" $> 0.002 $> "spike"),
- 
+ "vm" *> "print",
+ "spike" *> "print",
  "vm" *> "store",
  "spike" *> "store"]
 
@@ -89,11 +90,11 @@ x #= y = (x,y)
 ppProg = mapM (putStrLn . ppDecl) 
 
 hasSigProg :: Program -> [(String, Bool)]
-hasSigProg p = fst . runTM $ 
+hasSigProg p = fst . runTravM (prelude++testProg) [] $ 
                forM p $ \(Let n e)-> do hs <- hasSig e
                                         return (n, hs)
 
-runTM = runTravM (loomProg++ prelude) []
+runTM = runTravM (prelude++testProg) []
 
 --infixl 1 =:                                         
 --x =: y = Let x y 
@@ -107,19 +108,19 @@ takeMoreAndMore xs = map (`take` xs) [1..length xs]
 
 allTransforms :: IO ()
 allTransforms = do
-  putStrLn "\nprelude"
-  ppProg prelude
+  --putStrLn "\nprelude"
+  --ppProg prelude
   putStrLn "\ninitial"
-  ppProg testProg
+  ppProg $ prelude++testProg
   forM_ (takeMoreAndMore transforms) $ \trnsfs -> do 
       putStrLn $ "\nafter: "++(intercalate ", " $ map snd trnsfs)
-      ppProg (snd . runTM $ sequence_ (map fst trnsfs))
+      ppProg (snd . runTravM (prelude++testProg) [] $ sequence_ (map fst trnsfs))
   return ()
 
 
 --prelEnv = declsToEnv prelude
 
-main = test
+main = allTransforms --test1
 {-
 testQ = do test1
            s <- lastSession "/home/tomn/sessions/"

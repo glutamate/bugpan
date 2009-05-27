@@ -48,9 +48,9 @@ prelude = [
  "convolve s es" =: (sig ("sum" $> ("map" $> 
     (Lam "e" (SigAt (val "seconds" - ("fst" $> "e" )) "s")) $> "es"))),
  "laterF t e" =: (Pair (("fst" $> "e")+"t") ("snd" $> "e")),
- "later t es" =: ("emap" $> ("laterF" $> "t") $> "es"),
- "seconds" =: sig 1, --dummy
- "dt" =: 1 --dummy
+ "later t es" =: ("emap" $> ("laterF" $> "t") $> "es")
+ --"seconds" =: sig 1, --dummy
+ --"dt" =: 1 --dummy
           ]++solvers
 
 pair3e e1 e2 e3 = Pair (Pair e1 e2) e3

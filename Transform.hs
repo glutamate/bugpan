@@ -15,6 +15,7 @@ import BuiltIn
 substHasSigs :: TravM ()
 substHasSigs = mapDE $ \tle -> mapEM subst tle
     where subst e@(App (Var nm) arg) = do
+            --trace ("substHasSigs:"++show e) return ()
             ifM (dontLookUp nm)
                 (return e)
                 $ do defn <- lookUp nm
@@ -277,13 +278,13 @@ hasSig e = {- trace (pp e ) $ -} or `fmap` queryM (hasSigAux []) e
           hasSigAux _ (Event _) = return [True]
           hasSigAux _ (SigDelay _ _) = return [True]
           hasSigAux lu v@(Var nm) = 
-              ifM (dontLookUp nm)
+              ifM ({-mor (inBoundVars nm) (isDefBySrc nm)) -} (dontLookUp nm))
                   (return [False])
                   $ do defn <- stripSig `fmap` lookUp nm
                        --pth <- exprPath `fmap` get
                        if v `isSubTermIn` defn ||  nm `elem` lu
                           then return [False] -- not sure about this but need to break loop
-                          else {- trace (nm++": "++pp defn) $ -} queryM (hasSigAux $ nm:lu) defn
+                          else  {-trace (nm++": "++pp defn) $-}  queryM (hasSigAux $ nm:lu) defn
           hasSigAux _ (_) = return [False] 
 
 dontLookUp nm = do conds <- sequence [ (inBoundVars nm),
@@ -291,6 +292,8 @@ dontLookUp nm = do conds <- sequence [ (inBoundVars nm),
                                        (return $ nm `elem` bivNms)
                                      ]
                    return $ or conds
+
+--mor = liftM2 (||)
 
 makesShape :: E->TravM Bool
 makesShape e =  or `fmap` queryM (makesShapeAux []) e

@@ -121,7 +121,7 @@ exec stmts dt tmax =
                                     return ()
                            SigSnkConn nm "print" -> do 
                                     v <-fromJust `fmap` H.lookup envHT nm
-                                    putStr $ show v++"\t"
+                                    putStr $ ppVal v++"\t"
                                     return ()              
                            SigSnkConn sn bn@('#':bufnm) -> do 
                                     buf <- H.lookup envHT bn
@@ -149,7 +149,7 @@ exec stmts dt tmax =
 
        forM_ (map fst initEvts) $ \enm-> do
          ListV es <- fromJust `fmap` H.lookup envHT enm
-         putStrLn $ concat [enm , " -> ", show $ reverse es]
+         putStrLn $ concat [enm , " -> ", concatMap ppVal $ reverse es]
        forM_ bufnms $ \bufn-> do 
          --H.lookup envHT bufn >>= print 
          Just (ListV buf) <- H.lookup envHT ('#':bufn)

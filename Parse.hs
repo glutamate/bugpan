@@ -60,13 +60,14 @@ cE (B.Nil) = Nil
 cE (B.Var (B.BIdent b)) = Var (ident b)
 cE (B.EConst c) = Const (conToV c)
 
-cE (B.ListLit es) = foldl (Cons) Nil $ map cE es
+cE (B.ListLit []) = Nil 
+cE (B.ListLit (e:es)) = Cons (cE e) (cE $ B.ListLit es)
 
 cE (B.Sig e) = Sig $ cE e
 cE (B.SigVal e) = SigVal $ cE e
 cE (B.Event e) = Event $ cE e
 cE (B.SigDelay e1 e2) = SigDelay (cE e1) (cE e2)
-cE (B.SigAt e1 e2) = SigAt (cE e1) (cE e2)
+cE (B.SigAt e1 e2) = SigAt (cE e2) (cE e1)
 cE (B.Switch s1 ses) = 
     Switch 
        (map (\(B.SwitchLine ee es) -> (cE ee, cE es)) ses)

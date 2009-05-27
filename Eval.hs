@@ -75,8 +75,10 @@ eval es e@(M2 Div e1 e2) = do
   return . NumV $ v1/v2
 
 eval es (Cons e1 e2) = 
-    do car <- eval es e1 
-       ListV cdrl <- eval es e2
+    do car <- eval es e1
+       cdrvl <-  eval es e2
+       cdrl <- unListV cdrvl
+
        return $ ListV (car:cdrl)
 eval es (Pair e1 e2) = liftM2 (PairV) (eval es e1) (eval es e2) 
 eval es (Nil) = return $ ListV []
