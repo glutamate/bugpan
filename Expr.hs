@@ -102,7 +102,7 @@ pp (Lam n e) = concat ["\\", n, "->", pp e]
 pp (Var n) = n
 pp (Const v) = ppVal v
 pp (App f a) = ppa f ++ " " ++ ppa a
-pp (Pair (Pair x y) z) = concat ["(", pp x , ", ", pp y,", ", pp z, ")"]
+--pp (Pair (Pair x y) z) = concat ["(", pp x , ", ", pp y,", ", pp z, ")"]
 pp (Pair f s) = concat ["(", pp f , ", ", pp s, ")"]
 pp (Nil) = "[]"
 pp (Cons car Nil) = "[ "++pp car++" ]" -- ppa car ++ ":" ++ ppa cdr
@@ -131,7 +131,7 @@ pp (M2 Div e1 e2) = pp2op e1 "/" e2
 pp (M1 op e) = show op ++ " " ++ ppa e
 pp (LetE les efinal) = concat ["let ", concat $ ppes les, " in ", ppa efinal]
     where ppes es = map (\(n,e)-> n++" = "++pp e++";") es 
-pp (Box d) = "cube "++ppa d
+pp (Box d) = "box "++ppa d
 pp (Translate t e) = "translate "++ppa t++" "++ppa e
 pp (Colour t e) = "colour "++ppa t++" "++ppa e
 pp (Case tst pats) = "case "++pp tst++" of "++ concatMap (\(pat,e)-> ppPat pat++" -> "++pp e++"; ") pats

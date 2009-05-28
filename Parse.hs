@@ -82,6 +82,10 @@ cE (B.ECase e pats) =
     Case (cE e)
        (map (\(B.CaseLine pat ep) -> (cPat pat, cE ep)) pats)
       
+cE (B.Box e) = Box (cE e)
+cE (B.Translate e1 e2) = Translate (cE e1) (cE e2)
+cE (B.Colour e1 e2) = Colour (cE e1) (cE e2)
+
 cE e = error $"cE: "++show e
 
 cCmpOp op = case op of

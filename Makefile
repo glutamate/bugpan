@@ -10,10 +10,10 @@ bnfc: BNFC/Bugpan.cf
 	cd BNFC && sed -i -e 's/import ErrM/import BNFC.ErrM/' *.hs
 	ghc --make BNFC/TestBugpan
 
-runbugpan: bnfc comedi_helper
+runbugpan: 
 	ghc --make RunBugpan -threaded -lcomedi Comedi/comedi_hs_helper.o
 
-nodaq: bnfc
+nodaq: 
 	ghc --make RunBugpan -threaded
 
 comedi_helper: 

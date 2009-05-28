@@ -44,6 +44,10 @@ SigDelay. Exp3 ::= "delay" Exp Exp  ;
 
 Event. Exp4 ::= "[:" Exp ":]" ;
 Switch. Exp ::= "switch" "{" Exp ";" [SwitchLine] "}";
+Box. Exp ::= "box" Exp1;
+Translate. Exp ::= "translate" Exp1 Exp1;
+Colour. Exp ::= "colour" Exp1 Exp1;
+
 ELet.Exp ::= "let" [LetLine] "in" Exp ;
 ECase.Exp ::= "case" Exp "of" [CaseLine] ;
 
