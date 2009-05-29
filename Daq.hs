@@ -8,6 +8,7 @@ import Numbers
 import Data.HashTable as H
 import EvalM
 import Comedi.Comedi
+import Data.Array.Vector
 
 setupInput ::  Int -> IO ()
 setupInput rtHz = do subdev <- findSubdeviceByType  AnalogInput
@@ -31,7 +32,7 @@ retrieveInputWave :: Int -> Int -> IO [Double]
 retrieveInputWave nprom npnts = do
   ptr <- get_wave_ptr (fromIntegral nprom)
   dbls <- fmap (map realToFrac) $ peekArray npnts ptr
-  print $ take 10 dbls
+  --print $ take 10 dbls
   return dbls
 
 compileAdcSrc rs@(ReadSource nm ("adc":chanS:rtHzS:lenS:_)) = 
@@ -50,9 +51,10 @@ compileAdcSrc rs@(ReadSource nm ("adc":chanS:rtHzS:lenS:_)) =
      RunAfterGo $ const start_cont_acq,
      RunAfterDone $ \env -> do Just (NumV (NInt promN)) <- H.lookup env "adc_input_promise_number" 
                                putStrLn $"promise num "++show promN
-                               pts <- retrieveInputWave promN (round (len*(realToFrac rtHz)))
-                               let sf t = NumV . NReal $ pts!!(floor $ t*(realToFrac rtHz)) 
+                               pts <- fmap (toU $!) $! retrieveInputWave promN (round (len*(realToFrac rtHz)))
+                               let sf t = NumV . NReal $ pts `indexU` (floor $ t*(realToFrac rtHz)) 
                                H.update env ('%':nm) $ SigV 0 len (1/(realToFrac rtHz)) sf
+                               free_trial_results
                                return ()
     ]
 
