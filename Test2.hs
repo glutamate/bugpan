@@ -24,12 +24,12 @@ import BugPrelude
 
 evalsTo = evalsToInContext (evalManyAtOnce $ declsToEnv prelude)
 
-test_map_fst = [
+{-test_map_fst = [
                   "map" $> "incr" $> list [1,2,3] `evalsTo` ListV [2, 3, 4]
                  ,"fst" $> (Pair 1 2) `evalsTo` 1
-                 ,"snd" $> (Pair 1 2) `evalsTo` 2]
+                 ,"snd" $> (Pair 1 2) `evalsTo` 2]-}
 
-test_sum =  "sum" $> list [1,2,3] `evalsTo` 6
+--test_sum =  "sum" $> list [1,2,3] `evalsTo` 6
 
 type Program = [Declare]
 

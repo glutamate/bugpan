@@ -30,6 +30,7 @@ App. Exp5 ::= Exp Exp ;
 
 
 Pair. Exp4 ::= "(" Exp "," Exp ")" ;
+Pair3. Exp4 ::= "(" Exp "," Exp "," Exp ")" ;
 Nil. Exp4 ::= "[]" ;
 Cons. Exp ::= Exp "::" Exp ;
 ListLit.Exp4 ::= "[" [Exp] "]" ;

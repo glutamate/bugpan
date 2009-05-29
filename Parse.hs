@@ -12,7 +12,8 @@ import BNFC.PrintBugpan
 --import BNFC.LayoutBugpan
 import BNFC.ErrM
 import Data.List.HT (partitionMaybe)
-import HaskSyntaxUntyped (splitBySpaces)
+import HaskSyntaxUntyped --(splitBySpaces)
+import UnitTesting
 
 ident nm=nm
 
@@ -54,7 +55,9 @@ cE (B.Lam (B.PVar (B.BIdent b)) e) = Lam (ident b) $ cE e
 cE (B.Lam (B.PWild) e) = Lam "_" $ cE e
 
 cE (B.App e1 e2) = App (cE e1) (cE e2)
+
 cE (B.Pair e1 e2) = Pair (cE e1) (cE e2)
+cE (B.Pair3 e1 e2 e3 ) = Pair (Pair (cE e1) (cE e2)) (cE e3)
 cE (B.Cons e1 e2) = Cons (cE e1) (cE e2)
 cE (B.Nil) = Nil
 cE (B.Var (B.BIdent b)) = Var (ident b)
@@ -133,3 +136,23 @@ fileDecls fnm = do
 myLLexer = {-resolveLayout True .-} myLexer
 
 
+parsesTo :: String -> E -> Test
+parsesTo s e = case pExp $ myLLexer s of
+                 Bad err -> return . Just $ "parse fail on "++s++": "++err
+                 Ok expr -> if cE expr==e
+                               then return Nothing
+                               else return . Just $ "parse \""++s++"\" got "++printTree expr++", expected "++pp e
+
+progParsesTo :: String -> [Declare] -> Test
+progParsesTo s ds = case pProgram $ myLLexer s of
+                      Bad err -> return . Just $ "parse fail on "++s++": "++err
+                      Ok expr -> if convertProgram expr==ds
+                                  then return Nothing
+                                  else return . Just $ "parse \""++s++"\" got "++printTree expr++", expected "++concatMap ppDecl ds
+
+
+test_parse = ["2+2" `parsesTo` (2+3),
+             "(1,2)" `parsesTo`(Pair 1 2),
+             "(1,2,3)" `parsesTo` (Pair (Pair 1 2) 3)]
+
+test_no_semicolons = "let x = 1\nlet y=2\n" `progParsesTo` [Let "x" 1, Let "y" 2]

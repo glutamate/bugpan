@@ -18,3 +18,6 @@ nodaq:
 
 comedi_helper: 
 	gcc -c -g -o Comedi/comedi_hs_helper.o Comedi/comedi_hs_helper.c
+
+tests:
+	ghc UnitTesting.hs -e 'runAllTests'

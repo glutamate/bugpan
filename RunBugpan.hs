@@ -23,9 +23,21 @@ data RunState = RS { rstDecls :: [Declare],
                      rstTmax :: Double
                    }
 
+
+help = putStrLn $ unlines [
+        "runbugpan [toptions] file\n\nOptions: ",
+        "\t-n\t\tStart new session",
+        "\t-c\t\tContinue last session",
+        "\t-t {seconds}\tSet run length",
+        "\t-d {seconds}\tSet timestep\n"
+
+ ]
+
 main = do
   args <- getArgs
-  dispatch (RS [] Nothing 0.001 1) args
+  if null args 
+    then help
+    else dispatch (RS [] Nothing 0.001 1) args
 
 dispatch rst ("-n":args) = do 
   s <- newSession "/home/tomn/sessions/" 
