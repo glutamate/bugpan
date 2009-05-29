@@ -152,10 +152,21 @@ exec stmts dt tmax =
          putStrLn $ concat [enm , " -> ", concatMap ppVal $ reverse es]
        forM_ bufnms $ \bufn-> do 
          --H.lookup envHT bufn >>= print 
-         Just (ListV buf) <- H.lookup envHT ('#':bufn)
-         --let arr = array (0,nsteps) $ zip [0..nsteps] $ reverse buf
-         let arr = reverse buf
-         H.update envHT ('#':bufn) . SigV 0 tmax dt $ \t-> arr!!(round $ t/dt)
+         lubuf <- H.lookup envHT ('#':bufn)
+         case lubuf of
+            Just (ListV buf) -> do
+                                  --let arr = array (0,nsteps) $ zip [0..nsteps] $ reverse buf
+                                  let arr = reverse buf
+                                  H.update envHT ('#':bufn) . SigV 0 tmax dt $ \t-> arr!!(round $ t/dt)
+                                  return ()
+            _ -> return ()
+         lusbuf <- H.lookup envHT ('%':bufn)
+         case lusbuf of
+           Just v -> do H.delete envHT ('%':bufn)
+                        H.update envHT ('#':bufn) v
+                        return ()
+           _ -> return ()
+              
        readIORef largestPullLatency >>= putStrLn . ("largest latency: "++) . show
        H.toList envHT 
 

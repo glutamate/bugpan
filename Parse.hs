@@ -156,3 +156,7 @@ test_parse = ["2+2" `parsesTo` (2+3),
              "(1,2,3)" `parsesTo` (Pair (Pair 1 2) 3)]
 
 test_no_semicolons = "let x = 1\nlet y=2\n" `progParsesTo` [Let "x" 1, Let "y" 2]
+
+test_parse_negnums = ["-1" `parsesTo` (-1),
+                      "(1,-2)" `parsesTo`(Pair 1 (-2)),
+                      "5*(-1.1)" `parsesTo`(5*(-1.1))]

@@ -24,12 +24,15 @@ setupInputChannel ch tmax = do
   let delt = (1.0/(realToFrac globFreq)) -- $ acqRateHz ch'))
   let npts = round $ tmax/delt
   let dn = round (globFreq / realToFrac (acqRateHz ch)) -1
+  print ch
   fromIntegral `fmap` setupReadWave ch npts
 
 retrieveInputWave :: Int -> Int -> IO [Double]
 retrieveInputWave nprom npnts = do
   ptr <- get_wave_ptr (fromIntegral nprom)
-  fmap (map realToFrac) $ peekArray npnts ptr
+  dbls <- fmap (map realToFrac) $ peekArray npnts ptr
+  print $ take 10 dbls
+  return dbls
 
 compileAdcSrc rs@(ReadSource nm ("adc":chanS:rtHzS:lenS:_)) = 
     let rtHz= read rtHzS 
@@ -37,13 +40,19 @@ compileAdcSrc rs@(ReadSource nm ("adc":chanS:rtHzS:lenS:_)) =
         len = read lenS
     in [
      RunPrepare $ \env -> do setupInput rtHz
-                             promN <- setupInputChannel (AnalogChannel AnalogInput (-10,10) rtHz chanNum) len
+                             --print "hello world"
+                             promN <- setupInputChannel (AnalogChannel AnalogInput (-10,10) chanNum rtHz) len
+                             putStrLn $"primise num "++show promN
                              H.update env "adc_input_promise_number" (NumV . NInt $ promN)
+                             prepare_cont_acq
                              return (),
      Trigger $ const internal_trigger,
      RunAfterGo $ const start_cont_acq,
      RunAfterDone $ \env -> do Just (NumV (NInt promN)) <- H.lookup env "adc_input_promise_number" 
+                               putStrLn $"promise num "++show promN
                                pts <- retrieveInputWave promN (round (len*(realToFrac rtHz)))
-                               H.update env ('#':nm) . SigV 0 len (1/(realToFrac rtHz)) $ \t-> NumV . NReal $ pts!!(round $ t*(realToFrac rtHz))
+                               let sf t = NumV . NReal $ pts!!(floor $ t*(realToFrac rtHz)) 
+                               H.update env ('%':nm) $ SigV 0 len (1/(realToFrac rtHz)) sf
                                return ()
     ]
+

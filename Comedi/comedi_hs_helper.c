@@ -11,7 +11,7 @@ int subdev = 0;         /* change this to your input subdevice */
 int aref = AREF_GROUND; /* more on this later */
 comedi_cmd *cmd = NULL;
 comedi_cmd *cmd_out = NULL;
-#define BUFSZ 0x8000
+#define BUFSZ 1000 // 0x1000
 char buf[BUFSZ];
 char buf_out[BUFSZ];
 double* inp_res[32];
@@ -79,6 +79,7 @@ int subdev_type(int sdt) {
 
 int new_trial(int subdevice, double freq) {
   //from demo/cmd.c
+  get_comedi_ptr();
   printf("new_trial (sdev %d)...", subdevice);fflush(stdout);
 
   if(it==NULL) {

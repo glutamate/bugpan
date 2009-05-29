@@ -10,6 +10,7 @@ import ImpInterpret
 import Traverse
 import Transform
 import Stages
+import EvalM
 
 
 {-chainM :: Monad m => (s -> [a] -> m s)  -> [a] -> s -> m (s, [a])
@@ -35,6 +36,7 @@ help = putStrLn $ unlines [
 
 main = do
   args <- getArgs
+  --print args
   if null args 
     then help
     else dispatch (RS [] Nothing 0.001 1) args
@@ -52,17 +54,20 @@ dispatch rst ("-d":dts:args) = dispatch (rst {rstDt = read dts}) args
 dispatch rst ("-t":dts:args) = dispatch (rst {rstTmax = read dts}) args
 
 dispatch rst (file:args) | head file /= '-' = do
+  --print file
   ds <- fileDecls file
   dispatch (rst {rstDecls = rstDecls rst ++ ds}) args
 
 dispatch rst [] = go rst
 
 go (RS ds Nothing dt tmax) = do
-  mapM (putStrLn . ppDecl) ds
+  --mapM (putStrLn . ppDecl) ds
   let runTM = runTravM ds []
   let prg = snd . runTM $ transform
   ress <- execInStages prg dt tmax return
   mapM_ print ress
+  mapM_ showSig ress
+  
 
 go (RS ds (Just sess) dt tmax) = do
   --get t0 from db
@@ -70,3 +75,8 @@ go (RS ds (Just sess) dt tmax) = do
   let t0 = diffInS tnow $ tSessionStart sess
   runOnce dt t0 tmax ds sess
   return ()
+
+showSig (nm,(SigV t1 t2 dt sf)) = do
+  mapM (putStrLn . ppVal ) $ take 10 $ map sf [t1, t1+dt..t2]
+  return ()
+showSig _ = return ()

@@ -1,0 +1,5 @@
+use Prelude;
+
+ecVoltage <* "adc 0 20000 1" ;
+
+ecVoltage *> "store";

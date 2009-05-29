@@ -260,8 +260,10 @@ isSignalOrEvt (Event _) = return IsEvt
 isSignalOrEvt (Switch _ _) = return IsSig
 isSignalOrEvt (Var "seconds") = return IsSig
 isSignalOrEvt (Var "dt") = return IsNeitherSigNorEvt
-isSignalOrEvt (Var nm) = do def <- lookUp nm
-                            isSignalOrEvt def
+isSignalOrEvt (Var nm) = ifM (isDefBySrc nm)
+                             (return IsSig)
+                             (do def <- lookUp nm
+                                 isSignalOrEvt def)
 
 isSignalOrEvt _ = return IsNeitherSigNorEvt
 

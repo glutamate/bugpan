@@ -9,3 +9,7 @@ black = (0, 0, 0);
 green = (0, 1, 0);
 loomObj = {: colour black (translate (0, 0, <: distance :>) (centreCube l)) :};
 loomObj *> "screen";
+
+ecVoltage <* "adc 0 20000 6" ;
+
+ecVoltage *> "store";

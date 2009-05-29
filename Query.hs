@@ -27,7 +27,7 @@ import qualified Data.Binary as B
 import Numeric
 import Traverse
 import Transform
-import Stages
+--import Stages
 import Data.Ord
 import Charts
 import Control.Concurrent
@@ -40,7 +40,7 @@ evInEpoch ev ep = let (t1, t2) = epTs ep
 
 getSortedDirContents dir = do conts <- getDirContents dir
                               let sconts = sortBy cmpf conts
-                              liftIO $ print sconts
+                              --liftIO $ print sconts
                               return sconts
     where cmpf f1 f2 = case (readsPrec 5 f1, readsPrec 5 f2) of
                          ((n1::Int,_):_, (n2::Int,_):_) -> compare n1 n2
@@ -129,3 +129,10 @@ data Q = QVar String
        | In Q Q
        | Around Q Q
 
+testQ = do s <- lastSession "/home/tomn/sessions/"
+           print s
+           qres <- runAskM s $ signals "ecVoltage"
+           plot qres
+                         
+           --mapM print qres
+           return ()
