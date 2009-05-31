@@ -93,9 +93,11 @@ runAllTests  = do
                    forM_ tsts $ \tst-> do
                          let cmd = concat ["ghc ", fn, " -e 'runTest \"\" "++tst++"'"]
                          out <- sh cmd
+                         putStr $ fn ++ " "++ tst
                          case dropRet out of
-                           "" -> return ()
-                           s -> putStrLn $ concat $ [fn, " ", tst, ": ", s]
+                           "" -> putStrLn "" >> return ()
+                           s -> putStrLn $ concat $ [": ", s]
+  putStrLn "done testing"
 
 sh :: String -> IO String
 sh cmd = do (hin, hout, herr, ph) <- runInteractiveCommand cmd
