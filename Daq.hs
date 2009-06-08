@@ -9,6 +9,8 @@ import Data.HashTable as H
 import EvalM
 import Comedi.Comedi
 import Data.Array.Vector
+import Control.Concurrent hiding (Chan)
+
 
 setupInput ::  Int -> IO ()
 setupInput rtHz = do subdev <- findSubdeviceByType  AnalogInput
@@ -28,12 +30,13 @@ setupInputChannel ch tmax = do
   print ch
   fromIntegral `fmap` setupReadWave ch npts
 
-retrieveInputWave :: Int -> Int -> IO [Double]
+retrieveInputWave :: Int -> Int -> IO [CDouble]
 retrieveInputWave nprom npnts = do
   ptr <- get_wave_ptr (fromIntegral nprom)
-  dbls <- fmap (map realToFrac) $ peekArray npnts ptr
+  {-dbls <- fmap (map realToFrac) $ -}
+  peekArray npnts ptr
   --print $ take 10 dbls
-  return dbls
+  --return dbls
 
 compileAdcSrc rs@(ReadSource nm ("adc":chanS:rtHzS:lenS:_)) = 
     let rtHz= read rtHzS 
@@ -48,11 +51,19 @@ compileAdcSrc rs@(ReadSource nm ("adc":chanS:rtHzS:lenS:_)) =
                              prepare_cont_acq
                              return (),
      Trigger $ const internal_trigger,
-     RunAfterGo $ const start_cont_acq,
-     RunAfterDone $ \env -> do Just (NumV (NInt promN)) <- H.lookup env "adc_input_promise_number" 
+     RunAfterGo $ \env-> do forkIO start_cont_acq
+                            return (),
+     RunAfterDone $ \env -> do waitUntilAcqDone
+                               Just (NumV (NInt promN)) <- H.lookup env "adc_input_promise_number" 
                                putStrLn $"promise num "++show promN
-                               pts <- fmap (toU $!) $! retrieveInputWave promN (round (len*(realToFrac rtHz)))
-                               let sf t = NumV . NReal $ pts `indexU` (floor $ t*(realToFrac rtHz)) 
+                               let npts = round (len*(realToFrac rtHz))
+                               pts <- fmap (toU . map realToFrac) $! retrieveInputWave promN npts
+                               let toV = NumV . NReal
+                               let sf idx = if idx<0 
+                                               then toV $ headU pts
+                                               else if idx<npts
+                                                       then  toV $ pts `indexU` idx
+                                                       else toV $ lastU pts
                                H.update env ('%':nm) $ SigV 0 len (1/(realToFrac rtHz)) sf
                                free_trial_results
                                return ()

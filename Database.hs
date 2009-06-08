@@ -105,12 +105,16 @@ addRunToSession decls t0 tmax dt ress sess@(Session basedir sesst0)
             let ntics = round $ t0/dt
             saveBinary (dir++"/"++showHex ntics "") obj
       in do -- Session newEvs newSigSegs newEps ((t0,t0+tmax, decls):programsRun sess) (qenv sess) (sessPrelude sess)
+        print "saving sessopm"
         forM sigsToStore $ \(nm,sig) -> do
+          putStrLn $"saving "++ nm
           saveInSubDir "signals" nm sig
+          putStrLn "done"
         forM evtsToStore $ \(nm, ListV evs) -> do
           saveInSubDir "events" nm evs
         forM epsToStore $ \(nm, ListV eps) -> do
           saveInSubDir "epochs" nm eps
+        print "done saving sessopm"
         return ()
 
 
@@ -133,7 +137,7 @@ isNotFalse _ = True
 
 sigInEps s@(SigV ts1 ts2 dt sf) eps = 
     catMaybes $ for eps $ \ep-> let (tep1,tep2) = epTs ep in
-                                cond [(ts1<tep1 && ts2>tep2, Just $ SigV tep1 tep2 dt $ \t->sf(t-tep1))]
+                                cond [(ts1<tep1 && ts2>tep2, Just $ SigV tep1 tep2 dt $ \t->sf(t-(round $ tep1/dt)))]
 
 evTime (PairV (NumV (NReal t)) _) = t
 evTag (PairV (NumV (NReal t)) v) = v
@@ -168,7 +172,7 @@ guardBy (Just x) p | p x = Just x
                      else Nothing -}
 
 
-shiftSig ts (SigV t1 t2 dt sf) = SigV (t1+ts) (t2+ts) dt $ \t->sf(t-ts)
+shiftSig ts (SigV t1 t2 dt sf) = SigV (t1+ts) (t2+ts) dt $ \t->sf(t-(round $ ts/dt))
 shiftEvt ts (PairV (NumV (NReal t)) v) = (PairV (NumV (NReal $ t+ts)) v)
 shiftEp ts (PairV (PairV (NumV (NReal t1)) ((NumV (NReal t2)))) v) = 
     (PairV (PairV (NumV (NReal $t1+ts)) ((NumV (NReal $t2+ts)))) v)

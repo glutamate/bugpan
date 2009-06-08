@@ -19,3 +19,4 @@ void test_board_read();
 void internal_trigger();
 void start_cont_output();
 comedi_t* get_comedi_ptr();
+int get_running();

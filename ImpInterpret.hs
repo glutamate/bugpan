@@ -84,9 +84,11 @@ exec stmts dt tmax =
 
        --get tnow
        t0 <- getClockTime
+       putStrLn $ "trigger at "++show t0
+
        sequence_ $ map ($envHT) [ tr | Trigger tr <- prg ]
 
-       forkIO $ sequence_ $ map ($envHT) [ tr | RunAfterGo tr <- prg ]
+       sequence_ $ map ($envHT) [ tr | RunAfterGo tr <- prg ]
        --print t0       
        forM_ ts $ \t-> do
          -- wait until t
@@ -157,7 +159,7 @@ exec stmts dt tmax =
             Just (ListV buf) -> do
                                   --let arr = array (0,nsteps) $ zip [0..nsteps] $ reverse buf
                                   let arr = reverse buf
-                                  H.update envHT ('#':bufn) . SigV 0 tmax dt $ \t-> arr!!(round $ t/dt)
+                                  H.update envHT ('#':bufn) . SigV 0 tmax dt $ \t-> arr!!t
                                   return ()
             _ -> return ()
          lusbuf <- H.lookup envHT ('%':bufn)

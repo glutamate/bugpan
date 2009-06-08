@@ -91,12 +91,12 @@ takeOutTV p tv = atomically $ do vls <- readTVar tv
 
 initGlScreen dispFunMVar runningMVar = do
   initialize
-  openWindow (Size 640 480) [
+  openWindow (Size 320 240) [
                   DisplayRGBBits 8 8 8,
                   DisplayAlphaBits 8,
                   DisplayDepthBits 24,
                   DisplayStencilBits 0
-                 ] FullScreen
+                 ] Window
   windowTitle $= "Bugpan screen"
   swapInterval $= 1
   clearColor $= Color4 0 0.23 0 0

@@ -66,5 +66,5 @@ getVlsFromSig :: Device SigSrc -> IO V
 getVlsFromSig (Device _ _ _ _ _  (SrcAllInOneGo vlio hz)) = do 
   vls <- vlio
   let dt = 1/realToFrac hz
-  return (SigV 0 ((realToFrac $ length vls)*dt) dt $ \t-> vls!!(round $  t * realToFrac hz))
+  return (SigV 0 ((realToFrac $ length vls)*dt) dt $ \t-> vls!!t)
 

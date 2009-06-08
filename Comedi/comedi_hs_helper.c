@@ -19,13 +19,15 @@ comedi_range* inp_rang[32];
 lsampl_t inp_maxdata[32];
 comedi_t *it;
 unsigned int cur_pt=0;
-
+int running = 0;
 double globalInputHz;
 
 double* out_res[32];
 comedi_range* out_rang[32];
 lsampl_t out_maxdata[32];
 unsigned int out_npnts;
+
+int get_running() { return running; }
 
 double read_volts(comedi_t *it, int subd, int chan, int range) {
   lsampl_t data, maxdata;
@@ -448,6 +450,7 @@ void start_cont_acq() {
   lsampl_t data;
   //printf("begin acq, nchan=%d\n", n_chan);fflush(stdout);
   // see http://osdir.com/ml/comedi/2006-08/msg00003.html for trig_ext
+  running = 1;
   while(1){
     //printf("reading, no output\n");
     //if(cmd_out ==NULL) printf("cmd_out ==NULL\n");
@@ -480,7 +483,7 @@ void start_cont_acq() {
       }
     }
   } 
-
+  running = 0;
   //printf("done acq\n");
 }
 

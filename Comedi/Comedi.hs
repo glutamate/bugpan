@@ -77,6 +77,17 @@ foreign import ccall safe "comedi_hs_helper.h getGlobalFreq"
 foreign import ccall safe "comedi_hs_helper.h my_find_subdevice_by_type"
   my_find_subdevice_by_type :: CInt -> CInt -> IO CInt
 
+foreign import ccall safe "comedi_hs_helper.h get_running"
+  get_running :: IO CInt
+
+
+waitUntilAcqDone :: IO ()
+waitUntilAcqDone = do r <- get_running
+                      case r of
+                        0 -> return ()
+                        1 -> do threadDelay $ 25*1000
+                                waitUntilAcqDone
+
 
 {-open :: String -> IO (Ptr ())
 open fn = withCString fn comedi_open

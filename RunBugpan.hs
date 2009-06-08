@@ -74,9 +74,10 @@ go (RS ds (Just sess) dt tmax) = do
   tnow <- getClockTime
   let t0 = diffInS tnow $ tSessionStart sess
   runOnce dt t0 tmax ds sess
+  print "done running"
   return ()
 
 showSig (nm,(SigV t1 t2 dt sf)) = do
-  mapM (putStrLn . ppVal ) $ take 10 $ map sf [t1, t1+dt..t2]
+  mapM (putStrLn . ppVal ) $ map sf [0..9]
   return ()
 showSig _ = return ()

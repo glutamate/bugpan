@@ -12,7 +12,10 @@ bnfc: BNFC/Bugpan.cf
 
 runbugpan: 
 	ghc --make RunBugpan -threaded -lcomedi Comedi/comedi_hs_helper.o
-	
+
+
+runbugprof:
+	ghc -prof -auto --make RunBugpan -lcomedi Comedi/comedi_hs_helper.o
 
 nodaq: 
 	ghc --make RunBugpan -threaded

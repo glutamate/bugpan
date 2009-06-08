@@ -1,5 +1,11 @@
 use Prelude;
 
-ecVoltage <* "adc 0 20000 1" ;
+ecVoltage <* "adc 0 20000 6";
+
+-- stage ecvals "1"; 
+
+-- ecvals = ecVoltage; 
+
+-- ecvals *> "print"; 
 
 ecVoltage *> "store";

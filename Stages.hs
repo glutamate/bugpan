@@ -41,7 +41,7 @@ execInStages ds dt tmax postCompile = do
                             let copyEnvSigs = [ Let nm (Sig $ SigAt (Var "seconds") (Var ('#':nm))) | ('#':nm,_) <- envAdded ]
                             let stmts' = compile $ env++copyEnvSigs++map envToDecl envAdded++decls
                             --putStrLn "\na stage"
-                            --mapM (putStrLn . ppStmt ) stmts
+                            --mapM (putStrLn . ppStmt ) stmts'
                             let buffered = [ nm | SinkConnect (Var _) ('#':nm)<- decls ]
                             stmts <- postCompile stmts'
                             ress <- exec stmts dt tmax
@@ -75,6 +75,7 @@ runOnce dt t0 tmax ds sess = do
   ress <- execInStages prg dt tmax return
   putStrLn $ "results for this trial: "++show ress
   addRunToSession ds t0 tmax dt ress sess
+  print "runOnce done"
   return ()
 
 

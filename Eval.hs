@@ -129,11 +129,12 @@ eval es env (StrCat e1 e2) = do StrLit a <- eval es env e1 t
 eval es (SigAt offset sve) = 
     do s<- eval (withoutTime es) sve 
        case s of 
-         SigV t1 t2 _ efun-> do NumV n <- eval es offset
+         SigV t1 t2 dt efun->do NumV n <- eval es offset
                                 let tdbl = numToDouble n
-                                cond [(tdbl < t1, return (efun t1)),
-                                      (tdbl > t2, return (efun t2)),
-                                      (otherwise, return (efun tdbl))]
+                                let idx = round $ (tdbl-t1)/dt
+                                cond [(tdbl < t1, return (efun 0)),
+                                      (tdbl > t2, return (efun . round $ (t2-t1/dt))),
+                                      (otherwise, return (efun idx))]
          v -> fail $ "expected sigv, got "++show v
 
 eval es (LetE ses er) = do

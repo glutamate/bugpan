@@ -1,4 +1,4 @@
-{-# LANGUAGE Rank2Types, ScopedTypeVariables #-}
+{-# LANGUAGE Rank2Types, PatternSignatures #-}
 
 module EvalM where
 
@@ -70,7 +70,7 @@ data V  = BoolV Bool
         | PairV V V
         | ListV [V]
 	| LamV (V->EvalM V)
-	| SigV Double Double Double (Double->V)
+	| SigV Double Double Double (Int->V)
         | BoxV V V V --shape,loc,  colour
         | Unit
 	deriving (Show, Read)
@@ -121,7 +121,7 @@ instance Binary V where
                                   put t1 
                                   put t2
                                   put dt
-                                  mapM_ (\t->put $ sf t) [t1,t1+dt..t2]
+                                  mapM_ (\t->put $ sf t) [0..round $ (t2-t1)/dt]
                                   
 
     put Unit = putTT Unit
@@ -143,7 +143,7 @@ instance Binary V where
                        t2 <- get
                        dt <- get
                        vls <- forM [t1,t1+dt..t2] $ const get
-                       return . SigV t1 t2 dt $ \t->vls!!(round ((t-t1)/dt))
+                       return . SigV t1 t2 dt $ \pt->vls!!pt
 
 
 instance Eq V where
@@ -217,6 +217,6 @@ typeOfVal (NumV (NCmplx _)) = NumT $ Just CmplxT
 typeOfVal (PairV v w) = PairT (typeOfVal v) (typeOfVal w)
 typeOfVal (ListV []) = ListT AnyT
 typeOfVal (ListV (x:_)) = ListT (typeOfVal x)
-typeOfVal (SigV t1 _ _ sf) = SignalT (typeOfVal $ sf t1)
+typeOfVal (SigV t1 _ _ sf) = SignalT (typeOfVal $ sf 0)
 typeOfVal (BoxV _ _ _) = ShapeT
 typeOfVal Unit = UnitT
