@@ -19,7 +19,7 @@ import System.Directory
 import Statement
 
 data DriverState = DS {
-      dsSession :: Maybe (Session),
+      dsSession :: Session,
       dsDispPullMV :: MVar (IO V),
       dsRunMV :: MVar (),
       dsDt :: Double,
@@ -32,8 +32,12 @@ main = do
   dispPullMv <- newEmptyMVar
 
   forkOS (initGlScreen dispPullMv runningMv)
+
+  sess <- lastSession "/home/tomn/sessions/"
+
   waitSecs 0.5
-  let ds= DS Nothing dispPullMv runningMv 0.001 0.1 []
+
+  let ds= DS sess dispPullMv runningMv 0.001 0.1 []
   forever $ loop ds
 
   return ()
@@ -43,33 +47,21 @@ main = do
 --chainM f (x:[]) = fx
 --chainM f (x:xs) = 
 
-cmdFile = "/home/tomn/test.bug"
+cmdFile = "/tmp/program.bug"
 
-loop  ds = do
+loop ds@(DS (sess) dpmv rmv dt tmax prg) = do
   ifM (not `fmap` fileExist cmdFile)
       (threadDelay 100000 >> loop ds)
-      (do cmd <- read `fmap` readFile cmdFile
-          newds <- dispatch ds cmd
+      (do prg' <- read `fmap` readFile cmdFile
+
+          let runTM = runTravM prg' (declsToEnv prelude)
+          let prg = snd . runTM $ transform
+          tnow <- getClockTime
+          ress <- execInStages prg dt tmax $ postCompile dpmv rmv
+          putStrLn $ "results for this trial: "++show ress
+          addRunToSession prg (diffInS tnow (tSessionStart sess)) tmax dt ress sess
           removeFile cmdFile
-          loop newds )
-
-
-dispatch (DS msess dpmv rmv dt _ _) (Prepare prg' tmax) = do
-  let runTM = runTravM prg' (declsToEnv prelude)
-  let prg = snd . runTM $ transform
-  --let complPrel =  fst . runTM $ compilablePrelude
-  return $ DS msess dpmv rmv dt  tmax prg
-
-dispatch ds@(DS (Just sess) dpmv rmv dt tmax prg) Go = do
-  tnow <- getClockTime
-  ress <- execInStages prg dt tmax $ postCompile dpmv rmv
-  putStrLn $ "results for this trial: "++show ress
-  addRunToSession prg (diffInS tnow (tSessionStart sess)) tmax dt ress sess
-  return ds
-
-dispatch ds NewSession = do
-  sess <- newSession "/home/tomn/sessions/" 
-  return $ ds {dsSession = Just sess }
+          loop ds )
 
 postCompile dispPullMv runningMv prg = do 
   let screenVars = [ nm | SigSnkConn nm "screen" <- prg ]
@@ -80,11 +72,4 @@ postCompile dispPullMv runningMv prg = do
      else return $ prg++[
               GLParams dispPullMv runningMv
              ]
-
-
-data DriverCmd = Prepare [Declare] Double 
-               | Go 
-               | NewSession 
-               | UseSession String
-                 deriving (Show, Eq, Read)
 

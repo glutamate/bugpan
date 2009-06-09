@@ -72,7 +72,9 @@ data Declare
 ppDecl (Let nm e ) = nm++" = " ++ pp e
 ppDecl (SinkConnect e sn) = (pp e++" *> " ++ sn)
 ppDecl (ReadSource varNm srcNm) = (varNm++" <* " ++ (intercalate " " srcNm))
-ppDecl (Import nm subst) = "use "++nm 
+ppDecl (Import nm []) = "use "++nm 
+ppDecl (Import nm substs) = "use "++nm++" { "++intercalate "," (map ppImpSubst substs) ++ " }"
+    where ppImpSubst (nm,e) = nm++" => "++pp e
 ppDecl s = show s
 
 --for display purposes only

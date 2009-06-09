@@ -118,18 +118,28 @@ cType (B.TUnit) = UnitT
 
 processImports :: [Declare] -> IO [Declare]
 processImports ds = 
-    let importNm (Import nm _) = Just nm
+    let importNm (Import nm subs) = Just (nm, subs)
         importNm _ = Nothing
         (impNms, prog) = partitionMaybe importNm ds
-    in do extraDs <- mapM fileDecls impNms
+    in do extraDs <- mapM (\(nm, sub) ->fileDecls nm sub) impNms
           return $ (concat extraDs)++prog
 
-fileDecls fnm = do
+fileDecls fnm subs = do
   conts <- readFile $ fnm++".bug"
   case pProgram $ myLLexer conts of 
     Bad s -> fail $ fnm++": "++s
-    Ok ast -> processImports $ convertProgram ast
+    Ok ast -> processImports . makeSubs subs $ convertProgram ast
                 
+
+makeSubs :: [(String, E)] -> [Declare] -> [Declare]
+makeSubs [] ds = ds
+makeSubs ((nm,e):subs) ds = makeSubs subs $ makeSub ds
+    where makeSub [] = [Let nm e]
+          makeSub ((Let nm' e'):ds) | nm' == nm = (Let nm e):ds
+                                    | otherwise = makeSub ds
+                        
+          makeSub (d:ds) = makeSub ds
+
 
 --from TestBugPan.hs, generated  by BNFC
 

@@ -36,7 +36,7 @@ help = putStrLn $ unlines [
 
 main = do
   args <- getArgs
-  --print args
+  --print args 
   if null args 
     then help
     else dispatch (RS [] Nothing 0.001 1) args
@@ -55,7 +55,7 @@ dispatch rst ("-t":dts:args) = dispatch (rst {rstTmax = read dts}) args
 
 dispatch rst (file:args) | head file /= '-' = do
   --print file
-  ds <- fileDecls file
+  ds <- fileDecls file []
   dispatch (rst {rstDecls = rstDecls rst ++ ds}) args
 
 dispatch rst [] = go rst
