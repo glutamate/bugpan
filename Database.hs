@@ -98,7 +98,11 @@ addRunToSession decls t0 tmax dt ress sess@(Session basedir sesst0)
                         flip map nmsToStore $ 
                         \nm-> case lookup nm ress `guardBy` isEpochs of
                                 Just (ListV eps) -> Just (nm,ListV $ map (shiftEp t0) eps)
-                                _ -> Nothing           
+                                _ -> Nothing
+          
+          tStartEvs = [("tStart", ListV [PairV (NumV. NReal $ t0) Unit]),
+                       ("tStop", ListV [PairV (NumV. NReal $ t0+tmax) Unit])]
+          progEp = ("program", ListV [StringV (unlines $ map ppDecl decls)])
           saveInSubDir subdir nm obj = do
             let dir = (basedir++"/"++subdir++"/"++nm)
             createDirectoryIfMissing False dir
@@ -110,9 +114,9 @@ addRunToSession decls t0 tmax dt ress sess@(Session basedir sesst0)
           putStrLn $"saving "++ nm
           saveInSubDir "signals" nm sig
           putStrLn "done"
-        forM evtsToStore $ \(nm, ListV evs) -> do
+        forM (tStartEvs++evtsToStore) $ \(nm, ListV evs) -> do
           saveInSubDir "events" nm evs
-        forM epsToStore $ \(nm, ListV eps) -> do
+        forM (progEp:epsToStore) $ \(nm, ListV eps) -> do
           saveInSubDir "epochs" nm eps
         print "done saving sessopm"
         return ()

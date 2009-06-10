@@ -391,3 +391,13 @@ sigDelay x y = SigDelay (toExpr x) (toExpr y)
 x ^$> y = (toExpr x) $> (toExpr y)
 
 -}
+
+
+lookupDefn _ [] = Nothing
+lookupDefn nm ((Let nm' (Const v)):ds) | nm == nm' = Just $ v
+                                       | otherwise = lookupDefn nm ds
+lookupDefn nm (d:ds) = lookupDefn nm ds
+
+
+orJust (Just x) _ = x
+orJust _ y = y 

@@ -22,8 +22,6 @@ data DriverState = DS {
       dsSession :: Session,
       dsDispPullMV :: MVar (IO V),
       dsRunMV :: MVar (),
-      dsDt :: Double,
-      dsTmax :: Double,
       dsProgram :: [Declare]
 --      dsPrelude :: [Declare]
 }
@@ -37,7 +35,7 @@ main = do
 
   waitSecs 0.5
 
-  let ds= DS sess dispPullMv runningMv 0.001 0.1 []
+  let ds= DS sess dispPullMv runningMv  []
   forever $ loop ds
 
   return ()
@@ -49,13 +47,15 @@ main = do
 
 cmdFile = "/tmp/program.bug"
 
-loop ds@(DS (sess) dpmv rmv dt tmax prg) = do
+loop ds@(DS (sess) dpmv rmv prg) = do
   ifM (not `fmap` fileExist cmdFile)
       (threadDelay 100000 >> loop ds)
       (do prg' <- read `fmap` readFile cmdFile
 
           let runTM = runTravM prg' (declsToEnv prelude)
           let prg = snd . runTM $ transform
+          let tmax = (lookupDefn "_tmax" prg >>= vToDbl) `orJust` 1
+          let dt = (lookupDefn "_dt" prg >>= vToDbl) `orJust` 0.001
           tnow <- getClockTime
           ress <- execInStages prg dt tmax $ postCompile dpmv rmv
           putStrLn $ "results for this trial: "++show ress

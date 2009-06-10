@@ -73,6 +73,7 @@ data V  = BoolV Bool
 	| SigV Double Double Double (Int->V)
         | BoxV V V V --shape,loc,  colour
         | Unit
+        | StringV String
 	deriving (Show, Read)
 
 instance Read (a->b) 
@@ -94,6 +95,7 @@ data T  = BoolT
 	| EpochT T
         | ShapeT 
         | UnitT
+        | StringT
 	deriving (Show, Eq, Read)
 
 data NumT = IntT | RealT | CmplxT deriving (Eq, Show, Read)
@@ -107,6 +109,7 @@ typeTag UnitT = [5]
 typeTag (PairT t1 t2) = [6] -- ++ typeTag t1 ++ typeTag t2
 typeTag (ListT t) = [7] -- ++ typeTag t 
 typeTag (SignalT t) = [8]
+typeTag (StringT) = [9]
 
 putTT :: V -> Put 
 putTT v = mapM_ putWord8 . typeTag . typeOfVal $ v
@@ -125,6 +128,7 @@ instance Binary V where
                                   
 
     put Unit = putTT Unit
+    put v@(StringV s) = putTT v >> put s
     --put v@(ListV []) = putTT v >> put 
 
     get = do tt1::Word8 <- get
@@ -144,6 +148,7 @@ instance Binary V where
                        dt <- get
                        vls <- forM [t1,t1+dt..t2] $ const get
                        return . SigV t1 t2 dt $ \pt->vls!!pt
+               9 -> StringV `fmap` get 
 
 
 instance Eq V where
@@ -220,3 +225,4 @@ typeOfVal (ListV (x:_)) = ListT (typeOfVal x)
 typeOfVal (SigV t1 _ _ sf) = SignalT (typeOfVal $ sf 0)
 typeOfVal (BoxV _ _ _) = ShapeT
 typeOfVal Unit = UnitT
+typeOfVal (StringV _) = StringT
