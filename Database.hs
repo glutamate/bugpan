@@ -69,15 +69,32 @@ newSession rootDir = do
 
 lastSession :: FilePath -> IO Session
 lastSession rootDir = do
-  sesns <- getDirContents rootDir
-  --mapM print sesns
-  sesns <- filterM (\objNm -> do isDir <- doesDirectoryExist $ oneTrailingSlash rootDir++objNm
-                                 return $ isDir) sesns
+  sesns <- getSessionInRootDir rootDir
   sesnsTm <- mapM (\dirNm-> do tm <- getModificationTime (oneTrailingSlash rootDir++dirNm)
                                return (oneTrailingSlash rootDir++dirNm, tm)) sesns
   let dir = fst $ maximumBy (comparing snd) sesnsTm
+  loadExactSession dir
+
+loadExactSession :: FilePath -> IO Session
+loadExactSession dir = do
   t0 <- read `fmap` readFile (dir++"/tStart")
   return $ Session dir (TOD (fst t0) (snd t0))
+    
+
+getSessionInRootDir rootDir = do
+  sesns <- getDirContents rootDir
+  --mapM print sesns
+  filterM (\objNm -> do isDir <- doesDirectoryExist $ oneTrailingSlash rootDir++objNm
+                        return $ isDir) sesns
+
+loadSession :: FilePath -> String -> IO Session
+loadSession rootDir initnm = do
+  sesns <- (filter (initnm `isPrefixOf`)) `fmap` getSessionInRootDir rootDir
+  case sesns of 
+    (sess:[]) -> loadExactSession $ oneTrailingSlash rootDir++sess
+    [] -> fail $ "No session starting with "++initnm++" in "++rootDir
+    ss -> fail $ "Ambiguous session "++initnm ++": "++show ss
+  
 
 addRunToSession :: [Declare] -> Double -> Double -> Double -> [(String, V)] -> Session -> IO ()
 addRunToSession decls t0 tmax dt ress sess@(Session basedir sesst0) 
@@ -99,10 +116,11 @@ addRunToSession decls t0 tmax dt ress sess@(Session basedir sesst0)
                         \nm-> case lookup nm ress `guardBy` isEpochs of
                                 Just (ListV eps) -> Just (nm,ListV $ map (shiftEp t0) eps)
                                 _ -> Nothing
-          
-          tStartEvs = [("tStart", ListV [PairV (NumV. NReal $ t0) Unit]),
-                       ("tStop", ListV [PairV (NumV. NReal $ t0+tmax) Unit])]
-          progEp = ("program", ListV [StringV (unlines $ map ppDecl decls)])
+          t1 = NumV. NReal $ t0
+          t2 = NumV. NReal $ t0+tmax
+          tStartEvs = [("tStart", ListV [PairV t1 Unit]),
+                       ("tStop", ListV [PairV t2 Unit])]
+          progEp = ("program", ListV [PairV (PairV t1 t2) (StringV (unlines $ map ppDecl decls))])
           saveInSubDir subdir nm obj = do
             let dir = (basedir++"/"++subdir++"/"++nm)
             createDirectoryIfMissing False dir
