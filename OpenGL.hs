@@ -91,7 +91,7 @@ takeOutTV p tv = atomically $ do vls <- readTVar tv
 
 initGlScreen dispFunMVar runningMVar = do
   initialize
-  openWindow (Size 320 240) [
+  openWindow (Size 640 480) [
                   DisplayRGBBits 8 8 8,
                   DisplayAlphaBits 8,
                   DisplayDepthBits 24,
@@ -163,32 +163,32 @@ vertex3 x y z = Vertex3 x y z
 
 --http://www.morrowland.com/apron/tutorials/gl/gl_rotating_cube.php
 unitCube = do
-    vertex $ vertex3  1.0  1.0 (-1.0)	-- Top Right Of The Quad (Top)
-    vertex $ vertex3 (-1.0)  1.0 (-1.0)	-- Top Left Of The Quad (Top)
-    vertex $ vertex3 (-1.0)  1.0  1.0	-- Bottom Left Of The Quad (Top)
+    vertex $ vertex3  1.0  1.0 0.0	-- Top Right Of The Quad (Top)
+    vertex $ vertex3 0.0  1.0 0.0	-- Top Left Of The Quad (Top)
+    vertex $ vertex3 0.0  1.0  1.0	-- Bottom Left Of The Quad (Top)
     vertex $ vertex3  1.0  1.0  1.0	-- Bottom Right Of The Quad (Top)
 
-    vertex $ vertex3  1.0 (-1.0)  1.0	-- Top Right Of The Quad (Bottom)
-    vertex $ vertex3 (-1.0) (-1.0)  1.0	-- Top Left Of The Quad (Bottom)
-    vertex $ vertex3 (-1.0) (-1.0) (-1.0)	-- Bottom Left Of The Quad (Bottom)
-    vertex $ vertex3  1.0 (-1.0) (-1.0)	-- Bottom Right Of The Quad (Bottom)
+    vertex $ vertex3  1.0 0.0  1.0	-- Top Right Of The Quad (Bottom)
+    vertex $ vertex3 0.0 0.0  1.0	-- Top Left Of The Quad (Bottom)
+    vertex $ vertex3 0.0 0.0 0.0	-- Bottom Left Of The Quad (Bottom)
+    vertex $ vertex3  1.0 0.0 0.0	-- Bottom Right Of The Quad (Bottom)
 
     vertex $ vertex3  1.0  1.0  1.0	-- Top Right Of The Quad (Front)
-    vertex $ vertex3 (-1.0)  1.0  1.0	-- Top Left Of The Quad (Front)
-    vertex $ vertex3 (-1.0) (-1.0)  1.0	-- Bottom Left Of The Quad (Front)
-    vertex $ vertex3  1.0 (-1.0)  1.0	-- Bottom Right Of The Quad (Front)
+    vertex $ vertex3 0.0  1.0  1.0	-- Top Left Of The Quad (Front)
+    vertex $ vertex3 0.0 0.0  1.0	-- Bottom Left Of The Quad (Front)
+    vertex $ vertex3  1.0 0.0  1.0	-- Bottom Right Of The Quad (Front)
 
-    vertex $ vertex3  1.0 (-1.0) (-1.0)	-- Top Right Of The Quad (Back)
-    vertex $ vertex3 (-1.0) (-1.0) (-1.0)	-- Top Left Of The Quad (Back)
-    vertex $ vertex3 (-1.0)  1.0 (-1.0)	-- Bottom Left Of The Quad (Back)
-    vertex $ vertex3  1.0  1.0 (-1.0)	-- Bottom Right Of The Quad (Back)
+    vertex $ vertex3  1.0 0.0 0.0	-- Top Right Of The Quad (Back)
+    vertex $ vertex3 0.0 0.0 0.0	-- Top Left Of The Quad (Back)
+    vertex $ vertex3 0.0  1.0 0.0	-- Bottom Left Of The Quad (Back)
+    vertex $ vertex3  1.0  1.0 0.0	-- Bottom Right Of The Quad (Back)
 
-    vertex $ vertex3 (-1.0)  1.0  1.0	-- Top Right Of The Quad (Left)
-    vertex $ vertex3 (-1.0)  1.0 (-1.0)	-- Top Left Of The Quad (Left)
-    vertex $ vertex3 (-1.0) (-1.0) (-1.0)	-- Bottom Left Of The Quad (Left)
-    vertex $ vertex3 (-1.0) (-1.0)  1.0	-- Bottom Right Of The Quad (Left)
+    vertex $ vertex3 0.0  1.0  1.0	-- Top Right Of The Quad (Left)
+    vertex $ vertex3 0.0  1.0 0.0	-- Top Left Of The Quad (Left)
+    vertex $ vertex3 0.0 0.0 0.0	-- Bottom Left Of The Quad (Left)
+    vertex $ vertex3 0.0 0.0  1.0	-- Bottom Right Of The Quad (Left)
 
-    vertex $ vertex3  1.0  1.0 (-1.0)	-- Top Right Of The Quad (Right)
+    vertex $ vertex3  1.0  1.0 0.0	-- Top Right Of The Quad (Right)
     vertex $ vertex3  1.0  1.0  1.0	-- Top Left Of The Quad (Right)
-    vertex $ vertex3  1.0 (-1.0)  1.0	-- Bottom Left Of The Quad (Right)
-    vertex $ vertex3  1.0 (-1.0) (-1.0)	-- Bottom Right Of The Quad (Right)
+    vertex $ vertex3  1.0 0.0  1.0	-- Bottom Left Of The Quad (Right)
+    vertex $ vertex3  1.0 0.0 0.0	-- Bottom Right Of The Quad (Right)

@@ -52,7 +52,7 @@ inMainLoop (RunAfterGo _) = True
 inMainLoop (Trigger _) = True
 inMainLoop (GLParams _ _) = True
 --inMainLoop (ReadSrcAction _ _) = True
---inMainLoop _ = False
+inMainLoop _ = False
 
 ppStmt :: Stmt -> String
 ppStmt (InitSig n e) = concat [n, "(0) = ", pp e]

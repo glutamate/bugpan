@@ -101,4 +101,4 @@ comment "--" ;
 
 --layout toplevel ;
 
-token BIdent (letter (letter|digit|'_'|'\'')*) ;
+token BIdent ((letter|'_') (letter|digit|'_'|'\'')*) ;

@@ -42,7 +42,7 @@ exec stmts dt tmax =
         dispPullMV = safeHead [ dpmv | GLParams dpmv _ <- prg]
     in
     do envHT <- H.fromList H.hashString (initSigs++initEvts++fixEnv)
-       --
+       --mapM (putStrLn . ppStmt)  prg
        lastPull <- newIORef 5
        largestPullLatency <- newIORef 0
        t0' <- getClockTime
@@ -84,7 +84,7 @@ exec stmts dt tmax =
 
        --get tnow
        t0 <- getClockTime
-       putStrLn $ "trigger at "++show t0
+       putStrLn $ "trigger at "++show t0++" dt="++show dt
 
        sequence_ $ map ($envHT) [ tr | Trigger tr <- prg ]
 
@@ -122,8 +122,10 @@ exec stmts dt tmax =
                                     H.update envHT nm $! (appVs newevs evs) 
                                     return ()
                            SigSnkConn nm "print" -> do 
-                                    v <-fromJust `fmap` H.lookup envHT nm
-                                    putStr $ ppVal v++"\t"
+                                    v <- H.lookup envHT nm
+				    case v of 
+					Just v' -> putStr $ ppVal v'++"\t"
+					Nothing -> putStr $ "noval"++"\t"
                                     return ()              
                            SigSnkConn sn bn@('#':bufnm) -> do 
                                     buf <- H.lookup envHT bn
