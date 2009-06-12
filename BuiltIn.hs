@@ -25,6 +25,8 @@ eventsT t = ListT $ eventT t
 
 bivs = [ 
  BiV "round" (anyNumT .->. anyNumT) (LamV $ \(NumV n)->return . NumV $ roundNum n),
+ BiV "sin" (anyNumT .->. anyNumT) (LamV $ \(NumV n)->return . NumV $ sin n),
+ BiV "cos" (anyNumT .->. anyNumT) (LamV $ \(NumV n)->return . NumV $ cos n),
  BiV "floor" (anyNumT .->. anyNumT) (LamV $ \(NumV n)->return . NumV $ floorNum n),
  BiV "enowAux" (anyNumT .->. (anyNumT .->. (eventsT AnyT .->. eventsT AnyT)))
          (LamV $ \(NumV t) -> return $ LamV $ \(NumV dt) -> return $ LamV $ \(ListV es) -> do

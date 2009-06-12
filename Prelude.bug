@@ -4,7 +4,7 @@ add = \x->\y->x+y;
 sscan = \f->\v0->\s->let sr = {: (f <: s :>) <: delay sr v0 :> :}; in sr;
 integrate = (sscan intStep) 0;
 intStep = \new->\old->old+(new*dt);
-crosses = \val->\sig->[: if (<: sig :> >= val) && (<: delay sig 0 :> < val) then [ (<: seconds :>, <: sig :>) ] else [] :];
+crosses = \val->\sig->[: if (<: sig :> >= val) && (<: delay sig 0 :> < val) then [ (<: seconds :>, ()) ] else [] :];
 eventIf = \p->[: if p then [ (<: seconds :>, ()) ] else [] :];
 fraction = \x->x-(floor x);
 every = \ivl->eventIf ((fraction (<: seconds :>/ivl)) < dt);
@@ -24,3 +24,9 @@ iterateFrom = \t0->\f->\s0->let s = {: if <: seconds :> <= (t0+(dt/2)) then s0 e
 solveStep = \sf->\v0->\old->old+(<: delay (sf old) v0 :>*dt);
 solveOde = \sf->\v0->(iterate ((solveStep sf) v0)) v0;
 solveOdeFrom = \t0->\sf->\v0->((iterateFrom t0) ((solveStep sf) v0)) v0;
+
+cube l = translate ((0-1)*(l/2), (0-1)*(l/2), 0) (box (l, l, l));
+black = (0, 0, 0);
+green = (0, 1, 0);
+
+

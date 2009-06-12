@@ -1,0 +1,33 @@
+use Prelude;
+
+lov = 4.0000e-2;
+l = 0.2980;
+v = l/(lov*2);
+alpha = 0.005 ; 
+
+
+travel_dist = v*5 ;
+start_dist = travel_dist*(cos alpha) ; 
+displacement = travel_dist*(sin alpha);
+
+--distance = {: v*(<: seconds :>-5) :};
+
+tscreen = (0-0.17)*5/start_dist+5 ; 
+
+xpos = {: <:seconds:>*displacement/5 :};
+zpos = {: (<:seconds:>-5)*start_dist/5 :};
+
+pos = {: if <:zpos:> < (0-0.17) then (<:xpos:>, 0, <:zpos:>) else (tscreen*displacement/5, 0, (0-0.17)) :};
+loomObj = {: colour black (translate <:pos:> (cube l)) :};
+loomObj *> "screen";
+
+collision = [(5,())];
+
+collision *> "store";
+
+--_dt=0.5;
+--pos *> "print";
+
+--ecVoltage <* "adc 0 20000 6" ;
+
+--ecVoltage *> "store";

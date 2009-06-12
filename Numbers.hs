@@ -66,6 +66,25 @@ instance Fractional NumVl where
 	n1 / n2 = let (v1, v2) = sameize n1 n2 in v1 / v2
 	fromRational r = NReal $ fromRational r
 
+instance Floating NumVl where
+	cos = onDbl cos
+	sin = onDbl sin
+	tan = onDbl tan
+	log = onDbl log
+	exp = onDbl exp
+	acos = onDbl acos
+	asin = onDbl asin
+	atan = onDbl atan
+	acosh = onDbl acosh
+	asinh = onDbl asinh
+	atanh = onDbl atanh
+	cosh = onDbl cosh
+	sinh = onDbl sinh
+	pi = NReal pi
+	
+
+onDbl :: (Double->Double) -> NumVl -> NumVl
+onDbl op x = NReal . op $ numToDouble x
 
 sameize v1 v2 = let  	t1 = num2numType v1
 			t2 = num2numType v2

@@ -3,14 +3,11 @@ use Prelude;
 lov = 4.0000e-2;
 l = 0.2980;
 v = l/(lov*2);
-centreCube l = translate ((0-1)*(l/2), (0-1)*(l/2), 0) (box (l, l, l));
 
 distance = {: (min (v*(<: seconds :>-5))) (0-0.1700) :};
-black = (0, 0, 0);
-green = (0, 1, 0);
-loomObj = {: colour black (translate (0, 0, <: distance :>) (centreCube l)) :};
+loomObj = {: colour black (translate (0, 0, <: distance :>) (cube l)) :};
 loomObj *> "screen";
 
-ecVoltage <* "adc 0 20000 6" ;
+--ecVoltage <* "adc 0 20000 6" ;
 
-ecVoltage *> "store";
+--ecVoltage *> "store";
