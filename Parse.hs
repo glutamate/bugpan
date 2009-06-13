@@ -5,13 +5,13 @@ import Expr
 import Numbers
 import EvalM
 import Data.List 
-import BNFC.LexBugpan
+import BNFC.LexBugpan 
 import BNFC.ParBugpan
 import BNFC.SkelBugpan
 import BNFC.PrintBugpan
---import BNFC.LayoutBugpan
+import BNFC.LayoutBugpan
 import BNFC.ErrM
-import Data.List.HT (partitionMaybe)
+import Data.List.HT (partitionMaybe) 
 import HaskSyntaxUntyped --(splitBySpaces)
 import UnitTesting
 
@@ -19,7 +19,7 @@ ident nm=nm
 
 
 convertProgram :: B.Program -> [Declare]
-convertProgram (B.Prog ds) = map convDecl ds
+convertProgram (B.Prog (B.BIdent b) ds) = map convDecl ds
 
 convDecl (B.DLet (B.BIdent b) args e) = Let (ident b) . addLamsP (reverse args) $ cE e
 convDecl (B.DType (B.BIdent b) t) = DeclareType (ident b) $cType t
@@ -143,7 +143,7 @@ makeSubs ((nm,e):subs) ds = makeSubs subs $ makeSub ds
 
 --from TestBugPan.hs, generated  by BNFC
 
-myLLexer = {-resolveLayout True .-} myLexer
+myLLexer = resolveLayout True . myLexer
 
 
 parsesTo :: String -> E -> Test

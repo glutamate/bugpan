@@ -19,7 +19,7 @@ runbugprof:
 
 nodaq: 
 	ghc --make RunBugpan -threaded
-	mv RunBugpan runbugpan
+
 
 comedi_helper: 
 	gcc -c -g -o Comedi/comedi_hs_helper.o Comedi/comedi_hs_helper.c

@@ -1,4 +1,4 @@
-Prog. Program ::= [Declare] ;
+Prog. Program ::= "module" BIdent "where" "{" [Declare] "}";
 
 DLet. Declare ::= BIdent [Arg] "=" Exp ;
 DImport. Declare ::= "use" BIdent ;
@@ -49,8 +49,8 @@ Box. Exp ::= "box" Exp1;
 Translate. Exp ::= "translate" Exp1 Exp1;
 Colour. Exp ::= "colour" Exp1 Exp1;
 
-ELet.Exp ::= "let" [LetLine] "in" Exp ;
-ECase.Exp ::= "case" Exp "of" [CaseLine] ;
+ELet.Exp ::= "let" "{" [LetLine] "}" "in" Exp ;
+ECase.Exp ::= "case" Exp "of" "{" [CaseLine] "}"  ;
 
 SwitchLine. SwitchLine ::= Exp "~>" Exp ;
 LetLine. LetLine ::= BIdent "=" Exp ;
@@ -86,10 +86,10 @@ coercions Exp 5;
 coercions Pat 1;
 --coercions Const 0 ;
 
-terminator Declare ";"  ;
+separator Declare ";"  ;
 terminator SwitchLine ";"  ;
-terminator LetLine ";"  ;
-terminator CaseLine ";"  ;
+separator LetLine ";"  ;
+separator CaseLine ";"  ;
 
 separator Exp ","  ;
 
@@ -98,6 +98,11 @@ separator BIdent " " ;
 separator Arg "" ;
 separator ImpSubstLine "," ;
 comment "--" ;
+
+comment "{-" "-}" ;
+
+layout "where", "of", "let";
+layout stop "in";
 
 --layout toplevel ;
 

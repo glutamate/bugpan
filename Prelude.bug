@@ -1,32 +1,42 @@
-smap = \f->\s->{: f <: s :> :} ;
-incr = \x->x+1;
-add = \x->\y->x+y;
-sscan = \f->\v0->\s->let sr = {: (f <: s :>) <: delay sr v0 :> :}; in sr;
-integrate = (sscan intStep) 0;
-intStep = \new->\old->old+(new*dt);
-crosses = \val->\sig->[: if (<: sig :> >= val) && (<: delay sig 0 :> < val) then [ (<: seconds :>, ()) ] else [] :];
-eventIf = \p->[: if p then [ (<: seconds :>, ()) ] else [] :];
-fraction = \x->x-(floor x);
-every = \ivl->eventIf ((fraction (<: seconds :>/ivl)) < dt);
-map = \f->\lst->case lst of [] -> []; (x::xs) -> (f x)::((map f) xs); ;
-sum = \lst->case lst of [] -> 0; (x::xs) -> x+(sum xs); ;
-fst = \pr->case pr of (x,_) -> x; ;
-snd = \pr->case pr of (_,x) -> x; ;
-min = \x->\y->if x > y then y else x;
-max = \x->\y->if x < y then y else x;
-enow = \es->((enowAux <: seconds :>) dt) es;
-emap = \f->\evs->[: (map f) (enow evs) :];
-convolve = \s->\es->{: sum ((map (\e->s@(<: seconds :>-(fst e)))) es) :};
-laterF = \t->\e->((fst e)+t, snd e);
-later = \t->\es->(emap (laterF t)) es;
-iterate = \f->\s0->let s = {: if <: seconds :> <= (dt/2) then s0 else (f <: delay s s0 :>) :}; in s;
-iterateFrom = \t0->\f->\s0->let s = {: if <: seconds :> <= (t0+(dt/2)) then s0 else (f <: delay s s0 :>) :}; in s;
-solveStep = \sf->\v0->\old->old+(<: delay (sf old) v0 :>*dt);
-solveOde = \sf->\v0->(iterate ((solveStep sf) v0)) v0;
-solveOdeFrom = \t0->\sf->\v0->((iterateFrom t0) ((solveStep sf) v0)) v0;
+module Prelude where 
 
-cube l = translate ((0-1)*(l/2), (0-1)*(l/2), 0) (box (l, l, l));
-black = (0, 0, 0);
-green = (0, 1, 0);
+smap f s=  {: f <: s :> :} 
+incr = \x->x+1
+add = \x->\y->x+y
+sscan f v0 s = let sr = {: (f <: s :>) <: delay sr v0 :> :} in sr
+integrate = (sscan intStep) 0
+intStep = \new->\old->old+(new*dt)
+crosses = \val->\sig->[: if (<: sig :> >= val) && (<: delay sig 0 :> < val) then [ (<: seconds :>, ()) ] else [] :]
+eventIf = \p->[: if p then [ (<: seconds :>, ()) ] else [] :]
+fraction = \x->x-(floor x)
+every = \ivl->eventIf ((fraction (<: seconds :>/ivl)) < dt)
 
+
+map f lst = case lst of 
+      	    	 [] -> []
+		 (x::xs) -> (f x)::((map f) xs)
+
+sum lst = case lst of 
+      	   [] -> 0
+	   (x::xs) -> x+(sum xs)
+ 
+fst = \pr->case pr of (x,_) -> x
+snd = \pr->case pr of (_,x) -> x
+
+min = \x->\y->if x > y then y else x
+max = \x->\y->if x < y then y else x
+enow = \es->((enowAux <: seconds :>) dt) es
+emap = \f->\evs->[: (map f) (enow evs) :]
+convolve = \s->\es->{: sum ((map (\e->s@(<: seconds :>-(fst e)))) es) :}
+laterF = \t->\e->((fst e)+t, snd e)
+later = \t->\es->(emap (laterF t)) es
+iterate = \f->\s0->let s = {: if <: seconds :> <= (dt/2) then s0 else (f <: delay s s0 :>) :}; in s
+iterateFrom = \t0->\f->\s0->let s = {: if <: seconds :> <= (t0+(dt/2)) then s0 else (f <: delay s s0 :>) :}; in s
+solveStep = \sf->\v0->\old->old+(<: delay (sf old) v0 :>*dt)
+solveOde = \sf->\v0->(iterate ((solveStep sf) v0)) v0
+solveOdeFrom = \t0->\sf->\v0->((iterateFrom t0) ((solveStep sf) v0)) v0
+
+cube l = translate ((0-1)*(l/2), (0-1)*(l/2), 0) (box (l, l, l))
+black = (0, 0, 0)
+green = (0, 1, 0)
 
