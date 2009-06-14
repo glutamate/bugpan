@@ -213,7 +213,7 @@ applyCmp es (e1) (e2) op
       		v2 <- eval es e2 
 		case (v1,v2) of
 			(NumV n1,NumV n2) ->  return $ boolToV $ op n1 n2 
-			_-> fail "foobar"
+			_-> fail $ "expected two numbers, got "++pp e1++" and "++pp e2
 
 --applyCmp (b1) (b2) op = if op n1 n2 then T else F
 

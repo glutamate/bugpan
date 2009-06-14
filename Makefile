@@ -8,7 +8,7 @@ bnfc: BNFC/Bugpan.cf
 
 	cd BNFC && sed -i -e 's/import \(\w*\)Bugpan/import BNFC.\1Bugpan/' *.hs
 	cd BNFC && sed -i -e 's/import ErrM/import BNFC.ErrM/' *.hs
-	ghc --make BNFC/TestBugpan
+
 
 runbugpan: 
 	ghc --make RunBugpan -threaded -lcomedi Comedi/comedi_hs_helper.o

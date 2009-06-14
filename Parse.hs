@@ -27,7 +27,8 @@ convDecl (B.DSinkConn e idts) = SinkConnect (cE e) idts
 convDecl (B.DImport (B.BIdent b)) = Import (ident b) [] 
 convDecl (B.DImportSubst (B.BIdent b) substs) = Import (ident b) $ map unSubst substs
 convDecl (B.DReadSrc (B.BIdent b) spec) = ReadSource (ident b) $ splitBySpaces spec
-convDecl (B.DStage (B.BIdent b) intStr) = Stage (ident b) $ read intStr
+convDecl (B.DStage (B.BIdent b) si) = Stage (ident b) $ fromInteger si
+convDecl (B.DStageNeg (B.BIdent b) nsi) = Stage (ident b) . negate $ fromInteger nsi
 --convDecl b = error $"convDecl: "++show b
 
 unSubst (B.ImpSubstLine (B.BIdent b) e) = (ident b, cE e)
@@ -41,6 +42,9 @@ cE (B.Add e1 e2) = M2 Add (cE e1) (cE e2)
 cE (B.Sub e1 e2) = M2 Sub (cE e1) (cE e2)
 cE (B.Mul e1 e2) = M2 Mul (cE e1) (cE e2)
 cE (B.Div e1 e2) = M2 Div (cE e1) (cE e2)
+cE (B.Negate (B.EConst (B.CInt i))) = Const . NumV $ NInt (negate . fromInteger $ i)
+cE (B.Negate (B.EConst (B.CDbl d))) = Const . NumV $ NReal (negate d)
+cE (B.Negate e) = M2 Mul (-1) $ cE e
 cE (B.And e1 e2) = And (cE e1) (cE e2)
 cE (B.Natexp e1) = M1 Exp (cE e1)
 cE (B.Natlog e1) = M1 Ln (cE e1)
@@ -108,13 +112,14 @@ conToV B.CFalse = BoolV False
 
 cPat (B.PVar (B.BIdent b)) = PatVar (ident b)
 cPat (B.PWild) = PatIgnore
-cPat (B.PLit con) = PatLit $ conToV con
+cPat (B.PLit con) = PatLit $ conToV con 
 cPat (B.PPair p1 p2) = PatPair (cPat p1) (cPat p2)
 cPat B.PNil = PatNil
 cPat (B.PCons p1 p2) = PatCons (cPat p1) (cPat p2)
 
 
 cType (B.TUnit) = UnitT
+
 
 processImports :: [Declare] -> IO [Declare]
 processImports ds = 
@@ -124,8 +129,11 @@ processImports ds =
     in do extraDs <- mapM (\(nm, sub) ->fileDecls nm sub) impNms
           return $ (concat extraDs)++prog
 
-fileDecls fnm subs = do
-  conts <- readFile $ fnm++".bug"
+fileDecls fnm' subs = do
+  let fnm = if ".bug" `isSuffixOf` fnm'
+                      then fnm'
+                      else fnm'++".bug"
+  conts <- readFile $ fnm
   case pProgram $ myLLexer conts of 
     Bad s -> fail $ fnm++": "++s
     Ok ast -> processImports . makeSubs subs $ convertProgram ast
@@ -169,4 +177,5 @@ test_no_semicolons = "let x = 1\nlet y=2\n" `progParsesTo` [Let "x" 1, Let "y" 2
 
 test_parse_negnums = ["-1" `parsesTo` (-1),
                       "(1,-2)" `parsesTo`(Pair 1 (-2)),
+                      -- "-(1+1)" `parsesTo` (-2)),
                       "5*(-1.1)" `parsesTo`(5*(-1.1))]

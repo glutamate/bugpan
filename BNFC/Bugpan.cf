@@ -6,12 +6,14 @@ DImportSubst. Declare ::= "use" BIdent "{" [ImpSubstLine] "}";
 DType. Declare ::= BIdent ":" Type ;
 DSinkConn.Declare ::= Exp "*>" String ;
 DReadSrc.Declare ::= BIdent "<*" String ;
-DStage.Declare ::= "stage" BIdent String;
+DStage.Declare ::= "stage" BIdent Integer;
+DStageNeg.Declare ::= "stage" BIdent "-" Integer;
 
 Add. Exp3 ::= Exp2 "+" Exp3 ;
 Sub. Exp3 ::= Exp2 "-" Exp3 ;
 Mul. Exp4 ::= Exp3 "*" Exp4 ;
 Div. Exp4 ::= Exp3 "/" Exp4 ;
+Negate. Exp5 ::= "-" Exp4;
 Natexp. Exp5 ::= "exp" Exp ;
 Natlog. Exp5 ::= "ln" Exp ;
 Realpart. Exp5 ::= "re" Exp ;
@@ -31,23 +33,23 @@ App. Exp5 ::= Exp Exp ;
 
 Pair. Exp4 ::= "(" Exp "," Exp ")" ;
 Pair3. Exp4 ::= "(" Exp "," Exp "," Exp ")" ;
-Nil. Exp4 ::= "[]" ;
+Nil. Exp6 ::= "[]" ;
 Cons. Exp ::= Exp "::" Exp ;
 ListLit.Exp4 ::= "[" [Exp] "]" ;
 
-Var. Exp4 ::= BIdent ;
-EConst. Exp4 ::= Const ;
+Var. Exp6 ::= BIdent ;
+EConst. Exp6 ::= Const ;
 
-Sig. Exp4 ::= "{:" Exp ":}" ;
-SigVal. Exp4 ::= "<:" Exp ":>" ;
+Sig. Exp1 ::= "{:" Exp ":}" ;
+SigVal. Exp6 ::= "<:" Exp ":>" ;
 SigAt. Exp3 ::= Exp1 "@" Exp1 ;
 SigDelay. Exp3 ::= "delay" Exp Exp  ;
 
 Event. Exp4 ::= "[:" Exp ":]" ;
 Switch. Exp ::= "switch" "{" Exp ";" [SwitchLine] "}";
-Box. Exp ::= "box" Exp1;
-Translate. Exp ::= "translate" Exp1 Exp1;
-Colour. Exp ::= "colour" Exp1 Exp1;
+Box. Exp1 ::= "box" Exp1;
+Translate. Exp1 ::= "translate" Exp1 Exp1;
+Colour. Exp1 ::= "colour" Exp1 Exp1;
 
 ELet.Exp ::= "let" "{" [LetLine] "}" "in" Exp ;
 ECase.Exp ::= "case" Exp "of" "{" [CaseLine] "}"  ;
@@ -74,6 +76,9 @@ CFalse. Const ::= "false" ;
 
 TUnit. Type ::= "()" ;
 TLam. Type ::= Type "->" Type ;
+TPair2. Type ::= "(" Type "," Type ")" ;
+TPair3. Type ::= "(" Type "," Type "," Type ")" ;
+
 
 Lt. CmpOp ::= "<" ;
 Gt. CmpOp ::= ">" ;
@@ -82,12 +87,12 @@ Ge. CmpOp ::= ">=" ;
 Eq. CmpOp ::= "==" ;
 Ne. CmpOp ::= "!=" ;
 
-coercions Exp 5;
+coercions Exp 6;
 coercions Pat 1;
 --coercions Const 0 ;
 
 separator Declare ";"  ;
-terminator SwitchLine ";"  ;
+separator SwitchLine ";"  ;
 separator LetLine ";"  ;
 separator CaseLine ";"  ;
 
@@ -101,7 +106,7 @@ comment "--" ;
 
 comment "{-" "-}" ;
 
-layout "where", "of", "let";
+layout "where", "of", "let", "switch";
 layout stop "in";
 
 --layout toplevel ;
