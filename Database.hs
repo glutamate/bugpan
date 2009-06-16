@@ -56,7 +56,9 @@ newSession rootDir = do
   --let longStr = concat [show t1, show t2, show mac, show rnd] 
   --putStrLn longStr
   --let sha = take 20 . showDigest . sha512 . BS.pack $ map c2w "foo"
-  Just uuid <- (fmap (filter (/='-') . toString)) `fmap` nextUUID
+  muuid <- (fmap (filter (/='-') . toString)) `fmap` nextUUID
+  print muuid
+  Just uuid <- return muuid
   let baseDir = oneTrailingSlash rootDir++ uuid
   --print baseDir
   createDirectory baseDir

@@ -1,13 +1,17 @@
-use Prelude;
+module Loom where
 
-lov = 4.0000e-2;
-l = 0.2980;
-v = l/(lov*2);
+use Prelude
 
-distance = {: (min (v*(<: seconds :>-5))) (0-0.1700) :};
-loomObj = {: colour black (translate (0, 0, <: distance :>) (cube l)) :};
-loomObj *> "screen";
+lov = 4.0000e-2
+l = 0.2980
+v = l/(lov*2)
 
---ecVoltage <* "adc 0 20000 6" ;
+distance = {: (min (v*(<: seconds :>-5))) (-0.1700) :}
+loomObj = {: colour black (translate (0, 0, <: distance :>) (cube l)) :}
+loomObj *> "screen"
 
---ecVoltage *> "store";
+_tmax=6
+
+--ecVoltage <* "adc 0 20000 6" 
+
+--ecVoltage *> "store"

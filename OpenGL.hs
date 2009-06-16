@@ -107,6 +107,10 @@ initGlScreen dispFunMVar runningMVar = do
 waitLoop dispFunMVar runMV = do
   dispFun <- readMVar dispFunMVar
   runGlSignals dispFun runMV
+  clearColor $= Color4 0 0.23 0 0
+  clear [ColorBuffer]
+  swapBuffers
+
   waitLoop dispFunMVar runMV
 
 runGlSignals dispPull runningMVar = do

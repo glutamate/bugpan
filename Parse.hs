@@ -143,10 +143,10 @@ makeSubs :: [(String, E)] -> [Declare] -> [Declare]
 makeSubs [] ds = ds
 makeSubs ((nm,e):subs) ds = makeSubs subs $ makeSub ds
     where makeSub [] = [Let nm e]
-          makeSub ((Let nm' e'):ds) | nm' == nm = (Let nm e):ds
-                                    | otherwise = makeSub ds
+          makeSub (l@(Let nm' e'):ds) | nm' == nm = (Let nm e):ds
+                                      | otherwise = l:makeSub ds
                         
-          makeSub (d:ds) = makeSub ds
+          makeSub (d:ds) = d:makeSub ds
 
 
 --from TestBugPan.hs, generated  by BNFC

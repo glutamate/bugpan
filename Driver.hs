@@ -17,6 +17,7 @@ import EvalM
 import System.Posix.Files
 import System.Directory
 import Statement
+import Parse
 
 data DriverState = DS {
       dsSession :: Session,
@@ -28,6 +29,7 @@ data DriverState = DS {
 main = do 
   runningMv <- newEmptyMVar
   dispPullMv <- newEmptyMVar
+  whenM (doesFileExist cmdFile) $ removeFile cmdFile
 
   forkOS (initGlScreen dispPullMv runningMv)
 
@@ -50,7 +52,7 @@ cmdFile = "/tmp/program.bug"
 loop ds@(DS (sess) dpmv rmv prg) = do
   ifM (not `fmap` fileExist cmdFile)
       (threadDelay 100000 >> loop ds)
-      (do prg' <- read `fmap` readFile cmdFile
+      (do prg' <- fileDecls cmdFile [] -- read `fmap` readFile cmdFile
 
           let runTM = runTravM prg' (declsToEnv prelude)
           let prg = snd . runTM $ transform

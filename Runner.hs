@@ -20,6 +20,7 @@ import HaskSyntaxUntyped
 import Control.Monad.State.Strict
 import System.Cmd
 import Parse
+import System.Random
 --import Driver
 
 data RunnerState = RS {
@@ -28,13 +29,16 @@ data RunnerState = RS {
 
 type RunnerM = StateT RunnerState IO
 
+go :: RunnerM a -> IO a
+go ra = fst `fmap` runStateT ra (RS Nothing) 
+
 cmdFile = "/tmp/program.bug"
 
 use :: String -> [(String, E)] -> RunnerM ()
 use fnm substs = 
     do -- liftIO . system $ "cp "++fnm++" "++cmdFile
        ds <-  liftIO $ fileDecls fnm substs
-       liftIO $ writeFile cmdFile $ concatMap ppDecl ds
+       liftIO $ writeFile cmdFile $ ppProg "RunProgram" ds
        tnow <- liftIO $ getClockTime
        put (RS $ Just tnow)
        return ()
@@ -44,6 +48,18 @@ wait s = do RS tm <- get
             case tm of
               Just t -> liftIO $ waitUntil t s
               Nothing -> liftIO $ waitSecs s 
+
+uniform :: (Random a, Ord a) => a -> a-> RunnerM a 
+uniform lo hi = liftIO $ randomRIO (min lo hi, max lo hi) 
+
+oneOf :: [a] -> RunnerM a
+oneOf xs = do idx <- uniform 0 (length xs -1)
+              return $ xs !! idx
+
+trace :: Show a => String -> a -> RunnerM ()
+trace nm v = liftIO . putStrLn $ nm++" "++show v
+
+--wholeDuration :: ToVal a -> String -> a -> RunnerM ()
 
 ntimes :: Int -> RunnerM () -> RunnerM ()
 ntimes 0 _ = return ()
