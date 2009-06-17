@@ -135,7 +135,7 @@ fileDecls fnm' subs = do
                       else fnm'++".bug"
   conts <- readFile $ fnm
   case pProgram $ myLLexer conts of 
-    Bad s -> fail $ fnm++": "++s
+    Bad s -> fail $ fnm++": "++s++"\nfile name: \n"++fnm++"\nfile contents: \n"++conts
     Ok ast -> processImports . makeSubs subs $ convertProgram ast
                 
 

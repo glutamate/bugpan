@@ -62,6 +62,7 @@ dispatch rst (file:args) | head file /= '-' = do
 
 dispatch rst [] = go rst
 
+go rs@(RS [] _ _ _) = return ()
 go rs@(RS ds Nothing mdt mtmax) = do
   --mapM (putStrLn . ppDecl) ds
   let runTM = runTravM ds []

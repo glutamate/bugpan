@@ -70,7 +70,7 @@ exec stmts dt tmax =
                            , (True, do
                                 rMV <- newEmptyMVar
                                 scrPl <- newEmptyMVar
-                                forkOS (initGlScreen scrPl rMV) 
+                                forkOS (initGlScreen False scrPl rMV) 
                                 waitSecs 0.5
                                 return (Just rMV, Just scrPl)
                              )

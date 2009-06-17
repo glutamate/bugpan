@@ -24,27 +24,31 @@ import System.Random
 --import Driver
 
 data RunnerState = RS {
-      lastTriggerTime :: Maybe ClockTime
+      lastTriggerTime :: Maybe ClockTime,
+      cmdFile :: String
 }
 
 type RunnerM = StateT RunnerState IO
 
 go :: RunnerM a -> IO a
-go ra = fst `fmap` runStateT ra (RS Nothing) 
+go ra = do 
+	sess <- lastSession "/home/tomn/sessions/"
+	fst `fmap` runStateT ra (RS Nothing $ oneTrailingSlash(baseDir sess)++"/program.bug") 
 
-cmdFile = "/tmp/program.bug"
+--cmdFile = "/tmp/program.bug"
 
 use :: String -> [(String, E)] -> RunnerM ()
 use fnm substs = 
     do -- liftIO . system $ "cp "++fnm++" "++cmdFile
        ds <-  liftIO $ fileDecls fnm substs
-       liftIO $ writeFile cmdFile $ ppProg "RunProgram" ds
+       cmdFl <- cmdFile `fmap` get
+       liftIO $ writeFile cmdFl $ ppProg "RunProgram" ds
        tnow <- liftIO $ getClockTime
-       put (RS $ Just tnow)
+       put (RS (Just tnow) cmdFl)
        return ()
 
 wait :: Double -> RunnerM ()
-wait s = do RS tm <- get
+wait s = do RS tm cf <- get
             case tm of
               Just t -> liftIO $ waitUntil t s
               Nothing -> liftIO $ waitSecs s 

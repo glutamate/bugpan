@@ -35,6 +35,6 @@ _tmax=6
 --_dt=0.5
 --pos *> "print"
 
-ecVoltage <* "adc 0 20000 6" 
+--ecVoltage <* "adc 0 20000 6" 
 
-ecVoltage *> "store"
+--ecVoltage *> "store"
