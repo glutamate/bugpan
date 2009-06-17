@@ -9,26 +9,33 @@ DReadSrc.Declare ::= BIdent "<*" String ;
 DStage.Declare ::= "stage" BIdent Integer;
 DStageNeg.Declare ::= "stage" BIdent "-" Integer;
 
-Add. Exp3 ::= Exp2 "+" Exp3 ;
-Sub. Exp3 ::= Exp2 "-" Exp3 ;
-Mul. Exp4 ::= Exp3 "*" Exp4 ;
-Div. Exp4 ::= Exp3 "/" Exp4 ;
-Negate. Exp5 ::= "-" Exp4;
+Add. Exp2 ::= Exp2 "+" Exp3 ;
+Sub. Exp2 ::= Exp2 "-" Exp3 ;
+Mul. Exp3 ::= Exp3 "*" Exp4 ;
+Div. Exp3 ::= Exp3 "/" Exp4 ;
+Negate. Exp1 ::= "-" Exp2;
 Natexp. Exp5 ::= "exp" Exp ;
 Natlog. Exp5 ::= "ln" Exp ;
 Realpart. Exp5 ::= "re" Exp ;
 Imagpart. Exp5 ::= "im" Exp ;
 
-And. Exp1 ::= Exp2 "&&" Exp2 ;
-Or. Exp1 ::= Exp2 "||" Exp2 ;
+EConst. Exp6 ::= Const ;
+
+
+
+And. Exp1 ::= Exp1 "&&" Exp2 ;
+Or. Exp1 ::= Exp1 "||" Exp2 ;
 Not. Exp2 ::= "!" Exp3 ;
 
-ECmp.Exp1 ::= Exp2 CmpOp Exp2 ;
+ECmp.Exp1 ::= Exp1 CmpOp Exp2 ;
 
-If. Exp ::= "if" Exp1 "then" Exp1 "else" Exp1 ;
 
-Lam. Exp ::= "\\" Pat "->" Exp ;
-App. Exp5 ::= Exp Exp ;
+
+If. Exp ::= "if" Exp "then" Exp "else" Exp ;
+
+Lam. Exp2 ::= "\\" Pat "->" Exp ;
+App. Exp4 ::= Exp4 Exp5 ;
+Var. Exp6 ::= BIdent ;
 
 
 Pair. Exp4 ::= "(" Exp "," Exp ")" ;
@@ -37,18 +44,19 @@ Nil. Exp6 ::= "[]" ;
 Cons. Exp ::= Exp "::" Exp ;
 ListLit.Exp4 ::= "[" [Exp] "]" ;
 
-Var. Exp6 ::= BIdent ;
-EConst. Exp6 ::= Const ;
+
 
 Sig. Exp1 ::= "{:" Exp ":}" ;
 SigVal. Exp6 ::= "<:" Exp ":>" ;
-SigAt. Exp3 ::= Exp1 "@" Exp1 ;
-SigDelay. Exp3 ::= "delay" Exp Exp  ;
+SigAt. Exp2 ::= Exp2 "@" Exp3 ;
+SigDelay. Exp4 ::= "delay" Exp4 Exp5  ;
+
+
 
 Event. Exp4 ::= "[:" Exp ":]" ;
 Switch. Exp ::= "switch" "{" Exp ";" [SwitchLine] "}";
-Box. Exp1 ::= "box" Exp1;
-Translate. Exp1 ::= "translate" Exp1 Exp1;
+Box. Exp5 ::= "box" Exp4;
+Translate. Exp4 ::= "translate" Exp4 Exp5;
 Colour. Exp1 ::= "colour" Exp1 Exp1;
 
 ELet.Exp ::= "let" "{" [LetLine] "}" "in" Exp ;
@@ -88,6 +96,7 @@ Eq. CmpOp ::= "==" ;
 Ne. CmpOp ::= "!=" ;
 
 coercions Exp 6;
+
 coercions Pat 1;
 --coercions Const 0 ;
 
