@@ -135,7 +135,7 @@ fileDecls fnm' subs = do
                       else fnm'++".bug"
   conts <- readFile $ fnm
   case pProgram $ myLLexer conts of 
-    Bad s -> fail $ fnm++": "++s
+    Bad s -> fail $ fnm++": "++s++"\nfile name: \n"++fnm++"\nfile contents: \n"++conts
     Ok ast -> processImports . makeSubs subs $ convertProgram ast
                 
 
@@ -143,10 +143,10 @@ makeSubs :: [(String, E)] -> [Declare] -> [Declare]
 makeSubs [] ds = ds
 makeSubs ((nm,e):subs) ds = makeSubs subs $ makeSub ds
     where makeSub [] = [Let nm e]
-          makeSub ((Let nm' e'):ds) | nm' == nm = (Let nm e):ds
-                                    | otherwise = makeSub ds
+          makeSub (l@(Let nm' e'):ds) | nm' == nm = (Let nm e):ds
+                                      | otherwise = l:makeSub ds
                         
-          makeSub (d:ds) = makeSub ds
+          makeSub (d:ds) = d:makeSub ds
 
 
 --from TestBugPan.hs, generated  by BNFC

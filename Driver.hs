@@ -17,6 +17,11 @@ import EvalM
 import System.Posix.Files
 import System.Directory
 import Statement
+import Parse
+import GHC.Handle
+import System.IO
+import System.Environment
+
 
 data DriverState = DS {
       dsSession :: Session,
@@ -26,17 +31,26 @@ data DriverState = DS {
 --      dsPrelude :: [Declare]
 }
 main = do 
+  args <- getArgs
   runningMv <- newEmptyMVar
   dispPullMv <- newEmptyMVar
-
-  forkOS (initGlScreen dispPullMv runningMv)
-
   sess <- lastSession "/home/tomn/sessions/"
-
-  waitSecs 0.5
+  print sess
+  let redirect = not $ "-nr" `elem` args
+  when redirect $ do
+	  let outFileName = oneTrailingSlash(baseDir sess)++"driver_output.txt"
+	  putStrLn $"redirecting stdout to "++outFileName
+	  hout<- openFile outFileName AppendMode
+	  hDuplicateTo hout stdout
 
   let ds= DS sess dispPullMv runningMv  []
-  forever $ loop ds
+  whenM (doesFileExist $ cmdFile ds) $ removeFile (cmdFile ds)
+
+
+  forkOS (initGlScreen (not $ "-w" `elem` args) dispPullMv runningMv)
+  waitSecs 0.5
+
+  catchForever $ (loop ds >> hFlush stdout)
 
   return ()
 
@@ -45,12 +59,14 @@ main = do
 --chainM f (x:[]) = fx
 --chainM f (x:xs) = 
 
-cmdFile = "/tmp/program.bug"
+cmdFile (DS (sess) dpmv rmv prg)= oneTrailingSlash(baseDir sess)++"/program.bug"
+
+catchForever l = forever $ catch l (\e-> putStrLn $ "error in main loop: "++show e)
 
 loop ds@(DS (sess) dpmv rmv prg) = do
-  ifM (not `fmap` fileExist cmdFile)
-      (threadDelay 100000 >> loop ds)
-      (do prg' <- read `fmap` readFile cmdFile
+  ifM (not `fmap` fileExist (cmdFile ds))
+      (threadDelay 100000)
+      (do prg' <- fileDecls (cmdFile ds) [] -- read `fmap` readFile cmdFile
 
           let runTM = runTravM prg' (declsToEnv prelude)
           let prg = snd . runTM $ transform
@@ -60,8 +76,7 @@ loop ds@(DS (sess) dpmv rmv prg) = do
           ress <- execInStages prg dt tmax $ postCompile dpmv rmv
           putStrLn $ "results for this trial: "++show ress
           addRunToSession prg (diffInS tnow (tSessionStart sess)) tmax dt ress sess
-          removeFile cmdFile
-          loop ds )
+          removeFile $ cmdFile ds)
 
 postCompile dispPullMv runningMv prg = do 
   let screenVars = [ nm | SigSnkConn nm "screen" <- prg ]

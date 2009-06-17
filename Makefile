@@ -14,11 +14,17 @@ runbugpan:
 	ghc --make RunBugpan -threaded -lcomedi Comedi/comedi_hs_helper.o
 
 
-runbugprof:
+prof:
 	ghc -prof -auto --make RunBugpan -lcomedi Comedi/comedi_hs_helper.o
 
 nodaq: 
 	ghc --make RunBugpan -threaded
+
+driver:
+	ghc --make Driver -threaded -lcomedi Comedi/comedi_hs_helper.o
+
+runloom:
+	ghc --make RunLoom -lcomedi Comedi/comedi_hs_helper.o
 
 
 comedi_helper: 

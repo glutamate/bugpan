@@ -56,7 +56,9 @@ newSession rootDir = do
   --let longStr = concat [show t1, show t2, show mac, show rnd] 
   --putStrLn longStr
   --let sha = take 20 . showDigest . sha512 . BS.pack $ map c2w "foo"
-  Just uuid <- (fmap (filter (/='-') . toString)) `fmap` nextUUID
+  muuid <- (fmap (filter (/='-') . toString)) `fmap` nextUUID
+  print muuid
+  Just uuid <- return muuid
   let baseDir = oneTrailingSlash rootDir++ uuid
   --print baseDir
   createDirectory baseDir
@@ -127,16 +129,18 @@ addRunToSession decls t0 tmax dt ress sess@(Session basedir sesst0)
             let ntics = round $ t0/dt
             saveBinary (dir++"/"++showHex ntics "") obj
       in do -- Session newEvs newSigSegs newEps ((t0,t0+tmax, decls):programsRun sess) (qenv sess) (sessPrelude sess)
-        print "saving sessopm"
+        putStrLn $ "saving session: "++show nmsToStore
         forM sigsToStore $ \(nm,sig) -> do
-          putStrLn $"saving "++ nm
+          putStrLn $"saving signal "++ nm
           saveInSubDir "signals" nm sig
           putStrLn "done"
         forM (tStartEvs++evtsToStore) $ \(nm, ListV evs) -> do
+	  putStrLn $"saving events "++ nm
           saveInSubDir "events" nm evs
         forM (progEp:epsToStore) $ \(nm, ListV eps) -> do
+	  putStrLn $"saving epochs "++ nm
           saveInSubDir "epochs" nm eps
-        print "done saving sessopm"
+        print "done saving session"
         return ()
 
 
@@ -167,10 +171,10 @@ evTag (PairV (NumV (NReal t)) v) = v
 epTs (PairV (PairV (NumV (NReal t1)) ((NumV (NReal t2)))) _) = (t1,t2)
 epTag (PairV (PairV (NumV (NReal t1)) ((NumV (NReal t2)))) v) = v
 
-isEpoch (PairV (PairV (NumV (NReal _)) ((NumV (NReal _)))) _) = True
+isEpoch (PairV (PairV (NumV _) ((NumV _))) _) = True
 isEpoch _ = False
 
-isEvent (PairV (NumV (NReal _)) _) = True
+isEvent (PairV (NumV _) _) = True
 isEvent _ = False
 
 isEvents (ListV vs) = all isEvent vs
@@ -195,9 +199,9 @@ guardBy (Just x) p | p x = Just x
 
 
 shiftSig ts (SigV t1 t2 dt sf) = SigV (t1+ts) (t2+ts) dt $ \t->sf(t-(round $ ts/dt))
-shiftEvt ts (PairV (NumV (NReal t)) v) = (PairV (NumV (NReal $ t+ts)) v)
-shiftEp ts (PairV (PairV (NumV (NReal t1)) ((NumV (NReal t2)))) v) = 
-    (PairV (PairV (NumV (NReal $t1+ts)) ((NumV (NReal $t2+ts)))) v)
+shiftEvt ts (PairV (NumV t) v) = (PairV (NumV $ t+(NReal ts)) v)
+shiftEp ts (PairV (PairV (NumV t1) ((NumV t2))) v) = 
+    (PairV (PairV (NumV $ t1 +(NReal ts)) ((NumV $ t2 + (NReal ts)))) v)
 
 mkList :: V -> [V]
 mkList (ListV vs) = vs

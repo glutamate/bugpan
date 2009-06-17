@@ -4,7 +4,7 @@ import Expr
 import EvalM
 import System.Random
 import Data.HashTable as H
---import Daq
+import Daq
 import Numbers
 import Control.Concurrent
 import Statement
@@ -31,7 +31,7 @@ compileDec (Let nm (Switch ses ser)) =
           unSig (Sig se) = se 
           unSig e = e
 
---compileDec rs@(ReadSource nm ("adc":chanS:rtHzS:lenS:_)) = compileAdcSrc rs
+compileDec rs@(ReadSource nm ("adc":chanS:rtHzS:lenS:_)) = compileAdcSrc rs
 compileDec (ReadSource nm srcSpec) = [ReadSrcAction nm $ genSrc srcSpec]
 compileDec (Let nm e) = [Env nm $ unVal e]
 compileDec (SinkConnect (Var nm) snkNm) = [SigSnkConn nm snkNm]

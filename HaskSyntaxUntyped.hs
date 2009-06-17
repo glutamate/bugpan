@@ -81,3 +81,34 @@ infixl 1 <*
 x *> y = SinkConnect x y            
 x <* y = ReadSource x $ splitBySpaces y            
 
+dbl :: Double -> E
+dbl = Const . NumV . NReal
+
+int :: Int -> E
+int = Const . NumV . NInt
+
+class ToVal a where
+	toVal :: a-> V
+
+instance ToVal Int where
+	toVal = NumV . NInt
+
+instance ToVal Double where
+	toVal = NumV . NReal
+
+instance ToVal [Char] where
+	toVal = StringV
+
+instance ToVal a => ToVal [a] where
+	toVal xs = ListV $ map toVal xs
+
+instance ToVal () where
+	toVal _ = Unit
+
+instance (ToVal a, ToVal b) => ToVal (a,b) where
+	toVal (x,y) = PairV (toVal x) (toVal y)
+
+
+
+
+

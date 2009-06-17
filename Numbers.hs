@@ -19,10 +19,10 @@ instance Eq NumVl where
 
 nearlyZero n = (n<1e-18) && (n>(-1e-18))
 
-
-ppNum (NInt i) = show i
-ppNum (NReal f) = printf "%5.4g" f
-ppNum (NCmplx (r:+c)) = show r++" + i*"++show c
+ppNum n = if n<0 then "("++(ppNum' n)++")" else ppNum' n
+ppNum' (NInt i) = show i
+ppNum' (NReal f) = printf "%5.4g" f
+ppNum' (NCmplx (r:+c)) = show r++" + i*"++show c
 
 data Ntype = NI | NR | NC deriving (Show,Eq, Enum, Ord)
 
