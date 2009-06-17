@@ -36,10 +36,12 @@ main = do
   dispPullMv <- newEmptyMVar
   sess <- lastSession "/home/tomn/sessions/"
   print sess
-  let outFileName = oneTrailingSlash(baseDir sess)++"driver_output.txt"
-  putStrLn $"redirecting stdout to "++outFileName
-  hout<- openFile outFileName AppendMode
-  hDuplicateTo hout stdout
+  let redirect = not $ "-nr" `elem` args
+  when redirect $ do
+	  let outFileName = oneTrailingSlash(baseDir sess)++"driver_output.txt"
+	  putStrLn $"redirecting stdout to "++outFileName
+	  hout<- openFile outFileName AppendMode
+	  hDuplicateTo hout stdout
 
   let ds= DS sess dispPullMv runningMv  []
   whenM (doesFileExist $ cmdFile ds) $ removeFile (cmdFile ds)
@@ -48,7 +50,7 @@ main = do
   forkOS (initGlScreen (not $ "-w" `elem` args) dispPullMv runningMv)
   waitSecs 0.5
 
-  catchForever $ loop ds
+  catchForever $ (loop ds >> hFlush stdout)
 
   return ()
 
