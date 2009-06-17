@@ -23,6 +23,9 @@ nodaq:
 driver:
 	ghc --make Driver -threaded -lcomedi Comedi/comedi_hs_helper.o
 
+runloom:
+	ghc --make RunLoom -lcomedi Comedi/comedi_hs_helper.o
+
 
 comedi_helper: 
 	gcc -c -g -o Comedi/comedi_hs_helper.o Comedi/comedi_hs_helper.c
