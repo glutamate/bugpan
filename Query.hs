@@ -1,4 +1,4 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving, PatternSignatures #-} 
+{-# LANGUAGE GeneralizedNewtypeDeriving, PatternSignatures, FlexibleContexts#-} 
 
 module Query where
 
@@ -18,7 +18,8 @@ import Control.Monad.List
 import Control.Monad.State.Lazy
 import System.Directory
 import System.Time
---import System.Random
+import System.Random
+import System.Cmd
 --import System.Info.MAC as MAC
 --import Data.Digest.Pure.SHA
 import qualified Data.ByteString.Lazy as L
@@ -29,7 +30,7 @@ import Traverse
 import Transform
 --import Stages
 import Data.Ord
-import Charts
+--import Charts
 import Control.Concurrent
 import Database
 
@@ -104,7 +105,27 @@ askM (Has qep qevs) = do
   return ep
             
 
-plot :: [V] -> IO ()
+--plot :: MonadState Session m => AskM V -> m ()
+--plot = 
+
+plotWithR :: V -> IO ()
+plotWithR (SigV t1 t2 dt sf) = do
+  (r::Int) <- randomRIO (0,10000)
+  let datfile= "/tmp/bugplot"++show r
+  let rfile = "/tmp/bugplot"++show r++".r"
+  writeFile datfile $ unlines $ map (\t->show . unsafeVToDbl $ sf t) [0..round $ (t2-t1)/dt]
+  writeFile rfile $ concat [
+                 "x11(width=10,height=7)\n",
+                 "dat <- ts(scan(\"", datfile, "\"), start=", show t1, ", frequency=", show (1/dt),")\n", 
+                 "plot(dat)\n", 
+                 "z<-locator(1)\n",
+                 "q()"]
+  system $ "R --vanilla --slave < "++rfile
+  removeFile datfile
+  removeFile rfile
+  return ()
+
+{-plot :: [V] -> IO ()
 plot vs = do --let g = map ansToPlot ans
              plotGraph (valsToGraph vs)
              return ()
@@ -119,7 +140,7 @@ valsToGraph vs = foldl1 (<+>) $ map vToPlot vs
                              epvl = unsafeVToDbl $ epTag ep in
                          toGraph ((toPlot [(t1, epvl), (t2, epvl)])%Lines) 
 
-
+-}
 data Q = QVar String
        -- | Filter E Q
        -- | Map E Q
@@ -131,8 +152,8 @@ data Q = QVar String
 
 testQ = do s <- lastSession "/home/tomn/sessions/"
            print s
-           qres <- runAskM s $ signals "ecVoltage"
-           plot qres
+           qres <- runAskM s $ signals "vm"
+           mapM plotWithR qres
                          
            --mapM print qres
            return ()

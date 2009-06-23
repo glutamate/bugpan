@@ -131,7 +131,7 @@ addRunToSession decls t0 tmax dt ress sess@(Session basedir sesst0)
       in do -- Session newEvs newSigSegs newEps ((t0,t0+tmax, decls):programsRun sess) (qenv sess) (sessPrelude sess)
         putStrLn $ "saving session: "++show nmsToStore
         forM sigsToStore $ \(nm,sig) -> do
-          putStrLn $"saving signal "++ nm
+          putStrLn $"saving signal "++ nm++": "++ show sig
           saveInSubDir "signals" nm sig
           putStrLn "done"
         forM (tStartEvs++evtsToStore) $ \(nm, ListV evs) -> do
@@ -198,7 +198,7 @@ guardBy (Just x) p | p x = Just x
                      else Nothing -}
 
 
-shiftSig ts (SigV t1 t2 dt sf) = SigV (t1+ts) (t2+ts) dt $ \t->sf(t-(round $ ts/dt))
+shiftSig ts (SigV t1 t2 dt sf) = SigV (t1+ts) (t2+ts) dt $ sf
 shiftEvt ts (PairV (NumV t) v) = (PairV (NumV $ t+(NReal ts)) v)
 shiftEp ts (PairV (PairV (NumV t1) ((NumV t2))) v) = 
     (PairV (PairV (NumV $ t1 +(NReal ts)) ((NumV $ t2 + (NReal ts)))) v)
