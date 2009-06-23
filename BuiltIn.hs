@@ -34,6 +34,7 @@ bivs = [
                                       let takeF (PairV (NumV te) _) = nstep te dt == nstep t dt
                                       return $ ListV (takeWhile takeF $ dropWhile dropF es)),
  BiV "seconds" (SignalT anyNumT) undefined,
+ BiV "tmax" anyNumT undefined,
  BiV "dt" anyNumT undefined]
 
 bivNms = [nm | BiV nm _ _ <- bivs ]

@@ -9,7 +9,7 @@ import Data.Binary
 --import Control.Monad.Error
 --import Control.Monad.Identity
 --import System.IO.Unsafe
-
+--import Debug.Trace
 import Numbers
 
 data EvalS = EvalS { dt:: Double,
@@ -119,7 +119,7 @@ instance Binary V where
     put v@(NumV (NInt i)) =  putTT v >>put i
     put v@(NumV (NReal r)) =  putTT v >>put r
     put v@(PairV v1 w1) = putTT v >> put v1 >> put w1
-    put v@(ListV xs) = putTT v >> put (length xs) >> put xs
+    put v@(ListV xs) = putTT v >> put xs
     put v@(SigV t1 t2 dt sf) = do putTT v 
                                   put t1 
                                   put t2
@@ -140,8 +140,8 @@ instance Binary V where
                6 -> do p1 <- get
                        p2 <- get
                        return $ PairV p1 p2
-               7 -> do (len::Int) <- get
-                       vls <- forM [0..len-1] $ const get
+               7 -> do vls <- get
+                       --vls <- forM [0..len-1] $ const get
                        return $ ListV vls
                8 -> do t1 <- get
                        t2 <- get
@@ -149,6 +149,7 @@ instance Binary V where
                        vls <- forM [t1,t1+dt..t2] $ const get
                        return . SigV t1 t2 dt $ \pt->vls!!pt
                9 -> StringV `fmap` get 
+               tt -> error $ "unknown type tag: "++show tt
 
 
 instance Eq V where

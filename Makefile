@@ -11,14 +11,14 @@ bnfc: BNFC/Bugpan.cf
 
 
 runbugpan: 
-	ghc --make RunBugpan -threaded -lcomedi Comedi/comedi_hs_helper.o
+	ghc --make RunBugpan -O2 -threaded -lcomedi Comedi/comedi_hs_helper.o
 
 
 prof:
 	ghc -prof -auto --make RunBugpan -lcomedi Comedi/comedi_hs_helper.o
 
 nodaq: 
-	ghc --make RunBugpan -threaded
+	ghc --make -O2 RunBugpan -threaded
 
 driver:
 	ghc --make Driver -threaded -lcomedi Comedi/comedi_hs_helper.o

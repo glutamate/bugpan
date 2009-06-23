@@ -134,10 +134,10 @@ addRunToSession decls t0 tmax dt ress sess@(Session basedir sesst0)
           putStrLn $"saving signal "++ nm++": "++ show sig
           saveInSubDir "signals" nm sig
           putStrLn "done"
-        forM (tStartEvs++evtsToStore) $ \(nm, ListV evs) -> do
+        forM (tStartEvs++evtsToStore) $ \(nm, evs) -> do
 	  putStrLn $"saving events "++ nm
           saveInSubDir "events" nm evs
-        forM (progEp:epsToStore) $ \(nm, ListV eps) -> do
+        forM (progEp:epsToStore) $ \(nm, eps) -> do
 	  putStrLn $"saving epochs "++ nm
           saveInSubDir "epochs" nm eps
         print "done saving session"

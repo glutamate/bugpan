@@ -2,10 +2,12 @@ module Intfire where
 
 use Prelude -- { vm => 0.07, rm => 1e9 };
 
+rate = 100
+
 alpha tau t = if t<0 then 0 else tau*tau*t*(exp (-t*tau)) 
 
-rndSpikeSig <* "bernoulli 100"
-rndSpike = eventIf <: rndSpikeSig :>
+rndSpikeSig <* "uniform 0 1"
+rndSpike = eventIf (<: rndSpikeSig :> < rate*dt)
 
 gsyn = smap (alpha 300) seconds
 
@@ -20,6 +22,11 @@ vm = switch
 
 spike = crosses (-4.0e-2) vm
 refrac_end = later 2.0e-3 spike
-vm *> "print"
+
+inputRate = [(0,tmax,rate)]
+inputRate *> "store"
+
+--vm *> "print"
 vm *> "store"
+spike *> "store"
 --spike *> "print"

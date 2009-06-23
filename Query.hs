@@ -33,6 +33,7 @@ import Data.Ord
 --import Charts
 import Control.Concurrent
 import Database
+import HaskSyntaxUntyped
 
 
 evInEpoch ev ep = let (t1, t2) = epTs ep 
@@ -105,8 +106,32 @@ askM (Has qep qevs) = do
   return ep
             
 
---plot :: MonadState Session m => AskM V -> m ()
---plot = 
+inLastSession :: StateT Session IO a -> IO a
+inLastSession sma = do
+  s <- lastSession "/home/tomn/sessions/"
+  fst `fmap`  runStateT sma s
+
+plot :: AskM V ->  StateT Session IO ()
+plot (AskM lm) = do anss <- runListT lm
+                    liftIO $ mapM_ plotWithR anss
+
+
+summary :: AskM V ->  StateT Session IO ()
+summary (AskM lm) = do anss <- runListT lm
+                       liftIO $ mapM_ (putStrLn . ppVal) anss
+
+tst1 = do
+  saveBinary "/tmp/bugtest" $ ListV [PairV (PairV (cdbl 0) (cdbl 5)) Unit]
+  v <- loadBinary "/tmp/bugtest"
+  print $ ppVal v
+
+testQ1 = inLastSession $ do
+--           summary $ events "spike"
+           summary $ epochs "inputRate"
+--           plot . signals $ "vm" 
+
+freqDuring :: V -> V -> V
+freqDuring (ListV evs) (ListV eps) = Unit
 
 plotWithR :: V -> IO ()
 plotWithR (SigV t1 t2 dt sf) = do

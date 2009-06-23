@@ -25,7 +25,7 @@ safeHead (x:_) = Just x
 exec :: [Stmt] -> Double -> Double -> IO [(String, V)]
 exec stmts dt tmax = 
     let prg =  filter inMainLoop stmts 
-        fixEnvEs = ("dt",Const . NumV . NReal$ dt):[(nm,v) | en@(Env nm v) <-  stmts]
+        fixEnvEs = ("tmax",Const . NumV . NReal$ tmax):("dt",Const . NumV . NReal$ dt):[(nm,v) | en@(Env nm v) <-  stmts]
         fixEnv = map (\(n,e)->(n,unEvalM $ eval (evalS fixEnv) e)) fixEnvEs
         initSigs = [ (nm, unEvalM $ eval (evalS fixEnv) e) | InitSig nm e <-  stmts]
         initEvts = [ (nm,ListV []) | EventAddRule nm _ <- stmts]

@@ -87,6 +87,12 @@ dbl = Const . NumV . NReal
 int :: Int -> E
 int = Const . NumV . NInt
 
+cdbl :: Double -> V
+cdbl =  NumV . NReal
+
+cint :: Int -> V
+cint = NumV . NInt
+
 class ToVal a where
 	toVal :: a-> V
 
