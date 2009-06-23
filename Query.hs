@@ -131,8 +131,10 @@ testQ1 = inLastSession $ do
 --           plot . signals $ "vm" 
 
 freqDuring :: V -> V -> V
-freqDuring (ListV evs) (ListV eps) = Unit
-
+freqDuring (ListV evs) (ListV eps) = ListV $ map (freqDuring' evs) eps
+    where freqDuring' evs ep = let (t1, t2) = epTs ep
+                               in cdbl ((realToFrac .length $ filter (\e-> evTime e > t1 && evTime e < t2 ) evs)/(t2-t1))
+                                      
 plotWithR :: V -> IO ()
 plotWithR (SigV t1 t2 dt sf) = do
   (r::Int) <- randomRIO (0,10000)
