@@ -48,8 +48,6 @@ getSortedDirContents dir = do conts <- getDirContents dir
                          ((n1::Int,_):_, (n2::Int,_):_) -> compare n1 n2
                          _ -> EQ
 
-
-
 newtype AskM a = AskM { unAskM :: ListT (StateT Session IO) a }
     deriving (Monad, MonadIO, Functor, MonadState Session, MonadPlus)
 
@@ -86,25 +84,7 @@ epochs nm = do
       (do fnms <- getSortedDirContents $ bdir++"/epochs/"++nm
           evs <- forM fnms $ \fn-> liftIO $ loadBinary $ bdir++"/epochs/"++nm++"/"++fn
           answers evs)
-      (answers [])
-
-askM :: Q -> AskM V
-askM (Map lame q) = do
-  let f v = unEvalM $ eval emptyEvalS (App lame (Const v))
-  f `fmap` askM q
-
-askM (Filter pred q) = do
-  let f v = unEvalM $ eval emptyEvalS (App pred (Const v))
-  vs <- askM q
-  guard (isNotFalse $ f vs)
-  return vs
-
-askM (Has qep qevs) = do 
-  ev <- askM qevs
-  ep <- askM qep
-  guard (ev `evInEpoch` ep)
-  return ep
-            
+      (answers [])            
 
 inLastSession :: StateT Session IO a -> IO a
 inLastSession sma = do
@@ -125,9 +105,17 @@ tst1 = do
   v <- loadBinary "/tmp/bugtest"
   print $ ppVal v
 
+class QueryM m r | m->r where
+    events :: String -> m r
+
+instance QueryM (StateT Session IO) [V] where
+    events 
+
 testQ1 = inLastSession $ do
---           summary $ events "spike"
-           summary $ epochs "inputRate"
+           spike <- events "spike"
+           stim  <- epochs "inputRate"
+           plot (stim, spike `freqDuring` stim)
+           plot (zip stim $ spike `freqDuring` stim)
 --           plot . signals $ "vm" 
 
 freqDuring :: V -> V -> V
@@ -168,6 +156,24 @@ valsToGraph vs = foldl1 (<+>) $ map vToPlot vs
                          toGraph ((toPlot [(t1, epvl), (t2, epvl)])%Lines) 
 
 -}
+askM :: Q -> AskM V
+askM (Map lame q) = do
+  let f v = unEvalM $ eval emptyEvalS (App lame (Const v))
+  f `fmap` askM q
+
+askM (Filter pred q) = do
+  let f v = unEvalM $ eval emptyEvalS (App pred (Const v))
+  vs <- askM q
+  guard (isNotFalse $ f vs)
+  return vs
+
+askM (Has qep qevs) = do 
+  ev <- askM qevs
+  ep <- askM qep
+  guard (ev `evInEpoch` ep)
+  return ep
+
+
 data Q = QVar String
        -- | Filter E Q
        -- | Map E Q
