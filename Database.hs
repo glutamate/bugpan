@@ -77,6 +77,10 @@ lastSession rootDir = do
   let dir = fst $ maximumBy (comparing snd) sesnsTm
   loadExactSession dir
 
+deleteSession :: Session -> IO ()
+deleteSession (Session dir _) = removeDirectory dir
+    
+
 loadExactSession :: FilePath -> IO Session
 loadExactSession dir = do
   t0 <- read `fmap` readFile (dir++"/tStart")
@@ -88,6 +92,15 @@ getSessionInRootDir rootDir = do
   --mapM print sesns
   filterM (\objNm -> do isDir <- doesDirectoryExist $ oneTrailingSlash rootDir++objNm
                         return $ isDir) sesns
+
+getSortedDirContents dir = do conts <- getDirContents dir
+                              let sconts = sortBy cmpf conts
+                              --liftIO $ print sconts
+                              return sconts
+    where cmpf f1 f2 = case (readsPrec 5 f1, readsPrec 5 f2) of
+                         ((n1::Int,_):_, (n2::Int,_):_) -> compare n1 n2
+                         _ -> EQ
+
 
 loadSession :: FilePath -> String -> IO Session
 loadSession rootDir initnm = do
@@ -165,7 +178,8 @@ sigInEps s@(SigV ts1 ts2 dt sf) eps =
     catMaybes $ for eps $ \ep-> let (tep1,tep2) = epTs ep in
                                 cond [(ts1<tep1 && ts2>tep2, Just $ SigV tep1 tep2 dt $ \t->sf(t-(round $ tep1/dt)))]
 
-evTime (PairV (NumV (NReal t)) _) = t
+evTime (PairV nv@(NumV _) _) = unsafeVToDbl nv
+
 evTag (PairV (NumV (NReal t)) v) = v
 
 epTs (PairV (PairV (NumV (NReal t1)) ((NumV (NReal t2)))) _) = (t1,t2)
