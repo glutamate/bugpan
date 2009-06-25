@@ -43,7 +43,7 @@ evInEpoch ev ep = let (t1, t2) = epTs ep
 
 answers = return
  
-signals :: (MonadState Session m, MonadIO m) => String -> m [Signal]
+signals :: String -> StateT Session IO [Signal]
 signals nm = do
   Session bdir t0 <- get
   --liftIO . print $ bdir++"/signals/"++nm
@@ -51,25 +51,25 @@ signals nm = do
       (do fnms <- getSortedDirContents $ bdir++"/signals/"++nm
           sigs <- forM fnms $ \fn-> liftIO $ loadBinary $ bdir++"/signals/"++nm++"/"++fn 
           answers sigs) 
-      (answers [])
+      (liftIO (print "dir not found") >> answers [])
 
-events :: (MonadState Session m, MonadIO m) => String -> m [Event]
+events :: String -> StateT Session IO [Event]
 events nm = do
   Session bdir t0 <- get
   ifM (liftIO (doesDirectoryExist (bdir++"/events/"++nm)))
       (do fnms <- getSortedDirContents $ bdir++"/events/"++nm
-          utevs <- concat `fmap` forM fnms $ \fn-> liftIO $ loadBinary $ bdir++"/events/"++nm++"/"++fn
-          answers  $ map vToEvent utevs) 
-      (answers [])
+          utevs <- forM fnms $ \fn-> liftIO $ loadBinary $ bdir++"/events/"++nm++"/"++fn
+          answers  $ map vToEvent $ concat utevs) 
+      (liftIO (print "dir not found") >> answers [])
 
-durations :: (MonadState Session m, MonadIO m) => String -> m [Duration]
+durations ::  String -> StateT Session IO [Duration]
 durations nm = do
   Session bdir t0 <- get
   ifM (liftIO (doesDirectoryExist (bdir++"/epochs/"++nm)))
       (do fnms <- getSortedDirContents $ bdir++"/epochs/"++nm
-          eps <- concat `fmap` forM fnms $ \fn-> liftIO $ loadBinary $ bdir++"/epochs/"++nm++"/"++fn
-          answers $ map vToDuration eps)
-      (answers [])            
+          eps <- forM fnms $ \fn-> liftIO $ loadBinary $ bdir++"/epochs/"++nm++"/"++fn
+          answers $ map vToDuration $ concat eps)
+      (liftIO (print "dir not found") >> answers [])            
 
 inLastSession :: StateT Session IO a -> IO a
 inLastSession sma = do

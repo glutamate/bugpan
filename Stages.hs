@@ -73,7 +73,7 @@ runOnce dt t0 tmax ds sess = do
   let prg = snd . runTravM ds [] $ transform
   --print prg
   ress <- execInStages prg dt tmax return
-  putStrLn $ "results for this trial: "++show ress
+  --putStrLn $ "results for this trial: "++show ress
   addRunToSession ds t0 tmax dt ress sess
   print "runOnce done"
   return ()

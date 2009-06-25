@@ -18,6 +18,7 @@ import Control.Monad.List
 import Control.Monad.State.Lazy
 import System.Directory
 import System.Time
+import System.Cmd
 --import System.Random
 --import System.Info.MAC as MAC
 --import Data.Digest.Pure.SHA
@@ -78,7 +79,7 @@ lastSession rootDir = do
   loadExactSession dir
 
 deleteSession :: Session -> IO ()
-deleteSession (Session dir _) = removeDirectory dir
+deleteSession (Session dir _) = system ("rm -rf "++ dir) >> return ()
     
 
 loadExactSession :: FilePath -> IO Session
@@ -122,20 +123,20 @@ addRunToSession decls t0 tmax dt ress sess@(Session basedir sesst0)
           evtsToStore = reverse . catMaybes . 
                         flip map nmsToStore $ 
                         \nm-> case lookup nm ress `guardBy` isEvents of
-                                Just (ListV evs) -> Just (nm, ListV . reverse $ map (shiftEvt t0) evs)
+                                Just (ListV evs) -> Just (nm,  reverse $ map (shiftEvt t0) evs)
                                     
                                 _ -> 
                                     Nothing
           epsToStore = catMaybes . 
                         flip map nmsToStore $ 
                         \nm-> case lookup nm ress `guardBy` isEpochs of
-                                Just (ListV eps) -> Just (nm,ListV $ map (shiftEp t0) eps)
+                                Just (ListV eps) -> Just (nm, map (shiftEp t0) eps)
                                 _ -> Nothing
           t1 = NumV. NReal $ t0
           t2 = NumV. NReal $ t0+tmax
-          tStartEvs = [("tStart", ListV [PairV t1 Unit]),
-                       ("tStop", ListV [PairV t2 Unit])]
-          progEp = ("program", ListV [PairV (PairV t1 t2) (StringV (unlines $ map ppDecl decls))])
+          tStartEvs = [("tStart",  [PairV t1 Unit]),
+                       ("tStop",  [PairV t2 Unit])]
+          progEp = ("program",  [PairV (PairV t1 t2) (StringV (unlines $ map ppDecl decls))])
           saveInSubDir subdir nm obj = do
             let dir = (basedir++"/"++subdir++"/"++nm)
             createDirectoryIfMissing False dir
