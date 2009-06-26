@@ -11,6 +11,7 @@ import Data.Binary
 --import System.IO.Unsafe
 --import Debug.Trace
 import Numbers
+import Data.Array
 
 data EvalS = EvalS { dt:: Double,
                      tmax :: Double,
@@ -147,7 +148,8 @@ instance Binary V where
                        t2 <- get
                        dt <- get
                        vls <- forM [t1,t1+dt..t2] $ const get
-                       return . SigV t1 t2 dt $ \pt->vls!!pt
+                       let arr = listArray (0, length vls -1) vls
+                       return . SigV t1 t2 dt $ \pt->arr!pt
                9 -> StringV `fmap` get 
                tt -> error $ "unknown type tag: "++show tt
 

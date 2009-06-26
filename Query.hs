@@ -76,6 +76,10 @@ inLastSession sma = do
   s <- lastSession "/home/tomn/sessions/"
   fst `fmap`  runStateT sma s
 
+inSession :: Session -> StateT Session IO a -> IO a
+inSession s sma =  fst `fmap`  runStateT sma s
+
+
 --plot :: AskM V ->  StateT Session IO ()
 --plot (AskM lm) = do anss <- runListT lm
 --                    liftIO $ mapM_ plotWithR anss
@@ -103,7 +107,10 @@ freqDuring :: [Event] -> [Duration] -> [Duration]
 freqDuring evs eps = map (freqDuring' evs) eps
     where freqDuring' evs (t1, t2, vd) = 
               (t1, t2, cdbl ((realToFrac .length $ filter (\(t,vev)-> t > t1 && t < t2 ) evs)/(t2-t1)))
-                                      
+             
+plotSig :: (MonadIO m) => V -> m ()
+plotSig = liftIO . plotWithR
+        
 plotWithR :: V -> IO ()
 plotWithR (SigV t1 t2 dt sf) = do
   (r::Int) <- randomRIO (0,10000)
