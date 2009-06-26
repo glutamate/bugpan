@@ -9,7 +9,7 @@ import Numbers
 
 main = go runLoom
 
-runLoom = do 	wait 10
+runLoom = do 	wait 240
 		dplc <- uniform (-0.1) (0.1)
 		trace "displacement" dplc
 		use "DisplacedLoom" ["angle" =: dbl dplc]

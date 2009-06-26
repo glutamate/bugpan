@@ -70,6 +70,8 @@ newSession rootDir = do
   return $ Session baseDir t0
 --sessEvalState s = EvalS 0 0 Nothing (qenv s ++( evalManyAtOnce $ sessPrelude s))
 
+
+
 lastSession :: FilePath -> IO Session
 lastSession rootDir = do
   sesns <- getSessionInRootDir rootDir

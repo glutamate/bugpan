@@ -37,15 +37,19 @@ import HaskSyntaxUntyped
 import QueryTypes
 
 
+type QState = (Session)
+
+getSession = id `fmap` get
+
 evInEpoch ev ep = let (t1, t2) = epTs ep 
                       tev = evTime ev
                   in tev<t2 && tev>t1
 
 answers = return
  
-signals :: String -> StateT Session IO [Signal]
+signals :: String -> StateT QState IO [Signal]
 signals nm = do
-  Session bdir t0 <- get
+  Session bdir t0 <- getSession
   --liftIO . print $ bdir++"/signals/"++nm
   ifM (liftIO (doesDirectoryExist (bdir++"/signals/"++nm)))
       (do fnms <- getSortedDirContents $ bdir++"/signals/"++nm
@@ -53,39 +57,54 @@ signals nm = do
           answers sigs) 
       (liftIO (print "dir not found") >> answers [])
 
-events :: String -> StateT Session IO [Event]
+events :: String -> StateT QState IO [Event]
 events nm = do
-  Session bdir t0 <- get
+  Session bdir t0 <- getSession
   ifM (liftIO (doesDirectoryExist (bdir++"/events/"++nm)))
       (do fnms <- getSortedDirContents $ bdir++"/events/"++nm
           utevs <- forM fnms $ \fn-> liftIO $ loadBinary $ bdir++"/events/"++nm++"/"++fn
           answers  $ map vToEvent $ concat utevs) 
       (liftIO (print "dir not found") >> answers [])
 
-durations ::  String -> StateT Session IO [Duration]
+durations ::  String -> StateT QState IO [Duration]
 durations nm = do
-  Session bdir t0 <- get
+  Session bdir t0 <- getSession
   ifM (liftIO (doesDirectoryExist (bdir++"/epochs/"++nm)))
       (do fnms <- getSortedDirContents $ bdir++"/epochs/"++nm
           eps <- forM fnms $ \fn-> liftIO $ loadBinary $ bdir++"/epochs/"++nm++"/"++fn
           answers $ map vToDuration $ concat eps)
       (liftIO (print "dir not found") >> answers [])            
 
-inLastSession :: StateT Session IO a -> IO a
+inLastSession :: StateT QState IO a -> IO a
 inLastSession sma = do
   s <- lastSession "/home/tomn/sessions/"
   fst `fmap`  runStateT sma s
 
-inSession :: Session -> StateT Session IO a -> IO a
+inSession :: Session -> StateT QState IO a -> IO a
 inSession s sma =  fst `fmap`  runStateT sma s
 
 
---plot :: AskM V ->  StateT Session IO ()
+inNewSession :: StateT QState IO a -> IO a
+inNewSession sma = do sess <- newSession "/home/tomn/sessions/"
+                      inSession sess sma
+
+inTemporarySession sma = do sess <- newSession "/home/tomn/sessions/"
+                            inSession sess sma
+                            deleteSession sess
+
+sessionTmax  ::  StateT QState IO Double
+sessionTmax  = do
+  tstop <- events "tStop"
+  case tstop of
+    [] -> return 0
+    evs -> return . fst $ last evs
+
+--plot :: AskM V ->  StateT QState IO ()
 --plot (AskM lm) = do anss <- runListT lm
 --                    liftIO $ mapM_ plotWithR anss
 
 
---summary :: AskM V ->  StateT Session IO ()
+--summary :: AskM V ->  StateT QState IO ()
 --summary (AskM lm) = do anss <- runListT lm
 --                       liftIO $ mapM_ (putStrLn . ppVal) anss
 
