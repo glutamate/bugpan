@@ -46,11 +46,22 @@ type Id a = a
 vToEvent v = (evTime v, evTag v)
 vToDuration v = let (t1, t2) = epTs v in (t1, t2, epTag v)
 
+
 showDur (t1,t2,v) = show t1 ++ ".."++show t2++": "++ppVal v
+showEvt (t,v) = "@"++show t++": "++ppVal v
+
 
 class Tagged a where
     getTag :: a-> V
-    setTag :: a-> V ->a
+    setTag :: a-> V->a
+
+instance Tagged Event where
+    getTag = snd
+    setTag (t,_) v = (t,v)
+
+instance Tagged Duration where
+    getTag (_,_,v) = v
+    setTag (t1,t2,_) v = (t1,t2, v)
 
 
 --instance VFunctor Duration where

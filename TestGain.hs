@@ -1,3 +1,5 @@
+{-# OPTIONS -fbang-patterns #-}
+
 module Main where
 
 import System.Time
@@ -24,13 +26,31 @@ main = inTemporarySession $ do
   --plotSig (head vm)
   let q = spike`freqDuring` stim
   liftIO $ forM_ q (putStrLn . showDur)
-
+  io . print $ regress q 
   return ()
 
--- run many different inputrates
+
+io = liftIO
 -- make gain plot
--- regression
 -- post-spike signals like in fig 2
+
+sndV (PairV _ v) = v
+fstV (PairV v _) = v
+
+-- http://en.wikipedia.org/wiki/Regression_analysis
+regress :: (Tagged a) => [a] -> (Double,Double) --tag of type num,num
+regress vls = let xs = map (unsafeVToDbl . fstV . getTag) vls
+                  ys = map (unsafeVToDbl . sndV . getTag) vls
+                  xys = zip xs ys
+                  mx = mean xs
+                  my = mean ys
+                  nume = sum $ map (\(x,y)->(x-mx)*(y-my)) xys
+                  denom = sum $ map (square . (`sub` mx)) xs
+                  slope = nume/denom
+              in (slope,my-slope*mx)
+
+square x = x*x
+sub x y = x-y
 
 use :: MonadIO m => String -> m [Declare]
 use fnm = liftIO $ fileDecls fnm []
@@ -44,3 +64,11 @@ run ds t0 = do
   let dt = (lookupDefn "_dt" ds >>= vToDbl) `orJust` 0.001
   --liftIO $ mapM (putStrLn . ppDecl) ds
   liftIO $ runOnce dt t0 trun ds sess
+
+--from samfun
+mean :: Fractional a =>  [a] -> a
+mean = go 0 0
+        where
+            -- go ::  -> Int -> [Double] -> Double
+            go s n []     = s / fromIntegral n
+            go !s !n (x:xs) = go (s+x) (n+1) xs
