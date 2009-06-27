@@ -65,7 +65,7 @@ newSession rootDir = do
   createDirectory baseDir
   createDirectory $ baseDir++"/signals"
   createDirectory $ baseDir++"/events"
-  createDirectory $ baseDir++"/epochs"
+  createDirectory $ baseDir++"/durations"
   writeFile (baseDir++"/tStart") $ show (t1, t2)
   return $ Session baseDir t0
 --sessEvalState s = EvalS 0 0 Nothing (qenv s ++( evalManyAtOnce $ sessPrelude s))
@@ -155,7 +155,7 @@ addRunToSession decls t0 tmax dt ress sess@(Session basedir sesst0)
           saveInSubDir "events" nm evs
         forM (progEp:epsToStore) $ \(nm, eps) -> do
 	  putStrLn $"saving epochs "++ nm
-          saveInSubDir "epochs" nm eps
+          saveInSubDir "durations" nm eps
         print "done saving session"
         return ()
 

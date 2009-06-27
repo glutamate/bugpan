@@ -46,6 +46,15 @@ type Id a = a
 vToEvent v = (evTime v, evTag v)
 vToDuration v = let (t1, t2) = epTs v in (t1, t2, epTag v)
 
+showDur (t1,t2,v) = show t1 ++ ".."++show t2++": "++ppVal v
+
+class Tagged a where
+    getTag :: a-> V
+    setTag :: a-> V ->a
+
+
+--instance VFunctor Duration where
+
 --class (MonadState Session m, MonadIO m) => QueryM m where
 --    answers :: [a] -> m a
 

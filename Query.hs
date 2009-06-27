@@ -55,7 +55,7 @@ signals nm = do
       (do fnms <- getSortedDirContents $ bdir++"/signals/"++nm
           sigs <- forM fnms $ \fn-> liftIO $ loadBinary $ bdir++"/signals/"++nm++"/"++fn 
           answers sigs) 
-      (liftIO (print "dir not found") >> answers [])
+      (liftIO (print $ "dir not found:" ++nm) >> answers [])
 
 events :: String -> StateT QState IO [Event]
 events nm = do
@@ -64,16 +64,16 @@ events nm = do
       (do fnms <- getSortedDirContents $ bdir++"/events/"++nm
           utevs <- forM fnms $ \fn-> liftIO $ loadBinary $ bdir++"/events/"++nm++"/"++fn
           answers  $ map vToEvent $ concat utevs) 
-      (liftIO (print "dir not found") >> answers [])
+      (liftIO (print $ "dir not found:" ++nm) >> answers [])
 
 durations ::  String -> StateT QState IO [Duration]
 durations nm = do
   Session bdir t0 <- getSession
-  ifM (liftIO (doesDirectoryExist (bdir++"/epochs/"++nm)))
-      (do fnms <- getSortedDirContents $ bdir++"/epochs/"++nm
-          eps <- forM fnms $ \fn-> liftIO $ loadBinary $ bdir++"/epochs/"++nm++"/"++fn
+  ifM (liftIO (doesDirectoryExist (bdir++"/durations/"++nm)))
+      (do fnms <- getSortedDirContents $ bdir++"/durations/"++nm
+          eps <- forM fnms $ \fn-> liftIO $ loadBinary $ bdir++"/durations/"++nm++"/"++fn
           answers $ map vToDuration $ concat eps)
-      (liftIO (print "dir not found") >> answers [])            
+      (liftIO (print $ "dir not found:" ++nm) >> answers [])            
 
 inLastSession :: StateT QState IO a -> IO a
 inLastSession sma = do
@@ -125,7 +125,7 @@ testQ1 = inLastSession $ do
 freqDuring :: [Event] -> [Duration] -> [Duration]
 freqDuring evs eps = map (freqDuring' evs) eps
     where freqDuring' evs (t1, t2, vd) = 
-              (t1, t2, cdbl ((realToFrac .length $ filter (\(t,vev)-> t > t1 && t < t2 ) evs)/(t2-t1)))
+              (t1, t2, PairV vd $ cdbl ((realToFrac .length $ filter (\(t,vev)-> t > t1 && t < t2 ) evs)/(t2-t1)))
              
 plotSig :: (MonadIO m) => V -> m ()
 plotSig = liftIO . plotWithR
