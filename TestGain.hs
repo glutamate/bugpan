@@ -20,11 +20,11 @@ main = inTemporarySession $ do
   intfire <- use "Intfire"
   forM_ [0,10..100] $ \rate -> run (intfire `with` ["rate" =: dbl rate] ) (rate/10)
   --run intfire 0.1
-  spike <- events "spike"
-  stim  <- durations "inputRate"
+  spike <- events "spike" ()
+  stim  <- durations "inputRate" double
   --vm <- signals "vm"
   --plotSig (head vm)
-  let q = spike`freqDuring` stim
+  let q = spike `freqDuring` stim
   liftIO $ forM_ q (putStrLn . showDur)
   io . print $ regress q 
   return ()
@@ -34,13 +34,10 @@ io = liftIO
 -- make gain plot
 -- post-spike signals like in fig 2
 
-sndV (PairV _ v) = v
-fstV (PairV v _) = v
-
 -- http://en.wikipedia.org/wiki/Regression_analysis
-regress :: (Tagged a) => [a] -> (Double,Double) --tag of type num,num
-regress vls = let xs = map (unsafeVToDbl . fstV . getTag) vls
-                  ys = map (unsafeVToDbl . sndV . getTag) vls
+regress :: (Tagged t) => [t (Double,Double)] -> (Double,Double) --tag of type num,num
+regress vls = let xs = map (fst . getTag) vls
+                  ys = map (snd . getTag) vls
                   xys = zip xs ys
                   mx = mean xs
                   my = mean ys

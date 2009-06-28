@@ -47,32 +47,35 @@ evInEpoch ev ep = let (t1, t2) = epTs ep
 
 answers = return
  
-signals :: String -> StateT QState IO [Signal]
-signals nm = do
+double :: Double
+double = undefined
+
+signals :: Reify a => String -> a-> StateT QState IO [Signal a]
+signals nm _ = do
   Session bdir t0 <- getSession
   --liftIO . print $ bdir++"/signals/"++nm
   ifM (liftIO (doesDirectoryExist (bdir++"/signals/"++nm)))
       (do fnms <- getSortedDirContents $ bdir++"/signals/"++nm
           sigs <- forM fnms $ \fn-> liftIO $ loadBinary $ bdir++"/signals/"++nm++"/"++fn 
-          answers sigs) 
+          answers . catMaybes $ map reify sigs) 
       (liftIO (print $ "dir not found:" ++nm) >> answers [])
 
-events :: String -> StateT QState IO [Event]
-events nm = do
+events :: Reify (Event a) => String -> a-> StateT QState IO [Event a]
+events nm _ = do
   Session bdir t0 <- getSession
   ifM (liftIO (doesDirectoryExist (bdir++"/events/"++nm)))
       (do fnms <- getSortedDirContents $ bdir++"/events/"++nm
           utevs <- forM fnms $ \fn-> liftIO $ loadBinary $ bdir++"/events/"++nm++"/"++fn
-          answers  $ map vToEvent $ concat utevs) 
+          answers . catMaybes $ map reify $ concat utevs) 
       (liftIO (print $ "dir not found:" ++nm) >> answers [])
 
-durations ::  String -> StateT QState IO [Duration]
-durations nm = do
+durations :: Reify (Duration a) => String -> a-> StateT QState IO [Duration a]
+durations nm _ = do
   Session bdir t0 <- getSession
   ifM (liftIO (doesDirectoryExist (bdir++"/durations/"++nm)))
       (do fnms <- getSortedDirContents $ bdir++"/durations/"++nm
           eps <- forM fnms $ \fn-> liftIO $ loadBinary $ bdir++"/durations/"++nm++"/"++fn
-          answers $ map vToDuration $ concat eps)
+          answers . catMaybes $ map reify $ concat eps)
       (liftIO (print $ "dir not found:" ++nm) >> answers [])            
 
 inLastSession :: StateT QState IO a -> IO a
@@ -94,7 +97,7 @@ inTemporarySession sma = do sess <- newSession "/home/tomn/sessions/"
 
 sessionTmax  ::  StateT QState IO Double
 sessionTmax  = do
-  tstop <- events "tStop"
+  tstop <- events "tStop" double
   case tstop of
     [] -> return 0
     evs -> return . fst $ last evs
@@ -115,17 +118,17 @@ tst1 = do
 
 
 testQ1 = inLastSession $ do
-           spike <- events "spike"
-           stim  <- durations "inputRate"
+           spike <- events "spike" ()
+           stim  <- durations "inputRate" double
            return ()
 --           plot (stim, spike `freqDuring` stim)
  --          plot (zip stim $ spike `freqDuring` stim)
 --           plot . signals $ "vm" 
 
-freqDuring :: [Event] -> [Duration] -> [Duration]
+freqDuring :: [Event b] -> [Duration a] -> [Duration (a, Double)]
 freqDuring evs eps = map (freqDuring' evs) eps
     where freqDuring' evs (t1, t2, vd) = 
-              (t1, t2, PairV vd $ cdbl ((realToFrac .length $ filter (\(t,vev)-> t > t1 && t < t2 ) evs)/(t2-t1)))
+              (t1, t2, (vd, (realToFrac .length $ filter (\(t,vev)-> t > t1 && t < t2 ) evs)/(t2-t1)))
              
 plotSig :: (MonadIO m) => V -> m ()
 plotSig = liftIO . plotWithR

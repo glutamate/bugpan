@@ -34,11 +34,12 @@ import Data.Ord
 import Control.Concurrent
 import Database
 import HaskSyntaxUntyped
+import Data.Maybe
 
-type Duration = (Double,Double,V)
-type Event = (Double,V)
+type Duration a = (Double,Double,a)
+type Event a = (Double,a)
 
-type Signal = V
+data Signal a = Signal Double Double Double (Int -> a) 
 
 type List a = [a]
 type Id a = a
@@ -47,22 +48,81 @@ vToEvent v = (evTime v, evTag v)
 vToDuration v = let (t1, t2) = epTs v in (t1, t2, epTag v)
 
 
-showDur (t1,t2,v) = show t1 ++ ".."++show t2++": "++ppVal v
-showEvt (t,v) = "@"++show t++": "++ppVal v
+showDur (t1,t2,v) = show t1 ++ ".."++show t2++": "++show v
+showEvt (t,v) = "@"++show t++": "++show v
 
 
-class Tagged a where
-    getTag :: a-> V
-    setTag :: a-> V->a
+class Tagged t where
+    getTag :: t a-> a
+    setTag :: t a-> a ->t a
 
-instance Tagged Event where
+instance Tagged ((,) Double) where
     getTag = snd
     setTag (t,_) v = (t,v)
 
-instance Tagged Duration where
+instance Tagged ((,,) Double Double) where
     getTag (_,_,v) = v
     setTag (t1,t2,_) v = (t1,t2, v)
 
+instance Functor ((,) Double) where
+    fmap f (t,v) = (t, f v)
+
+instance Functor ((,,) Double Double) where
+    fmap f (t1,t2, v) = (t1,t2,f v)
+ 
+instance Functor Signal where
+    fmap f (Signal t1 t2 dt sf) = 
+        Signal t1 t2 dt $ \ix -> f (sf ix)
+
+class Reify a where
+    reify :: V-> Maybe a
+    pack :: a->V
+
+instance Reify V where 
+    reify = Just
+    pack = id
+instance Reify Double where 
+    reify = vToDbl
+    pack = NumV . NReal
+instance Reify Int where 
+    reify (NumV n) = let NInt i = numCast n NI
+                     in Just i
+    reify _ = Nothing
+    pack = NumV . NInt
+instance Reify Integer where 
+    reify (NumV n) = let NInt i = numCast n NI
+                     in Just $ toInteger i
+    reify _ = Nothing
+    pack = NumV . NInt . fromInteger
+instance (Reify a, Reify b) => Reify (a,b) where
+    reify (PairV a b) = liftM2 (,) (reify a) (reify b)
+    reify _ = Nothing
+    pack (x,y) = PairV (pack x) (pack y)
+instance (Reify a, Reify b, Reify c) => Reify (a,b,c) where
+    reify (PairV (PairV a b) c) = liftM3 (,,) (reify a) (reify b) (reify c)
+    reify _ = Nothing
+    pack (x,y,z) = PairV (PairV (pack x) (pack y)) (pack z)
+instance (Reify a) => Reify [a] where
+    reify (ListV xs) = let rmxs = map reify xs in
+                       if all isJust rmxs
+                          then Just $ map fromJust rmxs
+                          else Nothing
+    reify _ = Nothing
+    pack xs = ListV $ map pack xs
+instance Reify NumVl where
+    reify (NumV n) = Just n
+    reify _ = Nothing
+    pack = NumV
+instance Reify () where
+    reify Unit = Just ()
+    reify _ = Nothing
+    pack () = Unit
+instance Reify a => Reify (Signal a) where
+    reify (SigV t1 t2 dt sf) = Just $ Signal t1 t2 dt $ \ix-> unsafeReify (sf ix)
+    pack (Signal t1 t2 dt sf) = SigV t1 t2 dt $ \ix->pack (sf ix)
+
+unsafeReify :: Reify a => V -> a
+unsafeReify = fromJust . reify
 
 --instance VFunctor Duration where
 
