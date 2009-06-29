@@ -64,6 +64,7 @@ instance Tagged ((,,) Double Double) where
     getTag (_,_,v) = v
     setTag (t1,t2,_) v = (t1,t2, v)
 
+
 instance Functor ((,) Double) where
     fmap f (t,v) = (t, f v)
 
@@ -73,6 +74,17 @@ instance Functor ((,,) Double Double) where
 instance Functor Signal where
     fmap f (Signal t1 t2 dt sf) = 
         Signal t1 t2 dt $ \ix -> f (sf ix)
+
+
+instance Shiftable (Double,a) where
+    shift ts (t,v) = (t+ts, v)
+
+instance Shiftable (Double,Double,a) where
+    shift ts (t1,t2,v) = (t1+ts,t2+ts,v)
+
+instance Shiftable (Signal a) where
+    shift ts (Signal t1 t2 dt sf) = Signal (t1+ts) (t2+ts) dt sf 
+
 
 class Reify a where
     reify :: V-> Maybe a
@@ -124,7 +136,12 @@ instance Reify a => Reify (Signal a) where
 unsafeReify :: Reify a => V -> a
 unsafeReify = fromJust . reify
 
---instance VFunctor Duration where
+individually :: ListT m a -> m [a]
+individually = runListT
+
+eachOf :: Monad m => [a] -> ListT m a
+eachOf xs = ListT . return $ xs
+
 
 --class (MonadState Session m, MonadIO m) => QueryM m where
 --    answers :: [a] -> m a

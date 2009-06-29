@@ -41,9 +41,7 @@ type QState = (Session)
 
 getSession = id `fmap` get
 
-evInEpoch ev ep = let (t1, t2) = epTs ep 
-                      tev = evTime ev
-                  in tev<t2 && tev>t1
+evInDuration (t,_) (t1,t2, _) = t<t2 && t>t1
 
 answers = return
  
@@ -60,6 +58,9 @@ signals nm _ = do
           answers . catMaybes $ map reify sigs) 
       (liftIO (print $ "dir not found:" ++nm) >> answers [])
 
+signal :: Reify a => String -> a-> ListT (StateT QState IO) (Signal a)
+signal nm a = ListT $ signals nm a
+
 events :: Reify (Event a) => String -> a-> StateT QState IO [Event a]
 events nm _ = do
   Session bdir t0 <- getSession
@@ -69,6 +70,9 @@ events nm _ = do
           answers . catMaybes $ map reify $ concat utevs) 
       (liftIO (print $ "dir not found:" ++nm) >> answers [])
 
+event :: Reify a => String -> a-> ListT (StateT QState IO) (Event a)
+event nm a = ListT $ events nm a
+
 durations :: Reify (Duration a) => String -> a-> StateT QState IO [Duration a]
 durations nm _ = do
   Session bdir t0 <- getSession
@@ -77,6 +81,10 @@ durations nm _ = do
           eps <- forM fnms $ \fn-> liftIO $ loadBinary $ bdir++"/durations/"++nm++"/"++fn
           answers . catMaybes $ map reify $ concat eps)
       (liftIO (print $ "dir not found:" ++nm) >> answers [])            
+
+duration :: Reify a => String -> a-> ListT (StateT QState IO) (Duration a)
+duration nm a = ListT $ durations nm a
+
 
 inLastSession :: StateT QState IO a -> IO a
 inLastSession sma = do
@@ -117,19 +125,34 @@ tst1 = do
   print $ ppVal v
 
 
-testQ1 = inLastSession $ do
-           spike <- events "spike" ()
-           stim  <- durations "inputRate" double
-           return ()
---           plot (stim, spike `freqDuring` stim)
- --          plot (zip stim $ spike `freqDuring` stim)
---           plot . signals $ "vm" 
-
 freqDuring :: [Event b] -> [Duration a] -> [Duration (a, Double)]
-freqDuring evs eps = map (freqDuring' evs) eps
-    where freqDuring' evs (t1, t2, vd) = 
-              (t1, t2, (vd, (realToFrac .length $ filter (\(t,vev)-> t > t1 && t < t2 ) evs)/(t2-t1)))
-             
+freqDuring evs durs = map (freqDuring' evs) durs
+    where freqDuring' evs dur@(t1, t2, durtag) = 
+              (t1, t2, (durtag, 
+                        (realToFrac . length $ evs `during` [dur])/(t2-t1)))
+
+during :: [Event a] -> [Duration b] -> [Event a]
+during evs durs = concatMap (during' evs) durs
+    where during' evs dur = filter (`evInDuration` dur) evs
+
+sigDur :: Signal a -> Duration ()
+sigDur (Signal t1 t2 _ _) = (t1,t2, ())
+
+around :: [Signal a] -> [Event b] -> [Signal a]
+around sigs evs = catMaybes $ map (around' sigs) evs
+    where around' sigs ev@(t,_) = 
+              case filter ((ev `evInDuration`) . sigDur) sigs of
+                (sig:_) -> Just $ shift (-t) sig
+                [] -> Nothing
+
+inout :: [Event a] -> [Event b] -> [Duration (a,b)]
+inout [] _ = []
+inout _ [] = []
+inout ((t1,v1):ins) outs = 
+    case dropWhile ((<t1) . fst) outs of
+      ((t2,v2):outs') -> (t1,t2,(v1,v2)):inout ins outs'
+      [] -> []
+
 plotSig :: (MonadIO m) => V -> m ()
 plotSig = liftIO . plotWithR
         

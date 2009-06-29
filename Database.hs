@@ -120,19 +120,19 @@ addRunToSession decls t0 tmax dt ress sess@(Session basedir sesst0)
           sigsToStore = catMaybes . 
                         flip map nmsToStore $ 
                         \nm-> case lookup ('#':nm) ress `guardBy` isSig of
-                                Just s@(SigV t1 t2 _ sf) -> Just (nm,shiftSig t0 s)
+                                Just s@(SigV _ _ _ _) -> Just (nm,shift t0 s)
                                 _ -> Nothing
           evtsToStore = reverse . catMaybes . 
                         flip map nmsToStore $ 
                         \nm-> case lookup nm ress `guardBy` isEvents of
-                                Just (ListV evs) -> Just (nm,  reverse $ map (shiftEvt t0) evs)
+                                Just (ListV evs) -> Just (nm,  reverse $ map (shift t0) evs)
                                     
                                 _ -> 
                                     Nothing
           epsToStore = catMaybes . 
                         flip map nmsToStore $ 
                         \nm-> case lookup nm ress `guardBy` isEpochs of
-                                Just (ListV eps) -> Just (nm, map (shiftEp t0) eps)
+                                Just (ListV eps) -> Just (nm, map (shift t0) eps)
                                 _ -> Nothing
           t1 = NumV. NReal $ t0
           t2 = NumV. NReal $ t0+tmax
@@ -214,11 +214,14 @@ guardBy (Just x) p | p x = Just x
                      then mx
                      else Nothing -}
 
+class Shiftable s where
+    shift :: Double -> s -> s
 
-shiftSig ts (SigV t1 t2 dt sf) = SigV (t1+ts) (t2+ts) dt $ sf
-shiftEvt ts (PairV (NumV t) v) = (PairV (NumV $ t+(NReal ts)) v)
-shiftEp ts (PairV (PairV (NumV t1) ((NumV t2))) v) = 
-    (PairV (PairV (NumV $ t1 +(NReal ts)) ((NumV $ t2 + (NReal ts)))) v)
+instance Shiftable V where
+    shift ts (SigV t1 t2 dt sf) = SigV (t1+ts) (t2+ts) dt $ sf
+    shift ts (PairV (NumV t) v) = (PairV (NumV $ t+(NReal ts)) v)
+    shift ts (PairV (PairV (NumV t1) ((NumV t2))) v) = 
+        (PairV (PairV (NumV $ t1 +(NReal ts)) ((NumV $ t2 + (NReal ts)))) v)
 
 mkList :: V -> [V]
 mkList (ListV vs) = vs
