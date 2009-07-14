@@ -28,9 +28,12 @@ unsafeMain = do
   --forM_ [0,10..100] $ \rate -> urun (intfire `with` ["rate" =: dbl rate] ) (rate/10)
   urun (intfire) 0
   --print gsyn
-  plotSig . head $ section gsyn $ inout (peak gsyn) (later 20e-3 $ peak gsyn)
+  let peakgsyn = peak gsyn
+      roi = fst <$$> inout (peakgsyn) (later 20e-3 $ peakgsyn)
+  plotSig . head $ applyOver (/) gsyn roi
   --plotSig $ section gsynn (0, 20e-3, ())
-  print $ peak gsyn
+  print $ peakgsyn
+  
   deleteCurrentSession
 
 main = unsafeMain 

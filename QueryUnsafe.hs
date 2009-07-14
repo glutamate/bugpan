@@ -42,5 +42,6 @@ udurations nm proxy = unsafePerformIO $ do sess <- readIORef unsafeSession
                                              Just s -> evalStateT (durations nm proxy) s
                                              Nothing -> error $ "udurations "++nm++": no open session"
 
---sscan :: (a->b->a) -> a -> Signal b -> Signal a
-
+sscan :: (a->b->a) -> a -> Signal b -> Signal a
+sscan f init sig@(Signal t1 t2 dt sf) = let arr2 = scanl f init $ sigToList sig
+                                        in Signal t1 t2 dt $ \pt->arr2!!pt
