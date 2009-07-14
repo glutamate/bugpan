@@ -153,8 +153,8 @@ inout ((t1,v1):ins) outs =
       ((t2,v2):outs') -> (t1,t2,(v1,v2)):inout ins outs'
       [] -> []
 
-plotSig :: (MonadIO m) => V -> m ()
-plotSig = liftIO . plotWithR
+plotSig :: (MonadIO m) => Signal Double -> m ()
+plotSig = liftIO . plotWithR . pack
         
 plotWithR :: V -> IO ()
 plotWithR (SigV t1 t2 dt sf) = do

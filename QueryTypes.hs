@@ -41,6 +41,53 @@ type Event a = (Double,a)
 
 data Signal a = Signal Double Double Double (Int -> a) 
 
+instance Show a =>  Show (Signal a) where
+    show sig@(Signal t1 t2 dt sf) = "{"++show t1++": "++(show . take 5 $ sigToList sig)++"... :"++show t2++"}"
+
+sigPnts :: Signal a -> Int
+sigPnts (Signal t1 t2 dt sf) = round $ (t2-t1)/dt
+
+--zipSigs :: Signal a -> Signal b -> Signal (a,b)
+
+zipWithTime :: Signal a -> Signal (a,Double)
+zipWithTime (Signal t1 t2 dt sf) = Signal t1 t2 dt $ \pt -> (sf pt, (realToFrac pt)*dt+t1)
+
+sigToList :: Signal a -> [a]
+sigToList sig@(Signal t1 t2 dt sf) = map sf [0..sigPnts sig-1]
+
+sigInitialVal (Signal t1 t2 dt sf) = sf 0
+
+foldSig :: (a->b->a) -> a -> Signal b -> a
+foldSig f init sig = foldl' f init $ sigToList sig
+
+peak :: Ord a => [Signal a] ->[Event a]
+peak sigs =  map (\sig -> swap . foldSig cmp (sigInitialVal sig, 0) $ zipWithTime sig) sigs 
+    where cmp (curMax, tmax) (v, t) = if v>curMax 
+                                         then (v, t)
+                                         else (curMax, tmax)
+          swap (x,y) = (y,x)
+
+section :: [Signal a] -> [Duration b] -> [Signal a]
+section _ [] = []
+section sigs (dur:durs) = case find (sigContainsDur dur) sigs of
+                            Just sig -> section' sig dur : section sigs durs
+                            Nothing -> section sigs durs
+section' (Signal ts1 ts2 dt sf) (td1,td2,vd) = let (t1, t2)= (max ts1 td1, min ts2 td2)
+                                                   dropPnts = round $ (t1 - ts1)/dt
+                                               in Signal t1 t2 dt $ \pt->(sf $ pt + dropPnts)
+
+sigContainsDur :: Duration b -> Signal a -> Bool
+sigContainsDur (td1,td2,vd) (Signal ts1 ts2 dt sf) = ts1 < td1 && ts2 > td2
+
+--with :: a -> (a-> b) -> b
+--with x f = f x
+
+later :: Double -> [Event a] -> [Event a]
+later t  = map (\(te, v) ->(t+te, v))
+
+fmap2 :: (Functor f1, Functor f2) => (a->b) -> f1 (f2 a) -> f1 (f2 b)
+fmap2 = fmap . fmap
+
 type List a = [a]
 type Id a = a
 
@@ -63,6 +110,9 @@ instance Tagged ((,) Double) where
 instance Tagged ((,,) Double Double) where
     getTag (_,_,v) = v
     setTag (t1,t2,_) v = (t1,t2, v)
+
+foldTagged ::  Tagged t => (a -> b -> a) -> a -> [t b] -> a
+foldTagged f init col = foldl' f init $ map getTag col
 
 
 instance Functor ((,) Double) where

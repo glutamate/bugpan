@@ -15,8 +15,27 @@ import QueryTypes
 import Control.Monad.Trans
 import Control.Monad.State.Lazy
 import HaskSyntaxUntyped
+import QueryUnsafe
+import Data.IORef
 
-main = inTemporarySession $ do
+spikes = uevents "spike" ()
+stim = udurations "inputRate" double
+gsyn = usignals "gsyn" double
+
+unsafeMain = do
+  openNewSession
+  intfire <- use "Intfire"
+  --forM_ [0,10..100] $ \rate -> urun (intfire `with` ["rate" =: dbl rate] ) (rate/10)
+  urun (intfire) 0
+  --print gsyn
+  plotSig . head $ section gsyn $ inout (peak gsyn) (later 20e-3 $ peak gsyn)
+  --plotSig $ section gsynn (0, 20e-3, ())
+  print $ peak gsyn
+  deleteCurrentSession
+
+main = unsafeMain 
+
+safeMain = inTemporarySession $ do
   intfire <- use "Intfire"
   forM_ [0,10..100] $ \rate -> run (intfire `with` ["rate" =: dbl rate] ) (rate/10)
   --run intfire 0.1
@@ -57,6 +76,15 @@ with = flip makeSubs
 run :: [Declare] -> Double -> StateT QState IO ()
 run ds t0 = do
   sess <- getSession
+  let trun = (lookupDefn "_tmax" ds >>= vToDbl) `orJust` 1
+  let dt = (lookupDefn "_dt" ds >>= vToDbl) `orJust` 0.001
+  --liftIO $ mapM (putStrLn . ppDecl) ds
+  liftIO $ runOnce dt t0 trun ds sess
+
+
+urun :: [Declare] -> Double -> IO ()
+urun ds t0 = do
+  Just sess <- readIORef unsafeSession
   let trun = (lookupDefn "_tmax" ds >>= vToDbl) `orJust` 1
   let dt = (lookupDefn "_dt" ds >>= vToDbl) `orJust` 0.001
   --liftIO $ mapM (putStrLn . ppDecl) ds
