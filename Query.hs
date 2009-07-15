@@ -108,7 +108,7 @@ sessionTmax  = do
   tstop <- events "tStop" double
   case tstop of
     [] -> return 0
-    evs -> return . fst $ last evs
+    evs -> return . fst $ maximumBy (comparing fst) evs
 
 --plot :: AskM V ->  StateT QState IO ()
 --plot (AskM lm) = do anss <- runListT lm

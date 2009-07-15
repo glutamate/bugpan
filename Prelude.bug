@@ -3,19 +3,29 @@ module Prelude where
 smap f s=  {: f <: s :> :} 
 incr = \x->x+1
 add = \x->\y->x+y
+negate x = 0-x
 
 sscan f v0 s = let sr = {: (f <: s :>) <: delay sr v0 :> :} in sr
 integrate = sscan intStep 0
 intStep = \new->\old->old+new*dt
-crosses = \val->\sig->[: if (<: sig :> >= val) && (<: delay sig 0 :> < val) then [ (<: seconds :>, ()) ] else [] :]
-eventIf = \p->[: if p then [ (<: seconds :>, ()) ] else [] :]
+crosses val sig = [: if (<: sig :> >= val) && (<: delay sig 0 :> < val) then [ (<: seconds :>, ()) ] else [] :]
+eventIf p = [: if <: p :> then [ (<: seconds :>, ()) ] else [] :]
 fraction = \x->x-floor x
 every = \ivl->eventIf ((fraction (<: seconds :>/ivl)) < dt)
+
+zip s1 s2 = {: (<: s1 :>, <: s2 :>) :}
+zipWith f s1 s2 = {:  f <: s1 :> <: s2 :> :}
+
+peak sig = let sigpeak = sscan peakf (sig@0, 0) (zip sig seconds)
+     	       (peakval, peakt) = sigpeak@tmax
+	   in [(peakt, peakval)]
+peakf (new,tnew) (old,told) = if new>old then (new, tnew) else (old, told)
+
 
 
 map f lst = case lst of 
       	    	 [] -> []
-		 (x::xs) -> (f x)::((map f) xs)
+		 x::xs -> f x::(map f xs)
 
 sum lst = case lst of 
       	   [] -> 0
