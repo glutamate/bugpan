@@ -26,6 +26,10 @@ driver:
 runloom:
 	ghc --make RunLoom -lcomedi Comedi/comedi_hs_helper.o
 
+testacq:
+	ghc --make TestAcqOnly -threaded -lcomedi Comedi/comedi_hs_helper.o
+	sudo time ./TestAcqOnly
+
 
 comedi_helper: 
 	gcc -c -g -o Comedi/comedi_hs_helper.o Comedi/comedi_hs_helper.c

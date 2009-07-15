@@ -1,6 +1,6 @@
-use Prelude;
+module AcqOnly where
 
-ecVoltage <* "adc 0 20000 6";
+ecVoltage <* "adc 0 20000 1"
 
 -- stage ecvals "1"; 
 
@@ -8,4 +8,4 @@ ecVoltage <* "adc 0 20000 6";
 
 -- ecvals *> "print"; 
 
-ecVoltage *> "store";
+ecVoltage *> "store"
