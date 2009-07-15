@@ -84,7 +84,7 @@ exec stmts dt tmax =
 
        --get tnow
        t0 <- getClockTime
-       putStrLn $ "trigger at "++show t0++" dt="++show dt
+       putStrLn $ "trigger at "++show t0++" dt="++show dt++" tmax="++show tmax
 
        sequence_ $ map ($envHT) [ tr | Trigger tr <- prg ]
 

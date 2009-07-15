@@ -9,21 +9,21 @@ vrest = -0.075
 
 cm = 3.1e-12
 
--- peakSyn = 385 pS
--- mean weighted decay 0.6*0.42+0.29*2.71+0.11*15.5 = 2.74 ms
---_dt = 4.0e-5
-
+_dt = 1.0e-4 --4.0e-5
+_tmax= 0.1
 alpha tau t = if t<0 then 0 else tau*tau*t*(exp (-t*tau)) 
 
 rndSpikeSig <* "uniform 0 1"
 rndSpike = eventIf (<: rndSpikeSig :> < rate*dt) 
 
-gsyn = smap (alpha 300) seconds
+-- peakSyn = 385 pS = 3.85e-10
+-- mean weighted decay 0.6*0.42+0.29*2.71+0.11*15.5 = 2.74 ms
+gsyn = {: 7.05e-13 * (alpha 1485 <: seconds:>)  :}
 
 stage gsyn -1
 
 gcell = (convolve gsyn) rndSpike 
-cellOde = \v->{: ((<: gcell :>*3.0e-13)-((v-vrest)/rin))/cm :} 
+cellOde = \v->{: (<: gcell :> - ((v-vrest)/rin))/cm :} 
 vm = switch 
 	    (solveOde cellOde) vrest
 	    spike ~> \_->\_->{: vrest :}

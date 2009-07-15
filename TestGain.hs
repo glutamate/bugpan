@@ -20,6 +20,7 @@ import Data.IORef
 
 spikes = uevents "spike" ()
 stim = udurations "inputRate" double
+vm = usignals "vm" double
 gsyn = usignals "gsyn" double
 
 unsafeMain = do
@@ -31,8 +32,10 @@ unsafeMain = do
   --print gsyn
   let peakgsyn = peak gsyn
       roi = fst <$$> inout (peakgsyn) (later 20e-3 $ peakgsyn)
-  plotSig . head $ applyOverWith (/) gsyn roi
+  --plotSig . head $ applyOverWith (/) gsyn roi
   --plotSig $ section gsynn (0, 20e-3, ())
+  plotSig . head $ vm
+  print peakgsyn
   print . area $  (flip (/) <$$> roi) `applyOver` gsyn
   deleteCurrentSession
 
