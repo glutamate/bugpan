@@ -98,23 +98,30 @@ exec stmts dt tmax =
          forM_ prgNoScreen $ \stm -> do 
                          sevals <- H.toList envHT                       
                          let es = evalS sevals 
+                             evalToEnv env nm e =  case eval (extsEnv env es) e of
+                                              Res v ->  (H.update envHT nm $! v) >> return ()
+                                              Error s -> fail $ "eval error in exec "++pp e++": "++nm
+                             evalTo = evalToEnv []  
                          case stm of 
-                           SigUpdateRule nm (Switch ess er) -> do
+                           SigUpdateRule nm sw@(Switch ess er) -> do
+                                    --putStrLn $ nm++": "++ pp sw
                                     eslams <- forM ess (\(Var en, slam) -> (`pair` slam) 
                                                         `fmap` (unListV =<< fromJust `fmap` 
                                                                           H.lookup envHT en))
+                                   -- print 1
                                     let eslams' = map (onFst toHsTime . onFst head) . 
                                                   filter (not . null . fst) $ eslams
+                                    --print 2
                                     if null eslams'
-                                       then do H.update envHT nm $! unEvalM $ eval es er
-                                               return ()
+                                       then evalTo nm er
                                        else do
+                                         --print 4
                                          let idx = maxIdx (map (fst. fst) eslams')
                                          let ((t,v), Lam tn (Lam vn se)) =  eslams'!!idx
-                                         H.update envHT nm $! unEvalM $ eval (extsEnv [(vn,v), (tn, NumV. NReal $ t)] es) se
-                                         return ()
+                                         evalToEnv [(vn,v), (tn, NumV. NReal $ t)] nm se
                            SigUpdateRule nm e -> do
-                                    H.update envHT nm $! unEvalM $ eval es e
+                                    --putStrLn $ nm++": "++ pp e
+                                    evalTo nm e
                                     return ()
                            EventAddRule  nm e -> do
                                     evs<-fromJust `fmap` H.lookup envHT nm

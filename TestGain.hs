@@ -25,15 +25,15 @@ gsyn = usignals "gsyn" double
 unsafeMain = do
   openNewSession
   intfire <- use "Intfire"
+  --putStrLn $ ppProg "IntFire" intfire
   --forM_ [0,10..100] $ \rate -> urun (intfire `with` ["rate" =: dbl rate] ) (rate/10)
   urun (intfire) 0
   --print gsyn
   let peakgsyn = peak gsyn
       roi = fst <$$> inout (peakgsyn) (later 20e-3 $ peakgsyn)
-  plotSig . head $ applyOver (/) gsyn roi
+  plotSig . head $ applyOverWith (/) gsyn roi
   --plotSig $ section gsynn (0, 20e-3, ())
-  print $ peakgsyn
-  
+  print . area $  (flip (/) <$$> roi) `applyOver` gsyn
   deleteCurrentSession
 
 main = unsafeMain 

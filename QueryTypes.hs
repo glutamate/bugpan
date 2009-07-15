@@ -85,10 +85,15 @@ sigOverlapsDur (td1,td2,vd) (Signal ts1 ts2 dt sf) = td2 > ts1 && td1<ts2 -- || 
 mapMaybe :: (a->Maybe b) -> [a] -> [b]
 mapMaybe f xs = catMaybes $ map f xs
 
-applyOver :: (a->b->c) -> [Signal a] -> [Duration b] -> [Signal c]
-applyOver f sigs durs = concatMap (aux durs) sigs --is sig within a dur? if so, apply
+applyOverWith :: (a->b->c) -> [Signal a] -> [Duration b] -> [Signal c]
+applyOverWith f sigs durs = concatMap (aux durs) sigs --is sig within a dur? if so, apply
     where aux durs sig = map (aux1 sig) $ filter (`sigOverlapsDur` sig) durs
           aux1 sig dur = (`f` (getTag dur)) `fmap` section1 sig dur
+
+applyOver :: [Duration (a->b)] -> [Signal a] -> [Signal b]
+applyOver durs sigs = concatMap (aux durs) sigs --is sig within a dur? if so, apply
+    where aux durs sig = map (aux1 sig) $ filter (`sigOverlapsDur` sig) durs
+          aux1 sig dur = (getTag dur) `fmap` section1 sig dur
 
 --with :: a -> (a-> b) -> b
 --with x f = f x
