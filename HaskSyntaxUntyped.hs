@@ -8,6 +8,8 @@ import EvalM
 import Data.List
 import Numbers
 import Data.String
+import Data.Unique
+import System.IO.Unsafe
 
 default (Int, Double)
 
@@ -26,6 +28,8 @@ instance Assignable (String, E) where -- LetE
 instance Assignable (E, E) where -- LetE
     x =: y = (Var x, y)
 
+
+unsafeUniqueInt = unsafePerformIO (hashUnique `fmap` newUnique)
 
 
 addLams [] e = e
@@ -55,7 +59,10 @@ false = Const . BoolV $ False
 lam :: String -> E -> E
 lam vn bod = let vars = splitBySpaces vn in 
              addLams (reverse vars) bod
-             
+         
+lam' :: (E->E) -> E    
+lam' bodf = bodf $ (Var ("unique_var_"++show unsafeUniqueInt))
+
 sig = Sig
 delay = SigDelay
 val = SigVal

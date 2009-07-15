@@ -35,6 +35,7 @@ refrac_end = later 2.0e-3 spike
 inputRate = [(0,tmax,rate)]
 inputRate *> "store"
 
+gsyn *> "store"
 --vm *> "print"
 vm *> "store"
 spike *> "store"
