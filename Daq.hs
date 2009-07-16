@@ -8,9 +8,8 @@ import Numbers
 import Data.HashTable as H
 import EvalM
 import Comedi.Comedi
-import Data.Array.Vector
 import Control.Concurrent hiding (Chan)
-
+import Data.Array
 
 setupInput ::  Int -> IO ()
 setupInput rtHz = do subdev <- findSubdeviceByType  AnalogInput
@@ -57,13 +56,13 @@ compileAdcSrc rs@(ReadSource nm ("adc":chanS:rtHzS:lenS:_)) =
                                Just (NumV (NInt promN)) <- H.lookup env "adc_input_promise_number" 
                                putStrLn $"promise num "++show promN
                                let npts = round (len*(realToFrac rtHz))
-                               pts <- fmap (toU . map realToFrac) $! retrieveInputWave promN npts
+                               pts <- fmap (array (0,npts) . zip [0..npts-1] . map realToFrac) $! retrieveInputWave promN npts
                                let toV = NumV . NReal
                                let sf idx = if idx<0 
-                                               then toV $ headU pts
+                                               then toV $ pts!0
                                                else if idx<npts
-                                                       then  toV $ pts `indexU` idx
-                                                       else toV $ lastU pts
+                                                       then  toV $ pts!idx
+                                                       else toV $ pts!(npts-1)
                                H.update env ('%':nm) $ SigV 0 len (1/(realToFrac rtHz)) sf
                                free_trial_results
                                return ()
