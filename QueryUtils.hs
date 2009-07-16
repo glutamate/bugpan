@@ -38,6 +38,25 @@ applyOver durs sigs = concatMap (aux durs) sigs --is sig within a dur? if so, ap
 later :: Double -> [Event a] -> [Event a]
 later t  = map (\(te, v) ->(t+te, v))
 
+fadeOut :: Double -> [Event a] -> [Duration a]
+fadeOut t = map (\(tev,v)-> (tev, tev+t, v))
+
+fadeIn :: Double -> [Event a] -> [Duration a]
+fadeIn t = map (\(tev,v)-> (tev-t, tev, v))
+
+
+filterTag :: Tagged t => (a->Bool) -> [t a] -> [t a]
+filterTag p = filter (p . getTag)
+
+(//) :: Tagged t => (a->Bool) -> [t a] -> [t a]
+(//) = filterTag
+
+(&) :: (Tagged t1, Tagged t2) => [t1 a] -> [t2 b] -> [t2 b]
+[] & _ = []
+_ & ys = ys
+
+-- x = [] & []
+
 area :: Fractional a => [Signal a] -> [Duration a]
 area sigs = map area1 sigs
 
