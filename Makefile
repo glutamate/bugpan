@@ -27,8 +27,8 @@ runloom:
 	ghc --make RunLoom -lcomedi Comedi/comedi_hs_helper.o
 
 testacq:
-	ghc --make TestAcqOnly -threaded -lcomedi Comedi/comedi_hs_helper.o
-	sudo time ./TestAcqOnly
+	ghc --make TestAcqOnly -prof -auto-all -lcomedi Comedi/comedi_hs_helper.o
+	sudo time ./TestAcqOnly +RTS -p
 
 
 comedi_helper: 

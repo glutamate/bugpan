@@ -16,7 +16,7 @@ import Control.Concurrent.STM.TMVar
 import System.Time
 import Statement
 
---import Array
+import Data.Array
 
 safeHead [] = Nothing
 safeHead (x:_) = Just x
@@ -166,9 +166,9 @@ exec stmts dt tmax =
          lubuf <- H.lookup envHT ('#':bufn)
          case lubuf of
             Just (ListV buf) -> do
-                                  --let arr = array (0,nsteps) $ zip [0..nsteps] $ reverse buf
-                                  let arr = reverse buf
-                                  H.update envHT ('#':bufn) . SigV 0 tmax dt $ \t-> arr!!t
+                                  let arr = array (0,nsteps) $ zip [0..nsteps] $ reverse buf
+                                  --let arr = reverse buf
+                                  H.update envHT ('#':bufn) . SigV 0 tmax dt $ \t-> arr!t
                                   return ()
             _ -> return ()
          lusbuf <- H.lookup envHT ('%':bufn)
