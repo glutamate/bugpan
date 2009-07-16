@@ -30,6 +30,8 @@ testacq:
 	ghc --make TestAcqOnly -prof -auto-all -lcomedi Comedi/comedi_hs_helper.o
 	sudo time ./TestAcqOnly +RTS -p
 
+testgain:
+	ghc --make TestGain -lcomedi Comedi/comedi_hs_helper.o
 
 comedi_helper: 
 	gcc -c -g -o Comedi/comedi_hs_helper.o Comedi/comedi_hs_helper.c

@@ -93,10 +93,11 @@ data T  = BoolT
 	| AnyT
 	| SignalT T
 	| EventT T
-	| EpochT T
+	| DurationT T
         | ShapeT 
         | UnitT
         | StringT
+        | TyVar String
 	deriving (Show, Eq, Read)
 
 data NumT = IntT | RealT | CmplxT deriving (Eq, Show, Read)

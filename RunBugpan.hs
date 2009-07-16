@@ -32,8 +32,8 @@ help = putStrLn $ unlines [
         "\t-n\t\tStart new session",
         "\t-c\t\tContinue last session",
         "\t-t {seconds}\tSet run length",
-        "\t-d {seconds}\tSet timestep\n"
-
+        "\t-d {seconds}\tSet timestep\n",
+        "\t-p file\tParse file only\n"
  ]
 
 main = do
@@ -54,6 +54,11 @@ dispatch rst ("-c":args) = do
 
 dispatch rst ("-d":dts:args) = dispatch (rst {rstDt = Just $ read dts}) args
 dispatch rst ("-t":dts:args) = dispatch (rst {rstTmax = Just $ read dts}) args
+
+dispatch rst ("-p":file:_) | head file /= '-' = do
+  --print file
+  ds <- fileDecls file []
+  mapM_ print ds
 
 dispatch rst (file:args) | head file /= '-' = do
   --print file

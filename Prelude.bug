@@ -1,11 +1,19 @@
 module Prelude where 
 
 smap f s=  {: f <: s :> :} 
-incr = \x->x+1
-add = \x->\y->x+y
+
+incr : Num -> Num
+incr x =  x+1
+
+add : Num -> Num -> Num
+add x y = x+y
+
 negate x = 0-x
 
+sscan : (a->b->a) -> a -> Signal b -> Signal b
 sscan f v0 s = let sr = {: (f <: s :>) <: delay sr v0 :> :} in sr
+
+
 integrate = sscan intStep 0
 intStep = \new->\old->old+new*dt
 crosses val sig = [: if (<: sig :> >= val) && (<: delay sig 0 :> < val) then [ (<: seconds :>, ()) ] else [] :]

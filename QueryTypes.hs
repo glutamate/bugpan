@@ -60,18 +60,9 @@ sigInitialVal (Signal t1 t2 dt sf) = sf 0
 foldSig :: (a->b->a) -> a -> Signal b -> a
 foldSig f init sig = foldl' f init $ sigToList sig
 
-peak :: Ord a => [Signal a] ->[Event a]
-peak sigs =  map (\sig -> swap . foldSig cmp (sigInitialVal sig, 0) $ zipWithTime sig) sigs 
-    where cmp (curMax, tmax) (v, t) = if v>curMax 
-                                         then (v, t)
-                                         else (curMax, tmax)
-          swap (x,y) = (y,x)
 
-section :: [Signal a] -> [Duration b] -> [Signal a]
-section _ [] = []
-section sigs (dur:durs) = case find (sigContainsDur dur) sigs of
-                            Just sig -> section1 sig dur : section sigs durs
-                            Nothing -> section sigs durs
+--mapMaybe :: (a->Maybe b) -> [a] -> [b]
+--mapMaybe f xs = catMaybes $ map f xs
 section1 (Signal ts1 ts2 dt sf) (td1,td2,vd) = let (t1, t2)= (max ts1 td1, min ts2 td2)
                                                    dropPnts = round $ (t1 - ts1)/dt
                                                in Signal t1 t2 dt $ \pt->(sf $ pt + dropPnts)
@@ -82,49 +73,29 @@ sigContainsDur (td1,td2,vd) (Signal ts1 ts2 dt sf) = ts1 < td1 && ts2 > td2
 sigOverlapsDur :: Duration b -> Signal a -> Bool
 sigOverlapsDur (td1,td2,vd) (Signal ts1 ts2 dt sf) = td2 > ts1 && td1<ts2 -- || td1 < ts2 && td2 >ts1
 
-mapMaybe :: (a->Maybe b) -> [a] -> [b]
-mapMaybe f xs = catMaybes $ map f xs
-
-applyOverWith :: (a->b->c) -> [Signal a] -> [Duration b] -> [Signal c]
-applyOverWith f sigs durs = concatMap (aux durs) sigs --is sig within a dur? if so, apply
-    where aux durs sig = map (aux1 sig) $ filter (`sigOverlapsDur` sig) durs
-          aux1 sig dur = (`f` (getTag dur)) `fmap` section1 sig dur
-
-applyOver :: [Duration (a->b)] -> [Signal a] -> [Signal b]
-applyOver durs sigs = concatMap (aux durs) sigs --is sig within a dur? if so, apply
-    where aux durs sig = map (aux1 sig) $ filter (`sigOverlapsDur` sig) durs
-          aux1 sig dur = (getTag dur) `fmap` section1 sig dur
-
---with :: a -> (a-> b) -> b
---with x f = f x
-
-later :: Double -> [Event a] -> [Event a]
-later t  = map (\(te, v) ->(t+te, v))
-
-area :: Fractional a => [Signal a] -> [Duration a]
-area sigs = map area1 sigs
-
-area1 :: Fractional a => Signal a -> Duration a
-area1 sig@(Signal t1 t2 dt sf) = (t1, t2, foldSig sumf 0 sig)
-    where sumf prev next = prev+next*(realToFrac dt)
-
-(<$$>) :: (Functor f1, Functor f2) => (a->b) -> f1 (f2 a) -> f1 (f2 b)
-(<$$>) = fmap . fmap
-
 type List a = [a]
 type Id a = a
 
 vToEvent v = (evTime v, evTag v)
 vToDuration v = let (t1, t2) = epTs v in (t1, t2, epTag v)
 
+evInDuration (t,_) (t1,t2, _) = t<t2 && t>t1
+
 
 showDur (t1,t2,v) = show t1 ++ ".."++show t2++": "++show v
 showEvt (t,v) = "@"++show t++": "++show v
 
+sigDur :: Signal a -> Duration ()
+sigDur (Signal t1 t2 _ _) = (t1,t2, ())
+
+sscan :: (a->b->a) -> a -> Signal b -> Signal a
+sscan f init sig@(Signal t1 t2 dt sf) = let arr2 = scanl f init $ sigToList sig
+                                        in Signal t1 t2 dt $ \pt->arr2!!pt
+
 
 class Tagged t where
     getTag :: t a-> a
-    setTag :: t a-> a ->t a
+    setTag :: t a-> b ->t b
 
 instance Tagged ((,) Double) where
     getTag = snd

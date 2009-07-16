@@ -17,11 +17,16 @@ import Control.Monad.State.Lazy
 import HaskSyntaxUntyped
 import QueryUnsafe
 import Data.IORef
+import QueryUtils
 
 spikes = uevents "spike" ()
 stim = udurations "inputRate" double
 vm = usignals "vm" double
 gsyn = usignals "gsyn" double
+ 
+loomAnal = inLastSession $ do
+             ecV <- signals "ecVoltage" double
+             plotSig . head $ ecV
 
 unsafeMain = do
   openNewSession
@@ -39,7 +44,7 @@ unsafeMain = do
   print . area $  (flip (/) <$$> roi) `applyOver` gsyn
   deleteCurrentSession
 
-main = unsafeMain 
+main = loomAnal
 
 safeMain = inTemporarySession $ do
   intfire <- use "Intfire"
@@ -74,27 +79,7 @@ regress vls = let xs = map (fst . getTag) vls
 square x = x*x
 sub x y = x-y
 
-use :: MonadIO m => String -> m [Declare]
-use fnm = liftIO $ fileDecls fnm []
 
-with = flip makeSubs
-
-run :: [Declare] -> Double -> StateT QState IO ()
-run ds t0 = do
-  sess <- getSession
-  let trun = (lookupDefn "_tmax" ds >>= vToDbl) `orJust` 1
-  let dt = (lookupDefn "_dt" ds >>= vToDbl) `orJust` 0.001
-  --liftIO $ mapM (putStrLn . ppDecl) ds
-  liftIO $ runOnce dt t0 trun ds sess
-
-
-urun :: [Declare] -> Double -> IO ()
-urun ds t0 = do
-  Just sess <- readIORef unsafeSession
-  let trun = (lookupDefn "_tmax" ds >>= vToDbl) `orJust` 1
-  let dt = (lookupDefn "_dt" ds >>= vToDbl) `orJust` 0.001
-  --liftIO $ mapM (putStrLn . ppDecl) ds
-  liftIO $ runOnce dt t0 trun ds sess
 
 --from samfun
 mean :: Fractional a =>  [a] -> a

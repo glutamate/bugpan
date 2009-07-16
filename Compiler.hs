@@ -36,6 +36,7 @@ compileDec (ReadSource nm srcSpec) = [ReadSrcAction nm $ genSrc srcSpec]
 compileDec (Let nm e) = [Env nm $ unVal e]
 compileDec (SinkConnect (Var nm) snkNm) = [SigSnkConn nm snkNm]
 compileDec (Stage _ _) = []
+compileDec (DeclareType _ _) = []
 
 unVal :: E -> E
 unVal = mapE f

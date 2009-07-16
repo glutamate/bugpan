@@ -35,13 +35,12 @@ import Control.Concurrent
 import Database
 import HaskSyntaxUntyped
 import QueryTypes
-
+import Stages
+import Parse
 
 type QState = (Session)
 
 getSession = id `fmap` get
-
-evInDuration (t,_) (t1,t2, _) = t<t2 && t>t1
 
 answers = return
  
@@ -125,34 +124,6 @@ tst1 = do
   print $ ppVal v
 
 
-freqDuring :: [Event b] -> [Duration a] -> [Duration (a, Double)]
-freqDuring evs durs = map (freqDuring' evs) durs
-    where freqDuring' evs dur@(t1, t2, durtag) = 
-              (t1, t2, (durtag, 
-                        (realToFrac . length $ evs `during` [dur])/(t2-t1)))
-
-during :: [Event a] -> [Duration b] -> [Event a]
-during evs durs = concatMap (during' evs) durs
-    where during' evs dur = filter (`evInDuration` dur) evs
-
-sigDur :: Signal a -> Duration ()
-sigDur (Signal t1 t2 _ _) = (t1,t2, ())
-
-around :: [Signal a] -> [Event b] -> [Signal a]
-around sigs evs = catMaybes $ map (around' sigs) evs
-    where around' sigs ev@(t,_) = 
-              case filter ((ev `evInDuration`) . sigDur) sigs of
-                (sig:_) -> Just $ shift (-t) sig
-                [] -> Nothing
-
-inout :: [Event a] -> [Event b] -> [Duration (a,b)]
-inout [] _ = []
-inout _ [] = []
-inout ((t1,v1):ins) outs = 
-    case dropWhile ((<t1) . fst) outs of
-      ((t2,v2):outs') -> (t1,t2,(v1,v2)):inout ins outs'
-      [] -> []
-
 plotSig :: (MonadIO m) => Signal Double -> m ()
 plotSig = liftIO . plotWithR . pack
         
@@ -172,6 +143,20 @@ plotWithR (SigV t1 t2 dt sf) = do
   removeFile datfile
   removeFile rfile
   return ()
+
+run :: [Declare] -> Double -> StateT QState IO ()
+run ds t0 = do
+  sess <- getSession
+  let trun = (lookupDefn "_tmax" ds >>= vToDbl) `orJust` 1
+  let dt = (lookupDefn "_dt" ds >>= vToDbl) `orJust` 0.001
+  --liftIO $ mapM (putStrLn . ppDecl) ds
+  liftIO $ runOnce dt t0 trun ds sess
+
+use :: MonadIO m => String -> m [Declare]
+use fnm = liftIO $ fileDecls fnm []
+
+with = flip makeSubs
+
 
 {-plot :: [V] -> IO ()
 plot vs = do --let g = map ansToPlot ans

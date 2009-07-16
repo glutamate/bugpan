@@ -119,6 +119,17 @@ cPat (B.PCons p1 p2) = PatCons (cPat p1) (cPat p2)
 
 
 cType (B.TUnit) = UnitT
+cType (B.TNum) = NumT Nothing
+cType (B.TPair2 t1 t2) = PairT (cType t1) (cType t2)
+cType (B.TPair3 t1 t2 t3) = PairT (PairT (cType t1) (cType t2)) (cType t3)
+cType (B.TLam t1 t2) = LamT (cType t1) (cType t2)
+cType (B.TShape) = ShapeT
+cType (B.TBool) = BoolT
+cType (B.TList t1) = ListT (cType t1)
+cType (B.TSignal t1) = SignalT (cType t1)
+cType (B.TEvent t1) = EventT (cType t1)
+cType (B.TDuration t1) = DurationT (cType t1)
+cType (B.TyVar (B.BIdent tv)) = TyVar tv 
 
 
 processImports :: [Declare] -> IO [Declare]

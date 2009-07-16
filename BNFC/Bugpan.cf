@@ -57,7 +57,7 @@ Event. Exp4 ::= "[:" Exp ":]" ;
 Switch. Exp ::= "switch" "{" Exp ";" [SwitchLine] "}";
 Box. Exp5 ::= "box" Exp4;
 Translate. Exp4 ::= "translate" Exp4 Exp5;
-Colour. Exp1 ::= "colour" Exp1 Exp1;
+Colour. Exp4 ::= "colour" Exp4 Exp5;
 
 ELet.Exp ::= "let" "{" [LetLine] "}" "in" Exp ;
 ECase.Exp ::= "case" Exp "of" "{" [CaseLine] "}"  ;
@@ -82,11 +82,18 @@ CUnit. Const ::= "()" ;
 CTrue. Const ::= "true" ;
 CFalse. Const ::= "false" ;
 
-TUnit. Type ::= "()" ;
-TLam. Type ::= Type "->" Type ;
-TPair2. Type ::= "(" Type "," Type ")" ;
-TPair3. Type ::= "(" Type "," Type "," Type ")" ;
-
+TUnit. Type1 ::= "()" ;
+TLam. Type1 ::= Type "->" Type ;
+TPair2. Type1 ::= "(" Type "," Type ")" ;
+TPair3. Type1 ::= "(" Type "," Type "," Type ")" ;
+TNum. Type1 ::= "Num";
+TBool. Type1 ::= "Bool";
+TShape. Type1 ::= "Shape" ;
+TSignal. Type1 ::= "Signal" Type;
+TEvent. Type1 ::= "Event" Type;
+TDuration. Type1 ::= "Duration" Type;
+TList. Type1 ::= "[" Type "]";
+TyVar. Type1 ::= BIdent;
 
 Lt. CmpOp ::= "<" ;
 Gt. CmpOp ::= ">" ;
@@ -99,7 +106,7 @@ coercions Exp 6;
 
 coercions Pat 1;
 --coercions Const 0 ;
-
+coercions Type 1;
 separator Declare ";"  ;
 separator SwitchLine ";"  ;
 separator LetLine ";"  ;
