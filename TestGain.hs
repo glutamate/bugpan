@@ -26,6 +26,7 @@ gsyn = usignals "gsyn" double
  
 loomAnal = inLastSession $ do
              ecV <- signals "ecVoltage" double
+             tStart <- events "tStart" ()
              plotSig . head $ ecV
 
 unsafeMain = do
@@ -36,7 +37,7 @@ unsafeMain = do
   urun (intfire) 0
   --print gsyn
   let peakgsyn = peak gsyn
-      roi = fst <$$> inout (peakgsyn) (later 20e-3 $ peakgsyn)
+      roi = fadeOut 20e-3 $ peak gsyn
   --plotSig . head $ applyOverWith (/) gsyn roi
   --plotSig $ section gsynn (0, 20e-3, ())
   plotSig . head $ vm

@@ -80,8 +80,8 @@ during :: [Event a] -> [Duration b] -> [Event a]
 during evs durs = concatMap (during' evs) durs
     where during' evs dur = filter (`evInDuration` dur) evs
 
-around :: [Signal a] -> [Event b] -> [Signal a]
-around sigs evs = catMaybes $ map (around' sigs) evs
+around :: [Event b] -> [Signal a] -> [Signal a]
+around evs sigs = catMaybes $ map (around' sigs) evs
     where around' sigs ev@(t,_) = 
               case filter ((ev `evInDuration`) . sigDur) sigs of
                 (sig:_) -> Just $ shift (-t) sig
