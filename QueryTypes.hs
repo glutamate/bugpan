@@ -96,14 +96,20 @@ sscan f init sig@(Signal t1 t2 dt sf) = let arr2 = scanl f init $ sigToList sig
 class Tagged t where
     getTag :: t a-> a
     setTag :: t a-> b ->t b
+    getTStart :: t a -> Double
+    getTStop :: t a -> Double
 
 instance Tagged ((,) Double) where
     getTag = snd
     setTag (t,_) v = (t,v)
+    getTStart (t,_) = t
+    getTStop (t,_) = t
 
 instance Tagged ((,,) Double Double) where
     getTag (_,_,v) = v
     setTag (t1,t2,_) v = (t1,t2, v)
+    getTStart (t1,t2,_) = t1
+    getTStop (t1,t2,_) = t2
 
 foldTagged ::  Tagged t => (a -> b -> a) -> a -> [t b] -> a
 foldTagged f init col = foldl' f init $ map getTag col

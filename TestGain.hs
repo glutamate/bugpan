@@ -1,4 +1,4 @@
-{-# OPTIONS -fbang-patterns #-}
+{-# LANGUAGE BangPatterns #-}
 
 module Main where
 
@@ -18,6 +18,7 @@ import HaskSyntaxUntyped
 import QueryUnsafe
 import Data.IORef
 import QueryUtils
+import Math.Probably.FoldingStats
 
 spikes = uevents "spike" ()
 stim = udurations "inputRate" double
@@ -57,7 +58,7 @@ safeMain = inTemporarySession $ do
   --plotSig (head vm)
   let q = spike `freqDuring` stim
   liftIO $ forM_ q (putStrLn . showDur)
-  io . print $ regress q 
+  io . print $ regressF `runStatsOn` q 
   return ()
 
 
@@ -66,7 +67,7 @@ io = liftIO
 -- post-spike signals like in fig 2
 
 -- http://en.wikipedia.org/wiki/Regression_analysis
-regress :: (Tagged t) => [t (Double,Double)] -> (Double,Double) --tag of type num,num
+{-regress :: (Tagged t) => [t (Double,Double)] -> (Double,Double) --tag of type num,num
 regress vls = let xs = map (fst . getTag) vls
                   ys = map (snd . getTag) vls
                   xys = zip xs ys
@@ -79,7 +80,7 @@ regress vls = let xs = map (fst . getTag) vls
 
 square x = x*x
 sub x y = x-y
-
+-}
 
 
 --from samfun

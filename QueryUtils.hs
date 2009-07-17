@@ -7,6 +7,7 @@ import QueryTypes
 import Data.List
 import Data.Maybe
 import Database
+import Math.Probably.FoldingStats
 
 peak :: Ord a => [Signal a] ->[Event a]
 peak sigs =  map (\sig -> swap . foldSig cmp (sigInitialVal sig, 0) $ zipWithTime sig) sigs 
@@ -95,3 +96,10 @@ inout ((t1,v1):ins) outs =
       ((t2,v2):outs') -> (t1,t2,(v1,v2)):inout ins outs'
       [] -> []
 
+runStatsOn :: Tagged t => Fold a b -> [t a] -> [Duration b]
+runStatsOn _ [] = []
+runStatsOn (F op init c cmb) tgs = 
+    let t1 = minimum $ map getTStart tgs
+        t2 = maximum $ map getTStop tgs
+        v = c . foldl' op init $ map getTag tgs 
+    in [(t1,t2,v)]
