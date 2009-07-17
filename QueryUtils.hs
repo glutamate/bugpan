@@ -56,6 +56,7 @@ filterTag p = filter (p . getTag)
 [] & _ = []
 _ & ys = ys
 
+-- (=58) session 
 -- x = [] & []
 
 area :: Fractional a => [Signal a] -> [Duration a]
