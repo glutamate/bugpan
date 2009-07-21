@@ -37,6 +37,7 @@ import HaskSyntaxUntyped
 import QueryTypes
 import Stages
 import Parse
+import TNUtils 
 
 type QState = (Session)
 
@@ -123,10 +124,7 @@ tst1 = do
   v <- loadBinary "/tmp/bugtest"
   print $ ppVal v
 
-
-plotSig :: (MonadIO m) => Signal Double -> m ()
-plotSig = liftIO . plotWithR . pack
-        
+ 
 
 
 run :: [Declare] -> Double -> StateT QState IO ()

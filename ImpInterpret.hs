@@ -15,11 +15,8 @@ import Control.Concurrent
 import Control.Concurrent.STM.TMVar
 import System.Time
 import Statement
-
+import TNUtils
 import Data.Array
-
-safeHead [] = Nothing
-safeHead (x:_) = Just x
 
 
 exec :: [Stmt] -> Double -> Double -> IO [(String, V)]
@@ -182,30 +179,8 @@ exec stmts dt tmax =
        H.toList envHT 
 
 
-maybeM :: Monad m => Maybe a -> (a -> m b) -> m ()
-maybeM Nothing _ = return ()
-maybeM (Just x) a = a x >> return ()
-         
-{-globalSecsNow :: IO Double
-globalSecsNow = do tnow <- getClockTime
-                   tstart <- readTV globalTimeStartTVar
-                   return $ diffInS tnow tstart   -}               
+           
 
-diffInS (TOD t1s t1ps) (TOD t2s t2ps) = (fromInteger $ (t1s-t2s)*1000*1000 + ((t1ps-t2ps) `div` (1000*1000))) / 1000000
-
-waitSecs :: Double -> IO ()
-waitSecs s = threadDelay . round $ s*1000*1000
-
-
-waitUntil t0 s = do tn <- getClockTime
-                    let elapsed = diffInS tn t0
-                    --print elapsed
-                    if elapsed < s
-                       then threadDelay . round $ (s-elapsed)*1000*1000
-                       else return () 
- 
-secsSince t0 =  do tn <- getClockTime
-                   return $  diffInS tn t0
 
 noScreen _ (SigSnkConn _ "screen") = False
 noScreen nms (SigUpdateRule nm _) | nm `elem` nms = False
@@ -215,24 +190,11 @@ noScreen _ _ = True
 unUpdateRule (SigUpdateRule _ e) = Just e
 unUpdateRule _ = Nothing
 
-pair a b = (a,b)
-
-onFst :: (a->b) -> (a,c)->(b,c)
-onFst f (x,y) = (f x, y)
-
-onSnd :: (a->b) -> (c,a)->(c,b)
-onSnd f (x,y) = (x, f y)
 
 toHsTime :: V->(Double,V)
 toHsTime (PairV (NumV nv) v) = (numToDouble nv,v)
 
 appVs (ListV ws) (ListV vs) = ListV (ws++vs) 
 
-maxIdx :: Ord a => [a] -> Int
-maxIdx (x:xs) = mxIxAcc 1 0 x xs
-    where mxIxAcc curI mI mV [] = mI
-          mxIxAcc curI mI mV (x:xs) = if x>mV
-                                        then mxIxAcc (curI+1) curI x xs
-                                        else mxIxAcc (curI+1) mI mV xs
 
 --lastEvent

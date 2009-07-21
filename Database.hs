@@ -22,9 +22,7 @@ import System.Cmd
 --import System.Random
 --import System.Info.MAC as MAC
 --import Data.Digest.Pure.SHA
-import qualified Data.ByteString.Lazy as L
 --import Data.ByteString.Internal
-import qualified Data.Binary as B
 import Data.UUID
 import Data.UUID.V1
 import Numeric
@@ -33,21 +31,14 @@ import Transform
 --import Stages
 import Data.Ord
 import Control.Concurrent
+import TNUtils
 
 
 data Session = Session { baseDir :: FilePath,
                          tSessionStart :: ClockTime
                        } deriving (Eq, Show)
 
-asInt :: Int -> Int
-asInt = id
 
-
-oneTrailingSlash "/" = "/"
-oneTrailingSlash "" = ""
-oneTrailingSlash s = case last s of
-                      '/' -> s
-                      _ -> s++"/"
 
 newSession :: FilePath -> IO Session
 newSession rootDir = do
@@ -159,18 +150,6 @@ addRunToSession decls t0 tmax dt ress sess@(Session basedir sesst0)
         print "done saving session"
         return ()
 
-
-saveBinary :: B.Binary w => FilePath-> w -> IO ()
-saveBinary fp w = L.writeFile fp {-. compress-} . B.encode $ w --writeFile fp . show
-
-appendBinary :: B.Binary w => FilePath-> w -> IO ()
-appendBinary fp w = L.appendFile fp {-. compress-} . B.encode $ w --writeFile fp . show
-
-loadBinary :: B.Binary w =>FilePath-> IO w
-loadBinary fp = return . B.decode {-. decompress -}=<< L.readFile fp --readFile fp >>= return . read
-
-
-for = flip map
 
 isTrue (BoolV True) = True
 

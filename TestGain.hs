@@ -19,8 +19,10 @@ import QueryUnsafe
 import Data.IORef
 import QueryUtils
 import Math.Probably.FoldingStats
+import Math.Probably.PlotR
 
 spikes = uevents "spike" ()
+synin = uevents "rndSpike" ()
 stim = udurations "inputRate" double
 vm = usignals "vm" double
 gsyn = usignals "gsyn" double
@@ -28,7 +30,8 @@ gsyn = usignals "gsyn" double
 loomAnal = inLastSession $ do
              ecV <- signals "ecVoltage" double
              tStart <- events "tStart" ()
-             plotSig . head $ ecV
+             plot $ head ecV
+             liftIO . print $ meanF `sigStat` (head ecV)
 
 unsafeMain = do
   openNewSession
@@ -38,15 +41,15 @@ unsafeMain = do
   urun (intfire) 0
   --print gsyn
   let peakgsyn = peak gsyn
-      roi = fadeOut 20e-3 $ peak gsyn
+      roi = fadeOut 20e-3 $ peak gsyn 
   --plotSig . head $ applyOverWith (/) gsyn roi
   --plotSig $ section gsynn (0, 20e-3, ())
-  plotSig . head $ vm
-  print peakgsyn
+  plot (vm :+: ((-0.06) `tag` synin)) 
+  print peakgsyn 
   print . area $  (flip (/) <$$> roi) `applyOver` gsyn
   deleteCurrentSession
 
-main = loomAnal
+main = unsafeMain
 
 safeMain = inTemporarySession $ do
   intfire <- use "Intfire"

@@ -402,5 +402,3 @@ lookupDefn nm ((Let nm' (Const v)):ds) | nm == nm' = Just $ v
 lookupDefn nm (d:ds) = lookupDefn nm ds
 
 
-orJust (Just x) _ = x
-orJust _ y = y 

@@ -7,6 +7,7 @@ import Numbers
 import Control.Monad
 import Control.Monad.Reader
 import Data.List
+import TNUtils
 
 --type EvalM = Maybe
 
@@ -237,10 +238,6 @@ applyNumM2  es e1 e2 f
                                                    "; FYI 9 op 8=",
                                                    show (f 9 8) ]
 
-
-cond :: [(Bool, a)] -> a
-cond ((True, x):_) = x
-cond ((False, _):conds) = cond conds
 
 
 --test = teval (1+1.5) 

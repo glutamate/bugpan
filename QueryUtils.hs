@@ -69,8 +69,8 @@ area1 sig@(Signal t1 t2 dt sf) = (t1, t2, foldSig sumf 0 sig)
 (<$$>) :: (Functor f1, Functor f2) => (a->b) -> f1 (f2 a) -> f1 (f2 b)
 (<$$>) = fmap . fmap
 
-tag :: Tagged t => [t a] -> b -> [t b]
-tag ts tg = map (`setTag` tg) ts
+tag :: Tagged t =>  b -> [t a] -> [t b]
+tag tg = map (`setTag` tg)
 
 freqDuring :: [Event b] -> [Duration a] -> [Duration (a, Double)]
 freqDuring evs durs = map (freqDuring' evs) durs
@@ -103,4 +103,9 @@ runStatsOn (F op init c cmb) tgs =
     let t1 = minimum $ map getTStart tgs
         t2 = maximum $ map getTStop tgs
         v = c . foldl' op init $ map getTag tgs 
+    in [(t1,t2,v)]
+
+sigStat :: Fold a b -> Signal a -> [Duration b]
+sigStat (F op init c cmb) sig@(Signal t1 t2 dt sf) = 
+    let v = c . foldl' op init $ sigToList sig
     in [(t1,t2,v)]

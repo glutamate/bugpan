@@ -35,6 +35,9 @@ import Control.Concurrent
 import Database
 import HaskSyntaxUntyped
 import Data.Maybe
+import Math.Probably.PlotR
+import Data.Unique
+import TNUtils
 
 type Duration a = (Double,Double,a)
 type Event a = (Double,a)
@@ -43,6 +46,35 @@ data Signal a = Signal Double Double Double (Int -> a)
 
 instance Show a =>  Show (Signal a) where
     show sig@(Signal t1 t2 dt sf) = "{"++show t1++": "++(show . take 5 $ sigToList sig)++"... :"++show t2++"}"
+instance Num a => PlotWithR (Signal a) where
+    getRPlotCmd sig@(Signal t1 t2 dt sf) = 
+        do r <- hashUnique `fmap` newUnique
+           let datfile= "/tmp/bugplot"++(show $ idInt r)
+           writeSignal datfile sig
+           return $ RPlCmd { 
+                        prePlot = [concat ["dat <- ts(scan(\"", datfile, "\"), start=", show t1, ", frequency=", show (1/dt),")"]], 
+                        cleanUp = removeFile datfile,
+                        plotArgs = [TimeSeries "dat"]
+                      }
+
+writeSignal fnm sig@(Signal t1 t2 dt sf) = 
+    writeFile fnm . unlines $ map (\t->show $ sf t) [0..round $ (t2-t1)/dt]
+
+instance Real a => PlotWithR (Event a) where
+    getRPlotCmd (t,v) = 
+        do return $ RPlCmd { 
+                        prePlot = [],
+                        cleanUp = return (),
+                        plotArgs = [PLPoints [(t,realToFrac v)]]
+                      }
+
+instance Real a => PlotWithR (Duration a) where
+    getRPlotCmd (t1,t2, v) = 
+        do return $ RPlCmd { 
+                        prePlot = [],
+                        cleanUp = return (),
+                        plotArgs = [PLLines [(t1,realToFrac v), (t2,realToFrac v)]]
+                      }
 
 sigPnts :: Signal a -> Int
 sigPnts (Signal t1 t2 dt sf) = round $ (t2-t1)/dt

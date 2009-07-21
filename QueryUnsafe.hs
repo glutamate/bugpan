@@ -10,6 +10,7 @@ import Data.List
 import Expr
 import EvalM
 import Stages
+import TNUtils
 
 {-# NOINLINE unsafeSession #-}
 unsafeSession :: IORef (Maybe Session)

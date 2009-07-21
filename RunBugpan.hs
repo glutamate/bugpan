@@ -13,7 +13,7 @@ import Stages
 import EvalM
 import Numbers 
 import Control.Monad
-
+import TNUtils
 
 {-chainM :: Monad m => (s -> [a] -> m s)  -> [a] -> s -> m (s, [a])
 chainM f [] s = return (s, [])
