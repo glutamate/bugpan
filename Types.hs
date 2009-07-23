@@ -8,6 +8,8 @@ import Control.Monad
 type TEnv = [(String, T)]
 
 
+--ppType :: T -> String
+--ppType 
 
 exprType :: TEnv -> E -> Maybe T
 exprType e (If p c a) = do pt <- exprType e p

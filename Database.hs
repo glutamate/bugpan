@@ -1,8 +1,8 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving, PatternSignatures #-} 
+{-# LANGUAGE GeneralizedNewtypeDeriving #-} 
 
 module Database where
 
-import EvalM hiding (ListT)
+import EvalM
 import Eval
 import Expr
 import Data.Maybe
@@ -14,7 +14,7 @@ import Stages
 import Traverse
 import Transform-}
 import Control.Monad
-import Control.Monad.List
+--import Control.Monad.List
 import Control.Monad.State.Lazy
 import System.Directory
 import System.Time
@@ -61,7 +61,26 @@ newSession rootDir = do
   return $ Session baseDir t0
 --sessEvalState s = EvalS 0 0 Nothing (qenv s ++( evalManyAtOnce $ sessPrelude s))
 
+sessionTypes :: Session ->  IO [(String, T)]
+sessionTypes sess@(Session dir' _) = do
+  let dir = oneTrailingSlash dir'
+  xs <- forM ["signals", "events", "durations"] $ \kind -> do
+                                       sigs <- getDirContents $ dir++"/"++kind
+                                       --print sigs
+                                       forM sigs $ \sig -> do 
+                                         --print (kind, sig)
+                                         v<-loadUntyped $ dir++"/"++kind++"/"++sig
+                                         --print (kind, sig, head v )
+                                         return (sig, typeOfVal $ head v)
+  return $ concat xs
 
+loadUntyped :: FilePath -> IO [V]
+loadUntyped fp = do 
+  ifM (doesDirectoryExist fp)
+      (do fnms <- getSortedDirContents fp
+          xs <- forM fnms $ \fn-> loadBinary $ fp++"/"++fn
+          return $ concat xs)
+      ((print $ "dir not found:" ++fp) >> return [])
 
 lastSession :: FilePath -> IO Session
 lastSession rootDir = do
@@ -98,7 +117,7 @@ getSortedDirContents dir = do conts <- getDirContents dir
                               --liftIO $ print sconts
                               return sconts
     where cmpf f1 f2 = case (readsPrec 5 f1, readsPrec 5 f2) of
-                         ((n1::Int,_):_, (n2::Int,_):_) -> compare n1 n2
+                         ((n1,_):_, (n2,_):_) -> compare (idInt n1) (idInt n2)
                          _ -> EQ
 
 
@@ -145,7 +164,7 @@ addRunToSession decls t0 tmax dt ress sess@(Session basedir sesst0)
         putStrLn $ "saving session: "++show nmsToStore
         forM sigsToStore $ \(nm,sig) -> do
           putStrLn $"saving signal "++ nm++": "++ show sig
-          saveInSubDir "signals" nm sig
+          saveInSubDir "signals" nm [sig]
           putStrLn "done"
         forM (tStartEvs++evtsToStore) $ \(nm, evs) -> do
 	  putStrLn $"saving events "++ nm

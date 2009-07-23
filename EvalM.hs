@@ -1,4 +1,4 @@
-{-# LANGUAGE Rank2Types, PatternSignatures #-}
+{-# LANGUAGE Rank2Types #-}
 
 module EvalM where
 
@@ -133,8 +133,8 @@ instance Binary V where
     put v@(StringV s) = putTT v >> put s
     --put v@(ListV []) = putTT v >> put 
 
-    get = do tt1::Word8 <- get
-             case tt1 of
+    get = do tt1 <- get
+             case idWord8 tt1 of
                1 -> BoolV `fmap` get 
                2 -> (NumV . NInt ) `fmap` get 
                3 -> (NumV . NReal ) `fmap` get 
@@ -153,7 +153,8 @@ instance Binary V where
                        return . SigV t1 t2 dt $ \pt->arr!pt
                9 -> StringV `fmap` get 
                tt -> error $ "unknown type tag: "++show tt
-
+idWord8 :: Word8 -> Word8
+idWord8 = id
 
 instance Eq V where
     BoolV x == BoolV y = x==y

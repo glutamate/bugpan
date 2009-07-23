@@ -1,8 +1,8 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving, PatternSignatures, FlexibleContexts#-} 
+{-# LANGUAGE GeneralizedNewtypeDeriving, FlexibleContexts#-} 
 
 module Query where
 
-import EvalM hiding (ListT)
+import EvalM
 import Eval
 import Expr
 import Data.Maybe
@@ -14,7 +14,7 @@ import Stages
 import Traverse
 import Transform-}
 import Control.Monad
-import Control.Monad.List
+import qualified Control.Monad.List as L
 import Control.Monad.State.Lazy
 import System.Directory
 import System.Time
@@ -48,6 +48,7 @@ answers = return
 double :: Double
 double = undefined
 
+--change these to loadUntyped
 signals :: Reify a => String -> a-> StateT QState IO [Signal a]
 signals nm _ = do
   Session bdir t0 <- getSession
@@ -55,11 +56,11 @@ signals nm _ = do
   ifM (liftIO (doesDirectoryExist (bdir++"/signals/"++nm)))
       (do fnms <- getSortedDirContents $ bdir++"/signals/"++nm
           sigs <- forM fnms $ \fn-> liftIO $ loadBinary $ bdir++"/signals/"++nm++"/"++fn 
-          answers . catMaybes $ map reify sigs) 
+          answers . catMaybes $ map reify $ concat sigs) 
       (liftIO (print $ "dir not found:" ++nm) >> answers [])
 
-signal :: Reify a => String -> a-> ListT (StateT QState IO) (Signal a)
-signal nm a = ListT $ signals nm a
+signal :: Reify a => String -> a-> L.ListT (StateT QState IO) (Signal a)
+signal nm a = L.ListT $ signals nm a
 
 events :: Reify (Event a) => String -> a-> StateT QState IO [Event a]
 events nm _ = do
@@ -70,8 +71,8 @@ events nm _ = do
           answers . catMaybes $ map reify $ concat utevs) 
       (liftIO (print $ "dir not found:" ++nm) >> answers [])
 
-event :: Reify a => String -> a-> ListT (StateT QState IO) (Event a)
-event nm a = ListT $ events nm a
+event :: Reify a => String -> a-> L.ListT (StateT QState IO) (Event a)
+event nm a = L.ListT $ events nm a
 
 durations :: Reify (Duration a) => String -> a-> StateT QState IO [Duration a]
 durations nm _ = do
@@ -82,8 +83,8 @@ durations nm _ = do
           answers . catMaybes $ map reify $ concat eps)
       (liftIO (print $ "dir not found:" ++nm) >> answers [])            
 
-duration :: Reify a => String -> a-> ListT (StateT QState IO) (Duration a)
-duration nm a = ListT $ durations nm a
+duration :: Reify a => String -> a-> L.ListT (StateT QState IO) (Duration a)
+duration nm a = L.ListT $ durations nm a
 
 
 inLastSession :: StateT QState IO a -> IO a

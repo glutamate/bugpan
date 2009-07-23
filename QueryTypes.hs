@@ -1,4 +1,4 @@
-{-# LANGUAGE PatternSignatures, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, ExistentialQuantification, IncoherentInstances #-} 
+{-# LANGUAGE FlexibleInstances, FlexibleContexts, TypeSynonymInstances, ExistentialQuantification, IncoherentInstances #-} 
 
 module QueryTypes where
 

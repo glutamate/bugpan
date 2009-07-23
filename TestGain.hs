@@ -38,7 +38,14 @@ loomAnal = inSessionNamed "5c17e342716081de800000110961a575" $ do
 perfTest1 = inTemporarySession $ do
              intfire <- use "Intfire"
              run (intfire`with` ["_tmax" =: dbl 0.5]) 0
+             sess <- get
+             liftIO $ do ts <- sessionTypes sess
+                         print ts
              vm <- signals "vm" double
+             tStart <- events "tStart" ()
+             synin <- events "rndSpike" ()
+             io $ print $ tStart
+             io $ print $ synin
              liftIO . print $ meanF `sigStat` vm
          
 perfTest2 = inNewSession $ do
