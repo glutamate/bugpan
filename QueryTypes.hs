@@ -1,4 +1,4 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving, PatternSignatures, FlexibleInstances, FlexibleContexts, MultiParamTypeClasses, FunctionalDependencies, TypeSynonymInstances #-} 
+{-# LANGUAGE PatternSignatures, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, ExistentialQuantification, IncoherentInstances #-} 
 
 module QueryTypes where
 
@@ -46,35 +46,50 @@ data Signal a = Signal Double Double Double (Int -> a)
 
 instance Show a =>  Show (Signal a) where
     show sig@(Signal t1 t2 dt sf) = "{"++show t1++": "++(show . take 5 $ sigToList sig)++"... :"++show t2++"}"
-instance Num a => PlotWithR (Signal a) where
-    getRPlotCmd sig@(Signal t1 t2 dt sf) = 
-        do r <- hashUnique `fmap` newUnique
-           let datfile= "/tmp/bugplot"++(show $ idInt r)
-           writeSignal datfile sig
+instance Num a => PlotWithR [Signal a] where
+    getRPlotCmd sigs = 
+        do ss <- mapM writeSig sigs
            return $ RPlCmd { 
-                        prePlot = [concat ["dat <- ts(scan(\"", datfile, "\"), start=", show t1, ", frequency=", show (1/dt),")"]], 
-                        cleanUp = removeFile datfile,
-                        plotArgs = [TimeSeries "dat"]
+                        prePlot = map (\(df, r, t1, freq) -> concat ["dat",r, " <- ts(scan(\"", df, "\"), start=", t1, ", frequency=", freq,")"]) ss, 
+                        cleanUp = mapM_ (\(df, r, t1, freq)-> removeFile df) ss,
+                        plotArgs = map (\(df, r, t1, freq) -> TimeSeries ("dat"++r)) ss
                       }
+        where writeSig sig@(Signal t1 t2 dt sf) = 
+                  do r <- ( show . idInt . hashUnique) `fmap` newUnique
+                     let datfile= "/tmp/bugplot"++r
+                     writeFile datfile . unlines $ map (\t->show $ sf t) [0..round $ (t2-t1)/dt]
+                     return (datfile, r, show t1, show $ 1/dt)
 
-writeSignal fnm sig@(Signal t1 t2 dt sf) = 
-    writeFile fnm . unlines $ map (\t->show $ sf t) [0..round $ (t2-t1)/dt]
-
-instance Real a => PlotWithR (Event a) where
-    getRPlotCmd (t,v) = 
+instance Real a => PlotWithR [Event a] where
+    getRPlotCmd evs = 
         do return $ RPlCmd { 
                         prePlot = [],
                         cleanUp = return (),
-                        plotArgs = [PLPoints [(t,realToFrac v)]]
+                        plotArgs = [PLPoints $ map (\(t,v)-> (t, realToFrac v)) evs]
                       }
 
-instance Real a => PlotWithR (Duration a) where
-    getRPlotCmd (t1,t2, v) = 
+instance PlotWithR [Duration Double] where
+    getRPlotCmd durs = 
         do return $ RPlCmd { 
                         prePlot = [],
                         cleanUp = return (),
-                        plotArgs = [PLLines [(t1,realToFrac v), (t2,realToFrac v)]]
+                        plotArgs = map (\(t1,t2,v) -> PLLines [(t1, v), (t2, v)]) durs
                       }
+--scatter plot
+instance Tagged t => PlotWithR [t (Double,Double)] where
+    getRPlotCmd ts = 
+        let xys = map getTag ts in
+        do return $ RPlCmd { 
+                        prePlot = [],
+                        cleanUp = return (),
+                        plotArgs = [PLPoints xys]
+                      }
+
+data Hist a = forall t. Tagged t => Histogram [t a]
+
+instance Num a => PlotWithR (Hist a) where
+    getRPlotCmd (Histogram tgs) = 
+        plotHisto $ map getTag tgs
 
 sigPnts :: Signal a -> Int
 sigPnts (Signal t1 t2 dt sf) = round $ (t2-t1)/dt

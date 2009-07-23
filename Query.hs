@@ -103,6 +103,17 @@ inTemporarySession sma = do sess <- newSession "/home/tomn/sessions/"
                             inSession sess sma
                             deleteSession sess
 
+inSessionNamed :: String -> StateT QState IO a -> IO a
+inSessionNamed nm sma = do sess <- loadExactSession $ "/home/tomn/sessions/"++nm
+                           inSession sess sma
+
+
+inApproxSession :: String -> StateT QState IO a -> IO a
+inApproxSession nm sma = do sess <- loadApproxSession "/home/tomn/sessions/" nm
+                            inSession sess sma
+
+
+
 sessionTmax  ::  StateT QState IO Double
 sessionTmax  = do
   tstop <- events "tStop" double

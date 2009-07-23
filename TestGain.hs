@@ -15,41 +15,60 @@ import QueryTypes
 import Control.Monad.Trans
 import Control.Monad.State.Lazy
 import HaskSyntaxUntyped
-import QueryUnsafe
+--import QueryUnsafe
 import Data.IORef
 import QueryUtils
 import Math.Probably.FoldingStats
 import Math.Probably.PlotR
 
-spikes = uevents "spike" ()
+default (Double, Int)
+
+{-spikes = uevents "spike" ()
 synin = uevents "rndSpike" ()
 stim = udurations "inputRate" double
 vm = usignals "vm" double
 gsyn = usignals "gsyn" double
- 
-loomAnal = inLastSession $ do
+ -}
+loomAnal = inSessionNamed "5c17e342716081de800000110961a575" $ do
              ecV <- signals "ecVoltage" double
              tStart <- events "tStart" ()
-             plot $ head ecV
-             liftIO . print $ meanF `sigStat` (head ecV)
+             plot [head ecV]
+             liftIO . print $ meanF `sigStat`  ecV
 
-unsafeMain = do
-  openNewSession
+perfTest1 = inTemporarySession $ do
+             intfire <- use "Intfire"
+             run (intfire`with` ["_tmax" =: dbl 0.5]) 0
+             vm <- signals "vm" double
+             liftIO . print $ meanF `sigStat` vm
+         
+perfTest2 = inNewSession $ do
+             intfire <- use "Intfire"
+             run (intfire`with` ["_tmax" =: dbl 0.5]) 0
+             vm <- signals "vm" double
+             liftIO . print $ meanF `sigStat` vm
+
+  
+
+unsafeMain = inTemporarySession $ do
   intfire <- use "Intfire"
   --putStrLn $ ppProg "IntFire" intfire
   --forM_ [0,10..100] $ \rate -> urun (intfire `with` ["rate" =: dbl rate] ) (rate/10)
-  urun (intfire) 0
-  --print gsyn
+  run (intfire) 0
+  --print gsy
+  spikes <- events "spike" ()
+  synin <- events "rndSpike" ()
+  stim <- durations "inputRate" double
+  vm <- signals "vm" double
+  gsyn <- signals "gsyn" double
   let peakgsyn = peak gsyn
       roi = fadeOut 20e-3 $ peak gsyn 
   --plotSig . head $ applyOverWith (/) gsyn roi
   --plotSig $ section gsynn (0, 20e-3, ())
-  plot (vm :+: ((-0.06) `tag` synin)) 
-  print peakgsyn 
-  print . area $  (flip (/) <$$> roi) `applyOver` gsyn
-  deleteCurrentSession
+  plot (vm :+: ((-0.06) `tag` synin) :+: ((-0.05) `tag` spikes) ) 
+  liftIO $ print peakgsyn 
+  liftIO . print . area $  (flip (/) <$$> roi) `applyOver` gsyn
 
-main = unsafeMain
+main = perfTest1
 
 safeMain = inTemporarySession $ do
   intfire <- use "Intfire"

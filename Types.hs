@@ -2,7 +2,7 @@ module Types where
 
 import Expr
 import EvalM
---import Numbers
+import Numbers
 import Control.Monad
 
 type TEnv = [(String, T)]
@@ -16,7 +16,9 @@ exprType e (If p c a) = do pt <- exprType e p
                            at <- exprType e a
                            unifyTypes ct at
 
-exprType e (Const (NumV _)) = Just NumT
+exprType e (Const (NumV (NInt _))) = Just $ NumT (Just IntT)
+exprType e (Const (NumV (NReal _))) = Just $ NumT (Just RealT)
+exprType e (Const (NumV _)) = Just $ NumT Nothing
 exprType e (Const (BoolV _)) = Just BoolT
 --exprType e (Lam nm t ex) = LamT t `fmap` exprType ((nm,t):e) ex
 exprType e (Var nm) = lookup nm e

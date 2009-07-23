@@ -105,7 +105,14 @@ runStatsOn (F op init c cmb) tgs =
         v = c . foldl' op init $ map getTag tgs 
     in [(t1,t2,v)]
 
-sigStat :: Fold a b -> Signal a -> [Duration b]
-sigStat (F op init c cmb) sig@(Signal t1 t2 dt sf) = 
+sigStat :: Fold a b -> [Signal a] -> [Duration b]
+sigStat f sigs = map (sigStat' f) sigs
+ 
+sigStat' :: Fold a b -> Signal a -> Duration b
+sigStat' (F op init c cmb) sig@(Signal t1 t2 dt sf) = 
     let v = c . foldl' op init $ sigToList sig
-    in [(t1,t2,v)]
+    in (t1,t2,v)
+
+intervals :: Tagged t => [t a] -> [t (a,Double)]
+intervals tgs = map calcInt . zip tgs $ tail tgs
+                where calcInt (t1, t2) = setTag t1 $ (getTag t1, getTStart t2 - getTStart t1)

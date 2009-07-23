@@ -75,6 +75,12 @@ deleteSession :: Session -> IO ()
 deleteSession (Session dir _) = system ("rm -rf "++ dir) >> return ()
     
 
+loadApproxSession :: FilePath -> String -> IO Session
+loadApproxSession root nm = do
+  sessns <- getSessionInRootDir root
+  let sessNm = fromJust $ find (nm `isPrefixOf`) sessns
+  loadExactSession $ oneTrailingSlash root++sessNm
+
 loadExactSession :: FilePath -> IO Session
 loadExactSession dir = do
   t0 <- read `fmap` readFile (dir++"/tStart")

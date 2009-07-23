@@ -41,3 +41,7 @@ comedi_helper:
 
 tests:
 	ghc UnitTesting.hs -e 'runAllTests'
+
+clean: 
+	rm *.o *.hi
+	rm Comedi/*.o
