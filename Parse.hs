@@ -12,7 +12,7 @@ import BNFC.PrintBugpan
 import BNFC.LayoutBugpan
 import BNFC.ErrM
 import Data.List.HT (partitionMaybe) 
-import HaskSyntaxUntyped --(splitBySpaces)
+--import HaskSyntaxUntyped --(splitBySpaces)
 import UnitTesting
 
 ident nm=nm
@@ -23,10 +23,12 @@ convertProgram (B.Prog (B.BIdent b) ds) = map convDecl ds
 
 convDecl (B.DLet (B.BIdent b) args e) = Let (ident b) . addLamsP (reverse args) $ cE e
 convDecl (B.DType (B.BIdent b) t) = DeclareType (ident b) $cType t
-convDecl (B.DSinkConn e idts) = SinkConnect (cE e) idts
+convDecl (B.DSinkConn e (B.BIdent b) arg) = SinkConnect (cE e) (b, cE arg)
 convDecl (B.DImport (B.BIdent b)) = Import (ident b) [] 
 convDecl (B.DImportSubst (B.BIdent b) substs) = Import (ident b) $ map unSubst substs
-convDecl (B.DReadSrc (B.BIdent b) spec) = ReadSource (ident b) $ splitBySpaces spec
+
+convDecl (B.DReadSrc (B.BIdent b) (B.BIdent nm) arg ) = ReadSource (ident b) (nm, cE arg)
+
 convDecl (B.DStage (B.BIdent b) si) = Stage (ident b) $ fromInteger si
 convDecl (B.DStageNeg (B.BIdent b) nsi) = Stage (ident b) . negate $ fromInteger nsi
 --convDecl b = error $"convDecl: "++show b
@@ -109,6 +111,7 @@ conToV (B.CDbl r) = NumV (NReal r)
 conToV B.CUnit = Unit
 conToV B.CTrue = BoolV True
 conToV B.CFalse = BoolV False
+conToV (B.CString s) = StringV s
 
 cPat (B.PVar (B.BIdent b)) = PatVar (ident b)
 cPat (B.PWild) = PatIgnore

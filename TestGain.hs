@@ -50,7 +50,7 @@ perfTest1 = inTemporarySession $ do
          
 perfTest2 = inNewSession $ do
              intfire <- use "Intfire"
-             run (intfire`with` ["_tmax" =: dbl 0.5]) 0
+             run (intfire `with` ["_tmax" =: dbl 0.5]) 0
              vm <- signals "vm" double
              liftIO . print $ meanF `sigStat` vm
 
@@ -65,17 +65,18 @@ unsafeMain = inTemporarySession $ do
   spikes <- events "spike" ()
   synin <- events "rndSpike" ()
   stim <- durations "inputRate" double
-  vm <- signals "vm" double
+  vm <- signals "vm" double 
   gsyn <- signals "gsyn" double
-  let peakgsyn = peak gsyn
+  gcell <- signals "gcell" double
+  let peakgsyn = peak gsyn 
       roi = fadeOut 20e-3 $ peak gsyn 
   --plotSig . head $ applyOverWith (/) gsyn roi
   --plotSig $ section gsynn (0, 20e-3, ())
-  plot (vm :+: ((-0.06) `tag` synin) :+: ((-0.05) `tag` spikes) ) 
+  plot (vm :+: 0 `tag` synin :+: (1e-10) `tag` spikes ) 
   liftIO $ print peakgsyn 
-  liftIO . print . area $  (flip (/) <$$> roi) `applyOver` gsyn
+  --liftIO . print . area $  (flip (/) <$$> roi) `applyOver` gsyn
 
-main = perfTest1
+main = unsafeMain
 
 safeMain = inTemporarySession $ do
   intfire <- use "Intfire"

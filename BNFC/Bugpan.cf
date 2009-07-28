@@ -4,8 +4,10 @@ DLet. Declare ::= BIdent [Arg] "=" Exp ;
 DImport. Declare ::= "use" BIdent ;
 DImportSubst. Declare ::= "use" BIdent "{" [ImpSubstLine] "}";
 DType. Declare ::= BIdent ":" Type ;
-DSinkConn.Declare ::= Exp "*>" String ;
-DReadSrc.Declare ::= BIdent "<*" String ;
+
+DSinkConn.Declare ::= Exp "*>" BIdent Exp ;
+DReadSrc.Declare ::= BIdent "<*" BIdent Exp ;
+
 DStage.Declare ::= "stage" BIdent Integer;
 DStageNeg.Declare ::= "stage" BIdent "-" Integer;
 
@@ -50,7 +52,8 @@ Sig. Exp1 ::= "{:" Exp ":}" ;
 SigVal. Exp6 ::= "<:" Exp ":>" ;
 SigAt. Exp2 ::= Exp2 "@" Exp3 ;
 SigDelay. Exp4 ::= "delay" Exp4 Exp5  ;
-
+-- SigDeriv. Exp2 ::= "D" 
+-- SigFby. Exp2 ::= Exp2 "fby" Exp3;
 
 
 Event. Exp4 ::= "[:" Exp ":]" ;
@@ -75,12 +78,14 @@ PLit. Pat1 ::= Const ;
 PPair. Pat1 ::= "(" Pat "," Pat ")" ;
 PNil. Pat1 ::= "[]" ;
 PCons. Pat ::= Pat "::" Pat ;
+--PDeriv. Pat ::= "D" Pat;
 
 CInt. Const ::= Integer ;
 CDbl. Const ::= Double ;
 CUnit. Const ::= "()" ;
 CTrue. Const ::= "true" ;
 CFalse. Const ::= "false" ;
+CString. Const ::= String ; 
 
 TUnit. Type1 ::= "()" ;
 TLam. Type1 ::= Type "->" Type ;

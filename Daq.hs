@@ -37,10 +37,11 @@ retrieveInputWave nprom npnts = do
   --print $ take 10 dbls
   --return dbls
 
-compileAdcSrc rs@(ReadSource nm ("adc":chanS:rtHzS:lenS:_)) = 
-    let rtHz= read rtHzS 
-        chanNum = read chanS
-        len = read lenS
+
+compileAdcSrc rs@(ReadSource nm ("adc", Const (PairV (PairV chanS rtHzS) lenS))) = 
+    let rtHz= unsafeReify rtHzS 
+        chanNum =  unsafeReify chanS
+        len = unsafeReify lenS
     in [
      RunPrepare $ \env -> do setupInput rtHz
                              --print "hello world"

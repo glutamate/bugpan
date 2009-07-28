@@ -60,11 +60,9 @@ data E =  If E E E
 data Declare 
 	= Let String E
         | DeclareType String T
---	| LetEvt String E
---	| LetRec String E
 	| Import String [(String, E)]
-	| SinkConnect E String
-        | ReadSource String [String]
+	| SinkConnect E (String,E)
+        | ReadSource String (String,E)
         | Stage String Int
         | Nop
 	deriving (Show, Eq, Read)
@@ -73,8 +71,8 @@ ppProg :: String -> [Declare]->String
 ppProg modNm ds= "module "++modNm++" where\n"++(unlines $ map ppDecl ds)
 
 ppDecl (Let nm e ) = nm++" = " ++ pp e
-ppDecl (SinkConnect e sn) = (pp e++" *> \"" ++ sn++"\"")
-ppDecl (ReadSource varNm srcNm) = (varNm++" <* \"" ++ (intercalate " " srcNm)++"\"")
+ppDecl (SinkConnect e (src,arg)) = (pp e++" *> " ++ src++ " "++pp arg)
+ppDecl (ReadSource varNm (src, arg)) = (varNm++" <* " ++ src ++ " "++pp arg)
 ppDecl (Import nm []) = "use "++nm 
 ppDecl (Import nm substs) = "use "++nm++" { "++intercalate "," (map ppImpSubst substs) ++ " }"
     where ppImpSubst (nm,e) = nm++" => "++pp e

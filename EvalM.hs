@@ -176,7 +176,7 @@ ppVal (ListV vs) =  "["++slist vs++"]"
               slist (x:[]) = ppVal x
               slist (x:xs) = ppVal x ++ ", " ++ slist xs
 ppVal (BoxV shp loc col) = "Box " ++ppVal shp++" @"++ppVal loc++" RGB"++ppVal col
-
+ppVal (StringV s) = show s
 
 
 withTime t  es =  es {cur_t=Just t}
@@ -231,3 +231,50 @@ typeOfVal (SigV t1 _ _ sf) = SignalT (typeOfVal $ sf 0)
 typeOfVal (BoxV _ _ _) = ShapeT
 typeOfVal Unit = UnitT
 typeOfVal (StringV _) = StringT
+
+class Reify a where
+    reify :: V-> Maybe a
+    pack :: a->V
+
+instance Reify V where 
+    reify = Just
+    pack = id
+instance Reify Double where 
+    reify = vToDbl
+    pack = NumV . NReal
+instance Reify Int where 
+    reify (NumV n) = let NInt i = numCast n NI
+                     in Just i
+    reify _ = Nothing
+    pack = NumV . NInt
+instance Reify Integer where 
+    reify (NumV n) = let NInt i = numCast n NI
+                     in Just $ toInteger i
+    reify _ = Nothing
+    pack = NumV . NInt . fromInteger
+instance (Reify a, Reify b) => Reify (a,b) where
+    reify (PairV a b) = liftM2 (,) (reify a) (reify b)
+    reify _ = Nothing
+    pack (x,y) = PairV (pack x) (pack y)
+instance (Reify a, Reify b, Reify c) => Reify (a,b,c) where
+    reify (PairV (PairV a b) c) = liftM3 (,,) (reify a) (reify b) (reify c)
+    reify _ = Nothing
+    pack (x,y,z) = PairV (PairV (pack x) (pack y)) (pack z)
+instance (Reify a) => Reify [a] where
+    reify (ListV xs) = let rmxs = map reify xs in
+                       if all isJust rmxs
+                          then Just $ map fromJust rmxs
+                          else Nothing
+    reify _ = Nothing
+    pack xs = ListV $ map pack xs
+instance Reify NumVl where
+    reify (NumV n) = Just n
+    reify _ = Nothing
+    pack = NumV
+instance Reify () where
+    reify Unit = Just ()
+    reify _ = Nothing
+    pack () = Unit
+
+unsafeReify :: Reify a => V -> a
+unsafeReify = fromJust . reify

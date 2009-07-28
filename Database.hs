@@ -129,26 +129,33 @@ loadSession rootDir initnm = do
     [] -> fail $ "No session starting with "++initnm++" in "++rootDir
     ss -> fail $ "Ambiguous session "++initnm ++": "++show ss
   
+orIfEmpty :: [a] -> [a] -> [a]
+orIfEmpty [] xs = xs
+orIfEmpty xs _ = xs
+
+unString :: E -> String
+unString (Const (StringV s)) = s
+unString _ = ""
 
 addRunToSession :: [Declare] -> Double -> Double -> Double -> [(String, V)] -> Session -> IO ()
 addRunToSession decls t0 tmax dt ress sess@(Session basedir sesst0) 
-    = let nmsToStore = [ nm | SinkConnect (Var nm) "store" <- decls ]
+    = let nmsToStore = [ (nm, unString arg `orIfEmpty` nm) | SinkConnect (Var nm) ("store",arg) <- decls ]
           sigsToStore = catMaybes . 
                         flip map nmsToStore $ 
-                        \nm-> case lookup ('#':nm) ress `guardBy` isSig of
-                                Just s@(SigV _ _ _ _) -> Just (nm,shift t0 s)
+                        \(nm, nmStore)-> case lookup ('#':nm) ress `guardBy` isSig of
+                                Just s@(SigV _ _ _ _) -> Just (nmStore,shift t0 s)
                                 _ -> Nothing
           evtsToStore = reverse . catMaybes . 
                         flip map nmsToStore $ 
-                        \nm-> case lookup nm ress `guardBy` isEvents of
-                                Just (ListV evs) -> Just (nm,  reverse $ map (shift t0) evs)
+                        \(nm, nmStore) -> case lookup nm ress `guardBy` isEvents of
+                                Just (ListV evs) -> Just (nmStore,  reverse $ map (shift t0) evs)
                                     
                                 _ -> 
                                     Nothing
           epsToStore = catMaybes . 
                         flip map nmsToStore $ 
-                        \nm-> case lookup nm ress `guardBy` isEpochs of
-                                Just (ListV eps) -> Just (nm, map (shift t0) eps)
+                        \(nm, nmStore) -> case lookup nm ress `guardBy` isEpochs of
+                                Just (ListV eps) -> Just (nmStore, map (shift t0) eps)
                                 _ -> Nothing
           t1 = NumV. NReal $ t0
           t2 = NumV. NReal $ t0+tmax
@@ -162,6 +169,7 @@ addRunToSession decls t0 tmax dt ress sess@(Session basedir sesst0)
             saveBinary (dir++"/"++showHex ntics "") obj
       in do -- Session newEvs newSigSegs newEps ((t0,t0+tmax, decls):programsRun sess) (qenv sess) (sessPrelude sess)
         putStrLn $ "saving session: "++show nmsToStore
+        --putStrLn $ "from results: "++ show ress
         forM sigsToStore $ \(nm,sig) -> do
           putStrLn $"saving signal "++ nm++": "++ show sig
           saveInSubDir "signals" nm [sig]

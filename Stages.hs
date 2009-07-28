@@ -25,7 +25,7 @@ splitByStages ds =
         (mainL, env) = partition declInMainLoop ds 
         stageDs st = let nms = [ nm | Stage nm s <- ds, s==st ]
                          in [ d | d@(Let nm _) <- ds, nm `elem` nms ]++
-                            [ d | d@(SinkConnect _ ('#':nm)) <- ds, nm `elem` nms]
+                            [ d | d@(SinkConnect _ (('#':nm),_)) <- ds, nm `elem` nms]
         stagedDecls = map stageDs stages
         unstagedDecls = mainL \\ (concat stagedDecls)
     in (env : stagedDecls) ++ [unstagedDecls]
@@ -40,17 +40,19 @@ execInStages ds dt tmax postCompile = do
                             envAdded <- readIORef envAdd -- also change sigat nm to sigat #nm
                             let copyEnvSigs = [ Let nm (Sig $ SigAt (Var "seconds") (Var ('#':nm))) | ('#':nm,_) <- envAdded ]
                             let stmts' = compile $ env++copyEnvSigs++map envToDecl envAdded++decls
-                            --putStrLn "\na stage"
+                            putStrLn "\na stage"
                             --mapM (putStrLn . ppStmt ) stmts'
-                            let buffered = [ nm | SinkConnect (Var _) ('#':nm)<- decls ]
+                            let buffered = [ nm | SinkConnect (Var _) ('#':nm,_ )<- decls ]
                             stmts <- postCompile stmts'
                             ress <- exec stmts dt tmax
                             let savedRess = [('#':nm, val) | ('#':nm, val) <- ress, nm `elem` buffered ]
                             addToIORefList envAdd savedRess
-                            let storeResNms = [nm | SinkConnect (Var nm) "store" <- decls ]  
+                            let storeResNms = [nm | SinkConnect (Var nm) ("store",arg) <- decls ]  
                             let storeResVls = [(nm, val) | (nm, val) <- ress, 
                                                                         nm `elem` storeResNms, 
                                                                         not $ nm `elem` buffered]
+                            print storeResVls
+
                             addToIORefList envAdd storeResVls
 
   readIORef envAdd
@@ -71,7 +73,7 @@ runOnce dt t0 tmax ds sess = do
   --let runTM = runTravM ds []
   --mapM (putStrLn . ppDecl) ds
   let prg = snd . runTravM ds [] $ transform
-  --print prg
+  --mapM (putStrLn . ppDecl)  prg
   ress <- execInStages prg dt tmax return
   --putStrLn $ "results for this trial: "++show ress
   addRunToSession ds t0 tmax dt ress sess

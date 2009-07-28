@@ -3,6 +3,7 @@ module Transform where
 import Expr
 import Eval
 --import Run 
+import EvalM
 import Control.Monad
 import Numbers
 import Data.Char 
@@ -11,6 +12,7 @@ import Traverse
 import Control.Monad.State.Strict
 import Debug.Trace
 import BuiltIn
+import TNUtils
 
 substHasSigs :: TravM ()
 substHasSigs = mapDE $ \tle -> mapEM subst tle
@@ -157,10 +159,31 @@ removeNops = setter $ \s-> s{ decls = filter (not . isNop) $ decls s}
 floatConnectedSignals :: TravM ()
 floatConnectedSignals = mapD fCS
     where fCS e@(SinkConnect (Var nm) snm) = return e
-          fCS e@(SinkConnect se snm) = do sn <- genSym snm
-                                          insertBefore [Let sn se]
-                                          return (SinkConnect (Var sn) snm)
+          fCS e@(SinkConnect se (snm, arg)) = 
+              do sn <- genSym snm
+                 insertBefore [Let sn se]
+                 return (SinkConnect (Var sn) (snm,arg))
           fCS e = return e
+
+evalIn :: [Declare] -> E -> V
+evalIn decls e = unEvalM $ eval (evalS . evalManyAtOnce $ declsToEnv decls) e
+
+evalSinkSrcArgs :: TravM ()
+evalSinkSrcArgs = mapD eSSA
+    where eSSA e@(SinkConnect se (snm, Const _)) = return e
+          eSSA e@(SinkConnect se (snm, arg)) = do 
+            --traceM "helo world"
+            ds <- decls `fmap` get
+            let carg =  evalIn ds arg
+            --trace ("eval "++show arg++" to "++show carg) $ return ()
+            return (SinkConnect se (snm, Const carg))
+          eSSA e@(ReadSource vnm (snm, arg)) = do 
+            --traceM "helo world"
+            ds <- decls `fmap` get
+            let carg =  evalIn ds arg
+            --trace ("eval "++show arg++" to "++show carg) $ return ()
+            return (ReadSource vnm (snm, Const carg))
+          eSSA e = return e 
 
 globalizeE :: String -> E -> TravM String
 globalizeE s e = do gs <- genSym s
@@ -189,8 +212,8 @@ addStageAnnotations = whileChanges $ do
   ds <- decls `fmap` get
   let sAnnos = [ (nm, stage) | Stage nm stage <- ds ]
   let allSigs = [ nm | Let nm _ <- filter declInMainLoop ds ]
-  let existSnks = [n | SinkConnect (Var n1) ('#':n) <- ds, n1==n]
-  let newSnks =[SinkConnect (Var nm) ('#':nm) | Stage nm _ <- ds, not $ nm `elem` existSnks  ]
+  let existSnks = [n | SinkConnect (Var n1) (('#':n), _) <- ds, n1==n]
+  let newSnks =[SinkConnect (Var nm) (('#':nm), Const Unit) | Stage nm _ <- ds, not $ nm `elem` existSnks  ]
   forM_ sAnnos $ \(nm, stage)-> do 
     defn <- lookUp nm 
     let depSigs = filter ((`isSubTermIn` defn) .  Var) $ allSigs
@@ -229,9 +252,12 @@ massageDelayRefsInSwitch = mapD mDRIS
 
 addBuffersToStore :: TravM ()
 addBuffersToStore = mapD aBTS
-    where aBTS sc@(SinkConnect (Var nm) "store") =  do
-            whenM ((==IsSig) `fmap` isSignalOrEvt (Var nm))
-                $ insertAfter [SinkConnect (Var nm) ('#':nm)]
+    where aBTS sc@(SinkConnect (Var nm) ("store",_)) =  do
+            trace (show sc) $ return ()
+            -- isSig <- isSignalOrEvt (Var nm)
+            whenM ((==IsSig) `fmap` isSignalOrEvt (Var nm)) $ do
+                    trace ("foo!") $ return ()
+                    insertAtEnd [SinkConnect (Var nm) (('#':nm), Const Unit)]
                 
             return sc
           aBTS d = return d
@@ -343,6 +369,7 @@ transforms =   [(connectsLast, "connectsLast")
                 ,(explicitSignalCopying, "explicitSignalCopying")
                 ,(renameCopiedEvents, "renameCopiedEvents")
                 ,(removeNops, "removeNops")
+                ,(evalSinkSrcArgs, "evalSinkSrcArgs")
                 ,(addStageAnnotations, "addStageAnnotations")
                 ,(sigAtRefersToBuffer, "sigAtRefersToBuffer")
                 ,(simplifySomeLets, "simplifySomeLets")

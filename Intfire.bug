@@ -2,42 +2,76 @@ module Intfire where
 
 use Prelude
 
-rate = 100
+rate = 200
+--mitchell silver 385 ps
+--rin = 2.6e9
 
-rin = 2.6e9
-vrest = -0.075
+--we go with sargent
+rin=1.0e9
 
-cm = 3.1e-12
 
-_dt = 1.0e-4 --4.0e-5
-_tmax= 0.1
+vrest = -0.080
+
+cm = 2.5e-12
+
+gsynmul = 1.2e-12
+--gsynmul = 3.0e-13 -- for 7 mv
+--gsynmul = 1.342e-12
+
+_dt = 4.0e-5
+_tmax= 0.2
 alpha tau t = if t<0 then 0 else tau*tau*t*(exp (-t*tau)) 
 
-rndSpikeSig <* "uniform 0 1"
+rndSpikeSig <* uniform (0,1)
 rndSpike = eventIf (<: rndSpikeSig :> < rate*dt) 
 
--- peakSyn = 385 pS = 3.85e-10
+--rndSpike = [(0.05, ())]
+
+-- peakSyn = 732 pS = 7.32-10
 -- mean weighted decay 0.6*0.42+0.29*2.71+0.11*15.5 = 2.74 ms
-gsyn = {: 7.05e-13 * (alpha 1485 <: seconds:>)  :}
+gsyn = {: gsynmul * (alpha 1485 <: seconds:>)  :}
 
 stage gsyn -1
 
 gcell = (convolve gsyn) rndSpike 
-cellOde = \v->{: (<: gcell :> - ((v-vrest)/rin))/cm :} 
+cellOde = \v->{: ((<: gcell :>*(0-v)) - ((v-vrest)/rin))/cm :} 
+
+
 vm = switch 
 	    (solveOde cellOde) vrest
 	    spike ~> \_->\_->{: vrest :}
 	    refrac_end ~> \tsp->\_-> solveOdeFrom (tsp+dt) cellOde vrest
 
-spike = crosses (-0.049) vm
-refrac_end = later 2.0e-3 spike
+spike = crosses (-0.05) vm
+refrac_end = later 2.5e-3 spike
 
 inputRate = [(0,tmax,rate)]
-inputRate *> "store"
 
-gsyn *> "store"
---vm *> "print"
-vm *> "store"
-spike *> "store"
---spike *> "print"
-rndSpike *> "store"
+inputRate *> store ""
+
+gsyn *> store ""
+gcell *> store ""
+--vm *> print ()
+vm *> store ""
+spike *> store ""
+--spike *> print ()
+rndSpike *> store ""
+
+
+
+{-
+cellOdeF v t = (gcell@t-((v-vrest)/rin))/cm
+vm v0 = let D v = v0 fby {: (<: gcell :> - ((v-vrest)/rin))/cm :} in v
+
+solve sig s0 = let D s = s0 fby sig in s
+
+vm = switch
+       solve vm v0
+       spike ~> \_ _-> 0.02 fby {: vrest :}
+       refrac_end ~> \_ _-> let D v = v0 fby {: (<: gcell :> - ((v-vrest)/rin))/cm :} in v
+
+
+--mass-dashpot-sprint
+D v = v0 fby {: c*<:v:>/m + k*x/m :}
+D x = x0 fby v
+-}

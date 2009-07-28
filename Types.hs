@@ -62,3 +62,10 @@ unifyTypes (ListT t1) (ListT t2) = ListT `fmap` unifyTypes t1 t2
 
 unifyTypes t1 t2 | t1 == t2 = Just t1
                  | otherwise = Nothing
+
+haskTypeString :: T -> String
+haskTypeString BoolT = "Bool"
+haskTypeString UnitT = "()"
+haskTypeString (PairT t1 t2) = "("++haskTypeString t1++","++haskTypeString t2++")"
+haskTypeString (LamT t1 t2) = haskTypeString t1++"->"++haskTypeString t2
+haskTypeString (ListT t1) = "["++haskTypeString t1++"]"

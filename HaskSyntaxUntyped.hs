@@ -86,7 +86,7 @@ infixl 1 *>
 infixl 1 <*                   
 
 x *> y = SinkConnect x y            
-x <* y = ReadSource x $ splitBySpaces y            
+x <* y = ReadSource x y
 
 dbl :: Double -> E
 dbl = Const . NumV . NReal

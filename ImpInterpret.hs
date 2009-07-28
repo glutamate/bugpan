@@ -43,6 +43,7 @@ exec stmts dt tmax =
        lastPull <- newIORef 5
        largestPullLatency <- newIORef 0
        t0' <- getClockTime
+       print2 "buffer: " bufnms
        let screenPull = 
              --running <- readIORef started
             
