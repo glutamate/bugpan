@@ -6,6 +6,7 @@ import Traverse
 import EvalM
 import Control.Monad.State.Strict
 import PrettyPrint
+import TNUtils
  
 
 allDeclaredTypes :: TravM [(String, T)]
@@ -18,6 +19,7 @@ typeCheck = mapD tc
     where tc d@(DeclareType nm declt) = do
             defn <- lookUp nm
             tenv <- allDeclaredTypes
+            traceM $ nm++": "++(ppType declt)
             case exprType tenv defn (Just declt) of
               Nothing -> error $ "Unable to infer type "++ppType declt++" for expression "++nm
               Just t1 -> case unifyTypes t1 declt of

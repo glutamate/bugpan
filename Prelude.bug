@@ -1,5 +1,6 @@
 module Prelude where 
 
+--smap : (a->b) -> Signal a -> Signal b
 smap f s=  {: f <: s :> :} 
 
 incr : Num -> Num
@@ -10,7 +11,16 @@ add x y = x+y
 
 negate x = 0-x
 
-sscan : (a->b->a) -> a -> Signal b -> Signal b
+constSig : a -> Signal a
+constSig x = {: x :}
+
+--sigPlus1 : Signal Num -> Signal Num
+sigPlus1 = smap incr
+
+sigAtZero : Signal Num -> Num
+sigAtZero s = s@0
+
+--sscan : (a->b->a) -> a -> Signal b -> Signal b
 sscan f v0 s = let sr = {: (f <: s :>) <: delay sr v0 :> :} in sr
 
 
