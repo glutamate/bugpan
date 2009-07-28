@@ -8,6 +8,7 @@ import Control.Monad
 import Control.Monad.Reader
 import Data.List
 import TNUtils
+import PrettyPrint
 
 --type EvalM = Maybe
 

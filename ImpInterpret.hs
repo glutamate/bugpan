@@ -17,7 +17,7 @@ import System.Time
 import Statement
 import TNUtils
 import Data.Array
-
+import PrettyPrint
 
 exec :: [Stmt] -> Double -> Double -> IO [(String, V)]
 exec stmts dt tmax = 

@@ -7,7 +7,7 @@ import Control.Monad.Identity
 import qualified Data.List as L
 import Debug.Trace
 import Data.Maybe
-
+import PrettyPrint
 
 data TravS = TravS { counter :: Int,
                      decls :: [Declare],

@@ -11,6 +11,7 @@ import Control.Monad
 import EvalM
 import Statement
 import Database
+import PrettyPrint
 
 --data RelPos = At | Before | After
 

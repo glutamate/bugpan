@@ -14,6 +14,7 @@ import BNFC.ErrM
 import Data.List.HT (partitionMaybe) 
 --import HaskSyntaxUntyped --(splitBySpaces)
 import UnitTesting
+import PrettyPrint
 
 ident nm=nm
 

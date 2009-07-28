@@ -13,6 +13,8 @@ import Control.Monad.State.Strict
 import Debug.Trace
 import BuiltIn
 import TNUtils
+import TypeCheck
+import PrettyPrint
 
 substHasSigs :: TravM ()
 substHasSigs = mapDE $ \tle -> mapEM subst tle
@@ -350,7 +352,8 @@ compilablePrelude =
        compPrel <- filterM (\(n,e) -> ifM (hasSig e) (return False) (return True)) prel
        return $ map (\(n,e)->Let n e) compPrel -}
 
-transforms =   [(connectsLast, "connectsLast")
+transforms =   [(typeCheck, "typeCheck")
+                ,(connectsLast, "connectsLast")
                 ,(floatConnectedSignals, "floatConnectedSignals")
                 ,(whileChanges substHasSigs, "substHasSigs")
                 ,(betaRedHasSigs, "betaRedHasSigs")

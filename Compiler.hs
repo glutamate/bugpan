@@ -9,6 +9,7 @@ import Numbers
 import Control.Concurrent
 import Statement
 import BuiltIn
+import PrettyPrint
 
 compile :: [Declare] -> [Stmt]
 compile ds = let c = concatMap compileDec (filter noDtSeconds (bivDecls++ds)) in 

@@ -4,46 +4,65 @@ import Expr
 import EvalM
 import Numbers
 import Control.Monad
+import PrettyPrint
+import Data.Maybe
 
 type TEnv = [(String, T)]
 
 
---ppType :: T -> String
---ppType 
 
-exprType :: TEnv -> E -> Maybe T
-exprType e (If p c a) = do pt <- exprType e p
-                           unifyTypes BoolT pt
-                           ct <- exprType e c
-                           at <- exprType e a
-                           unifyTypes ct at
+exprType :: TEnv -> E -> Maybe T -> Maybe T
+exprType e (If p c a) _ = do pt <- exprType e p Nothing 
+                             unifyTypes BoolT pt
+                             ct <- exprType e c Nothing
+                             at <- exprType e a Nothing
+                             unifyTypes ct at
 
-exprType e (Const (NumV (NInt _))) = Just $ NumT (Just IntT)
-exprType e (Const (NumV (NReal _))) = Just $ NumT (Just RealT)
-exprType e (Const (NumV _)) = Just $ NumT Nothing
-exprType e (Const (BoolV _)) = Just BoolT
+exprType e (Const (NumV (NInt _))) _ = Just $ NumT (Just IntT)
+exprType e (Const (NumV (NReal _))) _ = Just $ NumT (Just RealT)
+exprType e (Const (NumV _)) _ = Just $ NumT Nothing
+exprType e (Const (BoolV _)) _ = Just BoolT
 --exprType e (Lam nm t ex) = LamT t `fmap` exprType ((nm,t):e) ex
-exprType e (Var nm) = lookup nm e
-exprType e (App le arge) 
-    = do lt <- exprType e le
-         argt <- exprType e arge
+exprType e (Var nm) _ = lookup nm e
+exprType e (App le arge) _
+    = do lt <- exprType e le Nothing
+         argt <- exprType e arge Nothing
          (LamT _ rt) <-unifyTypes lt (LamT argt AnyT)
          return rt
 
-exprType e (Pair e1 e2) = liftM2 (PairT) (exprType e e1) (exprType e e1)
+exprType e (Pair e1 e2) _ = liftM2 (PairT) (exprType e e1 Nothing) (exprType e e1 Nothing)
 
-exprType e (Nil) = Just $ ListT AnyT
+exprType e (Nil) _ = Just $ ListT AnyT
 
-exprType e (Cons hd tl) 
-    = do ht <- exprType e hd
-         tt <- exprType e tl
+exprType e (Cons hd tl) _
+    = do ht <- exprType e hd Nothing
+         tt <- exprType e tl Nothing
          ListT `fmap` unifyTypes (ht) (tt)
-exprType e (Case ex pts)  
-    = do (pat:pats) <- sequence $ map (exprType e . snd) pts
+exprType e (Case ex pts) _
+    = do (pat:pats) <- sequence $ map (\(x,y) -> exprType e y Nothing) pts
          foldM (unifyTypes) pat pats
+exprType e (Lam nm bd) (Just (LamT dnmt dbdt)) = do 
+  tbd <- exprType ((nm, dnmt):e) bd (Just dbdt)
+  realBdt <- unifyTypes tbd dbdt
+  return $ LamT dnmt realBdt
+exprType e (M1 op ne) dt = do
+  neTy <- exprType e ne dt
+  unifyTypes (NumT Nothing) neTy
+exprType e (M2 op ne1 ne2) declt = do
+  ne1Ty <- exprType e ne1 declt
+  ne2Ty <- exprType e ne2 declt
+  neTy <- unifyTypes ne2Ty ne1Ty
+  unifyTypes (NumT Nothing) neTy
+              
+exprType env (LetE [(nm, e)] (Var nm')) declt | nm == nm' = t
+  where t = exprType ((nm,fromJust t):env) e declt   
+  
+           
+exprType e ex _ = error $ "unknown expr: "++ pp ex
 --and or not
 --M1 m2
 --cmp
+--exprType r (Lam bd arg) (Just t) =
 
 unifyTypes :: T -> T -> Maybe T
 unifyTypes AnyT t = return t
@@ -60,6 +79,11 @@ unifyTypes (LamT t11 t12) (LamT t21 t22)
 
 unifyTypes (ListT t1) (ListT t2) = ListT `fmap` unifyTypes t1 t2
 
+unifyTypes (NumT (Just nt1)) (NumT (Just nt2)) = Just $ NumT (Just $ max nt1 nt2)
+
+unifyTypes (NumT Nothing) (NumT nt) = Just $ NumT nt
+unifyTypes (NumT nt) (NumT Nothing) = Just $ NumT nt
+--unifyTypes (NumT _) (NumT _) = Just $ NumT Nothing --improve
 unifyTypes t1 t2 | t1 == t2 = Just t1
                  | otherwise = Nothing
 

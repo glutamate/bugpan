@@ -38,6 +38,7 @@ import QueryTypes
 import Stages
 import Parse
 import TNUtils 
+import PrettyPrint
 
 type QState = (Session)
 

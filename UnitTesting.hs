@@ -13,6 +13,7 @@ import Control.Monad
 import System.Process 
 import System.Exit
 import System.IO
+import PrettyPrint
 
 type TError = String
 

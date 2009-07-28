@@ -32,7 +32,7 @@ import Transform
 import Data.Ord
 import Control.Concurrent
 import TNUtils
-
+import PrettyPrint
 
 data Session = Session { baseDir :: FilePath,
                          tSessionStart :: ClockTime

@@ -100,7 +100,7 @@ data T  = BoolT
         | TyVar String
 	deriving (Show, Eq, Read)
 
-data NumT = IntT | RealT | CmplxT deriving (Eq, Show, Read)
+data NumT = IntT | RealT | CmplxT deriving (Eq, Show, Read, Ord)
 
 typeTag :: T -> [Word8]
 typeTag BoolT = [1]
@@ -162,21 +162,6 @@ instance Eq V where
     PairV x w == PairV y z = x==y && w==z
     Unit == Unit = True
     _ == _ = False
-
-ppVal (BoolV True) = "True"
-ppVal (BoolV False) = "False"
-ppVal (NumV v) = ppNum v
-ppVal (LamV _) = "<lambda value>"
-ppVal (SigV t1 t2 dt _) = "<signal value "++show t1++" to  "++show t2++">"
-ppVal (PairV (PairV x y) z) = "("++ppVal x++","++ppVal y++","++ppVal z++")"
-ppVal (PairV v w) = "("++ppVal v++","++ppVal w++")"
-ppVal (Unit) = "()"
-ppVal (ListV vs) =  "["++slist vs++"]"
-        where slist [] = ""
-              slist (x:[]) = ppVal x
-              slist (x:xs) = ppVal x ++ ", " ++ slist xs
-ppVal (BoxV shp loc col) = "Box " ++ppVal shp++" @"++ppVal loc++" RGB"++ppVal col
-ppVal (StringV s) = show s
 
 
 withTime t  es =  es {cur_t=Just t}
