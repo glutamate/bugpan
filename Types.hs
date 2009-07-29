@@ -24,9 +24,9 @@ exprType e (Const (NumV _)) _ = Just $ NumT Nothing
 exprType e (Const (BoolV _)) _ = Just BoolT
 --exprType e (Lam nm t ex) = LamT t `fmap` exprType ((nm,t):e) ex
 exprType e (Var nm) _ = lookup nm e
-exprType e (App le arge) declT
-    = do lt <- exprType e le Nothing
-         argt <- exprType e arge Nothing
+exprType e (App le arge) (Just declT)
+    = do argt <- exprType e arge (Just $ AnyT)
+         lt <- exprType e le (Just $ LamT argt declT)
          (LamT _ rt) <-unifyTypes lt (LamT argt AnyT)
          return rt
 
@@ -34,9 +34,9 @@ exprType e (Pair e1 e2) _ = liftM2 (PairT) (exprType e e1 Nothing) (exprType e e
 
 exprType e (Nil) _ = Just $ ListT AnyT
 
-exprType e (Cons hd tl) _
-    = do ht <- exprType e hd Nothing
-         tt <- exprType e tl Nothing
+exprType e (Cons hd tl) (Just (ListT decty))
+    = do ht <- exprType e hd (Just decty)
+         ListT tt <- exprType e tl (Just $ ListT decty)
          ListT `fmap` unifyTypes (ht) (tt)
 exprType e (Case ex pts) _
     = do (pat:pats) <- sequence $ map (\(x,y) -> exprType e y Nothing) pts
@@ -54,7 +54,7 @@ exprType e (M2 op ne1 ne2) declt = do
   neTy <- unifyTypes ne2Ty ne1Ty
   unifyTypes (NumT Nothing) neTy
               
-exprType env (LetE [(nm, e)] (Var nm')) declt | nm == nm' = t
+exprType env (LetE [(nm,t,e)] (Var nm')) declt | nm == nm' = t
   where t = exprType ((nm,fromJust t):env) e declt   
   
 exprType env (Sig se) (Just (SignalT sigt)) = do
@@ -63,6 +63,17 @@ exprType env (Sig se) (Just (SignalT sigt)) = do
 exprType env (Sig se) Nothing = do
   SignalT `fmap` exprType env se Nothing
 
+exprType env (SigAt t s) (Just decty) = do
+  tt<- exprType env t (Just $ NumT (Just RealT))
+  unifyTypes tt (NumT $ Just RealT)
+  st<- exprType env s (Just $ SignalT decty)
+  unifyTypes st  (SignalT decty)
+  return decty
+
+exprType env (SigVal s) (Just decty) = do
+  st<- exprType env s (Just $ SignalT decty)
+  unifyTypes st  (SignalT decty)
+  return decty
 
 exprType e ex Nothing = error $ "unknown expr: "++ pp ex
 exprType e ex (Just decl) = error $ "unknown expr: "++ pp ex++" declared: "++show decl

@@ -7,6 +7,7 @@ import Control.Monad.Reader
 import Numbers
 import EvalM
 import Data.List
+import TNUtils
 
 data Math1 = Ln | Exp | Re | Im deriving (Show, Eq, Read)
 data Math2 = Add | Sub | Mul | Div deriving (Show, Eq, Read)
@@ -49,7 +50,7 @@ data E =  If E E E
         | SigDelay E E
         | Switch [(E,E)] E
         | Event E
-        | LetE [(String, E)] E
+        | LetE [(String,T,E)] E
         | Box E
         | Translate E E
         | Colour E E
@@ -72,11 +73,12 @@ isSubTermIn small big = not . null $ queryE tst big
     where tst someE | someE == small = [someE]
                     | otherwise = []
 
+
 queryE :: (E-> [a]) -> E -> [a]
 queryE q e@(If p c a) = q e ++ m p ++ m c ++m a
 	where m = queryE q
 
-queryE q e@(LetE ses er) = q e ++ m er ++ concatMap (m . snd) ses  
+queryE q e@(LetE ses er) = q e ++ m er ++ concatMap (m . trd3) ses  
 	where m = queryE q
 queryE q e@(Switch ses er) = concat [q e, m er, 
                                      concatMap (m . fst) ses,
@@ -157,7 +159,7 @@ freeVars e = fv [] e
           fv e (Event s1) = fv e s1
           fv e (Const _) = []
           fv e (Nil) = []
-          fv e (LetE ses er) = fv (map fst ses++e) er ++ concatMap (fv (map fst ses++e) . snd) ses 
+          fv e (LetE ses er) = fv (map fst3 ses++e) er ++ concatMap (fv (map fst3 ses++e) . trd3) ses 
           fv e (Case te pats) = fv e te ++ concatMap (\(pat, ep) -> fv (patIntroducedVars pat++e) ep) pats
           
           --fv e (expr) = []
@@ -186,7 +188,7 @@ mapE f (Event s2) = f (Event (mapE f s2))
 mapE f (Const c) = f (Const c)
 mapE f (Nil) = f (Nil)
 mapE f (LetE ses er) = 
-    f (LetE (map (\(n,e)-> (n, mapE f e)) ses) (mapE f er))
+    f (LetE (map (\(n,t,e)-> (n, t, mapE f e)) ses) (mapE f er))
 mapE f (Switch ses er) = 
     f (Switch (map (\(e1,e2)-> (mapE f e1, mapE f e2)) ses) (mapE f er))
 mapE f (Case te pats) = 

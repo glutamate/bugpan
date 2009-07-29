@@ -105,11 +105,12 @@ unDelays = mapDE unDelays'
 letFloating ::TravM ()
 letFloating = mapDE letFl
     where letFl (LetE ses er) = do
-            nns <- mapM genSym (map fst ses)
-            let nonns = zip (map fst ses) nns
-            nes <- forM (zip ses nns) $ \((n,e), nn) -> do
-                                  return $ Let nn (changeVars nonns e)
-            insertBefore nes
+            nns <- mapM genSym (map fst3 ses)
+            let nonns = zip (map fst3 ses) nns
+            nes <- forM (zip ses nns) $ \((n,t,e), nn) -> do
+                                  return $ [DeclareType nn t,
+                                            Let nn (changeVars nonns e)]
+            insertBefore $ concat nes
             return (changeVars nonns er) 
 
           letFl e = return e
@@ -235,18 +236,18 @@ sigAtRefersToBuffer = mapDE $ \tle -> mapEM sAbuf tle
 --what if n2 is referred to?
 simplifySomeLets :: TravM ()
 simplifySomeLets = mapDE $ \tle -> mapEM sSL tle
-    where sSL e@(LetE [(n1,e1)] (Var n2)) | n1 == n2 && (not $ Var n1 `isSubTermIn` e1)= return e1
-                                          | otherwise = return e
+    where sSL e@(LetE [(n1,t,e1)] (Var n2)) | n1 == n2 && (not $ Var n1 `isSubTermIn` e1)= return e1
+                                            | otherwise = return e
           sSL e = return e
 
 massageDelayRefsInSwitch :: TravM ()
 massageDelayRefsInSwitch = mapD mDRIS
-    where mDRIS d@(Let gn (Switch mes le@(LetE [(n1, s1)] (Var n2)))) 
+    where mDRIS d@(Let gn (Switch mes le@(LetE [(n1,t,s1)] (Var n2)))) 
                            | n1 == n2  = return (Let gn $ Switch (mDris2 gn mes) $ mapE (sub n1 gn) le)
                            | otherwise = return d 
           mDRIS d = return d
           mDris2 gn [] = []
-          mDris2 gn ((ev, ls@(Lam tn (Lam vn (LetE [(n1, s1)] (Var n2))))):tl) = (ev, mapE (sub n1 gn) ls):mDris2 gn tl
+          mDris2 gn ((ev, ls@(Lam tn (Lam vn (LetE [(n1,t1,s1)] (Var n2))))):tl) = (ev, mapE (sub n1 gn) ls):mDris2 gn tl
           mDris2 gn (hd:tl) = hd:mDris2 gn tl
           sub sn tn e@(SigDelay (Var sn1) v0) | sn1 == sn = SigDelay (Var tn) v0
                                               | otherwise = e

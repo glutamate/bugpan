@@ -7,7 +7,7 @@ import Expr
 import ImpInterpret
 import Control.Monad
 import Database
-import BugPrelude 
+--import BugPrelude 
 import Traverse
 import Stages
 import Transform
@@ -21,7 +21,7 @@ import Parse
 import GHC.Handle
 import System.IO
 import System.Environment
-
+import TNUtils
 
 data DriverState = DS {
       dsSession :: Session,
@@ -68,7 +68,7 @@ loop ds@(DS (sess) dpmv rmv prg) = do
       (threadDelay 100000)
       (do prg' <- fileDecls (cmdFile ds) [] -- read `fmap` readFile cmdFile
 
-          let runTM = runTravM prg' (declsToEnv prelude)
+          let runTM = runTravM prg' []
           let prg = snd . runTM $ transform
           let tmax = (lookupDefn "_tmax" prg >>= vToDbl) `orJust` 1
           let dt = (lookupDefn "_dt" prg >>= vToDbl) `orJust` 0.001

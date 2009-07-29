@@ -86,7 +86,7 @@ cE (B.Switch s1 ses) =
 
 cE (B.ELet les e) = 
     LetE
-       (map (\(B.LetLine (B.BIdent b) es) -> ((ident b), cE es)) les)
+       (map (\(B.LetLine (B.BIdent b) es) -> ((ident b), UnspecifiedT, cE es)) les)
        (cE e)
 cE (B.ECase e pats) = 
     Case (cE e)

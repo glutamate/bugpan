@@ -25,6 +25,10 @@ instance Assignable Declare where
 instance Assignable (String, E) where -- LetE
     x =: y = (x, y)
 
+instance Assignable (String, T, E) where -- LetE
+    x =: y = (x, UnspecifiedT, y)
+
+
 instance Assignable (E, E) where -- LetE
     x =: y = (Var x, y)
 

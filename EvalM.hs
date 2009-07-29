@@ -98,6 +98,8 @@ data T  = BoolT
         | UnitT
         | StringT
         | TyVar String
+        | UnknownT String
+        | UnspecifiedT
 	deriving (Show, Eq, Read)
 
 data NumT = IntT | RealT | CmplxT deriving (Eq, Show, Read, Ord)

@@ -33,6 +33,9 @@ testacq:
 testgain:
 	ghc --make TestGain -lcomedi Comedi/comedi_hs_helper.o
 
+bugsess:
+	ghc --make BugSess -lcomedi Comedi/comedi_hs_helper.o
+
 testgainprof:
 	ghc --make TestGain -prof -auto-all -lcomedi Comedi/comedi_hs_helper.o
 

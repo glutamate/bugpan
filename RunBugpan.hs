@@ -14,6 +14,7 @@ import EvalM
 import Numbers 
 import Control.Monad
 import TNUtils
+import PrettyPrint
 
 {-chainM :: Monad m => (s -> [a] -> m s)  -> [a] -> s -> m (s, [a])
 chainM f [] s = return (s, [])

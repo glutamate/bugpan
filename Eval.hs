@@ -138,9 +138,9 @@ eval es (SigAt offset sve) =
                                       (tdbl > t2, return (efun . round $ (t2-t1/dt))),
                                       (otherwise, return (efun idx))]
          v -> fail $ "expected sigv, got "++show v
-
+ 
 eval es (LetE ses er) = do
-  let nvs = map (\(n,e)-> (n, unEvalM $ eval (extsEnv nvs es) e)) ses
+  let nvs = map (\(n,t,e)-> (n, unEvalM $ eval (extsEnv nvs es) e)) ses
   eval (extsEnv nvs es) er
 
 {-eval es (SigDelay s p0) = eval es (Sig $ SigAt ((SigVal (Var "seconds"))- dt') s )

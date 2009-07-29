@@ -58,6 +58,7 @@ newSession rootDir = do
   createDirectory $ baseDir++"/events"
   createDirectory $ baseDir++"/durations"
   writeFile (baseDir++"/tStart") $ show (t1, t2)
+  writeFile (baseDir++"/sessionFormatVersion") $ "2"
   return $ Session baseDir t0
 --sessEvalState s = EvalS 0 0 Nothing (qenv s ++( evalManyAtOnce $ sessPrelude s))
 
@@ -97,6 +98,7 @@ deleteSession (Session dir _) = system ("rm -rf "++ dir) >> return ()
 loadApproxSession :: FilePath -> String -> IO Session
 loadApproxSession root nm = do
   sessns <- getSessionInRootDir root
+  --print sessns
   let sessNm = fromJust $ find (nm `isPrefixOf`) sessns
   loadExactSession $ oneTrailingSlash root++sessNm
 

@@ -6,7 +6,6 @@ import Expr
 import ImpInterpret
 import Control.Monad
 import Database
-import BugPrelude 
 import Traverse
 import Stages
 import Transform

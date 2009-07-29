@@ -99,7 +99,7 @@ pp (M2 Sub e1 e2) = pp2op e1 "-" e2
 pp (M2 Div e1 e2) = pp2op e1 "/" e2
 pp (M1 op e) = show op ++ " " ++ ppa e
 pp (LetE les efinal) = concat ["let ", concat $ ppes les, " in ", ppa efinal]
-    where ppes es = map (\(n,e)-> n++" = "++pp e++";") es 
+    where ppes es = map (\(n,t,e)-> n++" = "++pp e++";") es 
 pp (Box d) = "box "++ppa d
 pp (Translate t e) = "translate "++ppa t++" "++ppa e
 pp (Colour t e) = "colour "++ppa t++" "++ppa e

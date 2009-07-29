@@ -11,12 +11,12 @@ import Data.Char
 import Data.List
 import HaskSyntaxUntyped
 import UnitTesting hiding (evalsTo)
-import BugPrelude
-
 
 data BiV = BiV { bivName :: String,
                  bivType :: T,
                  bivVal :: V }
+
+nstep t dt = roundNum (t/dt)
 
 anyNumT = NumT Nothing
 (.->.) = LamT

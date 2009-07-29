@@ -8,6 +8,7 @@ import qualified Data.List as L
 import Debug.Trace
 import Data.Maybe
 import PrettyPrint
+import TNUtils
 
 data TravS = TravS { counter :: Int,
                      decls :: [Declare],
@@ -191,9 +192,9 @@ queryM :: (E-> TravM [a]) -> E -> TravM [a]
 queryM q e@(If p c a) = concatM [q e,m p, m c,m a]
 	where m = queryM q
 
-queryM q e@(LetE ses er) = withBvars (map fst ses) $
+queryM q e@(LetE ses er) = withBvars (map fst3 ses) $
                            concatM [q e, 
-                                    concat `fmap` mapM m (map snd ses), 
+                                    concat `fmap` mapM m (map trd3 ses), 
                                     m er]
     where m = queryM q
 queryM q e@(Switch ses er) = concatM [q e, 
@@ -281,9 +282,9 @@ mapEM f e = mapEM' e
           mapEM' (HasType t s2) = (return (HasType t) `ap` m s2) >>= f
 
           mapEM' (LetE ses er) = (
-              withBvars (map fst ses) $ 
-              return LetE `ap` mapM (\(n,e)-> do e' <- m e
-                                                 return (n, e')) ses 
+              withBvars (map fst3 ses) $ 
+              return LetE `ap` mapM (\(n,t,e)-> do e' <- m e
+                                                   return (n, t,e')) ses 
                           `ap` m er) >>= f
           mapEM' (Case e pats) = (return Case `ap` 
                                          m e `ap` 
