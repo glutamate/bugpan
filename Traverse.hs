@@ -161,7 +161,15 @@ lookUp nm = do env <- env `fmap` get
                                Just e -> return e
                                Nothing -> do ln <- curLine
                                              fail $ "lookUp: can't find "++nm++" in line: "++ ppDecl ln++"\nin env"++show (map fst ds)
-                             
+                          
+
+safeLookUp :: String -> TravM (Maybe E)
+safeLookUp nm = do env <- env `fmap` get
+                   case L.lookup nm env of
+                     Just e -> return $ Just e
+                     Nothing -> lookUpInDecls
+    where lookUpInDecls = do ds <- declsToEnv `fmap` decls `fmap` get
+                             return $ L.lookup nm ds
           
 insertAtEnd :: [Declare] -> TravM ()
 insertAtEnd [] = return ()

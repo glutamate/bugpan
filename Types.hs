@@ -114,5 +114,8 @@ haskTypeString :: T -> String
 haskTypeString BoolT = "Bool"
 haskTypeString UnitT = "()"
 haskTypeString (PairT t1 t2) = "("++haskTypeString t1++","++haskTypeString t2++")"
-haskTypeString (LamT t1 t2) = haskTypeString t1++"->"++haskTypeString t2
+haskTypeString (LamT t1 t2) = "("++haskTypeString t1++")->("++haskTypeString t2++")"
 haskTypeString (ListT t1) = "["++haskTypeString t1++"]"
+haskTypeString (NumT (Just RealT)) = "Double"
+haskTypeString (NumT (Just IntT)) = "Int"
+haskTypeString (NumT Nothing) = "Number"

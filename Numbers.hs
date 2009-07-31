@@ -4,6 +4,9 @@ module Numbers where
 
 import Data.Complex
 import Text.Printf
+
+type Number = NumVl
+
 data NumVl = NInt Int
 	   -- | NRat Int Int
 	   | NReal Double

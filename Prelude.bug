@@ -1,26 +1,26 @@
 module Prelude where 
 
-smap : (a->b) -> (Signal a) -> (Signal b)
+smap :: (a->b) -> (Signal a) -> (Signal b)
 smap f s=  {: f <: s :> :} 
 
-incr : Num -> Num
+incr :: Num -> Num
 incr x =  x+1
 
-add : Num -> Num -> Num
+add :: Num -> Num -> Num
 add x y = x+y
 
 negate x = 0-x
 
-constSig : a -> Signal a
+constSig :: a -> Signal a
 constSig x = {: x :}
 
 --sigPlus1 : (Signal Num) -> (Signal Num)
 sigPlus1 = smap incr
 
-sigAtZero : (Signal Num) -> Num
+sigAtZero :: (Signal Num) -> Num
 sigAtZero s = s@0
 
-sscan : (a->b->a) -> a -> (Signal b) -> (Signal b)
+--sscan :: (a->b->a) -> a -> (Signal b) -> (Signal b)
 sscan f v0 s = let sr = {: (f <: s :>) <: delay sr v0 :> :} in sr
 
 
@@ -43,11 +43,11 @@ peakf (new,tnew) (old,told) = if new>old then (new, tnew) else (old, told)
 
 map f lst = case lst of 
       	    	 [] -> []
-		 x::xs -> f x::(map f xs)
+		 x:xs -> f x:(map f xs)
 
 sum lst = case lst of 
       	   [] -> 0
-	   (x::xs) -> x+(sum xs)
+	   (x:xs) -> x+(sum xs)
  
 fst = \pr->case pr of (x,_) -> x
 snd = \pr->case pr of (_,x) -> x

@@ -14,6 +14,7 @@ import Debug.Trace
 import BuiltIn
 import TNUtils
 import TypeCheck
+import Data.List
 import PrettyPrint
 
 substHasSigs :: TravM ()
@@ -256,10 +257,10 @@ massageDelayRefsInSwitch = mapD mDRIS
 addBuffersToStore :: TravM ()
 addBuffersToStore = mapD aBTS
     where aBTS sc@(SinkConnect (Var nm) ("store",_)) =  do
-            trace (show sc) $ return ()
+            --trace (show sc) $ return ()
             -- isSig <- isSignalOrEvt (Var nm)
             whenM ((==IsSig) `fmap` isSignalOrEvt (Var nm)) $ do
-                    trace ("foo!") $ return ()
+                    --trace ("foo!") $ return ()
                     insertAtEnd [SinkConnect (Var nm) (('#':nm), Const Unit)]
                 
             return sc
@@ -320,6 +321,7 @@ hasSig e = {- trace (pp e ) $ -} or `fmap` queryM (hasSigAux []) e
 
 dontLookUp nm = do conds <- sequence [ (inBoundVars nm),
                                        (isDefBySrc nm),
+                                       (return ("#" `isPrefixOf` nm)),
                                        (return $ nm `elem` bivNms)
                                      ]
                    return $ or conds

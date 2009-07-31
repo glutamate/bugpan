@@ -16,6 +16,7 @@ ppType (NumT Nothing) = "Number"
 ppType (NumT (Just IntT)) = "Integer"
 ppType (NumT (Just RealT)) = "Real"
 ppType (NumT (Just CmplxT)) = "Complex"
+ppType (SignalT t) = "Signal "++ppType t
 ppType t = show t
 
 ppVal (BoolV True) = "True"
@@ -42,7 +43,9 @@ ppDecl (ReadSource varNm (src, arg)) = (varNm++" <* " ++ src ++ " "++pp arg)
 ppDecl (Import nm []) = "use "++nm 
 ppDecl (Import nm substs) = "use "++nm++" { "++intercalate "," (map ppImpSubst substs) ++ " }"
     where ppImpSubst (nm,e) = nm++" => "++pp e
-ppDecl (DeclareType nm t) = nm ++" : "++ ppType t
+ppDecl (DeclareType nm t) = nm ++" :: "++ ppType t
+ppDecl (Stage nm i) = "stage "++nm++" "++show i
+ppDecl (Nop) = "Nop"
 
 --for display purposes only
 depth :: E->Int
@@ -67,7 +70,7 @@ ppa e | depth e > 1 = "("++pp e++")"
 
 pp :: E->String
 pp (If p c a) = concat ["if ", pp p, " then ", ppa c, " else ", ppa a]
-pp (Lam n e) = concat ["\\", n, "->", pp e]
+pp (Lam n e) = concat ["\\", n, "->(", pp e, ")"]
 pp (Var n) = n
 pp (Const v) = ppVal v
 pp (App f a) = ppa f ++ " " ++ ppa a
@@ -75,7 +78,7 @@ pp (App f a) = ppa f ++ " " ++ ppa a
 pp (Pair f s) = concat ["(", pp f , ", ", pp s, ")"]
 pp (Nil) = "[]"
 pp (Cons car Nil) = "[ "++pp car++" ]" -- ppa car ++ ":" ++ ppa cdr
-pp (Cons car cdr) = ppa car ++ "::" ++ ppa cdr
+pp (Cons car cdr) = ppa car ++ ":" ++ ppa cdr
 pp (Cmp Lt e1 e2) = ppa e1 ++ " < " ++ ppa e2
 pp (Cmp Gt e1 e2) = ppa e1 ++ " > " ++ ppa e2
 pp (Cmp Eq e1 e2) = ppa e1 ++ " == " ++ ppa e2
@@ -97,13 +100,14 @@ pp (M2 Add e1 e2) = pp2op e1 "+" e2
 pp (M2 Sub (Const (NumV (NInt 0))) e2) = "-" ++ppa e2
 pp (M2 Sub e1 e2) = pp2op e1 "-" e2
 pp (M2 Div e1 e2) = pp2op e1 "/" e2
-pp (M1 op e) = show op ++ " " ++ ppa e
-pp (LetE les efinal) = concat ["let ", concat $ ppes les, " in ", ppa efinal]
-    where ppes es = map (\(n,t,e)-> n++" = "++pp e++";") es 
+pp (M1 Exp e) = "exp " ++ ppa e
+pp (M1 Ln e) = "log " ++ ppa e
+pp (LetE les efinal) = concat ["let {", intercalate ";" $ ppes les, "} in ", ppa efinal]
+    where ppes es = map (\(n,t,e)-> n++" = "++pp e) es 
 pp (Box d) = "box "++ppa d
 pp (Translate t e) = "translate "++ppa t++" "++ppa e
 pp (Colour t e) = "colour "++ppa t++" "++ppa e
-pp (Case tst pats) = "case "++pp tst++" of {"++ (concatMap (\(pat,e)-> ppPat pat++" -> "++pp e++"; ") pats)++"}"
+pp (Case tst pats) = "case "++pp tst++" of {"++ (intercalate ";" $ map (\(pat,e)-> ppPat pat++" -> "++pp e) pats)++"}"
 pp e = show e
 
 pp2op e1 op e2 = ppa e1 ++ op ++ ppa e2
@@ -113,5 +117,5 @@ ppPat (PatIgnore ) = "_"
 ppPat (PatLit e) = show e
 ppPat (PatPair x y) = "("++ppPat x++","++ppPat y++")"
 ppPat (PatNil) = "[]"
-ppPat (PatCons x xs) = "("++ppPat x++"::"++ppPat xs++")"
+ppPat (PatCons x xs) = "("++ppPat x++":"++ppPat xs++")"
 

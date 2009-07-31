@@ -3,7 +3,7 @@ Prog. Program ::= "module" BIdent "where" "{" [Declare] "}";
 DLet. Declare ::= BIdent [Arg] "=" Exp ;
 DImport. Declare ::= "use" BIdent ;
 DImportSubst. Declare ::= "use" BIdent "{" [ImpSubstLine] "}";
-DType. Declare ::= BIdent ":" Type ;
+DType. Declare ::= BIdent "::" Type ;
 
 DSinkConn.Declare ::= Exp "*>" BIdent Exp ;
 DReadSrc.Declare ::= BIdent "<*" BIdent Exp ;
@@ -43,7 +43,7 @@ Var. Exp6 ::= BIdent ;
 Pair. Exp4 ::= "(" Exp "," Exp ")" ;
 Pair3. Exp4 ::= "(" Exp "," Exp "," Exp ")" ;
 Nil. Exp6 ::= "[]" ;
-Cons. Exp ::= Exp "::" Exp ;
+Cons. Exp ::= Exp ":" Exp ;
 ListLit.Exp4 ::= "[" [Exp] "]" ;
 
 
@@ -77,7 +77,7 @@ PWild. Pat1 ::= "_" ;
 PLit. Pat1 ::= Const ;
 PPair. Pat1 ::= "(" Pat "," Pat ")" ;
 PNil. Pat1 ::= "[]" ;
-PCons. Pat ::= Pat "::" Pat ;
+PCons. Pat ::= Pat ":" Pat ;
 --PDeriv. Pat ::= "D" Pat;
 
 CInt. Const ::= Integer ;
