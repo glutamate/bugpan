@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances, FlexibleContexts, TypeSynonymInstances, ExistentialQuantification, IncoherentInstances #-} 
+{-# LANGUAGE FlexibleInstances, FlexibleContexts, TypeSynonymInstances, ExistentialQuantification, IncoherentInstances, DeriveDataTypeable #-} 
 
 module QueryTypes where
 
@@ -38,11 +38,12 @@ import Data.Maybe
 import Math.Probably.PlotR
 import Data.Unique
 import TNUtils
+import Data.Typeable
 
 type Duration a = (Double,Double,a)
 type Event a = (Double,a)
 
-data Signal a = Signal Double Double Double (Int -> a) 
+data Signal a = Signal Double Double Double (Int -> a) deriving Typeable
 
 instance Show a =>  Show (Signal a) where
     show sig@(Signal t1 t2 dt sf) = "{"++show t1++": "++(show . take 5 $ sigToList sig)++"... :"++show t2++"}"
@@ -193,13 +194,15 @@ individually = runListT
 eachOf :: Monad m => [a] -> ListT m a
 eachOf xs = ListT . return $ xs
 
-data QueryResultBox = forall a. QueryResult a => QResBox a
+data QueryResultBox = forall a. QueryResult a => QResBox a deriving Typeable
 
 class Show a => QueryResult a
 
 instance Show a => QueryResult [Signal a]
 instance Show a => QueryResult [Event a]
 instance Show a => QueryResult [Duration a]
+
+instance QueryResult [Char]
     
 
 

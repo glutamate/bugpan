@@ -9,8 +9,7 @@ import System.Directory
 import Traverse (ifM)
 import Control.Monad
 import Control.Monad.Writer.Lazy
-import System.Plugins
-import QueryPluginAPI
+import Language.Haskell.Interpreter
 import QueryTypes
 
 root = "/home/tomn/sessions/"
@@ -26,35 +25,31 @@ dispatch ("ask":sessNm:queryStr:_) = do
   --print sessNm
   tps <- sessionTypes sess
   --mapM_ print tps
-  out <- execWriterT $ do
-           tell ["module AQuery where"]
-           tell ["import Query"]
-           tell ["import QueryTypes"]
-           tell ["import QueryPluginAPI"]
-           tell ["resource = plugin { theQuery = q }"]
-           tell ["q nm = inSessionNamed nm $ do"]
-           let ind = "          "
-           forM_ tps $ \(nm, ty) -> do
-                         tell $ [concat [ind,nm ++ " <- ",
-                                        typeToKind ty,
-                                        " \""++ nm++"\" ",
-                                        (typeToProxyName $ unWrapT ty)
-                                        ]]
-           tell [ind++"return $ QResBox ("++queryStr++")"]
-  writeFile "AQuery.hs" $ unlines out
-  ms <- make "AQuery.hs" []
-  fp <- case ms of
-          MakeFailure e -> mapM_ putStrLn e >> error "failed"
-          MakeSuccess _ o -> return o
-  m_v <- load_ fp [] "resource"
-  v <- case m_v of
-         LoadFailure _   -> error "load failed" 
-         LoadSuccess _ v -> return v
-  QResBox qres <- (theQuery v) sessNm
-  print qres
+  out <- runInterpreter $ do
+           loadModules ["Query", "QueryTypes", "QueryUtils"]
+           cmd <- execWriterT $ do
+                          tell ["inSessionNamed \""++sessNm++"\" $ do"]
+                          let ind = "          "
+                          forM_ tps $ \(nm, ty) -> do
+                                       tell $ [concat [ind,nm ++ " <- ",
+                                                       typeToKind ty,
+                                                       " \""++ nm++"\" ",
+                                                       (typeToProxyName $ unWrapT ty)
+                                                      ]]
+                          tell [ind++"return $ QResBox ("++queryStr++")"]
+           
+           --setTopLevelModules [""]
+           setImportsQ $ map withNothing ["Prelude","Query", "QueryTypes", "QueryUtils"]
+           liftIO . putStrLn $ unlines cmd
+           n <- interpret (unlines cmd) (as :: IO QueryResultBox)
+           return n
+  --QResBox qres <- (theQuery v) sessNm
+  --print qres
+  case out of
+    Right outaction -> outaction >>= (\(QResBox qres) -> print qres)
+    Left err -> print err
   return ()
-
-
+      where withNothing x = (x,Nothing) 
 
 dispatch ("convert1":sessNm:_) = do
   sess <- loadApproxSession root sessNm
