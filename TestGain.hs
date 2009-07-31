@@ -20,6 +20,7 @@ import Data.IORef
 import QueryUtils
 import Math.Probably.FoldingStats
 import Math.Probably.PlotR
+import QueryRun
 
 default (Double, Int)
 

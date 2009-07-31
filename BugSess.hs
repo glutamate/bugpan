@@ -9,6 +9,9 @@ import System.Directory
 import Traverse (ifM)
 import Control.Monad
 import Control.Monad.Writer.Lazy
+import System.Plugins
+import QueryPluginAPI
+import QueryTypes
 
 root = "/home/tomn/sessions/"
 
@@ -24,16 +27,32 @@ dispatch ("ask":sessNm:queryStr:_) = do
   tps <- sessionTypes sess
   --mapM_ print tps
   out <- execWriterT $ do
-           tell $ "q = inSessionNamed \""++sessNm++"\" $ do \n"
-           let ind = "       "
+           tell ["module AQuery where"]
+           tell ["import Query"]
+           tell ["import QueryTypes"]
+           tell ["import QueryPluginAPI"]
+           tell ["resource = plugin { theQuery = q }"]
+           tell ["q nm = inSessionNamed nm $ do"]
+           let ind = "          "
            forM_ tps $ \(nm, ty) -> do
-                         tell $ concat [ind,nm ++ " <- ",
+                         tell $ [concat [ind,nm ++ " <- ",
                                         typeToKind ty,
                                         " \""++ nm++"\" ",
-                                        (typeToProxyName $ unWrapT ty),
-                                        "\n"]
-           tell $ ind++"return ("++queryStr++")"
-  putStrLn out
+                                        (typeToProxyName $ unWrapT ty)
+                                        ]]
+           tell [ind++"return $ QResBox ("++queryStr++")"]
+  writeFile "AQuery.hs" $ unlines out
+  ms <- make "AQuery.hs" []
+  fp <- case ms of
+          MakeFailure e -> mapM_ putStrLn e >> error "failed"
+          MakeSuccess _ o -> return o
+  m_v <- load_ fp [] "resource"
+  v <- case m_v of
+         LoadFailure _   -> error "load failed" 
+         LoadSuccess _ v -> return v
+  QResBox qres <- (theQuery v) sessNm
+  print qres
+  return ()
 
 
 

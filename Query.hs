@@ -35,7 +35,6 @@ import Control.Concurrent
 import Database
 import HaskSyntaxUntyped
 import QueryTypes
-import Stages
 import Parse
 import TNUtils 
 import PrettyPrint
@@ -138,21 +137,6 @@ tst1 = do
   print $ ppVal v
 
  
-
-
-run :: [Declare] -> Double -> StateT QState IO ()
-run ds t0 = do
-  sess <- getSession
-  let trun = (lookupDefn "_tmax" ds >>= vToDbl) `orJust` 1
-  let dt = (lookupDefn "_dt" ds >>= vToDbl) `orJust` 0.001
-  --liftIO $ mapM (putStrLn . ppDecl) ds
-  liftIO $ runOnce dt t0 trun ds sess
-
-use :: MonadIO m => String -> m [Declare]
-use fnm = liftIO $ fileDecls fnm []
-
-with = flip makeSubs
-
 
 {-plot :: [V] -> IO ()
 plot vs = do --let g = map ansToPlot ans

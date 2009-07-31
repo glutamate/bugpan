@@ -1,4 +1,4 @@
-{-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE Rank2Types, FlexibleInstances, OverlappingInstances #-}
 
 module EvalM where
 
@@ -262,6 +262,11 @@ instance Reify () where
     reify Unit = Just ()
     reify _ = Nothing
     pack () = Unit
+
+instance Reify [Char] where
+    reify (StringV s) = Just s
+    reify _ = Nothing
+    pack str = StringV str
 
 unsafeReify :: Reify a => V -> a
 unsafeReify = fromJust . reify

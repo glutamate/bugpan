@@ -193,6 +193,15 @@ individually = runListT
 eachOf :: Monad m => [a] -> ListT m a
 eachOf xs = ListT . return $ xs
 
+data QueryResultBox = forall a. QueryResult a => QResBox a
+
+class Show a => QueryResult a
+
+instance Show a => QueryResult [Signal a]
+instance Show a => QueryResult [Event a]
+instance Show a => QueryResult [Duration a]
+    
+
 
 --class (MonadState Session m, MonadIO m) => QueryM m where
 --    answers :: [a] -> m a
