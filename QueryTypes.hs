@@ -43,7 +43,6 @@ import Data.Typeable
 type Duration a = (Double,Double,a)
 type Event a = (Double,a)
 
-data Signal a = Signal Double Double Double (Int -> a) deriving Typeable
 
 instance Show a =>  Show (Signal a) where
     show sig@(Signal t1 t2 dt sf) = "{"++show t1++": "++(show . take 5 $ sigToList sig)++"... :"++show t2++"}"

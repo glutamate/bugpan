@@ -1,4 +1,4 @@
-{-# LANGUAGE Rank2Types, FlexibleInstances, OverlappingInstances #-}
+{-# LANGUAGE Rank2Types, FlexibleInstances, OverlappingInstances, DeriveDataTypeable #-}
 
 module EvalM where
 
@@ -12,6 +12,7 @@ import Data.Binary
 --import Debug.Trace
 import Numbers
 import Data.Array
+import Data.Typeable
 
 data EvalS = EvalS { dt:: Double,
                      tmax :: Double,
@@ -270,3 +271,6 @@ instance Reify [Char] where
 
 unsafeReify :: Reify a => V -> a
 unsafeReify = fromJust . reify
+
+--(Signal t1 t2 dt sf)
+data Signal a = Signal Double Double Double (Int -> a) deriving Typeable
