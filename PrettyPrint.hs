@@ -17,6 +17,8 @@ ppType (NumT (Just IntT)) = "Integer"
 ppType (NumT (Just RealT)) = "Real"
 ppType (NumT (Just CmplxT)) = "Complex"
 ppType (SignalT t) = "Signal "++ppType t
+ppType (UnspecifiedT) = "??"
+ppType (UnknownT nm) = "?"++nm
 ppType t = show t
 
 ppVal (BoolV True) = "True"

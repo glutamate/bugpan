@@ -119,3 +119,8 @@ haskTypeString (ListT t1) = "["++haskTypeString t1++"]"
 haskTypeString (NumT (Just RealT)) = "Double"
 haskTypeString (NumT (Just IntT)) = "Int"
 haskTypeString (NumT Nothing) = "Number"
+
+isSubtypeOf:: T -> T -> Bool
+isSubtypeOf (NumT _) (NumT Nothing) = True
+isSubtypeOf t1 t2 | t1 == t2 = True
+                  | otherwise = False

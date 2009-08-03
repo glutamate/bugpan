@@ -220,6 +220,7 @@ typeOfVal (BoxV _ _ _) = ShapeT
 typeOfVal Unit = UnitT
 typeOfVal (StringV _) = StringT
 
+
 class Reify a where
     reify :: V-> Maybe a
     pack :: a->V

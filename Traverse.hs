@@ -29,6 +29,13 @@ clearTyConstraints = setter (\s-> s {tyConstraints = []})
 addTyConstraint :: (T,T) -> TravM ()
 addTyConstraint con = setter (\s-> s {tyConstraints = con:tyConstraints s})
                       
+traceDecls :: TravM ()
+traceDecls = do ds <- decls `fmap` get
+                mapM_ (\d->traceM $ ppDecl d) ds
+
+traceTyConstraints :: TravM ()
+traceTyConstraints = do tcs <- tyConstraints `fmap` get
+                        mapM_ (\(t1,t2)->traceM $ ppType t1++" `U` "++ppType t2++"\n") tcs
 
 guardM :: MonadPlus m => m Bool -> m ()
 guardM mb = mb >>= guard
