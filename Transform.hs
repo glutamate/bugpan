@@ -66,7 +66,7 @@ betaRedMakesShape = mapDE $ \tle -> mapEM brms tle
 
 
 betaContract :: E -> E
-betaContract eo@(App (Lam nm bd) arg) = mapE bar bd
+betaContract eo@(App (Lam nm t bd) arg) = mapE bar bd
     where bar e@(Var n') | n' == nm =  arg -- doesnt work if shadows
                          | otherwise = e
           bar e = e
@@ -118,7 +118,7 @@ letFloating = mapDE letFl
                 
 sigFloating :: TravM () -- only sigFloat in values of type sig a. FIXME
 sigFloating = mapDE sigFl
-    where sigFl e@(Lam bd arg) = return e -- cheap hack to fix above issue
+    where sigFl e@(Lam bd t arg) = return e -- cheap hack to fix above issue
           sigFl (Sig se) = Sig `fmap` mapEM sigFloat se
           sigFl e = mapEM sigFloat e
           sigFloat (Sig se) = do
@@ -248,7 +248,7 @@ massageDelayRefsInSwitch = mapD mDRIS
                            | otherwise = return d 
           mDRIS d = return d
           mDris2 gn [] = []
-          mDris2 gn ((ev, ls@(Lam tn (Lam vn (LetE [(n1,t1,s1)] (Var n2))))):tl) = (ev, mapE (sub n1 gn) ls):mDris2 gn tl
+          mDris2 gn ((ev, ls@(Lam tn _ (Lam vn _ (LetE [(n1,t1,s1)] (Var n2))))):tl) = (ev, mapE (sub n1 gn) ls):mDris2 gn tl
           mDris2 gn (hd:tl) = hd:mDris2 gn tl
           sub sn tn e@(SigDelay (Var sn1) v0) | sn1 == sn = SigDelay (Var tn) v0
                                               | otherwise = e

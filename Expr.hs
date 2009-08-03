@@ -33,7 +33,7 @@ instance Num V where
 
 data E =  If E E E
         | Const V
-	| Lam String E
+	| Lam String T E
 	| App E E
 	| Var String
 	| Pair E E
@@ -85,7 +85,7 @@ queryE q e@(Switch ses er) = concat [q e, m er,
                                      concatMap (m . snd) ses]
 	where m = queryE q
 
-queryE q e@(Lam n bd) = q e ++ m bd
+queryE q e@(Lam n t bd) = q e ++ m bd
 	where m = queryE q
 queryE q e@(App le ae) = q e ++ m le ++ m ae
 	where m = queryE q
@@ -136,7 +136,7 @@ queryE q e@(HasType _ e1) = q e++m e1
 freeVars :: E -> [String]
 freeVars e = fv [] e
     where fv e (If p c a) = fv e p ++ fv e c ++ fv e a
-          fv e (Lam n bd) = fv (n:e) bd
+          fv e (Lam n t bd) = fv (n:e) bd
           fv e (App lm ar) = fv e lm ++ fv e ar
           fv e (Var n) | n `elem` e = []
                        | otherwise = [n]
@@ -167,7 +167,7 @@ freeVars e = fv [] e
 mapE :: (E-> E)-> E -> E
 mapE f (If p c a) = f (If (m p) (m c) (m a))
     where m = mapE f 
-mapE f (Lam n bd) = f (Lam n (m bd))
+mapE f (Lam n t bd) = f (Lam n t (m bd))
     where m = mapE f
 mapE f (App le ae) = f (App (m le) (m ae))
     where m = mapE f
@@ -245,7 +245,7 @@ instance Floating E where
 
 
 
-data Pat = 	  PatVar String
+data Pat = 	  PatVar String T
 		| PatIgnore
 		| PatLit V
 		| PatPair Pat Pat
@@ -254,7 +254,7 @@ data Pat = 	  PatVar String
 		-- | PatGuard E Pat
 		deriving (Show, Eq, Read)
 
-patIntroducedVars (PatVar nm) = [nm]
+patIntroducedVars (PatVar nm t) = [nm]
 patIntroducedVars (PatCons h t)= patIntroducedVars h ++ patIntroducedVars t
 patIntroducedVars (PatPair h t)= patIntroducedVars h ++ patIntroducedVars t
 patIntroducedVars _ = []

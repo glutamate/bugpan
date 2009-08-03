@@ -9,6 +9,7 @@ import Debug.Trace
 import Data.Maybe
 import PrettyPrint
 import TNUtils
+import EvalM (T)
 
 data TravS = TravS { counter :: Int,
                      decls :: [Declare],
@@ -16,10 +17,18 @@ data TravS = TravS { counter :: Int,
                      boundVars :: [String],
                      lineNum :: Int,
                      exprPath :: [E],
-                     changed :: Bool
+                     changed :: Bool,
+                     tyConstraints :: [(T,T)]
                    }
 
 type TravM = StateT TravS Identity
+
+clearTyConstraints :: TravM ()
+clearTyConstraints = setter (\s-> s {tyConstraints = []})
+
+addTyConstraint :: (T,T) -> TravM ()
+addTyConstraint con = setter (\s-> s {tyConstraints = con:tyConstraints s})
+                      
 
 guardM :: MonadPlus m => m Bool -> m ()
 guardM mb = mb >>= guard
@@ -39,8 +48,8 @@ spliceAt n ys xs = let (hd, tl) = splitAt n xs in
 
 runTravM :: [Declare] -> [(String, E)] -> TravM a -> (a, [Declare])
 runTravM decs env tx 
-    = let initS = TravS 0 decs env [] 0 [] False
-          (x, TravS _ decsFinal _ _ _ _ _) = runIdentity $ runStateT tx initS 
+    = let initS = TravS 0 decs env [] 0 [] False []
+          (x, TravS _ decsFinal _ _ _ _ _ _) = runIdentity $ runStateT tx initS 
                                                -- Just x -> x
                                                -- Nothing -> error "runTravM returns mzero"
                                              
@@ -210,7 +219,7 @@ queryM q e@(Switch ses er) = concatM [q e,
                                       concat `fmap` mapM m (map snd ses), 
                                       m er]
     where m = queryM q
-queryM q e@(Lam n bd) = withBvars [n] $ concatM [q e, m bd]
+queryM q e@(Lam n t bd) = withBvars [n] $ concatM [q e, m bd]
 	where m = queryM q
 queryM q e@(App le ae) = concatM [q e, m le, m ae]
 	where m = queryM q
@@ -265,7 +274,7 @@ mapEM :: (E-> TravM E)-> E -> TravM E
 mapEM f e = mapEM' e
     where m = withPath e . mapEM f 
           mapEM' (If p c a) = ( return If `ap` m p `ap` m c `ap` m a) >>= f
-          mapEM' (Lam n bd) = (withBvars [n] $ return (Lam n) `ap` m bd) >>= f
+          mapEM' (Lam n t bd) = (withBvars [n] $ return (Lam n t) `ap` m bd) >>= f
           mapEM' (App le ae) = (return App `ap` m le `ap` m ae) >>= f
           mapEM' (Var n) = f $ Var n
           mapEM' (Sig s) = (return Sig `ap` m s) >>= f

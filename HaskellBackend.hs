@@ -149,8 +149,8 @@ tweakExpr e = mapE (changeRead . unSharp . unVal) e
 
 tweakEslam = tweakEslam' . tweakExpr
 
-tweakEslam' (Lam t (Lam v (Sig s))) = (Lam t (Lam v s))
-tweakEslam' (Lam t (Lam v (Var nm))) = (Lam t (Lam v (Var $ nm++"Val")))
+tweakEslam' (Lam t tt (Lam v vt (Sig s))) = (Lam t tt (Lam v vt s))
+tweakEslam' (Lam t tt (Lam v vt (Var nm))) = (Lam t tt (Lam v vt (Var $ nm++"Val")))
 tweakEslam' e = e
 
 unSig (Sig s) = s

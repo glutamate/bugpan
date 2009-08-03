@@ -68,7 +68,7 @@ runTest s tsts = do
                    
                 
 
-tests = [ (Case (Pair 1  2) [(PatPair (PatVar "x") (PatIgnore), Var "x")]) `evalsTo` 1]
+tests = [ (Case (Pair 1  2) [(PatPair (PatVar "x" UnspecifiedT) (PatIgnore), Var "x")]) `evalsTo` 1]
 
 rt = runTest "" tests
 

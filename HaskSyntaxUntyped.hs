@@ -37,7 +37,7 @@ unsafeUniqueInt = unsafePerformIO (hashUnique `fmap` newUnique)
 
 
 addLams [] e = e
-addLams (v:vs) e = addLams vs $ Lam v e
+addLams (v:vs) e = addLams vs $ Lam v UnspecifiedT e
 
 
 splitBySpaces :: String -> [String]

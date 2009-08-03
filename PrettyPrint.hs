@@ -50,7 +50,7 @@ ppDecl (Nop) = "Nop"
 --for display purposes only
 depth :: E->Int
 depth (Const _) = 1
-depth (Lam _ b) = 1+depth b
+depth (Lam _ t b) = 1+depth b
 depth (App f b) = 1+ max (depth f) (depth b)
 depth (Var _) = 1
 depth (Pair e1 e2) = 1+ max (depth e1) (depth e2)
@@ -70,7 +70,8 @@ ppa e | depth e > 1 = "("++pp e++")"
 
 pp :: E->String
 pp (If p c a) = concat ["if ", pp p, " then ", ppa c, " else ", ppa a]
-pp (Lam n e) = concat ["\\", n, "->(", pp e, ")"]
+pp (Lam n UnspecifiedT e) = concat ["\\", n, "->(", pp e, ")"]
+pp (Lam n t e) = concat ["\\", n,"::",ppType t," ->(", pp e, ")"]
 pp (Var n) = n
 pp (Const v) = ppVal v
 pp (App f a) = ppa f ++ " " ++ ppa a
@@ -112,7 +113,8 @@ pp e = show e
 
 pp2op e1 op e2 = ppa e1 ++ op ++ ppa e2
 
-ppPat (PatVar n) = n
+ppPat (PatVar n UnspecifiedT) = n
+ppPat (PatVar n t) = n++"::"++ppType t
 ppPat (PatIgnore ) = "_"
 ppPat (PatLit e) = show e
 ppPat (PatPair x y) = "("++ppPat x++","++ppPat y++")"

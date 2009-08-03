@@ -187,7 +187,7 @@ addRunToSession decls t0 tmax dt ress sess@(Session basedir sesst0)
 
 
 --simpler interface
-saveInSession sess@(Session basedir sesst0) nm t0 dt sig@(SigV t1 t2 sigdt sf) = do
+saveInSession sess@(Session basedir _) nm t0 dt sig@(SigV t1 t2 sigdt sf) = do
   let dir = basedir++"/signals/"++nm
   createDirectoryIfMissing False dir
   let ntics = round $ t0/dt

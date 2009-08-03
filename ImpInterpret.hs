@@ -115,7 +115,7 @@ exec stmts dt tmax =
                                        else do
                                          --print 4
                                          let idx = maxIdx (map (fst. fst) eslams')
-                                         let ((t,v), Lam tn (Lam vn se)) =  eslams'!!idx
+                                         let ((t,v), Lam tn tt (Lam vn tv se)) =  eslams'!!idx
                                          evalToEnv [(vn,v), (tn, NumV. NReal $ t)] nm se
                            SigUpdateRule nm e -> do
                                     --putStrLn $ nm++": "++ pp e

@@ -37,7 +37,7 @@ convDecl (B.DStageNeg (B.BIdent b) nsi) = Stage (ident b) . negate $ fromInteger
 unSubst (B.ImpSubstLine (B.BIdent b) e) = (ident b, cE e)
 
 addLamsP [] e = e
-addLamsP (B.Arg (B.PVar (B.BIdent b)):vs) e = addLamsP vs $ Lam (ident b) e
+addLamsP (B.Arg (B.PVar (B.BIdent b)):vs) e = addLamsP vs $ Lam (ident b) UnspecifiedT e
 
 unIdent (B.BIdent b) = (ident b)
 
@@ -58,8 +58,8 @@ cE (B.Or e1 e2) = Or (cE e1) (cE e2)
 cE (B.Not e2) = Not (cE e2)
 cE (B.ECmp e1 op e2) = Cmp (cCmpOp op) (cE e1) (cE e2)
 cE (B.If p c a) = If (cE p) (cE c) (cE a)
-cE (B.Lam (B.PVar (B.BIdent b)) e) = Lam (ident b) $ cE e
-cE (B.Lam (B.PWild) e) = Lam "_" $ cE e
+cE (B.Lam (B.PVar (B.BIdent b)) e) = Lam (ident b) UnspecifiedT $ cE e
+cE (B.Lam (B.PWild) e) = Lam "_" UnspecifiedT $ cE e
 
 cE (B.App e1 e2) = App (cE e1) (cE e2)
 
@@ -114,7 +114,7 @@ conToV B.CTrue = BoolV True
 conToV B.CFalse = BoolV False
 conToV (B.CString s) = StringV s
 
-cPat (B.PVar (B.BIdent b)) = PatVar (ident b)
+cPat (B.PVar (B.BIdent b)) = PatVar (ident b) UnspecifiedT
 cPat (B.PWild) = PatIgnore
 cPat (B.PLit con) = PatLit $ conToV con 
 cPat (B.PPair p1 p2) = PatPair (cPat p1) (cPat p2)

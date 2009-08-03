@@ -93,7 +93,7 @@ eval es (Cmp Ge e1 e2) = applyCmp es (e1) (e2) (>=)
 eval es (Cmp Ne e1 e2) = applyCmp es (e1) (e2) (/=)
 
 
-eval es (Lam nm e) = return $ LamV (\v-> eval (extEnv (nm,v) es) e)
+eval es (Lam nm t e) = return $ LamV (\v-> eval (extEnv (nm,v) es) e)
 {-eval es env (App lam arg) t 
     = do (Lam nm bd) <- eval es env lam t
          ag <- eval es env arg t
@@ -193,7 +193,7 @@ eval es e = fail $"unknown expr: "++show e
 --applyEq (CNum n1) (CNum n2) op = liftBool $ op n1 n2 
 
 match :: Pat -> V -> Maybe [(String, V)]
-match (PatVar nm) vl = Just [(nm, vl)]
+match (PatVar nm t) vl = Just [(nm, vl)]
 match (PatIgnore) _ = Just []
 match (PatLit vl) vl' | vl == vl' = Just []
                       | otherwise = Nothing
@@ -245,7 +245,7 @@ applyNumM2  es e1 e2 f
 
 teval e = unEvalM $ eval emptyEvalS e
 --decr = Lam "x" $ M2 Sub (Var "x") 1 
-add = Lam "x" $ Lam "y" $ M2 Add (Var "x") (Var "y") 
+add = Lam "x" UnspecifiedT $ Lam "y" UnspecifiedT $ M2 Add (Var "x") (Var "y") 
 
 myAdd = App (App add 1) 2
 

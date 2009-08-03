@@ -41,7 +41,7 @@ exprType e (Cons hd tl) (Just (ListT decty))
 exprType e (Case ex pts) _
     = do (pat:pats) <- sequence $ map (\(x,y) -> exprType e y Nothing) pts
          foldM (unifyTypes) pat pats
-exprType e (Lam nm bd) (Just (LamT dnmt dbdt)) = do 
+exprType e (Lam nm t bd) (Just (LamT dnmt dbdt)) = do 
   tbd <- exprType ((nm, dnmt):e) bd (Just dbdt)
   realBdt <- unifyTypes tbd dbdt
   return $ LamT dnmt realBdt
