@@ -186,6 +186,23 @@ addRunToSession decls t0 tmax dt ress sess@(Session basedir sesst0)
         return ()
 
 
+--simpler interface
+saveInSession sess@(Session basedir sesst0) nm t0 dt sig@(SigV t1 t2 sigdt sf) = do
+  let dir = basedir++"/signals/"++nm
+  createDirectoryIfMissing False dir
+  let ntics = round $ t0/dt
+  saveBinary (dir++"/"++showHex ntics "") $ shift t0 sig
+saveInSession sess@(Session basedir sesst0) nm t0 dt lst@(ListV evs) | isEvents lst = do
+  let dir = basedir++"/events/"++nm
+  createDirectoryIfMissing False dir
+  let ntics = round $ t0/dt
+  saveBinary (dir++"/"++showHex ntics "") . reverse $ map (shift t0) evs
+                                                                     | isEpochs lst = do 
+  let dir = basedir++"/durations/"++nm
+  createDirectoryIfMissing False dir
+  let ntics = round $ t0/dt
+  saveBinary (dir++"/"++showHex ntics "") $ map (shift t0) evs
+
 isTrue (BoolV True) = True
 
 isNotFalse (BoolV False) = False

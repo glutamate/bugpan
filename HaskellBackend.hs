@@ -30,13 +30,18 @@ toHask modNm dt tmax ds
     = let (env:stageDs) = splitByStages ds
           nonMainLoop = filter notbanned $ fst (runTravM env [] compilableEnv) 
       in unlines $ ["{-# LANGUAGE NoMonomorphismRestriction #-}",
-                    "module "++capitalize modNm++" where",
+                    --"module "++capitalize modNm++" where",
+                    "module Main where",
                     "",
                     "import Numbers", 
                     "import HaskShapes",
                     "import Data.IORef",
+                    "import System.Environment",
+                    "import System.Time",
                     "import Array",
-                    "import Control.Monad","import EvalM hiding (tmax, dt)","",
+                    "import TNUtils",
+                    "import Database",
+                    "import Control.Monad","import EvalM hiding (tmax, dt)","","default (Int, Double)",
                    "dt="++show dt, "tmax="++show tmax, "npnts="++show(round $ tmax/dt)]++
                    writeBufToSig++
                    map atTopLevel nonMainLoop++["", ""]++
@@ -45,22 +50,40 @@ toHask modNm dt tmax ds
 
 --mapAccum :: (a->b) -> [a] -> [[b]]
 
+rootDir = "/home/tomn/sessions"
+
+mainFun exps = 
+    let ind = "   " in
+          ["main = do",
+           ind++"sessNm:_ <- getArgs",
+           ind++"sess <- loadApproxSession \""++rootDir++"\" sessNm", 
+           ind++"tnow <- getClockTime",
+           ind++"let t0 = diffInS tnow $ tSessionStart sess",
+           ind++inTuple exps++" <- goMain",
+           concatMap (\nm->ind++"saveInSession sess \""++nm++"\" t0 dt $ pack "++nm++"\n") exps,
+           ind++"return ()",
+
+
+           ""
+          ]
+
 writeBufToSig = ["", "bufToSig buf = ",
                          "   let arr = array (0,npnts) $ zip [0..npnts] $ reverse buf",
                          "   in Signal 0 tmax dt $ \\t-> arr!t", ""]
 
 
-compileStages stgs =  "goMain = do ":lns++[ind++"return ()", ""]++stages
+compileStages stgs =  mainFun allStore ++ ["goMain = do "] ++lns++retLine++stages
     where ind = "   " 
+          retLine = [ind++"return "++inTuple allStore, ""]
           lns = map stgLine $ zip stgs [0..]
+          allDs = concat stgs
+          allStore = [ nm | SinkConnect (Var nm) ("store",_) <- allDs]
           exports = map (nub . stageExports)  stgs
           accumExports n = concatMap (\i-> exports!!n) [0..n]
           stgLine (ds,n) = ind++expTuple ((exports!!n++eventExports ds) \\ imps n)++ "goStage"++show n ++" "++(inTuple $ imps n)
           imps n = accumExports (n-1)
           expTuple [] = ""
           expTuple nms = inTuple nms ++ " <- "
-          inTuple [] = "()"
-          inTuple nms = "("++intercalate "," nms++")"
           stages = concatMap comStageLine $ zip stgs [0..]
           comStageLine (ds,n) = compStage ds n (accumExports (n-1)) (exports!!n) ((eventExports ds \\ imps n) \\ (exports!!n))
 

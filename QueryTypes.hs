@@ -183,10 +183,6 @@ instance Shiftable (Signal a) where
     shift ts (Signal t1 t2 dt sf) = Signal (t1+ts) (t2+ts) dt sf 
 
 
-instance Reify a => Reify (Signal a) where
-    reify (SigV t1 t2 dt sf) = Just $ Signal t1 t2 dt $ \ix-> unsafeReify (sf ix)
-    pack (Signal t1 t2 dt sf) = SigV t1 t2 dt $ \ix->pack (sf ix)
-
 individually :: ListT m a -> m [a]
 individually = runListT
 

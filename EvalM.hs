@@ -278,3 +278,8 @@ data Signal a = Signal Double Double Double (Int -> a) deriving Typeable
 
 readSig :: Signal a -> Double -> a
 (Signal t1 t2 dt sf) `readSig` t = sf . round $ (t-t1 )/dt
+
+instance Reify a => Reify (Signal a) where
+    reify (SigV t1 t2 dt sf) = Just $ Signal t1 t2 dt $ \ix-> unsafeReify (sf ix)
+    pack (Signal t1 t2 dt sf) = SigV t1 t2 dt $ \ix->pack (sf ix)
+
