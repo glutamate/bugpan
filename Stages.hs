@@ -27,6 +27,8 @@ splitByStages ds =
         stageDs st = let nms = [ nm | Stage nm s <- ds, s==st ]
                          in [ d | d@(Let nm _) <- ds, nm `elem` nms ]++
                             [ d | d@(SinkConnect _ (('#':nm),_)) <- ds, nm `elem` nms]
+--                            [ d | d@(SinkConnect (Var nm) ("store",_)) <- ds, nm `elem` nms]
+                            
         stagedDecls = map stageDs stages
         unstagedDecls = mainL \\ (concat stagedDecls)
     in (env : stagedDecls) ++ [unstagedDecls]

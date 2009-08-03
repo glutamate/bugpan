@@ -16,4 +16,15 @@ appendIORef ref x = do xs <- readIORef ref
                        writeIORef ref (x:xs)
 
 
+enowAux t dt evs = let nstep t dt = round (t/dt)
+                       dropF (te,_) = nstep te dt > nstep t dt
+                       takeF (te,_) = nstep te dt == nstep t dt
+                   in takeWhile takeF $ dropWhile dropF evs
 
+selSwitch :: [([(Double, a)], Double -> a -> b)] -> b -> b
+selSwitch eslams def = selSwitch' eslams def 0
+
+selSwitch' [] def _ = def
+selSwitch' (([], _):es) def t = selSwitch' es def t
+selSwitch' (((tev,x):_, f):es) def t | tev > t = selSwitch' es (f tev x) tev
+                                     | otherwise = selSwitch' es def t

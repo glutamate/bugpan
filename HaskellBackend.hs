@@ -55,45 +55,97 @@ compileStages stgs =  "goMain = do ":lns++[ind++"return ()", ""]++stages
           lns = map stgLine $ zip stgs [0..]
           exports = map (nub . stageExports)  stgs
           accumExports n = concatMap (\i-> exports!!n) [0..n]
-          stgLine (ds,n) = ind++expTuple (exports!!n)++ "goStage"++show n ++imps n
-          imps n = impTuple $ accumExports (n-1)
+          stgLine (ds,n) = ind++expTuple ((exports!!n++eventExports ds) \\ imps n)++ "goStage"++show n ++" "++(inTuple $ imps n)
+          imps n = accumExports (n-1)
           expTuple [] = ""
           expTuple nms = inTuple nms ++ " <- "
-          impTuple [] = " ()"
-          impTuple nms = " ("++intercalate "," nms++")"
+          inTuple [] = "()"
+          inTuple nms = "("++intercalate "," nms++")"
           stages = concatMap comStageLine $ zip stgs [0..]
-          comStageLine (ds,n) = compStage ds n (accumExports (n-1)) (exports!!n)
+          comStageLine (ds,n) = compStage ds n (accumExports (n-1)) (exports!!n) ((eventExports ds \\ imps n) \\ (exports!!n))
 
-compStage ds n imps exps = ("goStage"++show n++" "++inTuple imps++" = do "):lns
+compStage ds n imps exps evExps = ("goStage"++show n++" "++inTuple imps++" = do "):lns
     where ind = "   "
           loopInd = "       "
           sigs = [ (nm,e) | Let nm (Sig e) <- ds ]
-          lns = initLns ++ initBuffers++ startLoop ++readSigs++writeSigs++returnBuffers++[""]
+          evs = [ nm | Let nm (Event e) <- ds ]
+          comments = ["--imps="++show imps,
+                      "--exps="++show exps,
+                     "--evexps="++show evExps]
+          lns = initLns ++ initBuffers++ startLoop ++readSigs++
+                writeSigs++readSigBuffers++readEventBuffers++returnLine++[""]
+          initLns = concatMap initLn ds
+          initLn (Let nm (Sig e)) = [ind++nm++" <- newIORef undefined"]
+          initLn (Let nm (Switch _ _)) = [ind++nm++" <- newIORef undefined"]
+          initLn (Let nm (SigDelay (Var snm) v0)) = [ind++nm++" <- newIORef "++pp v0]
+          initLn (Let nm (Event e)) = [ind++nm++"Queue <- newIORef []"]
+          --initLn (Let nm (SigDelay (Var snm) v0)) = [ind++nm++" <- newIORef "++pp v0]
+          initLn d = []
+          initBuffers = map (\sig-> ind++sig++"Buf <- newIORef []") exps
           startLoop = [ind++"forM_ [0..npnts-1] $ \\npt -> do", loopInd ++ "let secondsVal = npt*dt"]
-          initLns = map (\sig-> ind++sig++" <- newIORef "++initVal sig) $ map fst sigs
-          initVal sig = "undefined" -- lookup for initial val ?
-          readSigs = map (\sig-> loopInd++sig++"Val <- readIORef "++sig) $ map fst sigs
-          writeSigs = concatMap writeSig sigs
-          writeSig (nm,e) | nm `elem` exps = [loopInd++"let "++nm++"CurVal = "++(pp $ tweakExpr e)
-                                                     ,loopInd++"writeIORef "++nm++" "++nm++"CurVal"
-                                                     ,loopInd++"appendIORef "++nm++"Buf "++nm++"CurVal"
-                                                      ]
-                                             
-                          | otherwise = [loopInd++"writeIORef "++nm++" $ "++(pp $ tweakExpr e)]
-          tweakExpr e = mapE (changeRead . unSharp . unVal) e 
-          unVal (SigVal (Var nm)) = Var (nm++"Val")
+          --readSigs = map (\sig-> loopInd++sig++"Val <- readIORef "++sig) $ map fst sigs
+          readSigs = concatMap readSig ds
+          readSig (Let nm (Sig e)) = [loopInd++nm++"Val <- readIORef "++nm]
+          readSig (Let nm (Switch _ _)) = [loopInd++nm++"Val <- readIORef "++nm]
+          readSig (Let nm (SigDelay (Var snm) v0)) = [loopInd++nm++"Val <- readIORef "++nm]
+          readSig (Let nm (Event _)) = [loopInd++nm++" <- readIORef "++nm++"Queue"]
+          readSig d = []
+          writeSigs = concatMap writeSig ds
+          writeSig (Let nm (Sig e)) | nm `elem` exps = calcAndBuffer (nm, e)
+                                    | otherwise = [loopInd++"let "++nm++"Val = "++(pp $ tweakExpr e)
+                                                  ,loopInd++"writeIORef "++nm++" "++nm++"Val"]
+          writeSig (Let nm (Event e)) = [loopInd++nm++" <- return $ ("++(pp $tweakExpr e)++")++"++nm, --SORT THESE!!!!
+                                        loopInd++"writeIORef "++nm++"Queue "++nm]
+          writeSig (Let nm s@(Switch ses se)) = switch nm ses se
+          writeSig d = []
+          switch nm ses se = [loopInd++"let "++nm++"Switch = ["++
+                              (intercalate "," $ map switchLine ses)++"]",
+                             loopInd++"let "++nm++"Val = selSwitch "++nm++"Switch ("++
+                             (pp . unSig $ tweakExpr se)++")"
+                             ,loopInd++"writeIORef "++nm++" "++nm++"Val"
+                             ]++maybeExp nm
+          maybeExp nm = (if nm `elem` exps then [loopInd++"appendIORef "++nm++"Buf "++nm++"Val"] else [])
+          switchLine ((Var nm), esLam) = "("++nm++", "++(pp $ tweakEslam esLam)++")"
+          calcAndBuffer (nm, e) = [loopInd++"let "++nm++"Val = "++(pp  $ tweakExpr e)
+                                  ,loopInd++"writeIORef "++nm++" "++nm++"Val"
+                                  ,loopInd++"appendIORef "++nm++"Buf "++nm++"Val"
+                                  ]
+          readSigBuffers = map (\nm->ind++nm++"BufVal <- readIORef "++nm++"Buf") exps
+          readEventBuffers = map evQ evExps
+          evQ nm | nm `elem` evs = ind++nm++"QVal <- readIORef "++nm++"Queue"
+                 | otherwise = ind++"let "++nm++"QVal = "++nm
+          returnLine = [ind++"return "++(inTuple $ map (\nm-> "bufToSig "++nm++"BufVal") exps ++ map (++"QVal") evExps)]
+
+tweakExpr e = mapE (changeRead . unSharp . unVal) e 
+    where unVal (SigVal (Var nm)) = Var (nm++"Val")
           unVal e = e
           unSharp (Var ('#':nm)) = Var nm
           unSharp e = e
-          changeRead (SigAt t s) = (App (App (Var "readSig") (t)) s)
+          changeRead (SigAt t s) = (App (App (Var "readSig") (s)) t)
           changeRead e = e
-          initBuffers = map (\sig-> ind++sig++"Buf <- newIORef []") exps
-          returnBuffers = [ind++"return "++(inTuple $ map (\nm-> "bufToSig "++nm) exps) ]
+
+tweakEslam = tweakEslam' . tweakExpr
+
+tweakEslam' (Lam t (Lam v (Sig s))) = (Lam t (Lam v s))
+tweakEslam' (Lam t (Lam v (Var nm))) = (Lam t (Lam v (Var $ nm++"Val")))
+tweakEslam' e = e
+
+unSig (Sig s) = s
+unSig e = e
+
+test :: IO ()
+test = do let xs = []
+          xs <- return $ 1:xs -- xs refers to above, not recursive
+          print $ take 5 xs -- [1]
+
+
 
 inTuple nms = "("++intercalate "," nms++")"
 
 --stageExports ds = [ nm | SinkConnect (Var nm) ("store",_) <- ds]
 stageExports ds = [ nm | SinkConnect (Var nm) ('#':_,_) <- ds]
+
+eventExports ds = [ nm | SinkConnect (Var nm) ("store",_) <- ds] \\ stageExports ds
 
 capitalize :: String -> String
 capitalize [] = []
