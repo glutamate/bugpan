@@ -274,3 +274,7 @@ unsafeReify = fromJust . reify
 
 --(Signal t1 t2 dt sf)
 data Signal a = Signal Double Double Double (Int -> a) deriving Typeable
+
+
+readSig :: Signal a -> Double -> a
+(Signal t1 t2 dt sf) `readSig` t = sf . round $ (t-t1 )/dt

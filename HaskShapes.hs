@@ -17,6 +17,3 @@ appendIORef ref x = do xs <- readIORef ref
 
 
 
-bufToSig buf dt tmax nsteps = 
-    let arr = array (0,nsteps) $ zip [0..nsteps] $ reverse buf
-    in Signal 0 tmax dt  $ \t-> arr!t

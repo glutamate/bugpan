@@ -33,13 +33,22 @@ toHask modNm dt tmax ds
                     "module "++capitalize modNm++" where",
                     "",
                     "import Numbers", 
-                    "import HaskShapes","import Data.IORef","import Control.Monad","",
+                    "import HaskShapes",
+                    "import Data.IORef",
+                    "import Array",
+                    "import Control.Monad","import EvalM hiding (tmax, dt)","",
                    "dt="++show dt, "tmax="++show tmax, "npnts="++show(round $ tmax/dt)]++
+                   writeBufToSig++
                    map atTopLevel nonMainLoop++["", ""]++
                    compileStages stageDs++["", ""]++["{-"]++
                    concatMap (\ds-> "\na stage":map ppDecl ds) stageDs++["-}"]
 
 --mapAccum :: (a->b) -> [a] -> [[b]]
+
+writeBufToSig = ["", "bufToSig buf = ",
+                         "   let arr = array (0,npnts) $ zip [0..npnts] $ reverse buf",
+                         "   in Signal 0 tmax dt $ \\t-> arr!t", ""]
+
 
 compileStages stgs =  "goMain = do ":lns++[ind++"return ()", ""]++stages
     where ind = "   " 
@@ -59,24 +68,27 @@ compStage ds n imps exps = ("goStage"++show n++" "++inTuple imps++" = do "):lns
     where ind = "   "
           loopInd = "       "
           sigs = [ (nm,e) | Let nm (Sig e) <- ds ]
-          lns = initLns ++ initBuffers++ startLoop ++readSigs++writeSigs++[""]
+          lns = initLns ++ initBuffers++ startLoop ++readSigs++writeSigs++returnBuffers++[""]
           startLoop = [ind++"forM_ [0..npnts-1] $ \\npt -> do", loopInd ++ "let secondsVal = npt*dt"]
           initLns = map (\sig-> ind++sig++" <- newIORef "++initVal sig) $ map fst sigs
           initVal sig = "undefined" -- lookup for initial val ?
           readSigs = map (\sig-> loopInd++sig++"Val <- readIORef "++sig) $ map fst sigs
-          writeSigs = map writeSig sigs
-          writeSig (nm,e) | nm `elem` exps = unlines [loopInd++"let "++nm++"CurVal = "++(pp $ tweakExpr e)
+          writeSigs = concatMap writeSig sigs
+          writeSig (nm,e) | nm `elem` exps = [loopInd++"let "++nm++"CurVal = "++(pp $ tweakExpr e)
                                                      ,loopInd++"writeIORef "++nm++" "++nm++"CurVal"
                                                      ,loopInd++"appendIORef "++nm++"Buf "++nm++"CurVal"
                                                       ]
                                              
-                          | otherwise = loopInd++"writeIORef "++nm++" $ "++(pp $ tweakExpr e)
-          tweakExpr e = mapE (unSharp . unVal) e 
+                          | otherwise = [loopInd++"writeIORef "++nm++" $ "++(pp $ tweakExpr e)]
+          tweakExpr e = mapE (changeRead . unSharp . unVal) e 
           unVal (SigVal (Var nm)) = Var (nm++"Val")
           unVal e = e
           unSharp (Var ('#':nm)) = Var nm
           unSharp e = e
+          changeRead (SigAt t s) = (App (App (Var "readSig") (t)) s)
+          changeRead e = e
           initBuffers = map (\sig-> ind++sig++"Buf <- newIORef []") exps
+          returnBuffers = [ind++"return "++(inTuple $ map (\nm-> "bufToSig "++nm) exps) ]
 
 inTuple nms = "("++intercalate "," nms++")"
 
