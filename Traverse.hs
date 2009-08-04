@@ -23,6 +23,14 @@ data TravS = TravS { counter :: Int,
 
 type TravM = StateT TravS Identity
 
+alterDefinition :: String -> (E->E) -> TravM ()
+alterDefinition nm f = do 
+  ds <- decls `fmap` get
+  let line = [ (def,lnum) | (Let nm1 def ,lnum) <- zip ds [0..], nm==nm1]
+  case line of
+    (e, num):_ -> setter $ \s-> s { decls = setIdx num (Let nm $ f e) ds }
+    [] -> return ()
+
 clearTyConstraints :: TravM ()
 clearTyConstraints = setter (\s-> s {tyConstraints = []})
 
@@ -35,7 +43,10 @@ traceDecls = do ds <- decls `fmap` get
 
 traceTyConstraints :: TravM ()
 traceTyConstraints = do tcs <- tyConstraints `fmap` get
-                        mapM_ (\(t1,t2)->traceM $ ppType t1++" `U` "++ppType t2++"\n") tcs
+                        mapM_ (\(t1,t2)->traceM $ ppType t1++" `U` "++ppType t2) tcs
+
+traceConstraints :: [(T,T)] -> TravM ()
+traceConstraints = mapM_ (\(t1,t2)->traceM $ ppType t1++" `U` "++ppType t2)
 
 guardM :: MonadPlus m => m Bool -> m ()
 guardM mb = mb >>= guard
@@ -187,6 +198,13 @@ safeLookUp nm = do env <- env `fmap` get
     where lookUpInDecls = do ds <- declsToEnv `fmap` decls `fmap` get
                              return $ L.lookup nm ds
           
+insertAtTop :: [Declare] -> TravM ()
+insertAtTop [] = return ()
+insertAtTop ds = markChange >> (setter $ \s-> let ln = lineNum s
+                                                  ds' = ds ++ decls s
+                                               in s { decls = ds', lineNum = ln+length ds })
+
+
 insertAtEnd :: [Declare] -> TravM ()
 insertAtEnd [] = return ()
 insertAtEnd ds = markChange >> (setter $ \s -> s {decls = decls s ++ ds})

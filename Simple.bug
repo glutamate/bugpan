@@ -1,0 +1,12 @@
+module Simple where 
+
+
+--incr :: Num -> Num
+incr x =  x+1
+
+--add :: Num -> Num -> Num
+add x y = x+y
+
+val = incr 3
+
+id x = x
