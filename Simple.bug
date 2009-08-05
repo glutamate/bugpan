@@ -14,11 +14,11 @@ myInt = id 3
 
 myBool = id true
 
---min = \x->\y->if x > y then y else x
---max = \x->\y->if x < y then y else x
+min = \x->\y->if x > y then y else x
+max = \x->\y->if x < y then y else x
 
---fst :: (a,b) -> a
---fst = \pr->case pr of (x,_) -> x
+fst :: (a,b) -> a
+fst = \pr->case pr of (x,_) -> x
 --snd = \pr->case pr of (_,x) -> x
 
---myCons x xs = x:xs
+myCons x xs = x:xs

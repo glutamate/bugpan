@@ -214,15 +214,32 @@ checkTy (Cmp op e1 e2) = do t1 <- checkTy e1
                             addTyConstraint (t1, NumT Nothing)
                             addTyConstraint (t2, NumT Nothing)
                             return BoolT
-{-checkTy (Nil) = do telem <- UnknownT `fmap` (genSym "checkNil")
-                   addTyConstraint (ListT telem, t)
-                   return t
---checkTy (Cons x xs) (ListT te) = do 
-checkTy (Cons x xs) = do telem <- UnknownT `fmap` (genSym "checkCons")
-                         addTyConstraint (ListT telem,t)
-                         checkTy x telem
-                         checkTy xs t
-                         return t -}
+checkTy (Nil) = do telem <- UnknownT `fmap` (genSym "checkNil")
+                   return $ ListT telem
+checkTy (Cons x xs) = do ty1 <- checkTy x 
+                         ty2 <- checkTy xs
+                         let ty = ListT ty1
+                         addTyConstraint (ty2,ty)
+                         return ty
+checkTy (Case e pates) = do t1 <- checkTy e
+                            forM_ pates \(pat,e) -> do
+                              patTy <- tyPat pat
+                              
+
+tyPat :: Pat -> TravM T
+tyPat (PatVar nm t) = return t
+tyPat (PatLit v) = return $ typeOfVal v
+tyPat (PatIgnore) = UnknownT `fmap` (genSym "patIgnore")
+tyPat (PatNil) = (ListT . UnknownT) `fmap` (genSym "patIgnore")
+tyPat (PatPair p1 p2) = do t1 <- tyPat p1
+                           t2 <- tyPat p2
+                           return $ PairT t1 t2
+tyPat (PatCons p1 p2) = do t1 <- tyPat p1
+                           t2 <- tyPat p2
+                           let ty = ListT t1
+                           addTyConstraint (t2,ty)
+                           return ty                   
+
 --checkTy e = return t
 
 tyFail s = fail $ "Type check fails: "++concat s
