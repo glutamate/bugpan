@@ -10,6 +10,8 @@ import TNUtils
 import Data.Maybe
 import Data.List
 import BuiltIn
+import Data.Ord
+import Debug.Trace
 
 allDeclaredTypes :: TravM [(String, T)]
 allDeclaredTypes = do
@@ -20,9 +22,9 @@ typeCheck :: TravM ()
 typeCheck = do addBuiltinsTypeAnnos
                labelUnspecifiedTypes 
                deriveTypeConstraints 
-               traceM ""
-               traceM "derived constraints"
-               traceTyConstraints
+               --traceM ""
+               --traceM "derived constraints"
+               --traceTyConstraints
                solveConstraints
                traceM ""
                traceM "unified constraints"
@@ -95,16 +97,21 @@ deriveTypeConstraints  = do decTys <- allDeclaredTypes
 
 solveConstraints :: TravM ()
 solveConstraints = do constrs <- tyConstraints `fmap` get
-                      let constrs' = nub . unify . addRepetitions $ constrs 
+                      let constrs' = nub . unify {-. addRepetitions $ -} $ constrs 
                       traceM ""
                       traceM "added repetitins"
-                      traceConstraints . nub . addRepetitions $ constrs 
+                      traceConstraints . addRepetitions $ constrs 
                       setter $ \s-> s {tyConstraints = constrs'}
 
 addRepetitions :: [(T,T)] -> [(T,T)]
-addRepetitions constrs = constrs ++ concatMap aR' constrs
-    where aR' p = aR p ++ (aR . swap $ p) 
-          aR (t1@(UnknownT unm),t2) = 
+addRepetitions constrs = let repts = concatMap aR' . nub $ constrs 
+                             newrepts = concatMap aR' . nub $ repts in
+                         --trace ("addreps :"++show constrs) $
+                         if null newrepts 
+                            then constrs ++ repts
+                            else constrs ++ repts ++ (addRepetitions newrepts)
+    where aR' p = aR p -- ++ (aR . swap $ p) 
+          aR (t1,t2) | hasUnknownT t1 = 
               let others = [ ot | (thisTy, ot) <- constrs, ot /= t2, thisTy == t1 ]++
                            [ ot | (ot, thisTy) <- constrs, ot /= t2, thisTy == t1 ]
               in combinations $ t2:others
@@ -112,6 +119,8 @@ addRepetitions constrs = constrs ++ concatMap aR' constrs
           aR _ = []
 --combinations . map snd . filter ((/=t2) . snd) . filter ((==t1) . fst) $ constrs
  
+hasUnknownT t = not . null $ [() | UnknownT _ <- flatT t]
+
 combinations :: [a] -> [(a,a)]
 combinations [] = []
 combinations (x:xs) = map ((,) x) xs ++ combinations xs
@@ -126,10 +135,10 @@ applySolution = do cns <- tyConstraints `fmap` get
             traceM "new constraints :"
             --lookup ut in cns
             let oldMatches = zip (lookupMany ut cns) $ repeat newTy
-            let newConstrs = ((ut,newTy):oldMatches++cns)
+            let newConstrs = unify ((ut,newTy):oldMatches++cns)
             --unity also ut with other
-            --traceConstraints $  unify ((ut,newTy):cns)
-            alterDefinition nm . substTyInE $ unify newConstrs
+            traceConstraints $  newConstrs
+            alterDefinition nm . substTyInE $  newConstrs
             return $ DeclareType nm newTy
           aS _ d = return d
 
@@ -167,7 +176,7 @@ checkTy (App e1 e2) tfinal = do targ <- UnknownT `fmap` (genSym "checkApp")
                                                            return tfinal1
                                   t -> tyFail [ppType t," does not match ",
                                                ppType targ,"->", ppType tfinal] 
-checkTy e@(Lam nm targ bd) tlam = do tfinal <- UnknownT `fmap` (genSym "checkLam")
+checkTy e@(Lam nm targ bd) tlam = do tfinal <- UnknownT `fmap` (genSym $ "lam_"++nm)
                                      addTyConstraint (tlam, LamT targ tfinal)
                                      tfinal1 <- withPath e $ checkTy bd tfinal
                                      return $ LamT targ tfinal1
@@ -180,17 +189,40 @@ checkTy (M2 op e1 e2) t = do addTyConstraint (t, NumT Nothing)
                              addTyConstraint (t1, t2)
                              addTyConstraint (t1, t)
                              return t
-                                                            
+checkTy (Cmp op e1 e2) t = do addTyConstraint (t, BoolT)
+                              t1 <- checkTy e1 (NumT Nothing) 
+                              t2 <- checkTy e2 (NumT Nothing)
+                              addTyConstraint (t1, t2)
+                              return BoolT
+checkTy (Nil) t = do telem <- UnknownT `fmap` (genSym "checkNil")
+                     addTyConstraint (ListT telem, t)
+                     return t
+--checkTy (Cons x xs) (ListT te) = do 
+checkTy (Cons x xs) t = do telem <- UnknownT `fmap` (genSym "checkCons")
+                           addTyConstraint (ListT telem,t)
+                           checkTy x telem
+                           checkTy xs t
+                           return t
 checkTy e t = return t
 
 tyFail s = fail $ "Type check fails: "++concat s
 
 threeToPairR (a,b,c) = (a, (b,c))
 
+pivot :: String -> [(T,T)] -> ([(T,T)], [(T,T)])
+pivot unm constrs =trace ("pivot " ++ unm) (uniT, constrs')
+    where (uniT, constrs') = partition p constrs
+          p (UnknownT u1, UnknownT u2) = u1 == unm || u2 == unm
+          p _ = False
+          uniT' = map maybeSwap uniT
+          maybeSwap c@(UnknownT u1, UnknownT u2) | u2 == unm = (UnknownT u2, UnknownT u1)
+                                                 | otherwise = c
+
 unify :: [(T,T)] -> [(T,T)]
 unify [] = []
-unify (c@(UnknownT unm, UnknownT unm1):constrs) | unm == unm1 = unify constrs
-                                                | otherwise = c:unify constrs
+unify (c@(t@(UnknownT unm), UnknownT unm1):constrs) | unm == unm1 = unify constrs
+                                                    | otherwise = let (uniT, constrs' ) = (pivot unm constrs)
+                                                                  in  trace (show uniT) $  (c:uniT)++ (unify constrs')
 unify (c@(UnknownT unm, t2):constrs) = c:unify constrs
 unify (c@(t1, UnknownT unm):constrs) = swap c:unify constrs
 unify ((LamT t1 t2, LamT t3 t4):constrs) = unify $ constrs++[(t1, t3), (t2,t4)]
@@ -207,15 +239,28 @@ s ++^ ty = s++(ppType ty)
 swap (a,b) = (b,a)
 
 substT :: [(T,T)] -> T -> T
-substT subs t = if t `elem` (map fst subs) 
-                   then substT subs . fromJust $ lookup t subs
-                   else recSubstT subs t
+substT subs t = 
+   {- trace (ppType t) $-} if t `elem` (map fst subs) 
+                              then substT subs . mostSpecific $ lookupMany t subs
+                              else recSubstT subs t
 
 recSubstT :: [(T,T)] -> T -> T
 recSubstT subs (PairT t1 t2) = PairT (substT subs t1) (substT subs t2)
 recSubstT subs (LamT t1 t2) = LamT (substT subs t1) (substT subs t2)
 recSubstT subs (ListT t1) = ListT (substT subs t1)
 recSubstT subs t = t 
+
+mostSpecific :: [T] -> T
+mostSpecific = maximumBy (comparing rank)
+    where rank (TyVar _) = 5
+          rank (UnknownT _) = 4
+          rank (NumT (Just _)) = 7
+          rank (NumT Nothing) = 6
+          rank _ = 7
+
+maximumOn :: Ord b => (a->b) -> [a] -> a
+maximumOn f xs = fst . maximumBy (comparing snd) $ zip xs (map f xs)
+               
 
 refresh :: T -> TravM T
 refresh t = do 

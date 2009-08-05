@@ -2,11 +2,24 @@ module Simple where
 
 
 --incr :: Num -> Num
-incr x =  x+1
+--incr x =  x+1
 
 --add :: Num -> Num -> Num
-add x y = x+y
+--add x y = x+y
 
-val = incr 3
+--val = incr 3
 
 id x = x
+
+myInt = id 3
+
+myBool = id true
+
+--min = \x->\y->if x > y then y else x
+--max = \x->\y->if x < y then y else x
+
+--fst :: (a,b) -> a
+--fst = \pr->case pr of (x,_) -> x
+--snd = \pr->case pr of (_,x) -> x
+
+--myCons x xs = x:xs
