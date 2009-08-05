@@ -22,9 +22,10 @@ typeCheck :: TravM ()
 typeCheck = do addBuiltinsTypeAnnos
                labelUnspecifiedTypes 
                deriveTypeConstraints 
-               --traceM ""
-               --traceM "derived constraints"
-               --traceTyConstraints
+               traceDecls
+               traceM ""
+               traceM "derived constraints"
+               traceTyConstraints
                solveConstraints
                traceM ""
                traceM "unified constraints"
@@ -72,35 +73,37 @@ labelUnspecifiedTypes = mapDE (mapEM lUT) >> topLevelMap
                                                    return d
           lUT' _ d = return d
 
-symbolType :: String -> TravM T
+symbolType :: String -> TravM (T, Bool)
 symbolType nm = do path <- exprPath `fmap` get
                    --mayDefs <- ca mapM (definesTy nm) path
                    case catMaybes $ map (definesTy nm) path of
                      [] ->  lookupGlobal nm
-                     (t:_) -> return t
+                     (t:_) -> return (t, False)
     where definesTy :: String -> E -> Maybe T
           definesTy nm (Lam nm1 t _) | nm== nm1 = Just t
                                      | otherwise = Nothing
           definesTy nm (LetE assocs _) = (fst) `fmap` (lookup nm $ map threeToPairR assocs)
           definesTy _ _ = Nothing
-          lookupGlobal :: String -> TravM T
+          lookupGlobal :: String -> TravM (T,Bool)
           lookupGlobal nm = do decTys <- allDeclaredTypes
-                               return . fromJust $ lookup nm decTys
+                               return (fromJust $ lookup nm decTys, True)
 
 deriveTypeConstraints :: TravM ()
 deriveTypeConstraints  = do decTys <- allDeclaredTypes
                             forM_ decTys $ \(nm,t)-> do
                               mdefn <- safeLookUp nm
                               case mdefn of
-                                Just defn -> checkTy defn t >> return ()
+                                Just defn -> do tcalc <- checkTy defn
+                                                addTyConstraint (t,tcalc)
+                                                return ()
                                 Nothing -> return ()
 
 solveConstraints :: TravM ()
 solveConstraints = do constrs <- tyConstraints `fmap` get
-                      let constrs' = nub . unify {-. addRepetitions $ -} $ constrs 
-                      traceM ""
-                      traceM "added repetitins"
-                      traceConstraints . addRepetitions $ constrs 
+                      let constrs' = nub . map (\(n,t)-> (UnknownT n, t)) . solve {-. addRepetitions $ -} $ constrs 
+                      --traceM ""
+                      --traceM "solved repetitins"
+                      --traceConstraints {-. addRepetitions $ -} constrs'
                       setter $ \s-> s {tyConstraints = constrs'}
 
 addRepetitions :: [(T,T)] -> [(T,T)]
@@ -129,16 +132,17 @@ applySolution :: TravM ()
 applySolution = do cns <- tyConstraints `fmap` get
                    mapD (aS cns)
     where aS cns (DeclareType nm ut@(UnknownT _)) = do
-            let newTy =  makePoly $ substT cns ut
-            traceM ""
-            traceM $ "foo: "++^ut++" --> "++^newTy
-            traceM "new constraints :"
+            let newTy =  {- makePoly $ -} substT cns ut
+            let newCns = ((ut,newTy):cns)
+            --traceM ""
+            --traceM $ "foo: "++^ut++" --> "++^newTy
+            --traceM "new constraints :"
             --lookup ut in cns
-            let oldMatches = zip (lookupMany ut cns) $ repeat newTy
-            let newConstrs = unify ((ut,newTy):oldMatches++cns)
+            --let oldMatches = zip (lookupMany ut cns) $ repeat newTy
+            --let newConstrs = unify ((ut,newTy):oldMatches++cns)
             --unity also ut with other
-            traceConstraints $  newConstrs
-            alterDefinition nm . substTyInE $  newConstrs
+            --traceConstraints $  newConstrs
+            alterDefinition nm . substTyInE $ newCns -- newConstrs
             return $ DeclareType nm newTy
           aS _ d = return d
 
@@ -156,54 +160,64 @@ makePoly t = let unknowns = [ UnknownT nm | UnknownT nm <- flatT t]
 
 unitList x = [x]
 
-checkTy :: E -> T -> TravM T
-checkTy (If p c a) t = do checkTy p BoolT
-                          checkTy c t
-                          checkTy a t
-                          return t
-checkTy (Var nm) t = do vty <- symbolType nm
-                        vtyRefresh <- refresh vty
-                        addTyConstraint (vtyRefresh, t)
-                        return t
-checkTy (Const v) t@(UnknownT nm) = do addTyConstraint (typeOfVal v, t)
-                                       return $ typeOfVal v
-checkTy (Const v) t | typeOfVal v `isSubtypeOf` t = return t
-                    | otherwise = tyFail [ppVal v," is not of type ",ppType t]
-checkTy (App e1 e2) tfinal = do targ <- UnknownT `fmap` (genSym "checkApp")
-                                lt1 <- checkTy e1 (LamT targ tfinal)
-                                case lt1 of 
-                                  LamT targ1 tfinal1 -> do checkTy e2 targ1
-                                                           return tfinal1
-                                  t -> tyFail [ppType t," does not match ",
-                                               ppType targ,"->", ppType tfinal] 
-checkTy e@(Lam nm targ bd) tlam = do tfinal <- UnknownT `fmap` (genSym $ "lam_"++nm)
-                                     addTyConstraint (tlam, LamT targ tfinal)
-                                     tfinal1 <- withPath e $ checkTy bd tfinal
-                                     return $ LamT targ tfinal1
-checkTy (Pair e1 e2) t@(PairT t1 t2) = do checkTy e1 t1
-                                          checkTy e2 t2
-                                          return t
-checkTy (M2 op e1 e2) t = do addTyConstraint (t, NumT Nothing)
-                             t1 <- checkTy e1 t 
-                             t2 <- checkTy e2 t 
-                             addTyConstraint (t1, t2)
-                             addTyConstraint (t1, t)
-                             return t
-checkTy (Cmp op e1 e2) t = do addTyConstraint (t, BoolT)
-                              t1 <- checkTy e1 (NumT Nothing) 
-                              t2 <- checkTy e2 (NumT Nothing)
-                              addTyConstraint (t1, t2)
-                              return BoolT
-checkTy (Nil) t = do telem <- UnknownT `fmap` (genSym "checkNil")
-                     addTyConstraint (ListT telem, t)
-                     return t
+constraintsOf gctx e = constr [] e
+    where constr ctx (Var nm) =
+              case lookup nm ctx of
+                Just t -> return t
+                Nothing -> case lookup nm gctx of
+                             Just t -> do ty <- refresh t
+                                          return ty
+                             Nothing -> error $ "cannot find "++nm
+
+--          constr ctx (Const v) = 
+
+checkTy :: E -> TravM T
+checkTy (If p c a) = do tp <- checkTy p 
+                        tc <- checkTy c
+                        ta <- checkTy a
+                        addTyConstraint (tp, BoolT)
+                        addTyConstraint (tc, ta)                       
+                        return tc
+checkTy (Var nm) = do (vty, isGlobal) <- symbolType nm 
+                      if isGlobal
+                         then do reTy <- refresh vty
+                                 traceM2 "original" vty 
+                                 traceM2 "refreshed" reTy 
+                                 return reTy
+                         else return vty                     
+checkTy (Const v) = return $ typeOfVal v
+checkTy (App e1 e2) = do t1 <- checkTy e1
+                         t2 <- checkTy e2
+                         ty <- UnknownT `fmap` (genSym "checkApp")
+                         addTyConstraint (t1, LamT t2 ty)
+                         return ty
+
+checkTy e@(Lam nm targ bd) = do tres <- withPath e $ checkTy bd
+                                --addTyConstraint (
+                                return $ LamT targ tres
+checkTy (Pair e1 e2) = do t1 <- checkTy e1
+                          t2 <- checkTy e1
+                          return $ PairT t1 t2
+checkTy (M2 op e1 e2) = do t1 <- checkTy e1 
+                           t2 <- checkTy e2 
+                           addTyConstraint (t1, NumT Nothing)
+                           addTyConstraint (t2, NumT Nothing)
+                           return t1
+checkTy (Cmp op e1 e2) = do t1 <- checkTy e1 
+                            t2 <- checkTy e2 
+                            addTyConstraint (t1, NumT Nothing)
+                            addTyConstraint (t2, NumT Nothing)
+                            return BoolT
+{-checkTy (Nil) = do telem <- UnknownT `fmap` (genSym "checkNil")
+                   addTyConstraint (ListT telem, t)
+                   return t
 --checkTy (Cons x xs) (ListT te) = do 
-checkTy (Cons x xs) t = do telem <- UnknownT `fmap` (genSym "checkCons")
-                           addTyConstraint (ListT telem,t)
-                           checkTy x telem
-                           checkTy xs t
-                           return t
-checkTy e t = return t
+checkTy (Cons x xs) = do telem <- UnknownT `fmap` (genSym "checkCons")
+                         addTyConstraint (ListT telem,t)
+                         checkTy x telem
+                         checkTy xs t
+                         return t -}
+--checkTy e = return t
 
 tyFail s = fail $ "Type check fails: "++concat s
 
@@ -217,6 +231,30 @@ pivot unm constrs =trace ("pivot " ++ unm) (uniT, constrs')
           uniT' = map maybeSwap uniT
           maybeSwap c@(UnknownT u1, UnknownT u2) | u2 == unm = (UnknownT u2, UnknownT u1)
                                                  | otherwise = c
+--plzoo poly
+solve :: [(T,T)] -> [(String,T)]
+solve eqs = solv eqs []
+    where solv :: [(T,T)] -> [(String,T)] -> [(String,T)]
+          solv [] sbst = sbst
+          solv ((PairT t1 t2, PairT t3 t4):eq) sbst = solv ((t1, t3):(t2,t4):eq) sbst
+          solv ((LamT t1 t2, LamT t3 t4):eq) sbst = solv ((t1, t3):(t2,t4):eq) sbst
+          solv ((ListT t1, ListT t3):eq) sbst = solv ((t1, t3):eq) sbst
+          solv ((t1@(UnknownT nm), t2):eq) sbst | t1 == t2 = solv eq sbst
+                                                | not (t1 `partOfTy` t2) =
+                                                    let ts = substT [(t1, t2)] in
+                                                    solv (map (\(ty1, ty2) -> (ts ty1, ts ty2)) eq)
+                                                         ((nm, t2):(map (\(s,t) -> (s, ts t)) sbst))
+                                                | otherwise = error $ "cannot unify: "++^t1 ++"="++^t2
+          solv ((t2, t1@(UnknownT nm)):eq) sbst | not (t1 `partOfTy` t2) =
+                                                    let ts = substT [(t1, t2)] in
+                                                    solv (map (\(ty1, ty2) -> (ts ty1, ts ty2)) eq)
+                                                         ((nm, t2):(map (\(s,t) -> (s, ts t)) sbst))
+                                                | otherwise = error $ "cannot unify: "++^t2 ++"="++^t1
+          solv ((t1,t2):eq) sbst | t1 == t2 || 
+                                   t1 `isSubtypeOf` t2 || 
+                                   t2 `isSubtypeOf` t1 =  solv eq sbst
+                                 | otherwise = error $ "cannot unify: "++^t1 ++"="++^t2
+
 
 unify :: [(T,T)] -> [(T,T)]
 unify [] = []
@@ -241,7 +279,7 @@ swap (a,b) = (b,a)
 substT :: [(T,T)] -> T -> T
 substT subs t = 
    {- trace (ppType t) $-} if t `elem` (map fst subs) 
-                              then substT subs . mostSpecific $ lookupMany t subs
+                              then substT subs . {- mostSpecific -} head $ lookupMany t subs
                               else recSubstT subs t
 
 recSubstT :: [(T,T)] -> T -> T
@@ -265,13 +303,18 @@ maximumOn f xs = fst . maximumBy (comparing snd) $ zip xs (map f xs)
 refresh :: T -> TravM T
 refresh t = do 
   let tVars = tyVarsIn t
-  freshes <- mapM genSym tVars
-  return $ substT (zip (map TyVar tVars) (map UnknownT freshes)) t
+  freshes <- mapM (genSym . tyVarName) tVars
+  return $ substT (zip tVars (map UnknownT freshes)) t
 
 
 tyVarsIn t = catMaybes . map tVI $ flatT t
-             where tVI (TyVar s) = Just s
+             where tVI t@(TyVar s) = Just t
+                   tVI t@(UnknownT s) = Just t
                    tVI _ = Nothing
+
+tyVarName (TyVar s) = s
+tyVarName (UnknownT s) = s
+tyVarName t = ppType t
 
 partOfTy t1 t2 = t1 `elem` flatT t2
 
