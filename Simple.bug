@@ -10,7 +10,7 @@ incr x =  x+1
 --val = incr 3
 
 id x = x
---myInt = id 3
+myInt = id 3
 
 myBool = id true
 

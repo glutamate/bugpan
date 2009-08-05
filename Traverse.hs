@@ -31,6 +31,14 @@ alterDefinition nm f = do
     (e, num):_ -> setter $ \s-> s { decls = setIdx num (Let nm $ f e) ds }
     [] -> return ()
 
+alterTypeDefinition :: String -> T -> TravM ()
+alterTypeDefinition nm t = do 
+  ds <- decls `fmap` get
+  let line = [ (def,lnum) | (DeclareType nm1 def ,lnum) <- zip ds [0..], nm==nm1]
+  case line of
+    (e, num):_ -> setter $ \s-> s { decls = setIdx num (DeclareType nm t) ds }
+    [] -> return ()
+
 clearTyConstraints :: TravM ()
 clearTyConstraints = setter (\s-> s {tyConstraints = []})
 

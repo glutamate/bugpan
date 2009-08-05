@@ -18,19 +18,27 @@ allDeclaredTypes = do
   ds <- decls `fmap` get
   return [(nm, t) | DeclareType nm t <- ds]
 
+allDefinitions :: TravM [Declare]
+allDefinitions = do
+  ds <- decls `fmap` get
+  return [l | l@(Let nm e) <- ds]
+
+
 typeCheck :: TravM ()
 typeCheck = do addBuiltinsTypeAnnos
-               labelUnspecifiedTypes 
-               deriveTypeConstraints 
-               traceDecls
-               traceM ""
-               traceM "derived constraints"
-               traceTyConstraints
-               solveConstraints
-               traceM ""
-               traceM "unified constraints"
-               traceTyConstraints
-               applySolution
+               defs <- allDefinitions
+               mapM_ tyCheckD defs
+               --labelUnspecifiedTypes 
+               --deriveTypeConstraints 
+               --traceDecls
+               --traceM ""
+               --traceM "derived constraints"
+               --traceTyConstraints
+               --solveConstraints
+               --traceM ""
+               --traceM "unified constraints"
+               --traceTyConstraints
+               --applySolution
                traceDecls
                
 
@@ -49,22 +57,36 @@ typeCheck = do addBuiltinsTypeAnnos
                                       in error err
           tc d = return d -}
 
+tyCheckD d@(Let nm e)=do decTys <- allDeclaredTypes
+                         clearTyConstraints
+                         case lookup nm decTys of
+                           Just t -> do tinf <- checkTy e
+                                        if t == tinf
+                                           then return ()
+                                           else tyFail ["expected: ", ppType t, ", inferred: ", ppType tinf]
+                           Nothing -> do e' <- mapEM lUT e
+                                         t <- UnknownT `fmap` genSym nm
+                                         insertBefore [DeclareType nm t]
+                                         tcalc <- checkTy e'
+                                         addTyConstraint (t,tcalc)
+                                         traceM2 "solving for " nm
+                                         traceTyConstraints
+                                         solveConstraints
+                                         applySolution
+                                         markChange
+                                         --alterDefinition nm $ const e'
+                                         --alterTypeDefinition nm 
+                                         return ()
+--tyCheckD d = return d
+                         
+
 addBuiltinsTypeAnnos :: TravM ()
 addBuiltinsTypeAnnos = mapM_ addTyAnno bivs
     where addTyAnno (BiV nm ty _) = insertAtTop [DeclareType nm ty]
 
 labelUnspecifiedTypes :: TravM ()
 labelUnspecifiedTypes = mapDE (mapEM lUT) >> topLevelMap
-    where lUT (Lam nm UnspecifiedT bd) = do tvar <- genSym nm
-                                            return (Lam nm (UnknownT tvar) bd)
-          lUT (LetE assocs bd) = return LetE `ap` mapM lUTLet assocs `ap` return bd
-          lUT e = return e
-          lUTLet (nm,UnspecifiedT,e) = do tvar <- genSym nm
-                                          return (nm,UnknownT tvar,e)
-          lUTLet l = return l
-          lUTPat (PatVar nm UnspecifiedT) = do tvar <- genSym nm
-                                               return (PatVar nm $ UnknownT tvar)
-          lUTPat p = return p
+    where 
           topLevelMap = do decTys <- allDeclaredTypes
                            mapD (lUT' decTys)
           lUT' tenv d@(Let nm bd) | nm `elem` (map fst tenv) = return d
@@ -72,6 +94,17 @@ labelUnspecifiedTypes = mapDE (mapEM lUT) >> topLevelMap
                                                    insertBefore [DeclareType nm $  UnknownT tvar]
                                                    return d
           lUT' _ d = return d
+
+lUT (Lam nm UnspecifiedT bd) = do tvar <- genSym nm
+                                  return (Lam nm (UnknownT tvar) bd)
+lUT (LetE assocs bd) = return LetE `ap` mapM lUTLet assocs `ap` return bd
+lUT e = return e
+lUTLet (nm,UnspecifiedT,e) = do tvar <- genSym nm
+                                return (nm,UnknownT tvar,e)
+lUTLet l = return l
+lUTPat (PatVar nm UnspecifiedT) = do tvar <- genSym nm
+                                     return (PatVar nm $ UnknownT tvar)
+lUTPat p = return p
 
 symbolType :: String -> TravM (T, Bool)
 symbolType nm = do path <- exprPath `fmap` get
@@ -106,33 +139,15 @@ solveConstraints = do constrs <- tyConstraints `fmap` get
                       --traceConstraints {-. addRepetitions $ -} constrs'
                       setter $ \s-> s {tyConstraints = constrs'}
 
-addRepetitions :: [(T,T)] -> [(T,T)]
-addRepetitions constrs = let repts = concatMap aR' . nub $ constrs 
-                             newrepts = concatMap aR' . nub $ repts in
-                         --trace ("addreps :"++show constrs) $
-                         if null newrepts 
-                            then constrs ++ repts
-                            else constrs ++ repts ++ (addRepetitions newrepts)
-    where aR' p = aR p -- ++ (aR . swap $ p) 
-          aR (t1,t2) | hasUnknownT t1 = 
-              let others = [ ot | (thisTy, ot) <- constrs, ot /= t2, thisTy == t1 ]++
-                           [ ot | (ot, thisTy) <- constrs, ot /= t2, thisTy == t1 ]
-              in combinations $ t2:others
 
-          aR _ = []
---combinations . map snd . filter ((/=t2) . snd) . filter ((==t1) . fst) $ constrs
- 
 hasUnknownT t = not . null $ [() | UnknownT _ <- flatT t]
 
-combinations :: [a] -> [(a,a)]
-combinations [] = []
-combinations (x:xs) = map ((,) x) xs ++ combinations xs
 
 applySolution :: TravM ()
 applySolution = do cns <- tyConstraints `fmap` get
                    mapD (aS cns)
     where aS cns (DeclareType nm ut@(UnknownT _)) = do
-            let newTy =  {- makePoly $ -} substT cns ut
+            let newTy =   makePoly $ substT cns ut
             let newCns = ((ut,newTy):cns)
             --traceM ""
             --traceM $ "foo: "++^ut++" --> "++^newTy
@@ -159,15 +174,6 @@ makePoly t = let unknowns = [ UnknownT nm | UnknownT nm <- flatT t]
              in substT subs t
 
 unitList x = [x]
-
-constraintsOf gctx e = constr [] e
-    where constr ctx (Var nm) =
-              case lookup nm ctx of
-                Just t -> return t
-                Nothing -> case lookup nm gctx of
-                             Just t -> do ty <- refresh t
-                                          return ty
-                             Nothing -> error $ "cannot find "++nm
 
 --          constr ctx (Const v) = 
 
@@ -223,14 +229,6 @@ tyFail s = fail $ "Type check fails: "++concat s
 
 threeToPairR (a,b,c) = (a, (b,c))
 
-pivot :: String -> [(T,T)] -> ([(T,T)], [(T,T)])
-pivot unm constrs =trace ("pivot " ++ unm) (uniT, constrs')
-    where (uniT, constrs') = partition p constrs
-          p (UnknownT u1, UnknownT u2) = u1 == unm || u2 == unm
-          p _ = False
-          uniT' = map maybeSwap uniT
-          maybeSwap c@(UnknownT u1, UnknownT u2) | u2 == unm = (UnknownT u2, UnknownT u1)
-                                                 | otherwise = c
 --plzoo poly
 solve :: [(T,T)] -> [(String,T)]
 solve eqs = solv eqs []
@@ -256,23 +254,6 @@ solve eqs = solv eqs []
                                  | otherwise = error $ "cannot unify: "++^t1 ++"="++^t2
 
 
-unify :: [(T,T)] -> [(T,T)]
-unify [] = []
-unify (c@(t@(UnknownT unm), UnknownT unm1):constrs) | unm == unm1 = unify constrs
-                                                    | otherwise = let (uniT, constrs' ) = (pivot unm constrs)
-                                                                  in  trace (show uniT) $  (c:uniT)++ (unify constrs')
-unify (c@(UnknownT unm, t2):constrs) = c:unify constrs
-unify (c@(t1, UnknownT unm):constrs) = swap c:unify constrs
-unify ((LamT t1 t2, LamT t3 t4):constrs) = unify $ constrs++[(t1, t3), (t2,t4)]
-unify ((PairT t1 t2, PairT t3 t4):constrs) = unify $ constrs++[(t1, t3), (t2,t4)]
-unify ((ListT t1, ListT t2):constrs) = unify $ constrs++[(t1, t2)]
-unify ((t1,t2):constrs) | t1 == t2 || 
-                          t1 `isSubtypeOf` t2 || 
-                          t2 `isSubtypeOf` t1 = unify constrs
-                        | t1 `partOfTy` t2 || 
-                          t1 `partOfTy` t2 = error $ "infinite type: "++^t1 ++"="++^t2
-                        | otherwise = error $ "cannot unify: "++^t1 ++"="++^t2
-
 s ++^ ty = s++(ppType ty) 
 swap (a,b) = (b,a)
 
@@ -287,18 +268,6 @@ recSubstT subs (PairT t1 t2) = PairT (substT subs t1) (substT subs t2)
 recSubstT subs (LamT t1 t2) = LamT (substT subs t1) (substT subs t2)
 recSubstT subs (ListT t1) = ListT (substT subs t1)
 recSubstT subs t = t 
-
-mostSpecific :: [T] -> T
-mostSpecific = maximumBy (comparing rank)
-    where rank (TyVar _) = 5
-          rank (UnknownT _) = 4
-          rank (NumT (Just _)) = 7
-          rank (NumT Nothing) = 6
-          rank _ = 7
-
-maximumOn :: Ord b => (a->b) -> [a] -> a
-maximumOn f xs = fst . maximumBy (comparing snd) $ zip xs (map f xs)
-               
 
 refresh :: T -> TravM T
 refresh t = do 
@@ -325,8 +294,30 @@ flatT t = [t]
 
 
 
+constraintsOf gctx e = constr [] e
+    where constr ctx (Var nm) =
+              case lookup nm ctx of
+                Just t -> return t
+                Nothing -> case lookup nm gctx of
+                             Just t -> do ty <- refresh t
+                                          return ty
+                             Nothing -> error $ "cannot find "++nm
 
+mostSpecific :: [T] -> T
+mostSpecific = maximumBy (comparing rank)
+    where rank (TyVar _) = 5
+          rank (UnknownT _) = 4
+          rank (NumT (Just _)) = 7
+          rank (NumT Nothing) = 6
+          rank _ = 7
 
+maximumOn :: Ord b => (a->b) -> [a] -> a
+maximumOn f xs = fst . maximumBy (comparing snd) $ zip xs (map f xs)
+               
+
+combinations :: [a] -> [(a,a)]
+combinations [] = []
+combinations (x:xs) = map ((,) x) xs ++ combinations xs
 
 {-tyVarsIn (TyVar v) = [v]
 tyVarsIn (PairT t1 t2) = tyVarsIn t1++ tyVarsIn t2
