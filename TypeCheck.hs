@@ -229,6 +229,7 @@ checkTy (M2 op e1 e2) = do t1 <- checkTy e1
                            t2 <- checkTy e2 
                            addTyConstraint (t1, NumT Nothing)
                            addTyConstraint (t2, NumT Nothing)
+                           addTyConstraint (t1, t2)
                            return t1
 checkTy (M1 op e1) = do t1 <- checkTy e1 
                         addTyConstraint (t1, NumT Nothing)
@@ -237,6 +238,7 @@ checkTy (Cmp op e1 e2) = do t1 <- checkTy e1
                             t2 <- checkTy e2 
                             addTyConstraint (t1, NumT Nothing)
                             addTyConstraint (t2, NumT Nothing)
+                            addTyConstraint (t1, t2)
                             return BoolT
 checkTy (Nil) = do telem <- UnknownT `fmap` (genSym "checkNil")
                    return $ ListT telem
@@ -271,6 +273,10 @@ checkTy e@(Not e1) = do t1 <- checkTy e1
                         return BoolT
 checkTy (Sig e) = do te <- checkTy e
                      return $ SignalT te
+checkTy (SigLimited e tmax) = do te <- checkTy e
+                                 tmaxt <- checkTy tmax
+                                 addTyConstraint (tmaxt, realT)
+                                 return $ SignalT te
 checkTy (SigVal s) = do ts <- checkTy s
                         case ts of
                           SignalT et -> return et

@@ -281,6 +281,8 @@ queryM q e@(SigVal e1) = concatM [q e, m e1]
 	where m = queryM q
 queryM q e@(SigDelay e1 e2) = concatM [q e, m e1,  m e2]
 	where m = queryM q
+queryM q e@(SigLimited e1 e2) = concatM [q e, m e1,  m e2]
+	where m = queryM q
 queryM q e@(Event e1) = concatM [q e, m e1]
 	where m = queryM q
 queryM q e@(Const _) = concatM [q e]
@@ -316,6 +318,7 @@ mapEM f e = mapEM' e
           mapEM' (Sig s) = (return Sig `ap` m s) >>= f
           mapEM' (SigVal s) = (return SigVal `ap` m s) >>= f
           mapEM' (SigDelay s1 s2) = (return SigDelay `ap` m s1 `ap` m s2) >>= f
+          mapEM' (SigLimited s1 s2) = (return SigLimited `ap` m s1 `ap` m s2) >>= f
           mapEM' (SigAt s1 s2) = (return SigAt `ap` m s1 `ap` m s2) >>= f
           mapEM' (M1 op s) = (return (M1 op) `ap` m s) >>= f
           mapEM' (M2 op s1 s2) = (return (M2 op) `ap` m s1 `ap` m s2 ) >>= f

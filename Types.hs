@@ -119,6 +119,10 @@ haskTypeString (ListT t1) = "["++haskTypeString t1++"]"
 haskTypeString (NumT (Just RealT)) = "Double"
 haskTypeString (NumT (Just IntT)) = "Int"
 haskTypeString (NumT Nothing) = "Number"
+haskTypeString (SignalT t) = "Signal "++haskTypeString t
+haskTypeString (TyVar s) = s
+haskTypeString (ShapeT) = "Shape Double"
+haskTypeString t = error $ show t
 
 isSubtypeOf:: T -> T -> Bool
 isSubtypeOf (NumT _) (NumT Nothing) = True

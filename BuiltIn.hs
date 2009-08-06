@@ -20,15 +20,16 @@ nstep t dt = roundNum (t/dt)
 
 anyNumT = NumT Nothing
 realT = NumT (Just RealT)
+intT = NumT (Just IntT)
 (.->.) = LamT
 eventT t = PairT (anyNumT) (t)
 eventsT t = ListT $ eventT t
 
 bivs = [ 
- BiV "round" (anyNumT .->. anyNumT) (LamV $ \(NumV n)->return . NumV $ roundNum n),
- BiV "sin" (anyNumT .->. anyNumT) (LamV $ \(NumV n)->return . NumV $ sin n),
- BiV "cos" (anyNumT .->. anyNumT) (LamV $ \(NumV n)->return . NumV $ cos n),
- BiV "floor" (anyNumT .->. anyNumT) (LamV $ \(NumV n)->return . NumV $ floorNum n),
+ BiV "round" (realT .->. anyNumT) (LamV $ \(NumV n)->return . NumV $ roundNum n),
+ BiV "sin" (anyNumT .->. realT) (LamV $ \(NumV n)->return . NumV $ sin n),
+ BiV "cos" (anyNumT .->. realT) (LamV $ \(NumV n)->return . NumV $ cos n),
+ BiV "floor" (realT .->. intT) (LamV $ \(NumV n)->return . NumV $ floorNum n),
  BiV "enowAux" (anyNumT .->. (anyNumT .->. (eventsT AnyT .->. eventsT AnyT)))
          (LamV $ \(NumV t) -> return $ LamV $ \(NumV dt) -> return $ LamV $ \(ListV es) -> do
                                       let dropF (PairV (NumV te) _) = nstep te dt > nstep t dt

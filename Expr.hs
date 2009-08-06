@@ -45,6 +45,7 @@ data E =  If E E E
 	| And E E | Or E E | Not E
 	| Case E [(Pat,E)]
 	| Sig E
+	| SigLimited E E
 	| SigVal E
 	| SigAt E E
         | SigDelay E E
@@ -111,6 +112,8 @@ queryE q e@(SigVal e1) = q e++m e1
 	where m = queryE q
 queryE q e@(SigDelay e1 e2) = q e++m e1++ m e2
 	where m = queryE q
+queryE q e@(SigLimited e1 e2) = q e++m e1++ m e2
+	where m = queryE q
 queryE q e@(Event e1) = q e++m e1
 	where m = queryE q
 queryE q e@(Const _) = q e
@@ -133,7 +136,7 @@ queryE q e@(HasType _ e1) = q e++m e1
 
 --queryE q e = error $ "queryE: unknown expr "++show e 
 
-freeVars :: E -> [String]
+{-freeVars :: E -> [String]
 freeVars e = fv [] e
     where fv e (If p c a) = fv e p ++ fv e c ++ fv e a
           fv e (Lam n t bd) = fv (n:e) bd
@@ -162,7 +165,7 @@ freeVars e = fv [] e
           fv e (LetE ses er) = fv (map fst3 ses++e) er ++ concatMap (fv (map fst3 ses++e) . trd3) ses 
           fv e (Case te pats) = fv e te ++ concatMap (\(pat, ep) -> fv (patIntroducedVars pat++e) ep) pats
           
-          --fv e (expr) = []
+          --fv e (expr) = [] -}
 
 mapE :: (E-> E)-> E -> E
 mapE f (If p c a) = f (If (m p) (m c) (m a))
@@ -175,6 +178,7 @@ mapE f (Var n) = f (Var n)
 mapE f (Sig s) = f (Sig (mapE f s))
 mapE f (SigVal s) = f (SigVal (mapE f s))
 mapE f (SigDelay s1 s2) = f (SigDelay (mapE f s1) (mapE f s2))
+mapE f (SigLimited s1 s2) = f (SigLimited (mapE f s1) (mapE f s2))
 mapE f (SigAt s1 s2) = f (SigAt (mapE f s1) (mapE f s2))
 mapE f (M1 m s) = f (M1 m (mapE f s))
 mapE f (M2 m s1 s2) = f (M2 m (mapE f s1) (mapE f s2))

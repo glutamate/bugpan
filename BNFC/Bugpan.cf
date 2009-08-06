@@ -49,6 +49,7 @@ ListLit.Exp4 ::= "[" [Exp] "]" ;
 
 
 Sig. Exp1 ::= "{:" Exp ":}" ;
+SigLimited. Exp1 ::= "{:" Exp "#" Exp ":}" ;
 SigVal. Exp6 ::= "<:" Exp ":>" ;
 SigAt. Exp2 ::= Exp2 "@" Exp3 ;
 SigDelay. Exp4 ::= "delay" Exp4 Exp5  ;

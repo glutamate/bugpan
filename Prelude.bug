@@ -75,7 +75,7 @@ solveStep = \sf->\v0->\old->old+(<: delay (sf old) v0 :>*dt)
 solveOde = \sf->\v0->(iterate ((solveStep sf) v0)) v0
 solveOdeFrom = \t0->\sf->\v0->((iterateFrom t0) ((solveStep sf) v0)) v0
 
-cube l = translate (-l/2, -l/2, 0) (box (l, l, l))
-black = (0, 0, 0)
-green = (0, 1, 0)
+cube l = translate (-l/2.0, -l/2.0, 0) (box (l, l, l))
+black = (0.0, 0.0, 0.0)
+green = (0.0, 1.0, 0.0)
 

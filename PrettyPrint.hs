@@ -92,6 +92,7 @@ pp (And e1 e2) = ppa e1 ++ " && " ++ ppa e2
 pp (Or e1 e2) = ppa e1 ++ " || " ++ ppa e2
 pp (Not e1) = "!" ++ ppa e1
 pp (Sig e) = "{: "++pp e++" :}"
+pp (SigLimited e lim) = "{: "++pp e++" :"++pp lim++"}"
 pp (SigVal s) = "<: "++pp s++" :>"
 pp (SigAt t s) = ppa s ++ "@" ++ ppa t
 pp (SigDelay s v) = "delay "++ppa s++" "++ppa v

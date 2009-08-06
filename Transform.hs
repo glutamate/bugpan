@@ -172,7 +172,7 @@ floatConnectedSignals = mapD fCS
 evalIn :: [Declare] -> E -> V
 evalIn decls e = unEvalM $ eval (evalS . evalManyAtOnce $ declsToEnv decls) e
 
-evalSinkSrcArgs :: TravM ()
+evalSinkSrcArgs :: TravM () -- and signal limits, too
 evalSinkSrcArgs = mapD eSSA
     where eSSA e@(SinkConnect se (snm, Const _)) = return e
           eSSA e@(SinkConnect se (snm, arg)) = do 
@@ -187,6 +187,10 @@ evalSinkSrcArgs = mapD eSSA
             let carg =  evalIn ds arg
             --trace ("eval "++show arg++" to "++show carg) $ return ()
             return (ReadSource vnm (snm, Const carg))
+          eSSA (Let nm (SigLimited s lim )) = do
+            ds <- decls `fmap` get
+            let clim =  evalIn ds lim
+            return (Let nm (SigLimited s (Const clim)))
           eSSA e = return e 
 
 globalizeE :: String -> E -> TravM String

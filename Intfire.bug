@@ -20,7 +20,7 @@ gsynmul = 1.2e-12
 
 _dt = 4.0e-5
 _tmax= 0.2
-alpha tau t = if t<0 then 0 else tau*tau*t*(exp (-t*tau)) 
+alpha tau t = if t<0.0 then 0.0 else tau*tau*t*(exp (-t*tau)) 
 
 --rndSpikeSig <* uniform (0,1)
 --rndSpike = eventIf (<: rndSpikeSig :> < rate*dt) 
@@ -29,7 +29,7 @@ rndSpike = [(0.05, ())]
 
 -- peakSyn = 732 pS = 7.32-10
 -- mean weighted decay 0.6*0.42+0.29*2.71+0.11*15.5 = 2.74 ms
-gsyn = {: gsynmul * (alpha 1485 <: seconds:>)  :}
+gsyn = {: gsynmul * (alpha 1485 <: seconds:>) #0.02:}
 
 stage gsyn -1
 

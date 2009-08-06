@@ -23,6 +23,7 @@ noDtSeconds _ = True
 
 compileDec :: Declare -> [Stmt]
 compileDec (Let nm (Sig se)) = [SigUpdateRule nm $ unVal se] 
+compileDec (Let nm (SigLimited se lim)) = [SigUpdateRule nm $ unVal se] 
 compileDec (Let nm (SigDelay (Var sn) v0)) = [SigUpdateRule nm (Var sn), 
                                               InitSig nm v0]
 compileDec (Let nm (Event ee)) = [EventAddRule nm $ unVal ee]

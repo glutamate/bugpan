@@ -45,7 +45,7 @@ toHask modNm dt tmax ds
                    "dt="++show dt, "tmax="++show tmax, "npnts="++show(round $ tmax/dt)]++
                    writeBufToSig++
                    map atTopLevel nonMainLoop++["", ""]++
-                   compileStages stageDs++["", ""]++["{-"]++
+                   compileStages tmax stageDs++["", ""]++["{-"]++
                    concatMap (\ds-> "\na stage":map ppDecl ds) stageDs++["-}"]
 
 --mapAccum :: (a->b) -> [a] -> [[b]]
@@ -67,12 +67,14 @@ mainFun exps =
            ""
           ]
 
-writeBufToSig = ["", "bufToSig buf = ",
-                         "   let arr = array (0,npnts) $ zip [0..npnts] $ reverse buf",
-                         "   in Signal 0 tmax dt $ \\t-> arr!t", ""]
+writeBufToSig = ["", 
+                 "bufToSig tmax buf = ",
+                 "   let np = round $ tmax/dt",
+                 "       arr = array (0,np) $ zip [0..np] $ reverse buf",
+                 "   in Signal 0 tmax dt $ \\t-> arr!t", ""]
 
 
-compileStages stgs =  mainFun allStore ++ ["goMain = do "] ++lns++retLine++stages
+compileStages tmax stgs =  mainFun allStore ++ ["goMain = do "] ++lns++retLine++stages
     where ind = "   " 
           retLine = [ind++"return "++inTuple allStore, ""]
           lns = map stgLine $ zip stgs [0..]
@@ -85,25 +87,33 @@ compileStages stgs =  mainFun allStore ++ ["goMain = do "] ++lns++retLine++stage
           expTuple [] = ""
           expTuple nms = inTuple nms ++ " <- "
           stages = concatMap comStageLine $ zip stgs [0..]
-          comStageLine (ds,n) = compStage ds n (accumExports (n-1)) (exports!!n) ((eventExports ds \\ imps n) \\ (exports!!n))
+          comStageLine (ds,n) = compStage ds tmax n (accumExports (n-1)) (exports!!n) ((eventExports ds \\ imps n) \\ (exports!!n))
 
-compStage ds n imps exps evExps = ("goStage"++show n++" "++inTuple imps++" = do "):lns
+removeSigLimits :: TravM ()
+removeSigLimits = mapD rSL
+    where rSL (Let nm (SigLimited e _)) = return (Let nm (Sig e))
+          rSL d = return d
+
+compStage ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++" = do "):lns
     where ind = "   "
           loopInd = "       "
+          ds = snd $ runTravM ds' [] removeSigLimits
           sigs = [ (nm,e) | Let nm (Sig e) <- ds ]
           evs = [ nm | Let nm (Event e) <- ds ]
           comments = ["--imps="++show imps,
                       "--exps="++show exps,
                      "--evexps="++show evExps]
-          lns = initLns ++ initBuffers++ startLoop ++readSigs++
+          lns = initLns ++ newTmax ++ initBuffers++ startLoop ++readSigs++
                 writeSigs++readSigBuffers++readEventBuffers++returnLine++[""]
           initLns = concatMap initLn ds
           initLn (Let nm (Sig e)) = [ind++nm++" <- newIORef undefined"]
           initLn (Let nm (Switch _ _)) = [ind++nm++" <- newIORef undefined"]
           initLn (Let nm (SigDelay (Var snm) v0)) = [ind++nm++" <- newIORef "++pp v0]
           initLn (Let nm (Event e)) = [ind++nm++"Queue <- newIORef []"]
-          --initLn (Let nm (SigDelay (Var snm) v0)) = [ind++nm++" <- newIORef "++pp v0]
           initLn d = []
+          newTmax = let tm = localTmax tmax ds' in
+                    [ind++"let tmax = "++(show $ tm),
+                    ind++"let npnts = round $ tmax/dt"]
           initBuffers = map (\sig-> ind++sig++"Buf <- newIORef []") exps
           startLoop = [ind++"forM_ [0..npnts-1] $ \\npt -> do", loopInd ++ "let secondsVal = npt*dt"]
           --readSigs = map (\sig-> loopInd++sig++"Val <- readIORef "++sig) $ map fst sigs
@@ -137,7 +147,7 @@ compStage ds n imps exps evExps = ("goStage"++show n++" "++inTuple imps++" = do 
           readEventBuffers = map evQ evExps
           evQ nm | nm `elem` evs = ind++nm++"QVal <- readIORef "++nm++"Queue"
                  | otherwise = ind++"let "++nm++"QVal = "++nm
-          returnLine = [ind++"return "++(inTuple $ map (\nm-> "bufToSig "++nm++"BufVal") exps ++ map (++"QVal") evExps)]
+          returnLine = [ind++"return "++(inTuple $ map (\nm-> "bufToSig tmax "++nm++"BufVal") exps ++ map (++"QVal") evExps)]
 
 tweakExpr e = mapE (changeRead . unSharp . unVal) e 
     where unVal (SigVal (Var nm)) = Var (nm++"Val")

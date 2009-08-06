@@ -74,6 +74,7 @@ cE (B.ListLit []) = Nil
 cE (B.ListLit (e:es)) = Cons (cE e) (cE $ B.ListLit es)
 
 cE (B.Sig e) = Sig $ cE e
+cE (B.SigLimited e1 e2) = SigLimited (cE e1) (cE e2)
 cE (B.SigVal e) = SigVal $ cE e
 cE (B.Event e) = Event $ cE e
 cE (B.SigDelay e1 e2) = SigDelay (cE e1) (cE e2)

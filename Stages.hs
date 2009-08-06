@@ -11,6 +11,8 @@ import Control.Monad
 import EvalM
 import Statement
 import Database
+import TNUtils
+import Numbers
 import PrettyPrint
 
 --data RelPos = At | Before | After
@@ -33,8 +35,14 @@ splitByStages ds =
         unstagedDecls = mainL \\ (concat stagedDecls)
     in (env : stagedDecls) ++ [unstagedDecls]
 
+localTmax globaltmax decls =  let unLimSigs = [ nm | Let nm (Sig s) <- decls ]
+                                  limSigs = [ lim | Let nm (SigLimited s (Const (NumV (NReal lim)))) <- decls ]
+                              in if null unLimSigs && nonempty limSigs
+                                    then maximum limSigs
+                                    else globaltmax
+
 execInStages :: [Declare] -> Double -> Double -> ([Stmt] -> IO [Stmt]) -> IO [(String,V)]
-execInStages ds dt tmax postCompile = do
+execInStages ds dt tmaxGlobal postCompile = do
   let (env:stageDs) = splitByStages ds
   envAdd <- newIORef []
   --putStrLn "\nenvironment"
@@ -46,6 +54,7 @@ execInStages ds dt tmax postCompile = do
                             putStrLn "\na stage"
                             --mapM (putStrLn . ppStmt ) stmts'
                             let buffered = [ nm | SinkConnect (Var _) ('#':nm,_ )<- decls ]
+                            let tmax = localTmax tmaxGlobal decls
                             stmts <- postCompile stmts'
                             ress <- exec stmts dt tmax
                             let savedRess = [('#':nm, val) | ('#':nm, val) <- ress, nm `elem` buffered ]
