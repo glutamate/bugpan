@@ -17,8 +17,8 @@ myBool = id true
 min = \x->\y->if x > y then y else x
 max = \x->\y->if x < y then y else x
 
-fst :: (a,b) -> a
+--fst :: (a,b) -> a
 fst = \pr->case pr of (x,_) -> x
---snd = \pr->case pr of (_,x) -> x
+snd = \pr->case pr of (_,x) -> x
 
 myCons x xs = x:xs

@@ -48,6 +48,9 @@ addTyConstraint con = setter (\s-> s {tyConstraints = con:tyConstraints s})
 traceDecls :: TravM ()
 traceDecls = do ds <- decls `fmap` get
                 mapM_ (\d->traceM $ ppDecl d) ds
+traceDefn :: String -> TravM ()
+traceDefn nm = do ds <- decls `fmap` get
+                  mapM_ (\d->traceM $ ppDecl d) [ d | d@(Let nm1 e) <- ds, nm1 == nm]
 
 traceTyConstraints :: TravM ()
 traceTyConstraints = do tcs <- tyConstraints `fmap` get
