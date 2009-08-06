@@ -39,7 +39,7 @@ typeCheck = do addBuiltinsTypeAnnos
                --traceM "unified constraints"
                --traceTyConstraints
                --applySolution
-               traceDecls
+               --traceDecls
                
 
 {-mapD tc
@@ -211,7 +211,7 @@ checkTy (Var nm) = do (vty, isGlobal) <- symbolType nm
                                  return reTy
                          else return vty                     
 checkTy (Const v) = return . generaliseInts $ typeOfVal v
-    where generaliseInts (NumT (Just IntT)) = NumT Nothing
+    where generaliseInts (NumT (Just IntT)) = realT
           generaliseInts t = t 
 checkTy (App e1 e2) = do t1 <- checkTy e1
                          t2 <- checkTy e2
@@ -227,17 +227,17 @@ checkTy (Pair e1 e2) = do t1 <- checkTy e1
                           return $ PairT t1 t2
 checkTy (M2 op e1 e2) = do t1 <- checkTy e1 
                            t2 <- checkTy e2 
-                           addTyConstraint (t1, NumT Nothing)
-                           addTyConstraint (t2, NumT Nothing)
-                           addTyConstraint (t1, t2)
+                           addTyConstraint (t1, realT)
+                           addTyConstraint (t2, realT)
+---                           addTyConstraint (t1, t2)
                            return t1
 checkTy (M1 op e1) = do t1 <- checkTy e1 
-                        addTyConstraint (t1, NumT Nothing)
+                        addTyConstraint (t1, realT)
                         return t1
 checkTy (Cmp op e1 e2) = do t1 <- checkTy e1 
                             t2 <- checkTy e2 
-                            addTyConstraint (t1, NumT Nothing)
-                            addTyConstraint (t2, NumT Nothing)
+                            addTyConstraint (t1, realT)
+                            addTyConstraint (t2, realT)
                             addTyConstraint (t1, t2)
                             return BoolT
 checkTy (Nil) = do telem <- UnknownT `fmap` (genSym "checkNil")
@@ -285,7 +285,7 @@ checkTy (SigVal s) = do ts <- checkTy s
                                   return $ telem
 checkTy (SigAt tm s) = do ty1 <- checkTy tm 
                           tys <- checkTy s
-                          addTyConstraint (ty1, NumT (Just RealT))
+                          addTyConstraint (ty1, realT)
                           case tys of
                             SignalT tval -> return tval
                             _ -> do telem <- UnknownT `fmap` (genSym "checkSigAt")
@@ -305,8 +305,8 @@ checkTy (SigDelay s v0) = do tyv0 <- checkTy v0
 checkTy (Event e) = do tev <- checkTy e
                        --traceM2 "event expr type: " tev
                        telem <- UnknownT `fmap` (genSym "checkEvent")
-                       addTyConstraint (tev, ListT $ PairT (NumT (Just RealT)) telem)
-                       return tev -- . ListT $ PairT (NumT (Just RealT)) telem
+                       addTyConstraint (tev, ListT $ PairT realT telem)
+                       return tev
 
 checkTy (Box e) = do vecTy <-checkTy e
                      addTyConstraint (vecTy, vec3Ty)
@@ -332,7 +332,7 @@ checkTy (Switch eslams es)  = do sigTy <- checkTy es
                                             evsTy <- checkTy ev
                                             slamTy <- checkTy slam
                                             tyA <- UnknownT `fmap` (genSym "checkSwitch")
-                                            addTyConstraint (evsTy, ListT $ PairT (NumT (Just RealT)) tyA)
+                                            addTyConstraint (evsTy, ListT $ PairT realT tyA)
                                             addTyConstraint (slamTy, LamT realT (LamT tyA (SignalT telem)))
                                             return tyA
                                  addManyConstraints evTys

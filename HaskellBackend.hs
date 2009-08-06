@@ -33,6 +33,8 @@ toHask modNm dt tmax ds
                     --"module "++capitalize modNm++" where",
                     "module Main where",
                     "",
+                    "import Prelude hiding (floor)",
+                    "import qualified Prelude as P",
                     "import Numbers", 
                     "import HaskShapes",
                     "import Data.IORef",
@@ -41,7 +43,10 @@ toHask modNm dt tmax ds
                     "import Array",
                     "import TNUtils",
                     "import Database",
-                    "import Control.Monad","import EvalM hiding (tmax, dt)","","default (Int, Double)",
+                    "import Control.Monad",
+                    "import EvalM hiding (tmax, dt)","",
+                    "default (Int, Double)",
+                    "floor = realToFrac . P.floor ","",
                    "dt="++show dt, "tmax="++show tmax, "npnts="++show(round $ tmax/dt)]++
                    writeBufToSig++
                    map atTopLevel nonMainLoop++["", ""]++
@@ -69,7 +74,7 @@ mainFun exps =
 
 writeBufToSig = ["", 
                  "bufToSig tmax buf = ",
-                 "   let np = round $ tmax/dt",
+                 "   let np = idInt . round $ tmax/dt",
                  "       arr = array (0,np) $ zip [0..np] $ reverse buf",
                  "   in Signal 0 tmax dt $ \\t-> arr!t", ""]
 
@@ -113,9 +118,10 @@ compStage ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++"
           initLn d = []
           newTmax = let tm = localTmax tmax ds' in
                     [ind++"let tmax = "++(show $ tm),
-                    ind++"let npnts = round $ tmax/dt"]
+                    ind++"let npnts = idInt . round $ tmax/dt"]
           initBuffers = map (\sig-> ind++sig++"Buf <- newIORef []") exps
-          startLoop = [ind++"forM_ [0..npnts-1] $ \\npt -> do", loopInd ++ "let secondsVal = npt*dt"]
+          startLoop = [ind++"forM_ [0..npnts-1] $ \\npt -> do", 
+                       loopInd ++ "let secondsVal = (realToFrac npt)*dt"]
           --readSigs = map (\sig-> loopInd++sig++"Val <- readIORef "++sig) $ map fst sigs
           readSigs = concatMap readSig ds
           readSig (Let nm (Sig e)) = [loopInd++nm++"Val <- readIORef "++nm]
