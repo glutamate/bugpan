@@ -52,6 +52,13 @@ map f lst = case lst of
 sum lst = case lst of 
       	   [] -> 0
 	   (x:xs) -> x+(sum xs)
+
+eventsAfter tm evs = case evs of 
+	     	      	   ((tev,x):evvs) -> if tev < tm
+			   		        then (tev,x):(eventsAfter tm evvs)
+						else []
+			   _ -> []
+						
  
 fst = \pr->case pr of (x,_) -> x
 snd = \pr->case pr of (_,x) -> x
@@ -60,7 +67,8 @@ min = \x->\y->if x > y then y else x
 max = \x->\y->if x < y then y else x
 enow = \es->((enowAux <: seconds :>) dt) es
 emap = \f->\evs->[: (map f) (enow evs) :]
-convolve = \s->\es->{: sum ((map (\e->s@(<: seconds :>-(fst e)))) es) :}
+convolve s es = let sigLen = sigTmax s
+                in {: sum (map (\e->s@(<: seconds :> -(fst e))) (eventsAfter (<:seconds:> - sigLen) es)) :}
 laterF = \t->\e->((fst e)+t, snd e)
 later = \t->\es->(emap (laterF t)) es
 iterate f s0 = let s = {: if <: seconds :> <= (dt/2) 
