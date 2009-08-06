@@ -1,32 +1,34 @@
 module Prelude where 
 
-smap :: (a->b) -> (Signal a) -> (Signal b)
+--smap :: (a->b) -> (Signal a) -> (Signal b)
 smap f s=  {: f <: s :> :} 
 
-incr :: Number -> Number
+--incr :: Number -> Number
 incr x =  x+1
 
-add :: Number -> Number -> Number
+--add :: Number -> Number -> Number
 add x y = x+y
 
 negate x = 0-x
 
-constSig :: a -> Signal a
+--constSig :: a -> Signal a
 constSig x = {: x :}
 
 --sigPlus1 : (Signal Number) -> (Signal Number)
 sigPlus1 = smap incr
 
-sigAtZero :: (Signal Number) -> Number
+--sigAtZero :: (Signal Number) -> Number
 sigAtZero s = s@0
 
 --sscan :: (a->b->a) -> a -> (Signal b) -> (Signal b)
 sscan f v0 s = let sr = {: (f <: s :>) <: delay sr v0 :> :} in sr
 
+intStep = \new->\old->old+new*dt
 
 integrate = sscan intStep 0
-intStep = \new->\old->old+new*dt
-crosses val sig = [: if (<: sig :> >= val) && (<: delay sig 0 :> < val) then [ (<: seconds :>, ()) ] else [] :]
+crosses val sig = [: if (<: sig :> >= val) && (<: delay sig 0 :> < val) 
+                        then [ (<: seconds :>, ()) ] 
+                        else [] :]
 eventIf p = [: if p  then [ (<: seconds :>, ()) ] else [] :]
 fraction = \x->x-floor x
 every = \ivl->eventIf ((fraction (<: seconds :>/ivl)) < dt)
@@ -37,7 +39,9 @@ zipWith f s1 s2 = {:  f <: s1 :> <: s2 :> :}
 {-peak sig = let sigpeak = sscan peakf (sig@0, 0) (zip sig seconds)
      	       (peakval, peakt) = sigpeak@tmax
 	   in [(peakt, peakval)]
-peakf (new,tnew) (old,told) = if new>old then (new, tnew) else (old, told)
+peakf (new,tnew) (old,told) = if new>old 
+      		 	         then (new, tnew) 
+				 else (old, told)
 -}
 
 
@@ -59,8 +63,14 @@ emap = \f->\evs->[: (map f) (enow evs) :]
 convolve = \s->\es->{: sum ((map (\e->s@(<: seconds :>-(fst e)))) es) :}
 laterF = \t->\e->((fst e)+t, snd e)
 later = \t->\es->(emap (laterF t)) es
-iterate = \f->\s0->let s = {: if <: seconds :> <= (dt/2) then s0 else (f <: delay s s0 :>) :}; in s
-iterateFrom = \t0->\f->\s0->let s = {: if <: seconds :> <= (t0+(dt/2)) then s0 else (f <: delay s s0 :>) :}; in s
+iterate f s0 = let s = {: if <: seconds :> <= (dt/2) 
+	       	       	     then s0 
+			     else (f <: delay s s0 :>) :}
+	        in s
+iterateFrom = \t0->\f->\s0->let s = {: if <: seconds :> <= (t0+(dt/2)) 
+	      			          then s0 
+                                          else (f <: delay s s0 :>) :} 
+                            in s
 solveStep = \sf->\v0->\old->old+(<: delay (sf old) v0 :>*dt)
 solveOde = \sf->\v0->(iterate ((solveStep sf) v0)) v0
 solveOdeFrom = \t0->\sf->\v0->((iterateFrom t0) ((solveStep sf) v0)) v0

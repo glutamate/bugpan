@@ -22,3 +22,17 @@ fst = \pr->case pr of (x,_) -> x
 snd = \pr->case pr of (_,x) -> x
 
 myCons x xs = x:xs
+
+val1 = let x = 2 in x+2
+
+mySig = {: <: {: val1 :} :> :}
+
+mySigVal = mySig @ (0.0)
+
+smap f s=  {: f <: s :> :} 
+
+crosses val sig = [: if (<:  sig :> >= val) && (<: delay sig 0 :> < val) then [ (<: seconds :>, ()) ] else [] :]
+
+evExpr = (0.0, ())
+
+uExpr = ()

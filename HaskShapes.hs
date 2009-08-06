@@ -28,3 +28,7 @@ selSwitch' [] def _ = def
 selSwitch' (([], _):es) def t = selSwitch' es def t
 selSwitch' (((tev,x):_, f):es) def t | tev > t = selSwitch' es (f tev x) tev
                                      | otherwise = selSwitch' es def t
+
+
+sigTmax :: Signal a -> Double
+sigTmax (Signal t1 t2 dt sf) = t2

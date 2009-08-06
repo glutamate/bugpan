@@ -132,7 +132,9 @@ symbolType nm = do path <- exprPath `fmap` get
           definesTy _ _ = Nothing
           lookupGlobal :: String -> TravM (T,Bool)
           lookupGlobal nm = do decTys <- allDeclaredTypes
-                               return (fromJust $ lookup nm decTys, True)
+                               case lookup nm decTys of
+                                 Just t -> return (t,True)
+                                 Nothing -> error $ "cannot find symbol: "++nm
 
 deriveTypeConstraints :: TravM ()
 deriveTypeConstraints  = do decTys <- allDeclaredTypes
@@ -160,7 +162,7 @@ applySolution :: TravM ()
 applySolution = do cns <- tyConstraints `fmap` get
                    mapD (aS cns)
     where aS cns (DeclareType nm ut@(UnknownT _)) = do
-            let newTy =   makePoly $ substT cns ut
+            let newTy =  makePoly $ substT cns ut
             let newCns = ((ut,newTy):cns)
             --traceM ""
             --traceM $ "foo: "++^ut++" --> "++^newTy
@@ -204,7 +206,9 @@ checkTy (Var nm) = do (vty, isGlobal) <- symbolType nm
                                  --traceM2 "refreshed" reTy 
                                  return reTy
                          else return vty                     
-checkTy (Const v) = return $ typeOfVal v
+checkTy (Const v) = return . generaliseInts $ typeOfVal v
+    where generaliseInts (NumT (Just IntT)) = NumT Nothing
+          generaliseInts t = t 
 checkTy (App e1 e2) = do t1 <- checkTy e1
                          t2 <- checkTy e2
                          ty <- UnknownT `fmap` (genSym "checkApp")
@@ -215,13 +219,16 @@ checkTy e@(Lam nm targ bd) = do tres <- withPath e $ checkTy bd
                                 --addTyConstraint (
                                 return $ LamT targ tres
 checkTy (Pair e1 e2) = do t1 <- checkTy e1
-                          t2 <- checkTy e1
+                          t2 <- checkTy e2
                           return $ PairT t1 t2
 checkTy (M2 op e1 e2) = do t1 <- checkTy e1 
                            t2 <- checkTy e2 
                            addTyConstraint (t1, NumT Nothing)
                            addTyConstraint (t2, NumT Nothing)
                            return t1
+checkTy (M1 op e1) = do t1 <- checkTy e1 
+                        addTyConstraint (t1, NumT Nothing)
+                        return t1
 checkTy (Cmp op e1 e2) = do t1 <- checkTy e1 
                             t2 <- checkTy e2 
                             addTyConstraint (t1, NumT Nothing)
@@ -241,6 +248,89 @@ checkTy (Case et pates) = do t1 <- checkTy et
                                      withPath (Case et [(pat,e)]) $ checkTy e
                              addManyConstraints ts
                              return $ head ts
+checkTy e@(LetE ses es) = do te <- withPath e $ checkTy es
+                             forM_ ses $ \(nm, t,el)-> withPath e $ do tc <- checkTy el
+                                                                       addTyConstraint (t,tc)
+                             return te
+checkTy e@(And e1 e2) = do t1 <- checkTy e1 
+                           t2 <- checkTy e2 
+                           addTyConstraint (t1, BoolT)
+                           addTyConstraint (t2, BoolT)
+                           return BoolT
+checkTy e@(Or e1 e2)  = do t1 <- checkTy e1 
+                           t2 <- checkTy e2 
+                           addTyConstraint (t1, BoolT)
+                           addTyConstraint (t2, BoolT)
+                           return BoolT
+checkTy e@(Not e1) = do t1 <- checkTy e1 
+                        addTyConstraint (t1, BoolT)
+                        return BoolT
+checkTy (Sig e) = do te <- checkTy e
+                     return $ SignalT te
+checkTy (SigVal s) = do ts <- checkTy s
+                        case ts of
+                          SignalT et -> return et
+                          _ -> do telem <- UnknownT `fmap` (genSym "checkSigVal")
+                                  addTyConstraint (ts, SignalT telem)
+                                  return $ telem
+checkTy (SigAt tm s) = do ty1 <- checkTy tm 
+                          tys <- checkTy s
+                          addTyConstraint (ty1, NumT (Just RealT))
+                          case tys of
+                            SignalT tval -> return tval
+                            _ -> do telem <- UnknownT `fmap` (genSym "checkSigAt")
+                                    addTyConstraint (tys, SignalT telem)
+                                    return $ telem
+
+checkTy (SigDelay s v0) = do tyv0 <- checkTy v0 
+                             tys <- checkTy s
+                             case tys of
+                               SignalT tval -> do addTyConstraint (tyv0, tval)
+                                                  return tys
+                               _ -> do telem <- UnknownT `fmap` (genSym "checkSigDelay")
+                                       addTyConstraint (tys, SignalT telem)
+                                       addTyConstraint (tyv0, telem)
+                                       return $ SignalT telem
+                          
+checkTy (Event e) = do tev <- checkTy e
+                       --traceM2 "event expr type: " tev
+                       telem <- UnknownT `fmap` (genSym "checkEvent")
+                       addTyConstraint (tev, ListT $ PairT (NumT (Just RealT)) telem)
+                       return tev -- . ListT $ PairT (NumT (Just RealT)) telem
+
+checkTy (Box e) = do vecTy <-checkTy e
+                     addTyConstraint (vecTy, vec3Ty)
+                     return ShapeT
+checkTy (Colour ce shpe) = do shpt <- checkTy shpe
+                              colt <- checkTy ce
+                              addTyConstraint (shpt, ShapeT)
+                              addTyConstraint (colt, vec3Ty)
+                              return ShapeT
+checkTy (Translate ve shpe) = do shpt <- checkTy shpe
+                                 vect <- checkTy ve
+                                 addTyConstraint (shpt, ShapeT)
+                                 addTyConstraint (vect, vec3Ty)
+                                 return ShapeT
+checkTy (Switch eslams es)  = do sigTy <- checkTy es
+                                 telem <- case sigTy of
+                                            SignalT telem' -> return telem'
+                                            _ -> do telem' <- UnknownT `fmap` (genSym "checkSigAt")
+                                                    addTyConstraint (sigTy, SignalT telem')
+                                                    return $ telem'
+
+                                 evTys <- forM eslams $ \(ev, slam) -> do
+                                            evsTy <- checkTy ev
+                                            slamTy <- checkTy slam
+                                            tyA <- UnknownT `fmap` (genSym "checkSwitch")
+                                            addTyConstraint (evsTy, ListT $ PairT (NumT (Just RealT)) tyA)
+                                            addTyConstraint (slamTy, LamT tyA (LamT realT (SignalT telem)))
+                                            return tyA
+                                 addManyConstraints evTys
+                                 return $ SignalT telem
+
+checkTy e = error $ "checkTy: unknown expr: "++pp e
+
+vec3Ty = PairT (PairT realT realT) realT
 
 addManyConstraints :: [T] -> TravM ()
 addManyConstraints (t:ts) = forM_ ts $ \t1 -> addTyConstraint (t,t1)
@@ -273,6 +363,7 @@ solve eqs = solv eqs []
           solv ((PairT t1 t2, PairT t3 t4):eq) sbst = solv ((t1, t3):(t2,t4):eq) sbst
           solv ((LamT t1 t2, LamT t3 t4):eq) sbst = solv ((t1, t3):(t2,t4):eq) sbst
           solv ((ListT t1, ListT t3):eq) sbst = solv ((t1, t3):eq) sbst
+          solv ((SignalT t1, SignalT t3):eq) sbst = solv ((t1, t3):eq) sbst
           solv ((t1@(UnknownT nm), t2):eq) sbst | t1 == t2 = solv eq sbst
                                                 | not (t1 `partOfTy` t2) =
                                                     let ts = substT [(t1, t2)] in
@@ -303,6 +394,7 @@ recSubstT :: [(T,T)] -> T -> T
 recSubstT subs (PairT t1 t2) = PairT (substT subs t1) (substT subs t2)
 recSubstT subs (LamT t1 t2) = LamT (substT subs t1) (substT subs t2)
 recSubstT subs (ListT t1) = ListT (substT subs t1)
+recSubstT subs (SignalT t1) = SignalT (substT subs t1)
 recSubstT subs t = t 
 
 refresh :: T -> TravM T

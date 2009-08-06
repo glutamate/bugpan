@@ -19,6 +19,7 @@ data BiV = BiV { bivName :: String,
 nstep t dt = roundNum (t/dt)
 
 anyNumT = NumT Nothing
+realT = NumT (Just RealT)
 (.->.) = LamT
 eventT t = PairT (anyNumT) (t)
 eventsT t = ListT $ eventT t
@@ -33,9 +34,10 @@ bivs = [
                                       let dropF (PairV (NumV te) _) = nstep te dt > nstep t dt
                                       let takeF (PairV (NumV te) _) = nstep te dt == nstep t dt
                                       return $ ListV (takeWhile takeF $ dropWhile dropF es)),
- BiV "seconds" (SignalT anyNumT) Unit,
- BiV "tmax" anyNumT Unit,
- BiV "dt" anyNumT Unit]
+ BiV "sigTmax" (SignalT (TyVar "a") .->. realT) (LamV $ \(SigV t1 t2 dt df)-> return $ NumV (NReal t2)),
+ BiV "seconds" (SignalT realT) Unit,
+ BiV "tmax" realT Unit,
+ BiV "dt" realT Unit]
 
 bivNms = [nm | BiV nm _ _ <- bivs ]
 
