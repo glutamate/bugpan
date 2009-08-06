@@ -42,7 +42,9 @@ vm = switch
 	    spike ~> \_->\_->{: vrest :}
 	    refrac_end ~> \tsp->\_-> solveOdeFrom (tsp+dt) cellOde vrest
 
+spike :: [(Real, ())]
 spike = crosses (-0.05) vm
+refrac_end :: [(Real, ())]
 refrac_end = later 2.5e-3 spike
 
 inputRate = [(0,tmax,rate)]

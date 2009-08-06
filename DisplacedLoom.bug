@@ -21,13 +21,13 @@ zpos = {: (<:seconds:>-5)*start_dist/5 :}
 
 pos = {: if <:zpos:> < (0-0.17) then (<:xpos:>, 0, <:zpos:>) else (tscreen*displacement/5, 0, (0-0.17)) :}
 loomObj = {: colour black (translate <:pos:> (cube l)) :}
-loomObj *> "screen"
+loomObj *> screen ""
 
 collision = [(5,())]
 displacedAngle = [(0, 5, angle)]
 
-collision *> "store"
-displacedAngle *> "store"
+collision *> store ""
+displacedAngle *> store ""
 
 _tmax=6
 

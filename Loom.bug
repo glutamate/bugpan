@@ -8,10 +8,10 @@ v = l/(lov*2)
 
 distance = {: (min (v*(<: seconds :>-5))) (-0.1700) :}
 loomObj = {: colour black (translate (0, 0, <: distance :>) (cube l)) :}
-loomObj *> "screen"
+loomObj *> screen ""
 
 _tmax=6
 
---ecVoltage <* "adc 0 20000 6" 
+--ecVoltage <* adc (0,20000,6) 
 
---ecVoltage *> "store"
+--ecVoltage *> store ""

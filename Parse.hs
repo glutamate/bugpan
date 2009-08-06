@@ -124,6 +124,8 @@ cPat (B.PCons p1 p2) = PatCons (cPat p1) (cPat p2)
 
 cType (B.TUnit) = UnitT
 cType (B.TNum) = NumT Nothing
+cType (B.TInt) = NumT (Just IntT)
+cType (B.TReal) = NumT (Just RealT)
 cType (B.TPair2 t1 t2) = PairT (cType t1) (cType t2)
 cType (B.TPair3 t1 t2 t3) = PairT (PairT (cType t1) (cType t2)) (cType t3)
 cType (B.TLam t1 t2) = LamT (cType t1) (cType t2)

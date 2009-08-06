@@ -61,17 +61,21 @@ tyCheckD d@(Let nm e)=do decTys <- allDeclaredTypes
                          clearTyConstraints
                          case lookup nm decTys of
                            Just t -> do tinf <- checkTy e
-                                        if t == tinf
+                                        addTyConstraint (t,tinf)
+                                        solveConstraints
+                                        {-if t == tinf
                                            then return ()
-                                           else tyFail ["expected: ", ppType t, ", inferred: ", ppType tinf]
+                                           else tyFail ["expected: ", ppType t, ", inferred: ", ppType tinf] -}
                            Nothing -> do e' <- mapEM lUT e
                                          t <- UnknownT `fmap` genSym nm
                                          insertBefore [DeclareType nm t]
                                          --alterDefinition nm $ const e'
-                                         --when (nm=="fst") $ do traceM "definition of fst:"
+                                         --when (nm=="vm") $ do traceTyConstraints
+                         --traceM "definition of fst:"
                                          --                      traceDefn "fst"
                                          tcalc <- checkTy e'
                                          addTyConstraint (t,tcalc)
+                                         --traceM ""
                                          --traceM2 "solving for " nm
                                          --traceTyConstraints
                                          solveConstraints
@@ -323,7 +327,7 @@ checkTy (Switch eslams es)  = do sigTy <- checkTy es
                                             slamTy <- checkTy slam
                                             tyA <- UnknownT `fmap` (genSym "checkSwitch")
                                             addTyConstraint (evsTy, ListT $ PairT (NumT (Just RealT)) tyA)
-                                            addTyConstraint (slamTy, LamT tyA (LamT realT (SignalT telem)))
+                                            addTyConstraint (slamTy, LamT realT (LamT tyA (SignalT telem)))
                                             return tyA
                                  addManyConstraints evTys
                                  return $ SignalT telem
@@ -333,6 +337,7 @@ checkTy e = error $ "checkTy: unknown expr: "++pp e
 vec3Ty = PairT (PairT realT realT) realT
 
 addManyConstraints :: [T] -> TravM ()
+addManyConstraints [] = return ()
 addManyConstraints (t:ts) = forM_ ts $ \t1 -> addTyConstraint (t,t1)
 
 tyPat :: Pat -> TravM T
