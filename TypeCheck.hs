@@ -429,6 +429,7 @@ partOfTy t1 t2 = t1 `elem` flatT t2
 flatT t@(PairT t1 t2) = t:flatT t1++flatT t2
 flatT t@(LamT t1 t2) = t:flatT t1++flatT t2
 flatT t@(ListT tl) = t:flatT tl
+flatT t@(SignalT ts) = t:flatT ts
 flatT t = [t]
 
 flatPat p@(PatPair p1 p2) = p:flatPat p1++flatPat p2

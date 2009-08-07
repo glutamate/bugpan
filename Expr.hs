@@ -75,6 +75,10 @@ isSubTermIn small big = not . null $ queryE tst big
                     | otherwise = []
 
 
+flatE :: E -> [E]
+flatE = queryE (unitList)
+    where unitList x = [x]
+
 queryE :: (E-> [a]) -> E -> [a]
 queryE q e@(If p c a) = q e ++ m p ++ m c ++m a
 	where m = queryE q
@@ -167,6 +171,11 @@ freeVars e = fv [] e
           
           --fv e (expr) = [] -}
 
+alphaConvert :: E -> E -> E -> E
+alphaConvert from to = mapE f
+    where f e | e == from = to
+              | otherwise = e
+
 mapE :: (E-> E)-> E -> E
 mapE f (If p c a) = f (If (m p) (m c) (m a))
     where m = mapE f 
@@ -203,6 +212,11 @@ mapE f (Box s1) = f (Box (mapE f s1))
 mapE f (Translate s1 s2) = f (Translate (mapE f s1) (mapE f s2))
 mapE f (Colour s1 s2) = f (Colour (mapE f s1) (mapE f s2))
 mapE f (HasType t s2) = f (HasType t (mapE f s2))
+
+unLam :: E -> ([String], E)
+unLam e = unLam' e []
+unLam' (Lam nm _ bd) nms = unLam' bd (nm:nms)
+unLam' e nms = (nms, e)
 
 
 --mapE f e = error $ "mapE: unknown expr "++show e 

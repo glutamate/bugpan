@@ -76,7 +76,8 @@ writeBufToSig = ["",
                  "bufToSig tmax buf = ",
                  "   let np = idInt . round $ tmax/dt",
                  "       arr = array (0,np) $ zip [0..np] $ reverse buf",
-                 "   in Signal 0 tmax dt $ \\t-> arr!t", ""]
+                 "       sf p = if p>np-1 then arr!(np-1) else if p<0 then arr!0 else arr!p",
+                 "   in Signal 0 tmax dt sf", ""]
 
 
 compileStages tmax stgs =  mainFun allStore ++ ["goMain = do "] ++lns++retLine++stages

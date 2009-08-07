@@ -17,6 +17,7 @@ import TypeCheck
 import Data.List
 import PrettyPrint
 
+-- CHEATING!!!!!
 substHasSigs :: TravM ()
 substHasSigs = mapDE $ \tle -> mapEM subst tle
     where subst e@(App (Var nm) arg) = do
@@ -24,10 +25,74 @@ substHasSigs = mapDE $ \tle -> mapEM subst tle
             ifM (dontLookUp nm)
                 (return e)
                 $ do defn <- lookUp nm
-                     ifM (hasSig $ stripSig defn)
-                         (return $ App (defn) arg)
+                     ifM (liftM2 (&&) (hasSig $ stripSig defn) (not `fmap` recursiveSigGen nm defn))
+                         ({- do ph <- exprPath `fmap` get
+                             traceM $ "substHasSig "++nm
+                             traceM $ "path "++(unlines $ map pp pth) -}
+                          {-if nm == "convolve"
+                             then return e
+                             else -} return $ App (defn) arg)
                          (return e) 
           subst e = return e
+
+atsArgument :: E -> Bool
+atsArgument e = let args = getEArgs e
+                    getEArgs (Lam nm _ bd) = nm:getEArgs bd
+                    getEArgs _ = []
+                    getAts (SigAt _ (Var nm1)) = [nm1 `elem` args]
+                    getAts _ = []
+                in nonempty . filter id $ queryE getAts e
+
+
+recursiveSigGenApplication = mapDE tle
+    where tle e =  case fst $ unApp e of 
+                     Var nm -> rSGA e nm
+                     _ -> return e
+          unSig (Sig e) = e
+          unSig e = e
+          rSGA e nm = do
+            ifM (dontLookUp nm)
+                (return e)
+                $ do defn <- lookUp nm
+                     recSigGen <- recursiveSigGen nm defn
+                     --traceM "foo"
+                     if not recSigGen
+                        then return e
+                        else do f <- genSym $ nm++"_recSig"
+                                let (args, innerDefn) = unLam defn
+                                let subInner = subVar nm (Var f) innerDefn
+                                let sigDefn = lamMany (unSig subInner) args
+                                let newInnerDefn = Sig (LetE [(f, UnspecifiedT, sigDefn)] 
+                                                             (appMany (Var f) . snd $ unApp e))
+                                --traceM "recursiveSigGenApplication"
+                                --traceM nm
+                                --traceM $ pp defn
+                                --traceM $ pp e
+                                --t-raceM $ pp newInnerDefn
+                                return newInnerDefn
+
+appMany el [] = el
+appMany el (e:es) = appMany (App el e) es
+
+lamMany bd [] = bd
+lamMany bd (nm:nms) = lamMany (Lam nm UnspecifiedT bd) nms
+
+unInnerSig (Lam nm t bd) = Lam nm t $ unInnerSig bd
+unInnerSig (Sig e) = e
+unInnerSig e = e
+
+unApp e = unApp' e []
+unApp' (App lam arg) args = unApp' lam (arg:args)
+unApp' e nms = (e,nms)
+
+recursiveSigGen :: String -> E -> TravM Bool
+recursiveSigGen nm e = do let (_, unlame) = unLam e
+                          let isSig e = (==IsSig) `fmap` isSignalOrEvt e 
+                          issig <- isSig unlame
+                          let isrec = Var nm `elem` flatE unlame
+                          return $ isrec && issig
+
+
 
 substGetsSigs :: TravM ()
 substGetsSigs = mapDE $ \tle -> mapEM subst tle
@@ -375,6 +440,7 @@ transforms =   [(typeCheck, "typeCheck")
                 ,(betaRedHasSigs , "betaRedHasSigs")
                 ,(sigFloating, "sigFloating")
                 ,(unDelays, "unDelays")
+                ,(recursiveSigGenApplication, "recursiveSigGenApplication")
                 ,(massageDelayRefsInSwitch, "massageDelayRefsInSwitch")
                 ,(explicitSignalCopying, "explicitSignalCopying")
                 ,(renameCopiedEvents, "renameCopiedEvents")
