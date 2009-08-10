@@ -11,6 +11,8 @@ import Transform
 import Types
 import Data.Char
 import Data.List
+import CompiledSrcsSinks
+import Data.Maybe
 
 --forget about sinks, sources apart from store
 
@@ -44,7 +46,9 @@ toHask modNm dt tmax ds
                     "import TNUtils",
                     "import Database",
                     "import Control.Monad",
-                    "import EvalM hiding (tmax, dt)","",
+                    "import EvalM hiding (tmax, dt)"]++
+                   allSrcImports ds++
+                   ["",
                     "default (Int, Double)",
                     "floor = realToFrac . P.floor ","",
                    "dt="++show dt, "tmax="++show tmax, "npnts="++show(round $ tmax/dt)]++
@@ -54,6 +58,9 @@ toHask modNm dt tmax ds
                    concatMap (\ds-> "\na stage":map ppDecl ds) stageDs++["-}"]
 
 --mapAccum :: (a->b) -> [a] -> [[b]]
+
+allSrcImports ds = let snms = [nm | ReadSource _ (nm, _) <- ds]
+                   in concatMap (\s-> map ("import "++) $ srcImpModule s) . catMaybes $ map lookupSrc snms
 
 rootDir = "/home/tomn/sessions"
 
@@ -104,12 +111,15 @@ compStage ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++"
     where ind = "   "
           loopInd = "       "
           ds = snd $ runTravM ds' [] removeSigLimits
+          dsSrcs =  [(varNm, fromJust $ lookupSrc srcNm,param) | ReadSource varNm (srcNm, Const param) <- ds]
+          atOnceSrcs = [(varNm, srcf param) | (varNm, Src _ _ _ _ (SrcOnce srcf), param)<- dsSrcs ]
+          rtSrcs = [(varNm, srcf param) | (varNm, Src _ _ _ _ (SrcRealTimeSig srcf), param)<- dsSrcs ]
           sigs = [ (nm,e) | Let nm (Sig e) <- ds ]
           evs = [ nm | Let nm (Event e) <- ds ]
           comments = ["--imps="++show imps,
                       "--exps="++show exps,
                      "--evexps="++show evExps]
-          lns = initLns ++ newTmax ++ initBuffers++ startLoop ++readSigs++
+          lns = initLns ++ newTmax ++ initBuffers++ runAtOnceSrcs++ startLoop ++readSigs++
                 writeSigs++readSigBuffers++readEventBuffers++returnLine++[""]
           initLns = concatMap initLn ds
           initLn (Let nm (Sig e)) = [ind++nm++" <- newIORef undefined"]
@@ -117,6 +127,7 @@ compStage ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++"
           initLn (Let nm (SigDelay (Var snm) v0)) = [ind++nm++" <- newIORef "++pp v0]
           initLn (Let nm (Event e)) = [ind++nm++"Queue <- newIORef []"]
           initLn d = []
+          runAtOnceSrcs = map (\(v,s)-> ind++v++" <- "++s++" tmax dt") atOnceSrcs --DOESNT WORK FOR SIGS  OR EVTS!!
           newTmax = let tm = localTmax tmax ds' in
                     [ind++"let tmax = "++(show $ tm),
                     ind++"let npnts = idInt . round $ tmax/dt"]

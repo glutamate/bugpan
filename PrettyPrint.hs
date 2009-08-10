@@ -106,6 +106,8 @@ pp (M2 Sub e1 e2) = pp2op e1 "-" e2
 pp (M2 Div e1 e2) = pp2op e1 "/" e2
 pp (M1 Exp e) = "exp " ++ ppa e
 pp (M1 Ln e) = "log " ++ ppa e
+pp (LetE [(n,t,e)] efinal) = concat ["let "++n++"="++ppa e ++" in ", ppa efinal]
+    where ppes es = map (\(n,t,e)-> n++" = "++pp e) es 
 pp (LetE les efinal) = concat ["let {", intercalate ";" $ ppes les, "} in ", ppa efinal]
     where ppes es = map (\(n,t,e)-> n++" = "++pp e) es 
 pp (Box d) = "box "++ppa d
