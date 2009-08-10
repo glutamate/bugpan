@@ -43,7 +43,7 @@ use fnm substs =
     do -- liftIO . system $ "cp "++fnm++" "++cmdFile
        ds <-  liftIO $ fileDecls fnm substs
        cmdFl <- cmdFile `fmap` get
-       liftIO $ writeFile cmdFl $ show ds
+       liftIO $ writeFile cmdFl $ ppProg "RunProgram" ds
        tnow <- liftIO $ getClockTime
        put (RS (Just tnow) cmdFl)
        return ()

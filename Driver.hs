@@ -67,7 +67,7 @@ catchForever l = forever $ catch l (\e-> putStrLn $ "error in main loop: "++show
 loop ds@(DS (sess) dpmv rmv prg) = do
   ifM (not `fmap` fileExist (cmdFile ds))
       (threadDelay 100000)
-      (do prg' <- liftIO (read `fmap` readFile (cmdFile ds))
+      (do prg' <- fileDecls (cmdFile ds) [] -- read `fmap` readFile cmdFile
 
           let runTM = runTravM prg' []
           let prg = snd . runTM $ transform
