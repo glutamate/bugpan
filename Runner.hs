@@ -21,6 +21,8 @@ import System.Cmd
 import Parse
 import System.Random
 --import Driver
+import TNUtils
+import PrettyPrint
 
 data RunnerState = RS {
       lastTriggerTime :: Maybe ClockTime,
@@ -41,7 +43,7 @@ use fnm substs =
     do -- liftIO . system $ "cp "++fnm++" "++cmdFile
        ds <-  liftIO $ fileDecls fnm substs
        cmdFl <- cmdFile `fmap` get
-       liftIO $ writeFile cmdFl $ ppProg "RunProgram" ds
+       liftIO $ writeFile cmdFl $ show ds
        tnow <- liftIO $ getClockTime
        put (RS (Just tnow) cmdFl)
        return ()

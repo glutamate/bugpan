@@ -22,6 +22,7 @@ import GHC.Handle
 import System.IO
 import System.Environment
 import TNUtils
+import Control.Monad.Trans
 
 data DriverState = DS {
       dsSession :: Session,
@@ -66,7 +67,7 @@ catchForever l = forever $ catch l (\e-> putStrLn $ "error in main loop: "++show
 loop ds@(DS (sess) dpmv rmv prg) = do
   ifM (not `fmap` fileExist (cmdFile ds))
       (threadDelay 100000)
-      (do prg' <- fileDecls (cmdFile ds) [] -- read `fmap` readFile cmdFile
+      (do prg' <- liftIO (read `fmap` readFile (cmdFile ds))
 
           let runTM = runTravM prg' []
           let prg = snd . runTM $ transform
