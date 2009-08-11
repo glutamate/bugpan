@@ -5,12 +5,21 @@ import HaskSyntaxUntyped
 import Expr
 import EvalM
 import Numbers
+import System.Environment
+import Data.Char
+import Data.List
+import TNUtils
 
+main = do args <- getArgs
+          let interval = (read `fmap` (safeLast $ filter isNumberStr args)) `orJust` 240
+          go args $ runLoom (interval)
 
-main = go runLoom
+runLoom ivl = 
+    do 	wait ivl
+	dplc <- uniform (-0.1) (0.1)
+	trace "displacement" dplc
+	use "DisplacedLoom" ["angle" =: dbl dplc]
+	runLoom ivl
 
-runLoom = do 	wait 240
-		dplc <- uniform (-0.1) (0.1)
-		trace "displacement" dplc
-		use "DisplacedLoom" ["angle" =: dbl dplc]
-		runLoom
+isNumberStr str = all isDigit str
+

@@ -26,15 +26,21 @@ import PrettyPrint
 
 data RunnerState = RS {
       lastTriggerTime :: Maybe ClockTime,
-      cmdFile :: String
+      cmdFile :: String,
+      shArgs :: [String]
 }
 
 type RunnerM = StateT RunnerState IO
 
-go :: RunnerM a -> IO a
-go ra = do 
+setTriggerTimeToNow :: RunnerM ()
+setTriggerTimeToNow = do tnow <- liftIO $ getClockTime
+                         RS _ cmd args <- get
+                         put (RS (Just tnow) cmd args)
+
+go :: [String] -> RunnerM a -> IO a
+go args ra = do 
 	sess <- lastSession "/home/tomn/sessions/"
-	fst `fmap` runStateT ra (RS Nothing $ oneTrailingSlash(baseDir sess)++"/program.bug") 
+	fst `fmap` runStateT ra (RS Nothing (oneTrailingSlash(baseDir sess)++"/program.bug") args) 
 
 --cmdFile = "/tmp/program.bug"
 
@@ -43,13 +49,17 @@ use fnm substs =
     do -- liftIO . system $ "cp "++fnm++" "++cmdFile
        ds <-  liftIO $ fileDecls fnm substs
        cmdFl <- cmdFile `fmap` get
-       liftIO $ writeFile cmdFl $ ppProg "RunProgram" ds
-       tnow <- liftIO $ getClockTime
-       put (RS (Just tnow) cmdFl)
+       args <- shArgs `fmap` get
+       --liftIO $ print args
+       if "-nodaq" `elem` args
+          then liftIO $ do --print "removing daq"
+                           writeFile cmdFl $ show (noDaqTrans ds)
+          else liftIO $ writeFile cmdFl $ show ds -- ppProg "RunProgram" ds
+       setTriggerTimeToNow
        return ()
 
 wait :: Double -> RunnerM ()
-wait s = do RS tm cf <- get
+wait s = do RS tm cf _ <- get
             case tm of
               Just t -> liftIO $ waitUntil t s
               Nothing -> liftIO $ waitSecs s 
@@ -69,3 +79,9 @@ trace nm v = liftIO . putStrLn $ nm++" "++show v
 ntimes :: Int -> RunnerM () -> RunnerM ()
 ntimes 0 _ = return ()
 ntimes n r = r >> ntimes (n-1) r
+
+noDaqTrans ds = let daqVars = [ nm | ReadSource nm ("adc", _) <- ds ]
+                    hasDaqVar (ReadSource nm _) = nm `elem` daqVars
+                    hasDaqVar (SinkConnect (Var nm) _) = nm `elem` daqVars
+                    hasDaqVar _ = False
+                in filter (not . hasDaqVar) ds
