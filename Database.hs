@@ -161,9 +161,12 @@ addRunToSession decls t0 tmax dt ress sess@(Session basedir sesst0)
                                 _ -> Nothing
           t1 = NumV. NReal $ t0
           t2 = NumV. NReal $ t0+tmax
+          moduleName = head [nm | Let "moduleName" (Const (StringV nm)) <- decls]
           tStartEvs = [("tStart",  [PairV t1 Unit]),
                        ("tStop",  [PairV t2 Unit])]
-          progEp = ("program",  [PairV (PairV t1 t2) (StringV (unlines $ map ppDecl decls))])
+          progEp = [("program",  [PairV (PairV t1 t2) (StringV (unlines $ map ppDecl decls))]),
+                    ("moduleName", [PairV (PairV t1 t2) (StringV (moduleName))]),
+                    (moduleName, [PairV (PairV t1 t2) Unit])]
           saveInSubDir subdir nm obj = do
             let dir = (basedir++"/"++subdir++"/"++nm)
             createDirectoryIfMissing False dir
@@ -179,7 +182,7 @@ addRunToSession decls t0 tmax dt ress sess@(Session basedir sesst0)
         forM (tStartEvs++evtsToStore) $ \(nm, evs) -> do
 	  putStrLn $"saving events "++ nm
           saveInSubDir "events" nm evs
-        forM (progEp:epsToStore) $ \(nm, eps) -> do
+        forM (progEp++epsToStore) $ \(nm, eps) -> do
 	  putStrLn $"saving epochs "++ nm
           saveInSubDir "durations" nm eps
         print "done saving session"
