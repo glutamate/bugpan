@@ -21,7 +21,7 @@ ident nm=nm
 
 
 convertProgram :: B.Program -> [Declare]
-convertProgram (B.Prog (B.BIdent b) ds) = map convDecl ds++[Let "moduleName" $ Const (StringV b)]
+convertProgram (B.Prog (B.BIdent b) ds) =  map convDecl ds ++ [Let "moduleName" $ Const (StringV b)] 
 
 convDecl (B.DLet (B.BIdent b) args e) = Let (ident b) . addLamsP (reverse args) $ cE e
 convDecl (B.DType (B.BIdent b) t) = DeclareType (ident b) $cType t
@@ -155,7 +155,7 @@ fileDecls fnm' subs = do
   conts <- readFile $ fnm
   case pProgram $ myLLexer conts of 
     Bad s -> fail $ fnm++": "++s++"\nfile name: \n"++fnm++"\nfile contents: \n"++conts
-    Ok ast -> onlyOneModuleName `fmap` (processImports . makeSubs subs $ convertProgram ast)
+    Ok ast -> onlyOneModuleName `fmap` ( processImports . makeSubs subs $ convertProgram ast)
                 
 
 onlyOneModuleName :: [Declare] -> [Declare]

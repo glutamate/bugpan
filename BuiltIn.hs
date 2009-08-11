@@ -7,7 +7,7 @@ import EvalM
 import Control.Monad
 import Numbers
 import Data.Char
---import Debug.Trace
+import Debug.Trace
 import Data.List
 import HaskSyntaxUntyped
 import UnitTesting hiding (evalsTo)

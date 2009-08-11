@@ -122,6 +122,7 @@ haskTypeString (NumT Nothing) = "Number"
 haskTypeString (SignalT t) = "Signal "++haskTypeString t
 haskTypeString (TyVar s) = s
 haskTypeString (ShapeT) = "Shape Double"
+haskTypeString (StringT) = "String"
 haskTypeString t = error $ show t
 
 isSubtypeOf:: T -> T -> Bool

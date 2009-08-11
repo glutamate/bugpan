@@ -1,6 +1,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, FlexibleContexts#-} 
 
-module Query where
+module QueryRun where
 
 import EvalM
 import Eval
@@ -41,7 +41,7 @@ import TNUtils
 import PrettyPrint
 import Query
 
-type QState = (Session)
+--type QState = (Session)
 
 
 run :: [Declare] -> Double -> StateT QState IO ()

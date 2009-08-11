@@ -78,6 +78,17 @@ data V  = BoolV Bool
         | StringV String
 	deriving (Show, Read)
 
+instance Eq V where
+    BoolV x == BoolV y = x==y
+    NumV x == NumV y = x==y
+    PairV x w == PairV y z = x==y && w==z
+    Unit == Unit = True
+    StringV s1 == StringV s2 = s1 == s2  
+    ListV v1s == ListV v2s = length v1s == length v2s && (and $ zipWith (==) v1s v2s)
+    _ == _ = False
+
+
+
 instance Read (a->b) 
 instance Show (a->b) where
     show _ = "<fun>"
@@ -158,13 +169,6 @@ instance Binary V where
                tt -> error $ "unknown type tag: "++show tt
 idWord8 :: Word8 -> Word8
 idWord8 = id
-
-instance Eq V where
-    BoolV x == BoolV y = x==y
-    NumV x == NumV y = x==y
-    PairV x w == PairV y z = x==y && w==z
-    Unit == Unit = True
-    _ == _ = False
 
 
 withTime t  es =  es {cur_t=Just t}

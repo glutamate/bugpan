@@ -1,8 +1,8 @@
 module HaskellBackend where
 
 import Statement
-import Compiler
-import Stages
+--import Compiler
+--import Stages
 import Expr
 import PrettyPrint
 import Traverse
@@ -12,6 +12,7 @@ import Types
 import Data.Char
 import Data.List
 import CompiledSrcsSinks
+import Parse
 import Data.Maybe
 
 --forget about sinks, sources apart from store
@@ -21,7 +22,11 @@ import Data.Maybe
 --translate, box?
 
 --compileToHask :: String -> [Declare] -> IO String
+test = do ds <- fileDecls "Intfire" []
+          compileToHask "Intfire" 0.001 0.2 ds
+
 compileToHask modNm dt tmax ds = do
+  --putStrLn "hello"
   let prg = toHask modNm dt tmax ds
   writeFile (capitalize modNm++".hs") prg
   --putStrLn prg
@@ -54,8 +59,8 @@ toHask modNm dt tmax ds
                    "dt="++show dt, "tmax="++show tmax, "npnts="++show(round $ tmax/dt)]++
                    writeBufToSig++
                    map atTopLevel nonMainLoop++["", ""]++
-                   compileStages tmax stageDs++["", ""]++["{-"]++
-                   concatMap (\ds-> "\na stage":map ppDecl ds) stageDs++["-}"]
+                   compileStages tmax stageDs++["", ""] -- ["{-"]
+                   --concatMap (\ds-> "\na stage":map ppDecl ds) stageDs++["-}"]
 
 --mapAccum :: (a->b) -> [a] -> [[b]]
 
@@ -184,8 +189,8 @@ tweakEslam' e = e
 unSig (Sig s) = s
 unSig e = e
 
-test :: IO ()
-test = do let xs = []
+test2 :: IO ()
+test2= do let xs = []
           xs <- return $ 1:xs -- xs refers to above, not recursive
           print $ take 5 xs -- [1]
 

@@ -40,6 +40,7 @@ typeCheck = do addBuiltinsTypeAnnos
                --traceTyConstraints
                --applySolution
                --traceDecls
+               --traceM "typecheck ok"
                
 
 {-mapD tc

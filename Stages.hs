@@ -22,24 +22,6 @@ import PrettyPrint
 -- 1. look for stage annotatinos
 -- 2. for each anno, sigs it depends on get same stage anno
 
-splitByStages :: [Declare] -> [[Declare]]
-splitByStages ds = 
-    let stages = nub [ s | Stage _ s <- ds ]
-        (mainL, env) = partition declInMainLoop ds 
-        stageDs st = let nms = [ nm | Stage nm s <- ds, s==st ]
-                         in [ d | d@(Let nm _) <- ds, nm `elem` nms ]++
-                            [ d | d@(SinkConnect _ (('#':nm),_)) <- ds, nm `elem` nms]
---                            [ d | d@(SinkConnect (Var nm) ("store",_)) <- ds, nm `elem` nms]
-                            
-        stagedDecls = map stageDs stages
-        unstagedDecls = mainL \\ (concat stagedDecls)
-    in (env : stagedDecls) ++ [unstagedDecls]
-
-localTmax globaltmax decls =  let unLimSigs = [ nm | Let nm (Sig s) <- decls ]
-                                  limSigs = [ lim | Let nm (SigLimited s (Const (NumV (NReal lim)))) <- decls ]
-                              in if null unLimSigs && nonempty limSigs
-                                    then maximum limSigs
-                                    else globaltmax
 
 execInStages :: [Declare] -> Double -> Double -> ([Stmt] -> IO [Stmt]) -> IO [(String,V)]
 execInStages ds dt tmaxGlobal postCompile = do

@@ -423,6 +423,7 @@ compilablePrelude =
     do prel <- env `fmap` get
        compPrel <- filterM (\(n,e) -> ifM (hasSig e) (return False) (return True)) prel
        return $ map (\(n,e)->Let n e) compPrel -}
+ack str = (traceM str >>)
 
 transforms =   [(typeCheck, "typeCheck")
                 ,(connectsLast, "connectsLast")
@@ -459,3 +460,23 @@ transforms =   [(typeCheck, "typeCheck")
 transform :: TravM ()
 transform = sequence_ $ map fst transforms
                 
+
+splitByStages :: [Declare] -> [[Declare]]
+splitByStages ds = 
+    let stages = nub [ s | Stage _ s <- ds ]
+        (mainL, env) = partition declInMainLoop ds 
+        stageDs st = let nms = [ nm | Stage nm s <- ds, s==st ]
+                         in [ d | d@(Let nm _) <- ds, nm `elem` nms ]++
+                            [ d | d@(SinkConnect _ (('#':nm),_)) <- ds, nm `elem` nms]
+--                            [ d | d@(SinkConnect (Var nm) ("store",_)) <- ds, nm `elem` nms]
+                            
+        stagedDecls = map stageDs stages
+        unstagedDecls = mainL \\ (concat stagedDecls)
+    in (env : stagedDecls) ++ [unstagedDecls]
+
+
+localTmax globaltmax decls =  let unLimSigs = [ nm | Let nm (Sig s) <- decls ]
+                                  limSigs = [ lim | Let nm (SigLimited s (Const (NumV (NReal lim)))) <- decls ]
+                              in if null unLimSigs && nonempty limSigs
+                                    then maximum limSigs
+                                    else globaltmax

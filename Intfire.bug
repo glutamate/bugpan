@@ -59,7 +59,7 @@ spike *> store ""
 --spike *> print ()
 rndSpike *> store ""
 
-
+--foo = "foo"
 
 {-
 cellOdeF v t = (gcell@t-((v-vrest)/rin))/cm

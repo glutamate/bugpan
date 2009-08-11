@@ -94,6 +94,7 @@ exec stmts dt tmax =
 
          H.update envHT "seconds" (NumV . NReal $ t)
          forM_ prgNoScreen $ \stm -> do 
+                         putStrLn $ ppStmt stm
                          sevals <- H.toList envHT                       
                          let es = evalS sevals 
                              evalToEnv env nm e =  case eval (extsEnv env es) e of
@@ -122,9 +123,13 @@ exec stmts dt tmax =
                                     evalTo nm e
                                     return ()
                            EventAddRule  nm e -> do
+                                    --print $ "updating "++nm
                                     evs<-fromJust `fmap` H.lookup envHT nm
-                                    let newevs = unEvalM $ eval es e
+                                    let newevs = case eval es e of
+                                                   Res v -> v
+                                                   Error s-> error $ "error in updating "++nm++": s"
                                     H.update envHT nm $! (appVs newevs evs) 
+                                    --print $ "done"
                                     return ()
                            SigSnkConn nm "print" -> do 
                                     v <- H.lookup envHT nm

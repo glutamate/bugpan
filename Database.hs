@@ -161,12 +161,15 @@ addRunToSession decls t0 tmax dt ress sess@(Session basedir sesst0)
                                 _ -> Nothing
           t1 = NumV. NReal $ t0
           t2 = NumV. NReal $ t0+tmax
-          moduleName = head [nm | Let "moduleName" (Const (StringV nm)) <- decls]
+          moduleName = safeHead [nm | Let "moduleName" (Const (StringV nm)) <- decls]
+          moduleEps = case moduleName of
+                        Nothing -> []
+                        Just nm -> [("moduleName", [PairV (PairV t1 t2) (StringV (nm))]),
+                                    (nm, [PairV (PairV t1 t2) Unit])]
           tStartEvs = [("tStart",  [PairV t1 Unit]),
                        ("tStop",  [PairV t2 Unit])]
-          progEp = [("program",  [PairV (PairV t1 t2) (StringV (unlines $ map ppDecl decls))]),
-                    ("moduleName", [PairV (PairV t1 t2) (StringV (moduleName))]),
-                    (moduleName, [PairV (PairV t1 t2) Unit])]
+          progEp = [("program",  [PairV (PairV t1 t2) (StringV (unlines $ map ppDecl decls))])]++moduleEps
+                    
           saveInSubDir subdir nm obj = do
             let dir = (basedir++"/"++subdir++"/"++nm)
             createDirectoryIfMissing False dir
