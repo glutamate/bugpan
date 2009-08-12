@@ -69,7 +69,10 @@ loop ds@(DS (sess) dpmv rmv prg) = do
       (threadDelay 100000)
       (do prg'' <- reads `fmap` readFile (cmdFile ds) --fileDecls (cmdFile ds) []
           case prg'' of
-            [] -> (removeFile $ cmdFile ds) >> return ()
+            [] -> do 
+              removeFile $ cmdFile ds
+              putStrLn "\n\nERROR: cannot parse command file\n\n"
+              return ()
             (prg',_):_ -> do
                        let runTM = runTravM prg' []
                        let prg = snd . runTM $ transform

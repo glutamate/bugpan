@@ -34,7 +34,7 @@ execInStages ds dt tmaxGlobal postCompile = do
                             let copyEnvSigs = [ Let nm (Sig $ SigAt (Var "seconds") (Var ('#':nm))) | ('#':nm,_) <- envAdded ]
                             let stmts' = compile $ env++copyEnvSigs++map envToDecl envAdded++decls
                             putStrLn "\na stage"
-                            mapM (putStrLn . ppStmt ) stmts'
+                            --mapM (putStrLn . ppStmt ) stmts'
                             let buffered = [ nm | SinkConnect (Var _) ('#':nm,_ )<- decls ]
                             let tmax = localTmax tmaxGlobal decls
                             stmts <- postCompile stmts'
