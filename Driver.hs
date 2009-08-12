@@ -67,17 +67,19 @@ catchForever l = forever $ catch l (\e-> putStrLn $ "error in main loop: "++show
 loop ds@(DS (sess) dpmv rmv prg) = do
   ifM (not `fmap` fileExist (cmdFile ds))
       (threadDelay 100000)
-      (do prg' <- read `fmap` readFile (cmdFile ds) --fileDecls (cmdFile ds) []
-
-          let runTM = runTravM prg' []
-          let prg = snd . runTM $ transform
-          let tmax = (lookupDefn "_tmax" prg >>= vToDbl) `orJust` 1
-          let dt = (lookupDefn "_dt" prg >>= vToDbl) `orJust` 0.001
-          tnow <- getClockTime
-          ress <- execInStages prg dt tmax $ postCompile dpmv rmv
-          putStrLn $ "results for this trial: "++show ress
-          addRunToSession prg (diffInS tnow (tSessionStart sess)) tmax dt ress sess
-          removeFile $ cmdFile ds)
+      (do prg'' <- reads `fmap` readFile (cmdFile ds) --fileDecls (cmdFile ds) []
+          case prg'' of
+            [] -> (removeFile $ cmdFile ds) >> return ()
+            (prg',_):_ -> do
+                       let runTM = runTravM prg' []
+                       let prg = snd . runTM $ transform
+                       let tmax = (lookupDefn "_tmax" prg >>= vToDbl) `orJust` 1
+                       let dt = (lookupDefn "_dt" prg >>= vToDbl) `orJust` 0.001
+                       tnow <- getClockTime
+                       ress <- execInStages prg dt tmax $ postCompile dpmv rmv
+                       putStrLn $ "results for this trial: "++show ress
+                       addRunToSession prg (diffInS tnow (tSessionStart sess)) tmax dt ress sess
+                       removeFile $ cmdFile ds)
 
 postCompile dispPullMv runningMv prg = do 
   let screenVars = [ nm | SigSnkConn nm "screen" <- prg ]

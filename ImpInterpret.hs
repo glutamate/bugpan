@@ -94,7 +94,7 @@ exec stmts dt tmax =
 
          H.update envHT "seconds" (NumV . NReal $ t)
          forM_ prgNoScreen $ \stm -> do 
-                         putStrLn $ ppStmt stm
+                         --putStrLn $ ppStmt stm
                          sevals <- H.toList envHT                       
                          let es = evalS sevals 
                              evalToEnv env nm e =  case eval (extsEnv env es) e of
