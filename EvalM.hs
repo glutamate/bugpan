@@ -13,6 +13,7 @@ import Data.Binary
 import Numbers
 import Data.Array
 import Data.Typeable
+import TNUtils
 
 data EvalS = EvalS { dt:: Double,
                      tmax :: Double,
@@ -173,31 +174,46 @@ typeOfVal (StringV _) = StringT
 class Reify a where
     reify :: V-> Maybe a
     pack :: a->V
+    typeOfReified :: a->T
 
 instance Reify V where 
     reify = Just
     pack = id
+    typeOfReified _ = AnyT
+
 instance Reify Double where 
     reify = vToDbl
     pack = NumV . NReal
+    typeOfReified _ = NumT (Just RealT)
+
 instance Reify Int where 
     reify (NumV n) = let NInt i = numCast n NI
                      in Just i
     reify _ = Nothing
     pack = NumV . NInt
+    typeOfReified _ = NumT (Just IntT)
+
 instance Reify Integer where 
     reify (NumV n) = let NInt i = numCast n NI
                      in Just $ toInteger i
     reify _ = Nothing
     pack = NumV . NInt . fromInteger
+    typeOfReified _ = NumT (Just IntT)
+
 instance (Reify a, Reify b) => Reify (a,b) where
     reify (PairV a b) = liftM2 (,) (reify a) (reify b)
     reify _ = Nothing
     pack (x,y) = PairV (pack x) (pack y)
-instance (Reify a, Reify b, Reify c) => Reify (a,b,c) where
+    typeOfReified pr = PairT (typeOfReified $ fst pr) (typeOfReified $ snd pr)
+
+{-instance (Reify a, Reify b, Reify c) => Reify (a,b,c) where
     reify (PairV (PairV a b) c) = liftM3 (,,) (reify a) (reify b) (reify c)
     reify _ = Nothing
     pack (x,y,z) = PairV (PairV (pack x) (pack y)) (pack z)
+    typeOfReified trip = PairT (PairT (typeOfReified . fst3 $ trip) 
+                                      (typeOfReified . snd3 $ trip))
+                               (typeOfReified $ trd3 trip) -}
+
 instance (Reify a) => Reify [a] where
     reify (ListV xs) = let rmxs = map reify xs in
                        if all isJust rmxs
@@ -205,19 +221,23 @@ instance (Reify a) => Reify [a] where
                           else Nothing
     reify _ = Nothing
     pack xs = ListV $ map pack xs
+    typeOfReified xs = ListT (typeOfReified $ head xs)
+
 instance Reify NumVl where
     reify (NumV n) = Just n
     reify _ = Nothing
     pack = NumV
+    typeOfReified s = NumT Nothing
 instance Reify () where
     reify Unit = Just ()
     reify _ = Nothing
     pack () = Unit
-
+    typeOfReified _ = UnitT
 instance Reify [Char] where
     reify (StringV s) = Just s
     reify _ = Nothing
     pack str = StringV str
+    typeOfReified _ = StringT
 
 unsafeReify :: Reify a => V -> a
 unsafeReify = fromJust . reify
@@ -232,4 +252,8 @@ readSig :: Signal a -> Double -> a
 instance Reify a => Reify (Signal a) where
     reify (SigV t1 t2 dt sf) = Just $ Signal t1 t2 dt $ \ix-> unsafeReify (sf ix)
     pack (Signal t1 t2 dt sf) = SigV t1 t2 dt $ \ix->pack (sf ix)
+    typeOfReified s = SignalT (typeOfReified (unSig s))
+        where unSig :: Signal a -> a
+              unSig = undefined
+
 

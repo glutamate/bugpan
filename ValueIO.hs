@@ -2,6 +2,8 @@ module ValueIO where
 
 import EvalM
 import Data.Binary 
+import Data.Binary.Get
+import qualified Data.ByteString.Lazy as L
 import Numbers
 import Array
 import Control.Monad 
@@ -188,4 +190,21 @@ instance Binary a => Binary (Signal a) where
     put (Signal t1 t2 dt sf)= do put t1 
                                  put t2
                                  put dt
-                                 mapM_ (\t->put $ sf t) [0..floor $ (t2-t1)/dt]
+                                 mapM_ (\t->put $ sf t) [0..round $ (t2-t1)/dt]
+
+loadReifiedBinary :: (Reify a, Binary a, Show a) => String -> IO [a]
+loadReifiedBinary fp = res where
+    res = do let expectedTypeTag = typeOfReified (head $ unIO res)
+             bs <- L.readFile fp
+             let (n, bs1,_) =  runGetState (get) bs 1000
+             --return $ idInt n
+             let (actualTypeTag, restOfFile, _)  =runGetState (parseTT `fmap` get) bs1 1000
+             when (actualTypeTag /= expectedTypeTag) (fail $ "laodReifyBin "++fp++": "++show expectedTypeTag ++ " != "++ show actualTypeTag)
+             --putStrLn $ show expectedTypeTag ++ " =?= "++ show actualTypeTag
+             let objs =runGet (forM [1..(idInt n)] $ const get) restOfFile
+             --let obj =runGet (get) restOfFile 
+             --print objs
+             return $ objs
+
+unIO :: IO a -> a
+unIO = undefined

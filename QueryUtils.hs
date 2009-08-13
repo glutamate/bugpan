@@ -43,10 +43,10 @@ later :: Double -> [Event a] -> [Event a]
 later t  = map (\(te, v) ->(t+te, v))
 
 fadeOut :: Double -> [Event a] -> [Duration a]
-fadeOut t = map (\(tev,v)-> (tev, tev+t, v))
+fadeOut t = map (\(tev,v)-> ((tev, tev+t), v))
 
 fadeIn :: Double -> [Event a] -> [Duration a]
-fadeIn t = map (\(tev,v)-> (tev-t, tev, v))
+fadeIn t = map (\(tev,v)-> ((tev-t, tev), v))
 
 
 filterTag :: Tagged t => (a->Bool) -> [t a] -> [t a]
@@ -66,7 +66,7 @@ area :: Fractional a => [Signal a] -> [Duration a]
 area sigs = map area1 sigs
 
 area1 :: Fractional a => Signal a -> Duration a
-area1 sig@(Signal t1 t2 dt sf) = (t1, t2, foldSig sumf 0 sig)
+area1 sig@(Signal t1 t2 dt sf) = ((t1, t2), foldSig sumf 0 sig)
     where sumf prev next = prev+next*(realToFrac dt)
 
 (<$$>) :: (Functor f1, Functor f2) => (a->b) -> f1 (f2 a) -> f1 (f2 b)
@@ -77,8 +77,8 @@ tag tg = map (`setTag` tg)
 
 freqDuring :: [Event b] -> [Duration a] -> [Duration (a, Double)]
 freqDuring evs durs = map (freqDuring' evs) durs
-    where freqDuring' evs dur@(t1, t2, durtag) = 
-              (t1, t2, (durtag, 
+    where freqDuring' evs dur@((t1, t2), durtag) = 
+              ((t1, t2), (durtag, 
                         (realToFrac . length $ evs `during` [dur])/(t2-t1)))
 
 during :: [Event a] -> [Duration b] -> [Event a]
@@ -97,7 +97,7 @@ inout [] _ = []
 inout _ [] = []
 inout ((t1,v1):ins) outs = 
     case dropWhile ((<t1) . fst) outs of
-      ((t2,v2):outs') -> (t1,t2,(v1,v2)):inout ins outs'
+      ((t2,v2):outs') -> ((t1,t2),(v1,v2)):inout ins outs'
       [] -> []
 
 runStatsOn :: Tagged t => Fold a b -> [t a] -> [Duration b]
@@ -106,7 +106,7 @@ runStatsOn (F op init c cmb) tgs =
     let t1 = minimum $ map getTStart tgs
         t2 = maximum $ map getTStop tgs
         v = c . foldl' op init $ map getTag tgs 
-    in [(t1,t2,v)]
+    in [((t1,t2),v)]
 
 sigStat :: Fold a b -> [Signal a] -> [Duration b]
 sigStat f sigs = map (sigStat' f) sigs
@@ -118,7 +118,7 @@ sigStat' (F op init c cmb) sig@(Signal t1 t2 dt sf) =
         --go 0 x = c x
         --go n x = go (n-1) (x `op` sf n)
         v = c $! go npts init
-    in (t1,t2,v)
+    in ((t1,t2),v)
        where npts = round $ (t2-t1)/dt
              go 0 x = x
              go !n !x = go (n-1) (x `op` sf (npts-n))
@@ -131,6 +131,6 @@ minMaxDiffF = pure (-) <*> maxF <*> minF
 sigNoiseRatioF = pure (/) <*> minMaxDiffF <*> stdDevPF
 
 dur :: a -> [Duration a]
-dur x = [(minBound, maxBound, x)]
+dur x = [((minBound, maxBound), x)]
 
 -- <**> :: [Duration (a->b)] -> [Duration a] -> [Duration b]

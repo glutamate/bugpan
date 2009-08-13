@@ -63,13 +63,13 @@ signals nm _ = do
           answers . catMaybes $ map reify $ concat sigs) 
       (liftIO (print $ "dir not found:" ++nm) >> answers [])
 
-signalsDirect :: B.Binary a => String -> a -> StateT QState IO [Signal a]
+signalsDirect :: (Reify a, B.Binary a, Show a) => String -> a -> StateT QState IO [Signal a]
 signalsDirect nm _ = do
   Session bdir t0 <- getSession
   --liftIO . print $ bdir++"/signals/"++nm
   ifM (liftIO (doesDirectoryExist (bdir++"/signals/"++nm)))
       (do fnms <- getSortedDirContents $ bdir++"/signals/"++nm
-          sigs <- forM fnms $ \fn-> liftIO $ loadBinary $ bdir++"/signals/"++nm++"/"++fn 
+          sigs <- forM fnms $ \fn-> liftIO $ loadReifiedBinary $ bdir++"/signals/"++nm++"/"++fn 
           return $ concat sigs) 
       (liftIO (print $ "dir not found:" ++nm) >> answers [])
 

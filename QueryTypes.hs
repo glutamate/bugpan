@@ -40,7 +40,7 @@ import Data.Unique
 import TNUtils
 import Data.Typeable
 
-type Duration a = (Double,Double,a)
+type Duration a = ((Double,Double),a)
 type Event a = (Double,a)
 
 
@@ -73,7 +73,7 @@ instance PlotWithR [Duration Double] where
         do return $ RPlCmd { 
                         prePlot = [],
                         cleanUp = return (),
-                        plotArgs = map (\(t1,t2,v) -> PLLines [(t1, v), (t2, v)]) durs
+                        plotArgs = map (\((t1,t2),v) -> PLLines [(t1, v), (t2, v)]) durs
                       }
 --scatter plot
 instance Tagged t => PlotWithR [t (Double,Double)] where
@@ -110,30 +110,30 @@ foldSig f init sig = foldl' f init $ sigToList sig
 
 --mapMaybe :: (a->Maybe b) -> [a] -> [b]
 --mapMaybe f xs = catMaybes $ map f xs
-section1 (Signal ts1 ts2 dt sf) (td1,td2,vd) = let (t1, t2)= (max ts1 td1, min ts2 td2)
-                                                   dropPnts = round $ (t1 - ts1)/dt
-                                               in Signal t1 t2 dt $ \pt->(sf $ pt + dropPnts)
+section1 (Signal ts1 ts2 dt sf) ((td1,td2),vd) = let (t1, t2)= (max ts1 td1, min ts2 td2)
+                                                     dropPnts = round $ (t1 - ts1)/dt
+                                                 in Signal t1 t2 dt $ \pt->(sf $ pt + dropPnts)
 
 sigContainsDur :: Duration b -> Signal a -> Bool
-sigContainsDur (td1,td2,vd) (Signal ts1 ts2 dt sf) = ts1 < td1 && ts2 > td2
+sigContainsDur ((td1,td2),vd) (Signal ts1 ts2 dt sf) = ts1 < td1 && ts2 > td2
 
 sigOverlapsDur :: Duration b -> Signal a -> Bool
-sigOverlapsDur (td1,td2,vd) (Signal ts1 ts2 dt sf) = td2 > ts1 && td1<ts2 -- || td1 < ts2 && td2 >ts1
+sigOverlapsDur ((td1,td2),vd) (Signal ts1 ts2 dt sf) = td2 > ts1 && td1<ts2 -- || td1 < ts2 && td2 >ts1
 
 type List a = [a]
 type Id a = a
 
 vToEvent v = (evTime v, evTag v)
-vToDuration v = let (t1, t2) = epTs v in (t1, t2, epTag v)
+vToDuration v = let (t1, t2) = epTs v in ((t1, t2), epTag v)
 
-evInDuration (t,_) (t1,t2, _) = t<t2 && t>t1
+evInDuration (t,_) ((t1,t2), _) = t<t2 && t>t1
 
 
-showDur (t1,t2,v) = show t1 ++ ".."++show t2++": "++show v
+showDur ((t1,t2),v) = show t1 ++ ".."++show t2++": "++show v
 showEvt (t,v) = "@"++show t++": "++show v
 
 sigDur :: Signal a -> Duration ()
-sigDur (Signal t1 t2 _ _) = (t1,t2, ())
+sigDur (Signal t1 t2 _ _) = ((t1,t2), ())
 
 sscan :: (a->b->a) -> a -> Signal b -> Signal a
 sscan f init sig@(Signal t1 t2 dt sf) = let arr2 = scanl f init $ sigToList sig
@@ -152,11 +152,11 @@ instance Tagged ((,) Double) where
     getTStart (t,_) = t
     getTStop (t,_) = t
 
-instance Tagged ((,,) Double Double) where
-    getTag (_,_,v) = v
-    setTag (t1,t2,_) v = (t1,t2, v)
-    getTStart (t1,t2,_) = t1
-    getTStop (t1,t2,_) = t2
+instance Tagged ((,) (Double, Double)) where
+    getTag (_,v) = v
+    setTag ((t1,t2),_) v = ((t1,t2), v)
+    getTStart ((t1,t2),_) = t1
+    getTStop ((t1,t2),_) = t2
 
 foldTagged ::  Tagged t => (a -> b -> a) -> a -> [t b] -> a
 foldTagged f init col = foldl' f init $ map getTag col
@@ -165,8 +165,8 @@ foldTagged f init col = foldl' f init $ map getTag col
 instance Functor ((,) Double) where
     fmap f (t,v) = (t, f v)
 
-instance Functor ((,,) Double Double) where
-    fmap f (t1,t2, v) = (t1,t2,f v)
+{-instance Functor ((,) (Double, Double)) where
+    fmap f ((t1,t2), v) = ((t1,t2),f v) -}
  
 instance Functor Signal where
     fmap f (Signal t1 t2 dt sf) = 
@@ -176,8 +176,8 @@ instance Functor Signal where
 instance Shiftable (Double,a) where
     shift ts (t,v) = (t+ts, v)
 
-instance Shiftable (Double,Double,a) where
-    shift ts (t1,t2,v) = (t1+ts,t2+ts,v)
+instance Shiftable ((Double,Double),a) where
+    shift ts ((t1,t2),v) = ((t1+ts,t2+ts),v)
 
 instance Shiftable (Signal a) where
     shift ts (Signal t1 t2 dt sf) = Signal (t1+ts) (t2+ts) dt sf 

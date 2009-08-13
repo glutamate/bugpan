@@ -41,10 +41,10 @@ snrBench = inSessionNamed "72cf2d2c868a81de800000110961a575_fmt3" $ do
              liftIO . print $ sigStat minF (take 1 ecV)
 ioBench = inTemporarySession $ do
               prog <- use "TestStore"
-              run (prog`with` ["_tmax" =: dbl 100]) 0
+              run (prog`with` ["_tmax" =: dbl 10]) 0
               secs <- signals "secs" double
 --              ecV <- signals "ecVoltage" double
-              liftIO . print $ sigStat minF (secs)
+              liftIO . print $ sigStat meanF (secs)
 
 ioTest = inTemporarySession $ do
            prog <- use "TestStore"
@@ -52,7 +52,7 @@ ioTest = inTemporarySession $ do
            run prog 5
            run prog 10
 
-           secs <- signals "secs" double
+           secs <- signalsDirect "secs" double
            anEvent <- events "anEvent" ()
            aNumEvent <- events "aNumEvent" double
            aStringDur <- durations "aStringDur" ""
@@ -147,7 +147,7 @@ unsafeMain = inTemporarySession $ do
   liftIO $ print peakgsyn 
   --liftIO . print . area $  (flip (/) <$$> roi) `applyOver` gsyn
 
-main = snrBench
+main = ioTest
 
 safeMain = inTemporarySession $ do
   intfire <- use "Intfire"
