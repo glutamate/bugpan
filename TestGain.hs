@@ -147,7 +147,7 @@ unsafeMain = inTemporarySession $ do
   liftIO $ print peakgsyn 
   --liftIO . print . area $  (flip (/) <$$> roi) `applyOver` gsyn
 
-main = ioBench
+main = ioTest
 
 safeMain = inTemporarySession $ do
   intfire <- use "Intfire"

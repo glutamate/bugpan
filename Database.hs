@@ -39,6 +39,10 @@ data Session = Session { baseDir :: FilePath,
                          tSessionStart :: ClockTime
                        } deriving (Eq, Show)
 
+withoutTrailing c [] = []
+withoutTrailing c cs = if last cs == c
+                          then init cs
+                          else cs
 
 
 newSession :: FilePath -> IO Session
@@ -62,6 +66,19 @@ newSession rootDir = do
   writeFile (baseDir++"/sessionFormatVersion") $ "2"
   return $ Session baseDir t0
 --sessEvalState s = EvalS 0 0 Nothing (qenv s ++( evalManyAtOnce $ sessPrelude s))
+
+cloneSession :: Session -> String-> Int -> IO Session
+cloneSession (Session oldBasedir t0@(TOD t1 t2)) postfix newVersion = do
+  let baseDir = withoutTrailing '/' oldBasedir ++ postfix
+  createDirectory baseDir
+  createDirectory $ baseDir++"/signals"
+  createDirectory $ baseDir++"/events"
+  createDirectory $ baseDir++"/durations"
+  writeFile (baseDir++"/tStart") $ show (t1, t2)
+  writeFile (baseDir++"/sessionFormatVersion") $ show newVersion
+  return $ Session baseDir t0
+--sessEvalState s = EvalS 0 0 Nothing (qenv s ++( evalManyAtOnce $ sessPrelude s))
+
 
 sessionTypes :: Session ->  IO [(String, T)]
 sessionTypes sess@(Session dir' _) = do

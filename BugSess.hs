@@ -13,6 +13,7 @@ import Language.Haskell.Interpreter
 import QueryTypes
 import Data.Char
 import System.Posix.Resource
+import ValueIO
 
 root = "/home/tomn/sessions/"
 
@@ -78,6 +79,30 @@ dispatch ("convert1":sessNm:_) = do
                       return $ xs)
                   ((print $ "dir not found:" ++fp) >> return [])
 
+dispatch ("convert2":sessNm:_) = do
+  sessOld <- loadApproxSession root sessNm
+  sessNew <- cloneSession sessOld "_fmt3" 3
+  forM_ ["signals", "events", "durations"] $ \kind -> do
+                                   sigs <- getDirContents $ (oneTrailingSlash $ baseDir sessOld)++kind
+                                   let path  = (oneTrailingSlash $ baseDir sessOld)++kind++"/"
+                                   let pathN  = (oneTrailingSlash $ baseDir sessNew)++kind++"/"
+                                   forM_ sigs $ \sig -> do 
+                                                       vs<-loadUntyped1 $ path++sig
+                                                       createDirectory $ pathN++sig
+                                                       forM_ vs $ \(nm,sigv) -> do let fp = pathN++sig++"/"++nm
+                                                                                   putStrLn $ "saving "++show sigv++ " in "++fp
+                                                                                   saveBinary fp sigv
+      where loadUntyped1 :: FilePath -> IO [(String,[V])]
+            loadUntyped1 fp = do 
+              ifM (doesDirectoryExist fp)
+                  (do fnms <- getSortedDirContents fp
+                      xs <- forM fnms $ \fn-> do b<-loadBinary $ fp++"/"++fn
+                                                 return (fn,map unOldFmtV b)
+                      return $ xs)
+                  ((print $ "dir not found:" ++fp) >> return [])
+
+idLstOldFmtV :: [OldFmtV] -> [OldFmtV]
+idLstOldFmtV = id
 
 typeToKind :: T -> String
 typeToKind (SignalT _) = "signals"

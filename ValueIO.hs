@@ -60,11 +60,18 @@ putTT v = mapM_ putWord8 . typeTag . typeOfVal $ v
 putTT1 :: V -> Put 
 putTT1 v = put . typeTag1 . typeOfVal $ v
 
+
+newtype OldFmtV = OldFmtV { unOldFmtV :: V }
+
+instance Binary OldFmtV where
+    put = putFull . unOldFmtV
+    get = OldFmtV `fmap` getFull
+
 instance Binary V where
-    --put v = putTT1 v >> putRaw v
-    put = putFull
-    --get = (parseTT `fmap` get) >>= getRaw -- getFull
-    get = getFull
+    put v = putTT1 v >> putRaw v
+    --put = putFull
+    get = (parseTT `fmap` get) >>= getRaw -- getFull
+    --get = getFull
 
 putFull v@(BoolV b) = putTT v >> put b
 putFull v@(NumV (NInt i)) =  putTT v >>put i
@@ -88,7 +95,7 @@ putRaw v@(SigV t1 t2 dt sf) = do put t1
                                  put t2
                                  put dt
                                  mapM_ (\t->putRaw $ sf t) [0..round $ (t2-t1)/dt]
-putRaw Unit = return ()
+putRaw Unit = put ()
 putRaw v@(StringV s) = put s
 
 binTest x = let y = decode $ encode x
@@ -106,7 +113,8 @@ getFull = do tt1 <- get
                1 -> BoolV `fmap` get 
                2 -> (NumV . NInt ) `fmap` get 
                3 -> (NumV . NReal ) `fmap` get 
-               5 -> return Unit
+               5 -> do () <- get
+                       return Unit
                6 -> do p1 <- get
                        p2 <- get
                        return $ PairV p1 p2
