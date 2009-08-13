@@ -191,13 +191,22 @@ eachOf xs = ListT . return $ xs
 
 data QueryResultBox = forall a. QueryResult a => QResBox a deriving Typeable
 
-class Show a => QueryResult a
+class QueryResult a where
+    qReply :: a -> IO String
 
-instance Show a => QueryResult [Signal a]
-instance Show a => QueryResult [Event a]
-instance Show a => QueryResult [Duration a]
+instance Show a => QueryResult [Signal a] where
+    qReply xs = return $ show xs
+instance Show a => QueryResult [Event a] where
+    qReply xs = return $ show xs
+instance Show a => QueryResult [Duration a] where
+    qReply xs = return $ show xs
+instance QueryResult (IO RPlotCmd) where
+    qReply ioplot = do plot <- ioplot
+                       plotPlotCmd plot
+                       return ""
 
-instance QueryResult [Char]
+instance QueryResult [Char] where
+    qReply = return 
     
 
 

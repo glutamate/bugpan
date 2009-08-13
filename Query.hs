@@ -40,6 +40,7 @@ import Parse
 import TNUtils 
 import PrettyPrint
 import ValueIO
+import qualified Data.Binary as B
 
 type QState = (Session)
 
@@ -60,6 +61,16 @@ signals nm _ = do
       (do fnms <- getSortedDirContents $ bdir++"/signals/"++nm
           sigs <- forM fnms $ \fn-> liftIO $ loadVs $ bdir++"/signals/"++nm++"/"++fn 
           answers . catMaybes $ map reify $ concat sigs) 
+      (liftIO (print $ "dir not found:" ++nm) >> answers [])
+
+signalsDirect :: B.Binary a => String -> a -> StateT QState IO [Signal a]
+signalsDirect nm _ = do
+  Session bdir t0 <- getSession
+  --liftIO . print $ bdir++"/signals/"++nm
+  ifM (liftIO (doesDirectoryExist (bdir++"/signals/"++nm)))
+      (do fnms <- getSortedDirContents $ bdir++"/signals/"++nm
+          sigs <- forM fnms $ \fn-> liftIO $ loadBinary $ bdir++"/signals/"++nm++"/"++fn 
+          return $ concat sigs) 
       (liftIO (print $ "dir not found:" ++nm) >> answers [])
 
 signal :: Reify a => String -> a-> L.ListT (StateT QState IO) (Signal a)

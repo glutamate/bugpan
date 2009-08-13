@@ -86,7 +86,9 @@ dispatch ("convert2":sessNm:_) = do
                                    sigs <- getDirContents $ (oneTrailingSlash $ baseDir sessOld)++kind
                                    let path  = (oneTrailingSlash $ baseDir sessOld)++kind++"/"
                                    let pathN  = (oneTrailingSlash $ baseDir sessNew)++kind++"/"
+                                   --putStrLn $ "kind="++kind
                                    forM_ sigs $ \sig -> do 
+                                                       --putStrLn $ "sig="++sig
                                                        vs<-loadUntyped1 $ path++sig
                                                        createDirectory $ pathN++sig
                                                        forM_ vs $ \(nm,sigv) -> do let fp = pathN++sig++"/"++nm
@@ -96,7 +98,9 @@ dispatch ("convert2":sessNm:_) = do
             loadUntyped1 fp = do 
               ifM (doesDirectoryExist fp)
                   (do fnms <- getSortedDirContents fp
-                      xs <- forM fnms $ \fn-> do b<-loadBinary $ fp++"/"++fn
+                      xs <- forM fnms $ \fn-> do b <- loadBinary $ fp++"/"++fn
+                                                 return $ idLstOldFmtV b
+                                                 --putStrLn $ fn ++ show b
                                                  return (fn,map unOldFmtV b)
                       return $ xs)
                   ((print $ "dir not found:" ++fp) >> return [])
@@ -104,6 +108,9 @@ dispatch ("convert2":sessNm:_) = do
 idLstOldFmtV :: [OldFmtV] -> [OldFmtV]
 idLstOldFmtV = id
 
+-- :set -fbreak-on-exception
+
+-- :trace dispatch ["convert2", "72"]
 typeToKind :: T -> String
 typeToKind (SignalT _) = "signals"
 typeToKind (PairT (PairT _ _) _) = "durations"

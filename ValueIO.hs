@@ -6,6 +6,7 @@ import Numbers
 import Array
 import Control.Monad 
 import TNUtils
+import Debug.Trace
 
 loadVs :: String -> IO [V]
 loadVs fp = loadBinary fp
@@ -36,7 +37,7 @@ typeTag1 (SignalT t) = [8]++ typeTag1 t
 typeTag1 (StringT) = [9]
 
 parseTT :: [Word8] -> T
-parseTT = fst . parseTT1 
+parseTT wds = fst . parseTT1 $ wds
  
 parseTT1 :: [Word8] -> (T, [Word8])
 parseTT1 (1:rest) = (BoolT ,rest)
@@ -52,7 +53,7 @@ parseTT1 (8:rest) = let (t,more) = parseTT1 rest
 parseTT1 (6:rest) = let (t1,more) = parseTT1 rest
                         (t2,more') = parseTT1 more
                     in (PairT t1 t2, more')
-parseTT1 wds = error $ "unknonw type tag "++show wds
+parseTT1 wds = error $ "parseTT1: unknonw type tag "++show wds
 
 putTT :: V -> Put 
 putTT v = mapM_ putWord8 . typeTag . typeOfVal $ v
@@ -61,7 +62,7 @@ putTT1 :: V -> Put
 putTT1 v = put . typeTag1 . typeOfVal $ v
 
 
-newtype OldFmtV = OldFmtV { unOldFmtV :: V }
+newtype OldFmtV = OldFmtV { unOldFmtV :: V } deriving (Show, Eq)
 
 instance Binary OldFmtV where
     put = putFull . unOldFmtV
@@ -77,7 +78,7 @@ putFull v@(BoolV b) = putTT v >> put b
 putFull v@(NumV (NInt i)) =  putTT v >>put i
 putFull v@(NumV (NReal r)) =  putTT v >>put r
 putFull v@(PairV v1 w1) = putTT v >> putFull v1 >> putFull w1
-putFull v@(ListV xs) = putTT v >> put xs
+putFull v@(ListV xs) = putTT v >> put (length xs) >> mapM_ putFull xs
 putFull v@(SigV t1 t2 dt sf) = do putTT v 
                                   put t1 
                                   put t2
@@ -115,16 +116,17 @@ getFull = do tt1 <- get
                3 -> (NumV . NReal ) `fmap` get 
                5 -> do () <- get
                        return Unit
-               6 -> do p1 <- get
-                       p2 <- get
+               6 -> do p1 <- getFull
+                       p2 <- getFull
                        return $ PairV p1 p2
-               7 -> do vls <- get
-                       --vls <- forM [0..len-1] $ const get
+               7 -> do n <- idInt `fmap` get
+                       --vls <- get
+                       vls <- forM [0..n-1] $ const getFull
                        return $ ListV vls
                8 -> do t1 <- get
                        t2 <- get
                        dt <- get
-                       vls <- forM [t1,t1+dt..t2] $ const get
+                       vls <- forM [t1,t1+dt..t2] $ const getFull
                        let arr = listArray (0, length vls -1) vls
                        return . SigV t1 t2 dt $ \pt->arr!pt
                9 -> StringV `fmap` get 
@@ -160,8 +162,30 @@ getManyRaw n t = go [] n
                  x `seq` go (x:xs) (i-1)
 {-# INLINE getManyRaw #-}
 
+getMany :: Binary a => Int -> Get [a]
+getMany n = go [] n
+ where
+    go xs 0 = return $! reverse xs
+    go xs i = do x <- get 
+                 -- we must seq x to avoid stack overflows due to laziness in
+                 -- (>>=)
+                 x `seq` go (x:xs) (i-1)
+{-# INLINE getMany #-}
+
 
 idWord8 :: Word8 -> Word8
 idWord8 = id
 
 
+instance Binary a => Binary (Signal a) where
+    get = do t1 <- get
+             t2 <- get
+             dt <- get 
+             let n = round $ (t2-t1)/dt
+             vls <- getMany n
+             let arr = listArray (0, length vls -1) vls
+             return . Signal t1 t2 dt $ \pt->arr!pt
+    put (Signal t1 t2 dt sf)= do put t1 
+                                 put t2
+                                 put dt
+                                 mapM_ (\t->put $ sf t) [0..floor $ (t2-t1)/dt]

@@ -36,9 +36,9 @@ loomAnal = inSessionNamed "5c17e342716081de800000110961a575" $ do
              plot [head ecV]
              liftIO . print $ meanF `sigStat`  ecV
 
-snrBench = inSessionNamed "72cf2d2c868a81de800000110961a575" $ do
-             ecV <- signals "ecVoltage" double
-             liftIO . print $ sigStat minF (take 10 ecV)
+snrBench = inSessionNamed "72cf2d2c868a81de800000110961a575_fmt3" $ do
+             ecV <- signalsDirect "ecVoltage" double
+             liftIO . print $ sigStat minF (take 1 ecV)
 ioBench = inTemporarySession $ do
               prog <- use "TestStore"
               run (prog`with` ["_tmax" =: dbl 100]) 0
@@ -147,7 +147,7 @@ unsafeMain = inTemporarySession $ do
   liftIO $ print peakgsyn 
   --liftIO . print . area $  (flip (/) <$$> roi) `applyOver` gsyn
 
-main = ioTest
+main = snrBench
 
 safeMain = inTemporarySession $ do
   intfire <- use "Intfire"

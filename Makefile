@@ -31,7 +31,7 @@ testacq:
 	sudo time ./TestAcqOnly +RTS -p
 
 testgain:
-	ghc --make TestGain -lcomedi Comedi/comedi_hs_helper.o
+	ghc --make TestGain -O2 -lcomedi Comedi/comedi_hs_helper.o
 
 bugsess:
 	ghc --make BugSess -lcomedi Comedi/comedi_hs_helper.o
