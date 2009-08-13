@@ -38,7 +38,13 @@ loomAnal = inSessionNamed "5c17e342716081de800000110961a575" $ do
 
 snrBench = inSessionNamed "72cf2d2c868a81de800000110961a575" $ do
              ecV <- signals "ecVoltage" double
-             liftIO . print $ sigStat minF (take 1 ecV)
+             liftIO . print $ sigStat minF (take 10 ecV)
+ioBench = inTemporarySession $ do
+              prog <- use "TestStore"
+              run (prog`with` ["_tmax" =: dbl 100]) 0
+              secs <- signals "secs" double
+--              ecV <- signals "ecVoltage" double
+              liftIO . print $ sigStat minF (secs)
 
 ioTest = inTemporarySession $ do
            prog <- use "TestStore"
@@ -62,6 +68,8 @@ ioTest = inTemporarySession $ do
            assertEvTimesBtw "anEvent time (2/3 fail)" (0.29,0.31) $ anEvent
            assertTagsEqual "anEvent tag" () anEvent
            assertTagsBetween "aNumEvent tag" (4.5, 6.6) aNumEvent
+
+           assertTagsEqual "aStringDur val" "foo"  aStringDur
 
            assertTagsEqual "pairdur unit tag" () (snd <$$> aPairDur)
            assertTagsBetween "pairdur num tag" (0.5,2.5) (fst <$$> aPairDur)
@@ -139,7 +147,7 @@ unsafeMain = inTemporarySession $ do
   liftIO $ print peakgsyn 
   --liftIO . print . area $  (flip (/) <$$> roi) `applyOver` gsyn
 
-main = ioTest
+main = ioBench
 
 safeMain = inTemporarySession $ do
   intfire <- use "Intfire"

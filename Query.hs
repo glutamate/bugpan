@@ -39,6 +39,7 @@ import QueryTypes
 import Parse
 import TNUtils 
 import PrettyPrint
+import ValueIO
 
 type QState = (Session)
 
@@ -49,9 +50,6 @@ answers = return
 double :: Double
 double = undefined
 
-loadBinary' :: B.Binary w =>FilePath-> IO w
-loadBinary' fp = return . B.decode {-. decompress -}=<< L.readFile fp --readFile fp >>= return . read
-
 
 --change these to loadUntyped
 signals :: Reify a => String -> a-> StateT QState IO [Signal a]
@@ -60,7 +58,7 @@ signals nm _ = do
   --liftIO . print $ bdir++"/signals/"++nm
   ifM (liftIO (doesDirectoryExist (bdir++"/signals/"++nm)))
       (do fnms <- getSortedDirContents $ bdir++"/signals/"++nm
-          sigs <- forM fnms $ \fn-> liftIO $ loadBinary' $ bdir++"/signals/"++nm++"/"++fn 
+          sigs <- forM fnms $ \fn-> liftIO $ loadVs $ bdir++"/signals/"++nm++"/"++fn 
           answers . catMaybes $ map reify $ concat sigs) 
       (liftIO (print $ "dir not found:" ++nm) >> answers [])
 
@@ -72,7 +70,7 @@ events nm _ = do
   Session bdir t0 <- getSession
   ifM (liftIO (doesDirectoryExist (bdir++"/events/"++nm)))
       (do fnms <- getSortedDirContents $ bdir++"/events/"++nm
-          utevs <- forM fnms $ \fn-> liftIO $ loadBinary' $ bdir++"/events/"++nm++"/"++fn
+          utevs <- forM fnms $ \fn-> liftIO $ loadVs $ bdir++"/events/"++nm++"/"++fn
           answers . catMaybes $ map reify $ concat utevs) 
       (liftIO (print $ "dir not found:" ++nm) >> answers [])
 
@@ -84,7 +82,7 @@ durations nm _ = do
   Session bdir t0 <- getSession
   ifM (liftIO (doesDirectoryExist (bdir++"/durations/"++nm)))
       (do fnms <- getSortedDirContents $ bdir++"/durations/"++nm
-          eps <- forM fnms $ \fn-> liftIO $ loadBinary' $ bdir++"/durations/"++nm++"/"++fn
+          eps <- forM fnms $ \fn-> liftIO $ loadVs $ bdir++"/durations/"++nm++"/"++fn
           answers . catMaybes $ map reify $ concat eps)
       (liftIO (print $ "dir not found:" ++nm) >> answers [])            
 

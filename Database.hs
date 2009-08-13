@@ -33,6 +33,7 @@ import Data.Ord
 import Control.Concurrent
 import TNUtils
 import PrettyPrint
+import ValueIO
 
 data Session = Session { baseDir :: FilePath,
                          tSessionStart :: ClockTime
@@ -79,7 +80,7 @@ loadUntyped :: FilePath -> IO [V]
 loadUntyped fp = do 
   ifM (doesDirectoryExist fp)
       (do fnms <- getSortedDirContents fp
-          xs <- forM fnms $ \fn-> loadBinary $ fp++"/"++fn
+          xs <- forM fnms $ \fn-> loadVs $ fp++"/"++fn
           return $ concat xs)
       ((print $ "dir not found:" ++fp) >> return [])
 
@@ -174,7 +175,7 @@ addRunToSession decls t0 tmax dt ress sess@(Session basedir sesst0)
             let dir = (basedir++"/"++subdir++"/"++nm)
             createDirectoryIfMissing False dir
             let ntics = round $ t0/dt
-            saveBinary (dir++"/"++showHex ntics "") obj
+            saveVs (dir++"/"++showHex ntics "") obj
       in do -- Session newEvs newSigSegs newEps ((t0,t0+tmax, decls):programsRun sess) (qenv sess) (sessPrelude sess)
         putStrLn $ "saving session: "++show nmsToStore
         --putStrLn $ "from results: "++ show ress
@@ -193,7 +194,7 @@ addRunToSession decls t0 tmax dt ress sess@(Session basedir sesst0)
 
 
 --simpler interface
-saveInSession sess@(Session basedir _) nm t0 dt sig@(SigV t1 t2 sigdt sf) = do
+{-saveInSession sess@(Session basedir _) nm t0 dt sig@(SigV t1 t2 sigdt sf) = do
   let dir = basedir++"/signals/"++nm
   createDirectoryIfMissing False dir
   let ntics = round $ t0/dt
@@ -208,7 +209,7 @@ saveInSession sess@(Session basedir sesst0) nm t0 dt lst@(ListV evs) | isEvents 
   createDirectoryIfMissing False dir
   let ntics = round $ t0/dt
   saveBinary (dir++"/"++showHex ntics "") $ map (shift t0) evs
-
+-}
 isTrue (BoolV True) = True
 
 isNotFalse (BoolV False) = False

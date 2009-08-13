@@ -116,61 +116,6 @@ data T  = BoolT
 
 data NumT = IntT | RealT | CmplxT deriving (Eq, Show, Read, Ord)
 
-typeTag :: T -> [Word8]
-typeTag BoolT = [1]
-typeTag (NumT (Just IntT)) = [2]
-typeTag (NumT (Just RealT)) = [3]
-typeTag (NumT (Just CmplxT)) = [4]
-typeTag UnitT = [5]
-typeTag (PairT t1 t2) = [6] -- ++ typeTag t1 ++ typeTag t2
-typeTag (ListT t) = [7] -- ++ typeTag t 
-typeTag (SignalT t) = [8]
-typeTag (StringT) = [9]
-
-putTT :: V -> Put 
-putTT v = mapM_ putWord8 . typeTag . typeOfVal $ v
-
-instance Binary V where
-    put v@(BoolV b) = putTT v >> put b
-    put v@(NumV (NInt i)) =  putTT v >>put i
-    put v@(NumV (NReal r)) =  putTT v >>put r
-    put v@(PairV v1 w1) = putTT v >> put v1 >> put w1
-    put v@(ListV xs) = putTT v >> put xs
-    put v@(SigV t1 t2 dt sf) = do putTT v 
-                                  put t1 
-                                  put t2
-                                  put dt
-                                  mapM_ (\t->put $ sf t) [0..round $ (t2-t1)/dt]
-                                  
-
-    put Unit = putTT Unit
-    put v@(StringV s) = putTT v >> put s
-    --put v@(ListV []) = putTT v >> put 
-
-    get = do tt1 <- get
-             case idWord8 tt1 of
-               1 -> BoolV `fmap` get 
-               2 -> (NumV . NInt ) `fmap` get 
-               3 -> (NumV . NReal ) `fmap` get 
-               5 -> return Unit
-               6 -> do p1 <- get
-                       p2 <- get
-                       return $ PairV p1 p2
-               7 -> do vls <- get
-                       --vls <- forM [0..len-1] $ const get
-                       return $ ListV vls
-               8 -> do t1 <- get
-                       t2 <- get
-                       dt <- get
-                       vls <- forM [t1,t1+dt..t2] $ const get
-                       let arr = listArray (0, length vls -1) vls
-                       return . SigV t1 t2 dt $ \pt->arr!pt
-               9 -> StringV `fmap` get 
-               tt -> error $ "unknown type tag: "++show tt
-idWord8 :: Word8 -> Word8
-idWord8 = id
-
-
 withTime t  es =  es {cur_t=Just t}
 
 withoutTime  es = es {cur_t= Nothing }
