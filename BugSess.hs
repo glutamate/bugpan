@@ -11,6 +11,8 @@ import Control.Monad
 import Control.Monad.Writer.Lazy
 import Language.Haskell.Interpreter
 import QueryTypes
+import Data.Char
+import System.Posix.Resource
 
 root = "/home/tomn/sessions/"
 
@@ -19,11 +21,15 @@ main = do
   args <- getArgs
   dispatch args
 
+unCap [] = []
+unCap (c:cs) = toLower c : cs
+
 dispatch ("ask":sessNm:queryStr:_) = do
   sess <- loadApproxSession root sessNm
   let sessNm = last . splitBy '/' $ baseDir sess 
   --print sessNm
   tps <- sessionTypes sess
+  setResourceLimit ResourceOpenFiles $ ResourceLimits (ResourceLimit 32000) (ResourceLimit 32000) 
   --mapM_ print tps
   out <- runInterpreter $ do
            loadModules ["Query", "QueryTypes", "QueryUtils"]
@@ -31,7 +37,7 @@ dispatch ("ask":sessNm:queryStr:_) = do
                           tell ["inSessionNamed \""++sessNm++"\" $ do"]
                           let ind = "          "
                           forM_ tps $ \(nm, ty) -> do
-                                       tell $ [concat [ind,nm ++ " <- ",
+                                       tell $ [concat [ind,unCap nm ++ " <- ",
                                                        typeToKind ty,
                                                        " \""++ nm++"\" ",
                                                        (typeToProxyName $ unWrapT ty)

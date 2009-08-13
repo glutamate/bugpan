@@ -1,0 +1,19 @@
+module TestStore where
+
+use Prelude
+
+secs = {: <: seconds :> + 0.1 :}
+
+_tmax = 1.0
+_dt = 0.001
+
+anEvent = crosses 0.4 secs
+aStringDur = [(0.1,0.8,"foo")]
+aNumEvent = [(0.3,5.0), (0.6, 6.0)]
+aPairDur = [(0.2,0.3, (1.0, ())), (0.5,0.6, (2.0, ()))] 
+
+secs *> store ""
+anEvent *> store ""
+aNumEvent *> store ""
+aPairDur *> store ""
+aStringDur *> store ""

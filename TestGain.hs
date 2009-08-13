@@ -9,7 +9,7 @@ import ImpInterpret
 import EvalM hiding (ListT)
 import Eval
 import Expr
-import Stages
+--import Stages
 import Query
 import QueryTypes
 import Control.Monad.Trans
@@ -35,6 +35,68 @@ loomAnal = inSessionNamed "5c17e342716081de800000110961a575" $ do
              tStart <- events "tStart" ()
              plot [head ecV]
              liftIO . print $ meanF `sigStat`  ecV
+
+snrBench = inSessionNamed "72cf2d2c868a81de800000110961a575" $ do
+             ecV <- signals "ecVoltage" double
+             liftIO . print $ sigStat minF (take 1 ecV)
+
+ioTest = inTemporarySession $ do
+           prog <- use "TestStore"
+           run prog 0
+           run prog 5
+           run prog 10
+
+           secs <- signals "secs" double
+           anEvent <- events "anEvent" ()
+           aNumEvent <- events "aNumEvent" double
+           aStringDur <- durations "aStringDur" ""
+           aPairDur <- durations "aPairDur" (double, ())
+
+           assertTagsBetween "secs stdDev" (0.28,0.30) $ sigStat stdDevF secs
+           assertEqual "#secs" 3 $ length secs
+           assertEqual "#events" 3 $ length anEvent
+           assertEqual "#anumevent" 6 $ length aNumEvent
+           assertEqual "#strdur" 3 $ length aStringDur
+           assertEqual "#pairdur" 6 $ length aPairDur
+
+           assertEvTimesBtw "anEvent time (2/3 fail)" (0.29,0.31) $ anEvent
+           assertTagsEqual "anEvent tag" () anEvent
+           assertTagsBetween "aNumEvent tag" (4.5, 6.6) aNumEvent
+
+           assertTagsEqual "pairdur unit tag" () (snd <$$> aPairDur)
+           assertTagsBetween "pairdur num tag" (0.5,2.5) (fst <$$> aPairDur)
+
+           sigStartBetween "secs start" (4.9,5.1) $ secs !!1
+           sigEndBetween "secs stop" (5.9,6.1) $ secs !!1
+           sigDtBetween "secs dt" (0.0001, 0.01) $ secs !!1
+
+sigStartBetween str rng (Signal t1 _ _ _) =
+    assertBetween str rng t1
+sigEndBetween str rng (Signal _ t2 _ _) =
+    assertBetween str rng t2
+sigDtBetween str rng (Signal t1 _ dt _) =
+    assertBetween str rng dt
+
+assertBetween str (lo, hi) x  = 
+    if x>lo && x < hi
+       then liftIO . putStrLn $ str++ " ok"
+       else liftIO . putStrLn $ str ++" FAIL: not "++show lo++"<"++show x++"<"++show hi
+assertEqual str x y = 
+    if x==y 
+       then liftIO . putStrLn $ str++ " ok"
+       else liftIO . putStrLn $ str ++" FAIL: not "++show x++"=="++show y
+
+assertTagsBetween str rng tgs = do
+  let tags = map getTag tgs 
+  forM tags $ \val -> assertBetween str rng val
+assertTagsEqual str x tgs = do
+  let tags = map getTag tgs 
+  forM tags $ \val -> assertEqual str x val
+
+assertEvTimesBtw str rng tgs = do
+  let tms = map fst tgs 
+  forM tms $ \tm -> assertBetween str rng tm
+              
 
 perfTest1 = inTemporarySession $ do
              intfire <- use "Intfire"
@@ -77,7 +139,7 @@ unsafeMain = inTemporarySession $ do
   liftIO $ print peakgsyn 
   --liftIO . print . area $  (flip (/) <$$> roi) `applyOver` gsyn
 
-main = unsafeMain
+main = ioTest
 
 safeMain = inTemporarySession $ do
   intfire <- use "Intfire"

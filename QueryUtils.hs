@@ -1,3 +1,5 @@
+{-# LANGUAGE BangPatterns #-}
+
 module QueryUtils where
 
 import EvalM hiding (ListT)
@@ -8,6 +10,7 @@ import Data.List
 import Data.Maybe
 import Database
 import Math.Probably.FoldingStats
+import Control.Applicative hiding ((<**>))
 
 peak :: Ord a => [Signal a] ->[Event a]
 peak sigs =  map (\sig -> swap . foldSig cmp (sigInitialVal sig, 0) $ zipWithTime sig) sigs 
@@ -110,9 +113,24 @@ sigStat f sigs = map (sigStat' f) sigs
  
 sigStat' :: Fold a b -> Signal a -> Duration b
 sigStat' (F op init c cmb) sig@(Signal t1 t2 dt sf) = 
-    let v = c . foldl' op init $ sigToList sig
+    let --v = c . foldl' op init $ sigToList sig
+        
+        --go 0 x = c x
+        --go n x = go (n-1) (x `op` sf n)
+        v = c $! go npts init
     in (t1,t2,v)
+       where npts = round $ (t2-t1)/dt
+             go 0 x = x
+             go !n !x = go (n-1) (x `op` sf (npts-n))
 
 intervals :: Tagged t => [t a] -> [t (a,Double)]
 intervals tgs = map calcInt . zip tgs $ tail tgs
                 where calcInt (t1, t2) = setTag t1 $ (getTag t1, getTStart t2 - getTStart t1)
+
+minMaxDiffF = pure (-) <*> maxF <*> minF
+sigNoiseRatioF = pure (/) <*> minMaxDiffF <*> stdDevPF
+
+dur :: a -> [Duration a]
+dur x = [(minBound, maxBound, x)]
+
+-- <**> :: [Duration (a->b)] -> [Duration a] -> [Duration b]
