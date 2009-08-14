@@ -4,6 +4,7 @@ import Expr
 import EvalM
 import Data.HashTable as H
 import Control.Concurrent
+import Numbers
 
 data Stmt = InitSig String E
           | Env String E
@@ -16,7 +17,7 @@ data Stmt = InitSig String E
           | Trigger (H.HashTable String V -> IO ())
           | GLParams (MVar (IO V)) (MVar ())
           -- | SigSwitch String [(String, E)] E
-          | ReadSrcAction String (Double -> Double -> IO V)
+          | ReadSrcAction String (RealNum -> RealNum -> IO V)
             deriving (Eq, Show)    
 
 instance Show (MVar a) where

@@ -129,9 +129,9 @@ inApproxSession nm sma = do sess <- loadApproxSession "/home/tomn/sessions/" nm
 
 
 
-sessionTmax  ::  StateT QState IO Double
+sessionTmax  ::  StateT QState IO RealNum
 sessionTmax  = do
-  tstop <- events "tStop" double
+  tstop <- events "tStop" real
   case tstop of
     [] -> return 0
     evs -> return . fst $ maximumBy (comparing fst) evs

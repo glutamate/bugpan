@@ -14,6 +14,7 @@ import QueryTypes
 import Data.Char
 import System.Posix.Resource
 import ValueIO
+import Numbers
 
 root = "/home/tomn/sessions/"
 
@@ -53,7 +54,9 @@ dispatch ("ask":sessNm:queryStr:_) = do
   --QResBox qres <- (theQuery v) sessNm
   --print qres
   case out of
-    Right outaction -> outaction >>= (\(QResBox qres) -> print qres)
+    Right outaction -> do QResBox qres <- outaction 
+                          qreply <- qReply qres
+                          print qreply
     Left err -> print err
   return ()
       where withNothing x = (x,Nothing) 
@@ -99,14 +102,11 @@ dispatch ("convert2":sessNm:_) = do
               ifM (doesDirectoryExist fp)
                   (do fnms <- getSortedDirContents fp
                       xs <- forM fnms $ \fn-> do b <- loadBinary $ fp++"/"++fn
-                                                 return $ idLstOldFmtV b
+                                                 --return $ idLstOldFmtV b
                                                  --putStrLn $ fn ++ show b
-                                                 return (fn,map unOldFmtV b)
+                                                 return (fn,map oldVtoV b)
                       return $ xs)
                   ((print $ "dir not found:" ++fp) >> return [])
-
-idLstOldFmtV :: [OldFmtV] -> [OldFmtV]
-idLstOldFmtV = id
 
 -- :set -fbreak-on-exception
 

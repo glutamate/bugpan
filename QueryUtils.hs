@@ -11,6 +11,7 @@ import Data.Maybe
 import Database
 import Math.Probably.FoldingStats
 import Control.Applicative hiding ((<**>))
+import Numbers
 
 peak :: Ord a => [Signal a] ->[Event a]
 peak sigs =  map (\sig -> swap . foldSig cmp (sigInitialVal sig, 0) $ zipWithTime sig) sigs 
@@ -39,13 +40,13 @@ applyOver durs sigs = concatMap (aux durs) sigs --is sig within a dur? if so, ap
 --with :: a -> (a-> b) -> b
 --with x f = f x
 
-later :: Double -> [Event a] -> [Event a]
+later :: RealNum -> [Event a] -> [Event a]
 later t  = map (\(te, v) ->(t+te, v))
 
-fadeOut :: Double -> [Event a] -> [Duration a]
+fadeOut :: RealNum -> [Event a] -> [Duration a]
 fadeOut t = map (\(tev,v)-> ((tev, tev+t), v))
 
-fadeIn :: Double -> [Event a] -> [Duration a]
+fadeIn :: RealNum -> [Event a] -> [Duration a]
 fadeIn t = map (\(tev,v)-> ((tev-t, tev), v))
 
 
@@ -75,7 +76,7 @@ area1 sig@(Signal t1 t2 dt sf) = ((t1, t2), foldSig sumf 0 sig)
 tag :: Tagged t =>  b -> [t a] -> [t b]
 tag tg = map (`setTag` tg)
 
-freqDuring :: [Event b] -> [Duration a] -> [Duration (a, Double)]
+freqDuring :: [Event b] -> [Duration a] -> [Duration (a, RealNum)]
 freqDuring evs durs = map (freqDuring' evs) durs
     where freqDuring' evs dur@((t1, t2), durtag) = 
               ((t1, t2), (durtag, 
@@ -123,7 +124,7 @@ sigStat' (F op init c cmb) sig@(Signal t1 t2 dt sf) =
              go 0 x = x
              go !n !x = go (n-1) (x `op` sf (npts-n))
 
-intervals :: Tagged t => [t a] -> [t (a,Double)]
+intervals :: Tagged t => [t a] -> [t (a,RealNum)]
 intervals tgs = map calcInt . zip tgs $ tail tgs
                 where calcInt (t1, t2) = setTag t1 $ (getTag t1, getTStart t2 - getTStart t1)
 

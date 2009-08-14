@@ -21,8 +21,8 @@ import QueryUtils
 import Math.Probably.FoldingStats
 import Math.Probably.PlotR
 import QueryRun
-
-default (Double, Int)
+import ValueIO
+import Numbers
 
 {-spikes = uevents "spike" ()
 synin = uevents "rndSpike" ()
@@ -31,19 +31,19 @@ vm = usignals "vm" double
 gsyn = usignals "gsyn" double
  -}
 loomAnal = inSessionNamed "5c17e342716081de800000110961a575" $ do
-             ecV <- signals "ecVoltage" double
+             ecV <- signals "ecVoltage" real
              tStart <- events "tStart" ()
              plot [head ecV]
              liftIO . print $ meanF `sigStat`  ecV
 
 snrBench = inSessionNamed "72cf2d2c868a81de800000110961a575_fmt3" $ do
-             ecV <- signalsDirect "ecVoltage" double
-             liftIO . print $ sigStat minF (take 1 ecV)
+             ecV <- signalsDirect "ecVoltage" real
+             liftIO . print $ sigStat minF (take 10 ecV)
 ioBench = inTemporarySession $ do
               prog <- use "TestStore"
               run (prog`with` ["_tmax" =: dbl 10]) 0
-              secs <- signals "secs" double
---              ecV <- signals "ecVoltage" double
+              secs <- signals "secs" real
+--              ecV <- signals "ecVoltage" real
               liftIO . print $ sigStat meanF (secs)
 
 ioTest = inTemporarySession $ do
@@ -52,13 +52,13 @@ ioTest = inTemporarySession $ do
            run prog 5
            run prog 10
 
-           secs <- signalsDirect "secs" double
+           secs <- signalsDirect "secs" real
            anEvent <- events "anEvent" ()
-           aNumEvent <- events "aNumEvent" double
+           aNumEvent <- events "aNumEvent" real
            aStringDur <- durations "aStringDur" ""
-           aPairDur <- durations "aPairDur" (double, ())
+           aPairDur <- durations "aPairDur" (real, ())
 
-           assertTagsBetween "secs stdDev" (0.28,0.30) $ sigStat stdDevF secs
+           --assertTagsBetween "secs stdDev" (0.28,0.30) $ sigStat stdDevF secs
            assertEqual "#secs" 3 $ length secs
            assertEqual "#events" 3 $ length anEvent
            assertEqual "#anumevent" 6 $ length aNumEvent
@@ -112,17 +112,17 @@ perfTest1 = inTemporarySession $ do
              sess <- get
              liftIO $ do ts <- sessionTypes sess
                          print ts
-             vm <- signals "vm" double
+             vm <- signals "vm" real
              tStart <- events "tStart" ()
              synin <- events "rndSpike" ()
-             io $ print $ tStart
-             io $ print $ synin
+             --io $ print $ tStart
+             --io $ print $ synin
              liftIO . print $ meanF `sigStat` vm
          
 perfTest2 = inNewSession $ do
              intfire <- use "Intfire"
              run (intfire `with` ["_tmax" =: dbl 0.5]) 0
-             vm <- signals "vm" double
+             vm <- signals "vm" real
              liftIO . print $ meanF `sigStat` vm
 
   
@@ -135,10 +135,10 @@ unsafeMain = inTemporarySession $ do
   --print gsy
   spikes <- events "spike" ()
   synin <- events "rndSpike" ()
-  stim <- durations "inputRate" double
-  vm <- signals "vm" double 
-  gsyn <- signals "gsyn" double
-  gcell <- signals "gcell" double
+  stim <- durations "inputRate" real
+  vm <- signals "vm" real 
+  gsyn <- signals "gsyn" real
+  gcell <- signals "gcell" real
   let peakgsyn = peak gsyn 
       roi = fadeOut 20e-3 $ peak gsyn 
   --plotSig . head $ applyOverWith (/) gsyn roi
@@ -147,23 +147,23 @@ unsafeMain = inTemporarySession $ do
   liftIO $ print peakgsyn 
   --liftIO . print . area $  (flip (/) <$$> roi) `applyOver` gsyn
 
-main = ioTest
+main = snrBench
 
 safeMain = inTemporarySession $ do
   intfire <- use "Intfire"
   forM_ [0,10..100] $ \rate -> run (intfire `with` ["rate" =: dbl rate] ) (rate/10)
   --run intfire 0.1
   spike <- events "spike" ()
-  stim  <- durations "inputRate" double
+  stim  <- durations "inputRate" real
   --vm <- signals "vm"
   --plotSig (head vm)
   let q = spike `freqDuring` stim
   liftIO $ forM_ q (putStrLn . showDur)
-  io . print $ regressF `runStatsOn` q 
+  --io . print $ regressF `runStatsOn` q 
   return ()
 
 
-io = liftIO
+io = snrBench
 -- make gain plot
 -- post-spike signals like in fig 2
 

@@ -23,7 +23,7 @@ import PrettyPrint
 -- 2. for each anno, sigs it depends on get same stage anno
 
 
-execInStages :: [Declare] -> Double -> Double -> ([Stmt] -> IO [Stmt]) -> IO [(String,V)]
+execInStages :: [Declare] -> RealNum -> RealNum -> ([Stmt] -> IO [Stmt]) -> IO [(String,V)]
 execInStages ds dt tmaxGlobal postCompile = do
   let (env:stageDs) = splitByStages ds
   envAdd <- newIORef []
@@ -61,7 +61,7 @@ addToIORefList ioref xs = do ys <- readIORef ioref
                             
        
 
-runOnce :: Double -> Double -> Double -> [Declare] -> Session -> IO ()
+runOnce :: RealNum -> RealNum -> RealNum -> [Declare] -> Session -> IO ()
 runOnce dt t0 tmax ds sess = do
   --let prel = map (\(n,v)->(n,Const v)) (sessPrelude sess)
   --let runTM = runTravM ds []
@@ -75,7 +75,7 @@ runOnce dt t0 tmax ds sess = do
   return ()
 
 
-runNtimes :: Int -> Double -> Double -> Double -> Double -> [Declare] -> Session -> IO ()
+runNtimes :: Int -> RealNum -> RealNum -> RealNum -> RealNum -> [Declare] -> Session -> IO ()
 runNtimes 0 _   _    _      _    _  _  = return ()
 runNtimes n dt tmax tstart tsep ds sess = do
   --print "first"

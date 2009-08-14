@@ -1,4 +1,4 @@
-{-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE Rank2Types, GeneralizedNewtypeDeriving #-}
 
 module Numbers where
 
@@ -7,10 +7,25 @@ import Text.Printf
 
 type Number = NumVl
 
+newtype RealNum = RealNum { unRealNum :: Double} 
+    deriving (Eq, Enum, Read, Num, Ord, Real, Fractional, RealFloat, RealFrac, Floating)
+
+
+instance Show RealNum where
+    show (RealNum x) = show x
+
+instance Bounded RealNum where
+    minBound = -1e200
+    maxBound = 1e200
+
+real = RealNum 1.0
+
+
+
 data NumVl = NInt Int
 	   -- | NRat Int Int
-	   | NReal Double
-	   | NCmplx (Complex Double)
+	   | NReal RealNum
+	   | NCmplx (Complex RealNum)
 	     deriving (Show, Read)
 
 instance Eq NumVl where
@@ -24,7 +39,7 @@ nearlyZero n = (n<1e-18) && (n>(-1e-18))
 
 ppNum n = if n<0 then "("++(ppNum' n)++")" else ppNum' n
 ppNum' (NInt i) = show i
-ppNum' (NReal f) = printf "%5.4g" f
+ppNum' (NReal f) = printf "%5.4g" $ unRealNum f
 ppNum' (NCmplx (r:+c)) = show r++" + i*"++show c
 
 data Ntype = NI | NR | NC deriving (Show,Eq, Enum, Ord)
@@ -86,7 +101,7 @@ instance Floating NumVl where
 	pi = NReal pi
 	
 
-onDbl :: (Double->Double) -> NumVl -> NumVl
+onDbl :: (RealNum->RealNum) -> NumVl -> NumVl
 onDbl op x = NReal . op $ numToDouble x
 
 sameize v1 v2 = let  	t1 = num2numType v1

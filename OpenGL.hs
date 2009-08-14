@@ -21,6 +21,7 @@ import Control.Monad.Trans
 import Control.Monad.State.Strict
 import EvalM 
 import SrcSinks
+import Numbers
 
 --import Allegro.Vector
 --import qualified Data.Map as M
@@ -156,9 +157,9 @@ drawShape (BoxV shp loc col)
         let (r, g,b) = fromPair3v col
         let (x0, y0, z0) = fromPair3v loc
         let (x, y, z) = fromPair3v shp
-        color $ Color3 r g b
-        translate $ Vector3 x0 y0 z0
-        scale x y z
+        color $ Color3 (unRealNum r) (unRealNum g) (unRealNum b) 
+        translate $ Vector3 (unRealNum x0) (unRealNum y0) (unRealNum z0)
+        scale (unRealNum x) (unRealNum y) (unRealNum z)
         renderPrimitive Quads $ unitCube
           --return ()
 

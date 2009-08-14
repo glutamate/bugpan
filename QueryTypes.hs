@@ -40,8 +40,8 @@ import Data.Unique
 import TNUtils
 import Data.Typeable
 
-type Duration a = ((Double,Double),a)
-type Event a = (Double,a)
+type Duration a = ((RealNum,RealNum),a)
+type Event a = (RealNum,a)
 
 
 instance Show a =>  Show (Signal a) where
@@ -65,24 +65,25 @@ instance Real a => PlotWithR [Event a] where
         do return $ RPlCmd { 
                         prePlot = [],
                         cleanUp = return (),
-                        plotArgs = [PLPoints $ map (\(t,v)-> (t, realToFrac v)) evs]
+                        plotArgs = [PLPoints $ map (\(t,v)-> (unRealNum t, realToFrac v)) evs]
                       }
 
-instance PlotWithR [Duration Double] where
+instance PlotWithR [Duration RealNum] where
     getRPlotCmd durs = 
         do return $ RPlCmd { 
                         prePlot = [],
                         cleanUp = return (),
-                        plotArgs = map (\((t1,t2),v) -> PLLines [(t1, v), (t2, v)]) durs
+                        plotArgs = map (\((t1,t2),v) -> PLLines [(unRealNum t1, unRealNum v), 
+                                                                 (unRealNum t2, unRealNum v)]) durs
                       }
 --scatter plot
-instance Tagged t => PlotWithR [t (Double,Double)] where
+instance Tagged t => PlotWithR [t (RealNum,RealNum)] where
     getRPlotCmd ts = 
         let xys = map getTag ts in
         do return $ RPlCmd { 
                         prePlot = [],
                         cleanUp = return (),
-                        plotArgs = [PLPoints xys]
+                        plotArgs = [PLPoints $ map (\(t,v)-> (unRealNum t, unRealNum v)) xys]
                       }
 
 data Hist a = forall t. Tagged t => Histogram [t a]
@@ -96,7 +97,7 @@ sigPnts (Signal t1 t2 dt sf) = round $ (t2-t1)/dt
 
 --zipSigs :: Signal a -> Signal b -> Signal (a,b)
 
-zipWithTime :: Signal a -> Signal (a,Double)
+zipWithTime :: Signal a -> Signal (a,RealNum)
 zipWithTime (Signal t1 t2 dt sf) = Signal t1 t2 dt $ \pt -> (sf pt, (realToFrac pt)*dt+t1)
 
 sigToList :: Signal a -> [a]
@@ -143,16 +144,16 @@ sscan f init sig@(Signal t1 t2 dt sf) = let arr2 = scanl f init $ sigToList sig
 class Tagged t where
     getTag :: t a-> a
     setTag :: t a-> b ->t b
-    getTStart :: t a -> Double
-    getTStop :: t a -> Double
+    getTStart :: t a -> RealNum
+    getTStop :: t a -> RealNum
 
-instance Tagged ((,) Double) where
+instance Tagged ((,) RealNum) where
     getTag = snd
     setTag (t,_) v = (t,v)
     getTStart (t,_) = t
     getTStop (t,_) = t
 
-instance Tagged ((,) (Double, Double)) where
+instance Tagged ((,) (RealNum, RealNum)) where
     getTag (_,v) = v
     setTag ((t1,t2),_) v = ((t1,t2), v)
     getTStart ((t1,t2),_) = t1
@@ -162,10 +163,10 @@ foldTagged ::  Tagged t => (a -> b -> a) -> a -> [t b] -> a
 foldTagged f init col = foldl' f init $ map getTag col
 
 
-instance Functor ((,) Double) where
+instance Functor ((,) RealNum) where
     fmap f (t,v) = (t, f v)
 
-{-instance Functor ((,) (Double, Double)) where
+{-instance Functor ((,) (RealNum, RealNum)) where
     fmap f ((t1,t2), v) = ((t1,t2),f v) -}
  
 instance Functor Signal where
@@ -173,10 +174,10 @@ instance Functor Signal where
         Signal t1 t2 dt $ \ix -> f (sf ix)
 
 
-instance Shiftable (Double,a) where
+instance Shiftable (RealNum,a) where
     shift ts (t,v) = (t+ts, v)
 
-instance Shiftable ((Double,Double),a) where
+instance Shiftable ((RealNum,RealNum),a) where
     shift ts ((t1,t2),v) = ((t1+ts,t2+ts),v)
 
 instance Shiftable (Signal a) where

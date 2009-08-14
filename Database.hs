@@ -63,7 +63,7 @@ newSession rootDir = do
   createDirectory $ baseDir++"/events"
   createDirectory $ baseDir++"/durations"
   writeFile (baseDir++"/tStart") $ show (t1, t2)
-  writeFile (baseDir++"/sessionFormatVersion") $ "2"
+  writeFile (baseDir++"/sessionFormatVersion") $ "3"
   return $ Session baseDir t0
 --sessEvalState s = EvalS 0 0 Nothing (qenv s ++( evalManyAtOnce $ sessPrelude s))
 
@@ -157,7 +157,7 @@ unString :: E -> String
 unString (Const (StringV s)) = s
 unString _ = ""
 
-addRunToSession :: [Declare] -> Double -> Double -> Double -> [(String, V)] -> Session -> IO ()
+addRunToSession :: [Declare] -> RealNum -> RealNum -> RealNum -> [(String, V)] -> Session -> IO ()
 addRunToSession decls t0 tmax dt ress sess@(Session basedir sesst0) 
     = let nmsToStore = [ (nm, unString arg `orIfEmpty` nm) | SinkConnect (Var nm) ("store",arg) <- decls ]
           sigsToStore = catMaybes . 
@@ -270,7 +270,7 @@ guardBy (Just x) p | p x = Just x
                      else Nothing -}
 
 class Shiftable s where
-    shift :: Double -> s -> s
+    shift :: RealNum -> s -> s
 
 instance Shiftable V where
     shift ts (SigV t1 t2 dt sf) = SigV (t1+ts) (t2+ts) dt $ sf

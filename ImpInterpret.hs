@@ -19,7 +19,7 @@ import TNUtils
 import Data.Array
 import PrettyPrint
 
-exec :: [Stmt] -> Double -> Double -> IO [(String, V)]
+exec :: [Stmt] -> RealNum -> RealNum -> IO [(String, V)]
 exec stmts dt tmax = 
     let prg =  filter inMainLoop stmts 
         fixEnvEs = ("tmax",Const . NumV . NReal$ tmax):("dt",Const . NumV . NReal$ dt):[(nm,v) | en@(Env nm v) <-  stmts]
@@ -197,7 +197,7 @@ unUpdateRule (SigUpdateRule _ e) = Just e
 unUpdateRule _ = Nothing
 
 
-toHsTime :: V->(Double,V)
+toHsTime :: V->(RealNum,V)
 toHsTime (PairV (NumV nv) v) = (numToDouble nv,v)
 
 appVs (ListV ws) (ListV vs) = ListV (ws++vs) 

@@ -35,23 +35,23 @@ plotSink
 
 data SigSrc =   SrcAllInOneGo (IO [V]) Int
 		-- | SrcRealTime (IO a)
-		| SrcAnyTime (Double -> IO V)
-                | SrcAnyTimePure (Double -> V)
+		| SrcAnyTime (RealNum -> IO V)
+                | SrcAnyTimePure (RealNum -> V)
 
 data SigSink =   SinkAllInOneGoBefore ([V] -> IO ()) 
 		| SinkAllInOneGoAnytime ([V] -> IO ()) 
-		| SinkAllInOneGoAnytimeAnyRate ([(Double, V)] -> IO ()) 
+		| SinkAllInOneGoAnytimeAnyRate ([(RealNum, V)] -> IO ()) 
 		-- | SinkRealTime (a-> IO ())
-		| SinkAnyTime (Double -> V -> IO ())
+		| SinkAnyTime (RealNum -> V -> IO ())
                 | SinkRealTime (V->IO ())
                 | SinkPull (IO V)
 
-data EventSink = EvtSink (Double -> V -> IO ())
+data EventSink = EvtSink (RealNum -> V -> IO ())
 
 loadBefore (Device _ _ _ _ _ (SinkAllInOneGoBefore _)) = True
 loadBefore _ = False
 
-applyVlToSink :: [(Double, V)] -> Device SigSink -> IO ()
+applyVlToSink :: [(RealNum, V)] -> Device SigSink -> IO ()
 applyVlToSink vls (Device _ _ _ _ _  (SinkAnyTime teio)) 
     = forM_ vls $ uncurry teio
 applyVlToSink vls (Device _ _ _ _ _  (SinkAllInOneGoAnytime teio)) 

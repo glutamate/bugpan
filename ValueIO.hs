@@ -1,3 +1,5 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
 module ValueIO where
 
 import EvalM
@@ -9,6 +11,7 @@ import Array
 import Control.Monad 
 import TNUtils
 import Debug.Trace
+import Unsafe.Coerce
 
 loadVs :: String -> IO [V]
 loadVs fp = loadBinary fp
@@ -63,12 +66,35 @@ putTT v = mapM_ putWord8 . typeTag . typeOfVal $ v
 putTT1 :: V -> Put 
 putTT1 v = put . typeTag1 . typeOfVal $ v
 
+data OV  =   OBoolV Bool
+           | ONumV ONumVl
+           | OPairV OV OV
+           | OListV [OV]
+	   | OLamV (OV->EvalM OV)
+	   | OSigV Double Double Double (Int->OV)
+           | OBoxV OV OV OV --shape,loc,  colour
+           | OUnit
+           | OStringV String
+	     deriving (Show, Read)
 
-newtype OldFmtV = OldFmtV { unOldFmtV :: V } deriving (Show, Eq)
+data ONumVl = OldInt Int
+              | OldReal Double
+                deriving (Show, Read)
 
-instance Binary OldFmtV where
-    put = putFull . unOldFmtV
-    get = OldFmtV `fmap` getFull
+oldVtoV (OBoolV b) = BoolV b
+oldVtoV (ONumV (OldInt i))= NumV $ NInt i
+oldVtoV (ONumV (OldReal i))= NumV . NReal $ RealNum i
+oldVtoV (OPairV p1 p2) = PairV (oldVtoV p1) (oldVtoV p2)
+oldVtoV (OListV vs) = ListV (map oldVtoV vs)
+oldVtoV (OUnit) = Unit
+oldVtoV (OSigV t1 t2 dt sf) = SigV (RealNum t1) (RealNum t2) (RealNum dt) (oldVtoV . sf)
+oldVtoV (OStringV s ) = StringV s
+
+
+
+instance Binary OV where
+    put = undefined
+    get = getFull
 
 instance Binary V where
     put v = putTT1 v >> putRaw v
@@ -91,12 +117,12 @@ putFull v@(StringV s) = putTT v >> put s
 
 putRaw v@(BoolV b) =  put b
 putRaw v@(NumV (NInt i)) =  put i
-putRaw v@(NumV (NReal r)) =  put r
+putRaw v@(NumV (NReal r)) =  put $ toWord64 r
 putRaw v@(PairV v1 w1) =  putRaw v1 >> putRaw w1
 putRaw v@(ListV xs) =  put (length xs) >> mapM_ putRaw xs
-putRaw v@(SigV t1 t2 dt sf) = do put t1 
-                                 put t2
-                                 put dt
+putRaw v@(SigV t1 t2 dt sf) = do put $ toWord64 t1 
+                                 put $ toWord64 t2
+                                 put $ toWord64 dt
                                  mapM_ (\t->putRaw $ sf t) [0..round $ (t2-t1)/dt]
 putRaw Unit = put ()
 putRaw v@(StringV s) = put s
@@ -113,29 +139,29 @@ sig0 (SigV _ _ _ sf) = sf 0
 
 getFull = do tt1 <- get
              case idWord8 tt1 of
-               1 -> BoolV `fmap` get 
-               2 -> (NumV . NInt ) `fmap` get 
-               3 -> (NumV . NReal ) `fmap` get 
+               1 -> OBoolV `fmap` get 
+               2 -> (ONumV . OldInt) `fmap` get 
+               3 -> (ONumV . OldReal) `fmap` get 
                5 -> do () <- get
-                       return Unit
+                       return OUnit
                6 -> do p1 <- getFull
                        p2 <- getFull
-                       return $ PairV p1 p2
+                       return $ OPairV p1 p2
                7 -> do n <- idInt `fmap` get
                        --vls <- get
                        vls <- forM [0..n-1] $ const getFull
-                       return $ ListV vls
+                       return $ OListV vls
                8 -> do t1 <- get
                        t2 <- get
                        dt <- get
                        vls <- forM [t1,t1+dt..t2] $ const getFull
                        let arr = listArray (0, length vls -1) vls
-                       return . SigV t1 t2 dt $ \pt->arr!pt
-               9 -> StringV `fmap` get 
+                       return . OSigV t1 t2 dt $ \pt->arr!pt
+               9 -> OStringV `fmap` get 
                tt -> error $ "unknown type tag: "++show tt
 
 getRaw BoolT = BoolV `fmap` get 
-getRaw (NumT (Just RealT)) = (NumV . NReal) `fmap` get 
+getRaw (NumT (Just RealT)) = (NumV . NReal . fromWord64) `fmap` get 
 getRaw (NumT (Just IntT)) = (NumV . NInt) `fmap` get 
 getRaw (UnitT) = return Unit
 getRaw (StringT) = StringV `fmap` get
@@ -144,9 +170,9 @@ getRaw (PairT t1 t2) = do v1 <- getRaw t1
                           return $ PairV v1 v2
 getRaw (ListT t) = do n <- get :: Get Int
                       ListV `fmap` getManyRaw n t
-getRaw (SignalT t) = do t1 <- get
-                        t2 <- get
-                        dt <- get 
+getRaw (SignalT t) = do t1 <- fromWord64 `fmap` get
+                        t2 <- fromWord64 `fmap` get
+                        dt <- fromWord64 `fmap` get 
                         let n = round $ (t2-t1)/dt
                         vls <- getManyRaw n t
                         let arr = listArray (0, length vls -1) vls
@@ -175,14 +201,16 @@ getMany n = go [] n
 {-# INLINE getMany #-}
 
 
+
+
 idWord8 :: Word8 -> Word8
 idWord8 = id
 
 
 instance Binary a => Binary (Signal a) where
-    get = do t1 <- get
-             t2 <- get
-             dt <- get 
+    get = do t1 <- fromWord64 `fmap` get
+             t2 <- fromWord64 `fmap` get
+             dt <- fromWord64 `fmap` get
              let n = round $ (t2-t1)/dt
              vls <- getMany n
              let arr = listArray (0, length vls -1) vls
@@ -192,7 +220,7 @@ instance Binary a => Binary (Signal a) where
                                  put dt
                                  mapM_ (\t->put $ sf t) [0..round $ (t2-t1)/dt]
 
-loadReifiedBinary :: (Reify a, Binary a, Show a) => String -> IO [a]
+loadReifiedBinary :: (Reify a,Binary a, Show a) => String -> IO [a]
 loadReifiedBinary fp = res where
     res = do let expectedTypeTag = typeOfReified (head $ unIO res)
              bs <- L.readFile fp
@@ -206,5 +234,29 @@ loadReifiedBinary fp = res where
              --print objs
              return $ objs
 
+fileTypeTag :: String -> IO T
+fileTypeTag fp = do bs <- L.readFile fp
+                    let (n, bs1,_) =  runGetState (get) bs 1000
+                    let (actualTypeTag, restOfFile, _)  =runGetState (parseTT `fmap` get) bs1 1000
+                    let n'= idInt n
+                    return $ actualTypeTag
+             --return $ idInt n
+
 unIO :: IO a -> a
 unIO = undefined
+
+test1 n = do let x = 2.0::RealNum
+             saveBinary ("/home/tomn/testBin"++show n) $ replicate n x
+
+
+
+instance Binary RealNum where
+    put (RealNum x) = put $ toWord64 x
+    get = (RealNum . fromWord64) `fmap` get 
+
+
+toWord64 :: a -> Word64
+toWord64 = unsafeCoerce
+
+fromWord64 :: Word64 -> a
+fromWord64 = unsafeCoerce

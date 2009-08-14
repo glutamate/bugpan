@@ -1,4 +1,4 @@
-{-# LANGUAGE Rank2Types, FlexibleInstances, OverlappingInstances, DeriveDataTypeable #-}
+{-# LANGUAGE Rank2Types, FlexibleInstances, OverlappingInstances, DeriveDataTypeable, GeneralizedNewtypeDeriving #-}
 
 module EvalM where
 
@@ -73,7 +73,7 @@ data V  = BoolV Bool
         | PairV V V
         | ListV [V]
 	| LamV (V->EvalM V)
-	| SigV Double Double Double (Int->V)
+	| SigV RealNum RealNum RealNum (Int->V)
         | BoxV V V V --shape,loc,  colour
         | Unit
         | StringV String
@@ -181,9 +181,11 @@ instance Reify V where
     pack = id
     typeOfReified _ = AnyT
 
-instance Reify Double where 
-    reify = vToDbl
-    pack = NumV . NReal
+--for efficient binary io
+
+instance Reify RealNum where 
+    reify (NumV (NReal x)) = Just x
+    pack = NumV . NReal 
     typeOfReified _ = NumT (Just RealT)
 
 instance Reify Int where 
@@ -243,10 +245,10 @@ unsafeReify :: Reify a => V -> a
 unsafeReify = fromJust . reify
 
 --(Signal t1 t2 dt sf)
-data Signal a = Signal Double Double Double (Int -> a) deriving Typeable
+data Signal a = Signal RealNum RealNum RealNum (Int -> a) deriving Typeable
 
 
-readSig :: Signal a -> Double -> a
+readSig :: Signal a -> RealNum -> a
 (Signal t1 t2 dt sf) `readSig` t = sf . round $ (t-t1 )/dt
 
 instance Reify a => Reify (Signal a) where

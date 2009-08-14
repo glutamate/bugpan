@@ -11,7 +11,7 @@ import Data.String
 import Data.Unique
 import System.IO.Unsafe
 
-default (Int, Double)
+default (Int, RealNum)
 
 infixl 1 =:
 
@@ -92,13 +92,13 @@ infixl 1 <*
 x *> y = SinkConnect x y            
 x <* y = ReadSource x y
 
-dbl :: Double -> E
+dbl :: RealNum -> E
 dbl = Const . NumV . NReal
 
 int :: Int -> E
 int = Const . NumV . NInt
 
-cdbl :: Double -> V
+cdbl :: RealNum -> V
 cdbl =  NumV . NReal
 
 cint :: Int -> V
@@ -110,7 +110,7 @@ class ToVal a where
 instance ToVal Int where
 	toVal = NumV . NInt
 
-instance ToVal Double where
+instance ToVal RealNum where
 	toVal = NumV . NReal
 
 instance ToVal [Char] where

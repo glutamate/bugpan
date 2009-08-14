@@ -47,7 +47,7 @@ cE (B.Sub e1 e2) = M2 Sub (cE e1) (cE e2)
 cE (B.Mul e1 e2) = M2 Mul (cE e1) (cE e2)
 cE (B.Div e1 e2) = M2 Div (cE e1) (cE e2)
 cE (B.Negate (B.EConst (B.CInt i))) = Const . NumV $ NInt (negate . fromInteger $ i)
-cE (B.Negate (B.EConst (B.CDbl d))) = Const . NumV $ NReal (negate d)
+cE (B.Negate (B.EConst (B.CDbl d))) = Const . NumV . NReal $ RealNum (negate d)
 cE (B.Negate e) = M2 Mul (-1) $ cE e
 cE (B.And e1 e2) = And (cE e1) (cE e2)
 cE (B.Natexp e1) = M1 Exp (cE e1)
@@ -110,7 +110,7 @@ cCmpOp op = case op of
 
 
 conToV (B.CInt i) = NumV (NInt $ fromInteger i)
-conToV (B.CDbl r) = NumV (NReal r)
+conToV (B.CDbl r) = NumV (NReal $ RealNum r)
 conToV B.CUnit = Unit
 conToV B.CTrue = BoolV True
 conToV B.CFalse = BoolV False

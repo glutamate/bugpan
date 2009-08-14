@@ -44,7 +44,7 @@ import Query
 --type QState = (Session)
 
 
-run :: [Declare] -> Double -> StateT QState IO ()
+run :: [Declare] -> RealNum -> StateT QState IO ()
 run ds t0 = do
   sess <- getSession
   let trun = (lookupDefn "_tmax" ds >>= vToDbl) `orJust` 1
