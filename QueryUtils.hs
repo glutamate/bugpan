@@ -133,6 +133,12 @@ sigStat' (F op init c cmb) sig@(Signal t1 t2 dt sf) =
              go !n !x = go (n-1) (x `op` sf (npts-n))
 
         
+spreadOut :: (Ord a, Bounded a, Num a, Fractional a) => [Signal a] -> [Signal a]
+spreadOut [] = []
+spreadOut (sigs) = let amp = uncurry (-) . getTag $ sigStat' (both maxF minF) (head sigs)
+                       adds = map (*1.5) $ iterate (+amp) 0
+                   in map (\(s,m) -> fmap (+m) s) (zip sigs adds)
+
 
 intervals :: Tagged t => [t a] -> [t (a,RealNum)]
 intervals tgs = map calcInt . zip tgs $ tail tgs
