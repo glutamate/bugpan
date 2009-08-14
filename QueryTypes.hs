@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances, FlexibleContexts, TypeSynonymInstances, ExistentialQuantification, IncoherentInstances, DeriveDataTypeable #-} 
+{-# LANGUAGE FlexibleInstances, FlexibleContexts, TypeSynonymInstances, ExistentialQuantification, IncoherentInstances, DeriveDataTypeable, NoMonomorphismRestriction, BangPatterns #-} 
 
 module QueryTypes where
 
@@ -39,6 +39,8 @@ import Math.Probably.PlotR
 import Data.Unique
 import TNUtils
 import Data.Typeable
+import Array
+import Math.Probably.FoldingStats
 
 type Duration a = ((RealNum,RealNum),a)
 type Event a = (RealNum,a)
@@ -46,9 +48,10 @@ type Event a = (RealNum,a)
 
 instance Show a =>  Show (Signal a) where
     show sig@(Signal t1 t2 dt sf) = "{"++show t1++": "++(show . take 5 $ sigToList sig)++"... :"++show t2++"}"
-instance Num a => PlotWithR [Signal a] where
+
+instance (Ord a, Bounded a, Num a) => PlotWithR [Signal a] where
     getRPlotCmd sigs = 
-        do ss <- mapM writeSig sigs
+        do ss <- mapM writeSig $ downSample 1000 sigs
            return $ RPlCmd { 
                         prePlot = map (\(df, r, t1, freq) -> concat ["dat",r, " <- ts(scan(\"", df, "\"), start=", t1, ", frequency=", freq,")"]) ss, 
                         cleanUp = mapM_ (\(df, r, t1, freq)-> removeFile df) ss,
@@ -57,7 +60,8 @@ instance Num a => PlotWithR [Signal a] where
         where writeSig sig@(Signal t1 t2 dt sf) = 
                   do r <- ( show . idInt . hashUnique) `fmap` newUnique
                      let datfile= "/tmp/bugplot"++r
-                     writeFile datfile . unlines $ map (\t->show $ sf t) [0..round $ (t2-t1)/dt]
+                     writeFile datfile . unlines $ map (\t->show $ sf t) [0..(floor $ (t2-t1)/dt)-1]
+                     --print "done file!"
                      return (datfile, r, show t1, show $ 1/dt)
 
 instance Real a => PlotWithR [Event a] where
@@ -87,6 +91,8 @@ instance Tagged t => PlotWithR [t (RealNum,RealNum)] where
                       }
 
 data Hist a = forall t. Tagged t => Histogram [t a]
+
+plot_ = getRPlotCmd
 
 instance Num a => PlotWithR (Hist a) where
     getRPlotCmd (Histogram tgs) = 
@@ -140,6 +146,35 @@ sscan :: (a->b->a) -> a -> Signal b -> Signal a
 sscan f init sig@(Signal t1 t2 dt sf) = let arr2 = scanl f init $ sigToList sig
                                         in Signal t1 t2 dt $ \pt->arr2!!pt
 
+
+downSample n = map (downSample' (n `div` 2))
+
+downSample' :: (Ord a, Bounded a, Num a) => Int -> Signal a -> Signal a
+downSample' n sig@(Signal t1 t2 dt sf) =
+    let npw = round $ (t2-t1)/dt
+        chunkSize = floor (npw./ n)
+        nChunks =  ceiling (npw ./chunkSize)
+        newDt = (t2-t1)/realToFrac (nChunks*2)
+        narr = listArray (0,(nChunks*2)-1 ) $concatMap chunk [0..(nChunks-1)]
+        chunk i = let n1 = i*chunkSize
+                      n2 = n1 + (min chunkSize (npw - i*chunkSize -1))
+                      (x,y) = sigSegStat (both maxF minF) (n1,n2) sig
+                      in [x,y]
+     in if npw>n 
+           then (Signal t1 t2 ((t2-t1)./(nChunks*2)) $ \p-> narr!p)
+           else sig
+        {-chunk i = let arrsec = sliceU (uVpnts w) (i*chunkSize) $ min chunkSize (npw - i*chunkSize -1)
+                                           in [maximumU arrsec, minimumU arrsec]
+                             in UVecWave (toU narr) ((maxt w-mint w)/2 / realToFrac nChunks) (mint w) (nChunks*2)
+-}
+
+sigSegStat :: Fold a b -> (Int, Int) -> Signal a -> b
+sigSegStat (F op init c _) (n1, n2) (Signal t1 t2 dt sf) = c $! go n1 init
+    where go !n !x   | n>n2 = x
+                     | otherwise = go (n+1) (x `op` (sf n))
+
+
+x ./ y = realToFrac x / realToFrac y
 
 class Tagged t where
     getTag :: t a-> a
@@ -208,6 +243,12 @@ instance QueryResult (IO RPlotCmd) where
 
 instance QueryResult [Char] where
     qReply = return 
+
+instance QueryResult Int where
+    qReply = return . show
+
+instance QueryResult RealNum where
+    qReply = return . show
     
 
 

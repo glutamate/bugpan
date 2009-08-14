@@ -12,6 +12,8 @@ import Database
 import Math.Probably.FoldingStats
 import Control.Applicative hiding ((<**>))
 import Numbers
+import Array
+import Data.Ord
 
 peak :: Ord a => [Signal a] ->[Event a]
 peak sigs =  map (\sig -> swap . foldSig cmp (sigInitialVal sig, 0) $ zipWithTime sig) sigs 
@@ -93,6 +95,12 @@ around evs sigs = catMaybes $ map (around' sigs) evs
                 (sig:_) -> Just $ shift (-t) sig
                 [] -> Nothing
 
+align :: [Event b] -> [Signal a] -> [Signal a]
+align evs sigs = map align' sigs
+    where align' sig@(Signal t1 t2 dt sf) = let (ts,_) = minimumBy (comparing ((distFrom t1) . fst)) evs
+                                            in shift (negate ts) sig
+          distFrom x y = abs(x-y)
+
 inout :: [Event a] -> [Event b] -> [Duration (a,b)]
 inout [] _ = []
 inout _ [] = []
@@ -124,6 +132,8 @@ sigStat' (F op init c cmb) sig@(Signal t1 t2 dt sf) =
              go 0 x = x
              go !n !x = go (n-1) (x `op` sf (npts-n))
 
+        
+
 intervals :: Tagged t => [t a] -> [t (a,RealNum)]
 intervals tgs = map calcInt . zip tgs $ tail tgs
                 where calcInt (t1, t2) = setTag t1 $ (getTag t1, getTStart t2 - getTStart t1)
@@ -135,3 +145,4 @@ dur :: a -> [Duration a]
 dur x = [((minBound, maxBound), x)]
 
 -- <**> :: [Duration (a->b)] -> [Duration a] -> [Duration b]
+

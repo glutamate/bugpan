@@ -33,7 +33,7 @@ dispatch ("ask":sessNm:queryStr:_) = do
   let sessNm = last . splitBy '/' $ baseDir sess 
   --print sessNm
   tps <- sessionTypes sess
-  setResourceLimit ResourceOpenFiles $ ResourceLimits (ResourceLimit 32000) (ResourceLimit 32000) 
+  --setResourceLimit ResourceOpenFiles $ ResourceLimits (ResourceLimit 32000) (ResourceLimit 32000) 
   --mapM_ print tps
   out <- runInterpreter $ do
            loadModules ["Query", "QueryTypes", "QueryUtils"]
@@ -49,7 +49,7 @@ dispatch ("ask":sessNm:queryStr:_) = do
                           tell [ind++"return $ QResBox ("++queryStr++")"]
            
            --setTopLevelModules [""]
-           setImportsQ $ map withNothing ["Prelude","Query", "QueryTypes", "QueryUtils"]
+           setImportsQ $ map withNothing ["Prelude","Query", "QueryTypes", "QueryUtils", "Numbers"]
            liftIO . putStrLn $ unlines cmd
            n <- interpret (unlines cmd) (as :: IO QueryResultBox)
            return n
@@ -58,7 +58,7 @@ dispatch ("ask":sessNm:queryStr:_) = do
   case out of
     Right outaction -> do QResBox qres <- outaction 
                           qreply <- qReply qres
-                          print qreply
+                          putStrLn qreply
     Left err -> print err
   return ()
       where withNothing x = (x,Nothing) 
@@ -163,5 +163,6 @@ unWrapT t = t
 typeToProxyName :: T-> String
 typeToProxyName UnitT = "()"
 typeToProxyName StringT = "\"foo\""
-typeToProxyName (NumT (Just RealT)) = "double"
+typeToProxyName (NumT (Just RealT)) = "real"
+typeToProxyName (PairT t1 t2) = "("++typeToProxyName t1++", "++typeToProxyName t2++")"
 

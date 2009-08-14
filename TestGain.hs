@@ -37,10 +37,13 @@ loomAnal = inSessionNamed "5c17e342716081de800000110961a575" $ do
              liftIO . print $ meanF `sigStat`  ecV
 
 snrBench = inSessionNamed "72cf2d2c868a81de800000110961a575" $ do
-             ecV <- signalsDirect "ecVoltage" real
-             tStart <- events "tStart" ()
+             ecV <- (take 3) `fmap` signalsDirect "ecVoltage" real
+             tStart <- (take 3) `fmap` events "tStart" ()
              liftIO . print $ tStart
-             liftIO . print $ sigStat minF (take 10 ecV)
+             liftIO . print $ ecV
+             liftIO . print $ length ecV
+             plot . downSample 200 . align tStart $ ecV
+             --liftIO . print $ sigStat minF (take 2 ecV)
 ioBench = inTemporarySession $ do
               prog <- use "TestStore"
               run (prog`with` ["_tmax" =: dbl 10]) 0
