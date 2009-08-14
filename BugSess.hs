@@ -14,7 +14,9 @@ import QueryTypes
 import Data.Char
 import System.Posix.Resource
 import ValueIO
+import PrettyPrint
 import Numbers
+import System.Cmd
 
 root = "/home/tomn/sessions/"
 
@@ -107,6 +109,41 @@ dispatch ("convert2":sessNm:_) = do
                                                  return (fn,map oldVtoV b)
                       return $ xs)
                   ((print $ "dir not found:" ++fp) >> return [])
+
+dispatch ("compact":sessNm:_) = do
+  system $ "./BugSess compact_1 "++sessNm
+  system $ "./BugSess compact_2 "++sessNm
+  return ()
+
+dispatch ("compact_1":sessNm:_) = do
+  sess <- loadApproxSession root sessNm
+  forM_ ["events", "durations"] $ \kind -> do
+       nms <- getDirContents $ (oneTrailingSlash $ baseDir sess)++kind
+       let path  = (oneTrailingSlash $ baseDir sess)++kind++"/"
+       forM_ nms $ \nm -> do 
+         fnms <- getSortedDirContents $ path++nm
+         xs <- forM fnms $ \fn->loadBinary $ path++nm++"/"++fn                                    
+         let vs = idLstV $ concat xs
+         saveBinary (path++nm++"/compacted") vs
+         --putStrLn $ nm ++ ": "++ppVal (ListV vs)
+
+dispatch ("compact_2":sessNm:_) = do
+  sess <- loadApproxSession root sessNm
+  forM_ ["events", "durations"] $ \kind -> do
+       nms <- getDirContents $ (oneTrailingSlash $ baseDir sess)++kind
+       let path  = (oneTrailingSlash $ baseDir sess)++kind++"/"
+       forM_ nms $ \nm -> do 
+         fnms <- getSortedDirContents $ path++nm
+         forM fnms $ \fn-> if fn == "compacted"
+                              then return () --print "skipping"
+                              else removeFile $ path++nm++"/"++fn
+                                                 
+
+-- find . -name "compacted" -exec rm -rf {} \;
+
+idLstV :: [V] -> [V]
+idLstV = id
+
 
 -- :set -fbreak-on-exception
 
