@@ -12,6 +12,12 @@ import Control.Monad
 import TNUtils
 import Debug.Trace
 import Unsafe.Coerce
+import Data.Array.IO
+import System.IO
+import Data.Array.MArray
+import Data.Array.Vector
+import qualified Data.StorableVector as SV
+import Foreign.C.Types
 
 loadVs :: String -> IO [V]
 loadVs fp = loadBinary fp
@@ -170,6 +176,14 @@ getRaw (PairT t1 t2) = do v1 <- getRaw t1
                           return $ PairV v1 v2
 getRaw (ListT t) = do n <- get :: Get Int
                       ListV `fmap` getManyRaw n t
+getRaw (SignalT (NumT (Just RealT))) = do 
+                        t1 <- fromWord64 `fmap` get
+                        t2 <- fromWord64 `fmap` get
+                        dt <- fromWord64 `fmap` get 
+                        let n = round $ (t2-t1)/dt
+                        vls <- fmap (map fromWord64) $ getMany n 
+                        let arr = listArray (0, length vls -1) vls
+                        return . SigV t1 t2 dt $ \pt->arr!pt
 getRaw (SignalT t) = do t1 <- fromWord64 `fmap` get
                         t2 <- fromWord64 `fmap` get
                         dt <- fromWord64 `fmap` get 
@@ -200,7 +214,9 @@ getMany n = go [] n
                  x `seq` go (x:xs) (i-1)
 {-# INLINE getMany #-}
 
+{-# INLINE getRaw #-}
 
+{- --SPECIALIZE getMany :: Int -> Get [RealNum] -} 
 
 
 idWord8 :: Word8 -> Word8
@@ -251,8 +267,8 @@ test1 n = do let x = 2.0::RealNum
 
 
 instance Binary RealNum where
-    put (RealNum x) = put $ toWord64 x
-    get = (RealNum . fromWord64) `fmap` get 
+    put (RealNum x) =  put $ toWord64  x
+    get = (RealNum .  fromWord64) `fmap` get 
 
 
 toWord64 :: a -> Word64
@@ -260,3 +276,109 @@ toWord64 = unsafeCoerce
 
 fromWord64 :: Word64 -> a
 fromWord64 = unsafeCoerce
+
+
+---- testing IOArray
+
+data TestVec = TV [RealNum]
+             
+instance Binary TestVec where
+    put (TV xs) = mapM_ put xs
+    get = undefined
+--    put (TV xs) = mapM_ put xs
+
+test2 = do
+  let tv = TV [10..19]
+  saveBinary "testIOArray" tv
+  h <- openFile "testIOArray" ReadMode
+  --arr <- idIOArrayDbl `fmap` newArray_ (0::Int,10::Int)
+  w8arr <-  newArray_ (0::Int,39::Int)
+  hGetArray h w8arr 10
+  arr <- idIOArrayW64 `fmap` castIOUArray w8arr
+  lst <- getElems arr
+  print $ map (idDouble . unsafeCoerce) lst
+  --putStrLn "boo!"
+  return ()
+
+idIOArrayDbl :: IOUArray Int Double -> IOUArray Int Double
+idIOArrayDbl = id
+
+idIOArrayW64 :: IOUArray Int Word64 -> IOUArray Int Word64
+idIOArrayW64 = id
+
+idDouble :: Double -> Double
+idDouble = id
+
+idDoubleL :: [Double] -> [Double]
+idDoubleL = id
+
+
+test3 = do
+  --let arr = SV.pack ([0..120000]::[Double])
+  --SV.writeFile "testSV" arr
+  let tv = TV $ replicate 9 1.1
+  saveBinary "testSV" tv
+  --h <- openFile "testIOArray" ReadMode
+
+  arr2 <- SV.readFile "testSV"
+  print $ idDoubleL $ SV.unpack $ SV.map (fromWord64) arr2
+  --hClose h
+
+test4 = do
+  --let arr = SV.pack ([0..120000]::[Double])
+  --SV.writeFile "testSV" arr
+  let tv = TV [10..19]
+  saveBinary "testCDbl" tv
+  --h1 <- openFile "testUA" WriteMode
+  --hPutU h1 $ toU ([0..99]::[Double])
+  --hClose h1
+  --h <- openFile "testUA" ReadMode
+  --arr2 <- hGetU h
+  --print $ idDoubleL $ fromU $ arr2
+  --hClose h
+
+test5 = do
+  let arr =  replicateU 120000 (1.1::Double)
+--  saveBinary "testInt" (2::Word32)
+  h <- openFile "testUA2" WriteMode
+  hPutU h arr
+  hClose h 
+  let arr = SV.pack (replicate 120000 (1.1::Double))
+  SV.writeFile "testSV1" arr
+
+test6 = do
+  xs <- forM [0..100] $ \i-> do
+    h <- openFile "testUA2" ReadMode
+    arr2 <- hGetU h
+    hClose h 
+    return $ idDouble $ arr2 `indexU` (100000+i)
+  print$ sum xs
+
+
+test7 = do
+  xs <- forM [0..100] $ \i-> do
+    arr <- SV.readFile "testSV1"
+    return $ idDouble $ arr `SV.index` (100000+i)
+   
+  print$ sum xs
+
+
+
+  --b <- loadBinary "testUA2"
+  --print (b::MyArr)
+
+data MyArr = MyArr Int [RealNum] deriving (Show)
+
+fromWord32 :: Word32 -> a
+fromWord32 = unsafeCoerce
+
+idCDouble :: CDouble -> CDouble
+idCDouble = id
+
+instance Binary MyArr where
+    put = undefined
+    get = do l <- fromWord32 `fmap` get
+             vls <- forM [0..8] $ \_ -> get 
+             return $ MyArr l vls
+
+

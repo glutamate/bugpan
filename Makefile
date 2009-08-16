@@ -31,8 +31,13 @@ testacq:
 	sudo time ./TestAcqOnly +RTS -p
 
 testgainopt:
-	rm ValueIO.o Query.o QueryUtils.o QueryTypes.o
+	rm -f ValueIO.o Query.o QueryUtils.o QueryTypes.o
 	ghc --make TestGain -O2 -lcomedi Comedi/comedi_hs_helper.o
+
+testgainoptall:
+	rm -f *.o
+	ghc --make TestGain -O2 -lcomedi Comedi/comedi_hs_helper.o
+
 
 testgain:
 	ghc --make TestGain -lcomedi Comedi/comedi_hs_helper.o

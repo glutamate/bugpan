@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE BangPatterns, NoMonomorphismRestriction #-}
 
 module QueryUtils where
 
@@ -152,3 +152,18 @@ dur x = [((minBound, maxBound), x)]
 
 -- <**> :: [Duration (a->b)] -> [Duration a] -> [Duration b]
 
+--dur (/) <**> ecVoltage <**> sigStat stdDevF ecVoltage 
+
+--normaliseBy :: Fold a a -> [Signal a] -> [Signal a]
+
+
+normaliseBy :: (Floating a) => Fold a a -> [Signal a] -> [Signal a]
+normaliseBy stat sigs = ((flip (/)) <$$> sigStat stat sigs ) `applyOver` sigs
+
+
+
+normaliseBySD :: (Floating a) => [Signal a] -> [Signal a]
+normaliseBySD = normaliseBy stdDevF
+
+stdDevF_spec :: Fold RealNum RealNum
+stdDevF_spec = stdDevF
