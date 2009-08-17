@@ -4,7 +4,7 @@ module EvalM where
 
 import Control.Monad
 import Data.Maybe
-import Data.Binary
+--import Data.Binary
 --import Control.Monad.Reader
 --import Control.Monad.Error
 --import Control.Monad.Identity
@@ -81,13 +81,19 @@ data V  = BoolV Bool
 
 instance Eq V where
     BoolV x == BoolV y = x==y
+    NumV (NReal x) == NumV (NReal y) = near x y
     NumV x == NumV y = x==y
     PairV x w == PairV y z = x==y && w==z
     Unit == Unit = True
     StringV s1 == StringV s2 = s1 == s2  
     ListV v1s == ListV v2s = length v1s == length v2s && (and $ zipWith (==) v1s v2s)
+    SigV t1 t2 dt sf == SigV t1' t2' dt' sf'=
+         near t1 t1' && near t2 t2' && near dt dt' && 
+           and (map (\p-> (sf p) == (sf' p)) [0..(round $ (t2-t1)/dt)-1]) 
     _ == _ = False
 
+
+near x y = x - y < 1e-8
 
 
 instance Read (a->b) 
@@ -165,7 +171,7 @@ typeOfVal (NumV (NCmplx _)) = NumT $ Just CmplxT
 typeOfVal (PairV v w) = PairT (typeOfVal v) (typeOfVal w)
 typeOfVal (ListV []) = ListT AnyT
 typeOfVal (ListV (x:_)) = ListT (typeOfVal x)
-typeOfVal (SigV t1 _ _ sf) = SignalT (typeOfVal $ sf 0)
+typeOfVal (SigV _ _ _ sf) = SignalT (typeOfVal $ sf 0)
 typeOfVal (BoxV _ _ _) = ShapeT
 typeOfVal Unit = UnitT
 typeOfVal (StringV _) = StringT
@@ -183,7 +189,7 @@ instance Reify V where
 
 --for efficient binary io
 
-instance Reify RealNum where 
+instance Reify Double where 
     reify (NumV (NReal x)) = Just x
     pack = NumV . NReal 
     typeOfReified _ = NumT (Just RealT)
@@ -247,6 +253,15 @@ unsafeReify = fromJust . reify
 --(Signal t1 t2 dt sf)
 data Signal a = Signal RealNum RealNum RealNum (Int -> a) deriving Typeable
 
+sigPnts :: Signal a -> Int
+sigPnts (Signal t1 t2 dt sf) = round $ (t2-t1)/dt
+
+
+sigToList :: Signal a -> [a]
+sigToList sig@(Signal t1 t2 dt sf) = map sf [0..sigPnts sig-1]
+
+instance Show a =>  Show (Signal a) where
+    show sig@(Signal t1 t2 dt sf) = "{"++show t1++": "++(show . take 5 $ sigToList sig)++"... :"++show t2++"}"
 
 readSig :: Signal a -> RealNum -> a
 (Signal t1 t2 dt sf) `readSig` t = sf . round $ (t-t1 )/dt

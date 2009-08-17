@@ -4,21 +4,21 @@ module Numbers where
 
 import Data.Complex
 import Text.Printf
-
+import Data.Array.Vector
 type Number = NumVl
 
-newtype RealNum = RealNum { unRealNum :: Double} 
-    deriving (Eq, Enum, Read, Num, Ord, Real, Fractional, RealFloat, RealFrac, Floating)
+--newtype RealNum = RealNum { unRealNum :: Double} 
+--    deriving (Eq, Enum, Read, Num, Ord, Real, Fractional, RealFloat, RealFrac, Floating)
+type RealNum = Double
 
+--instance Show RealNum where
+--    show (RealNum x) = show x
 
-instance Show RealNum where
-    show (RealNum x) = show x
-
-instance Bounded RealNum where
+instance Bounded Double where
     minBound = -1e200
     maxBound = 1e200
 
-real = RealNum 1.0
+--real = RealNum 1.0
 
 
 
@@ -39,7 +39,7 @@ nearlyZero n = (n<1e-18) && (n>(-1e-18))
 
 ppNum n = if n<0 then "("++(ppNum' n)++")" else ppNum' n
 ppNum' (NInt i) = show i
-ppNum' (NReal f) = printf "%5.4g" $ unRealNum f
+ppNum' (NReal f) = printf "%5.4g" $ f
 ppNum' (NCmplx (r:+c)) = show r++" + i*"++show c
 
 data Ntype = NI | NR | NC deriving (Show,Eq, Enum, Ord)

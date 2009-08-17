@@ -41,7 +41,7 @@ retrieveInputWave nprom npnts = do
 compileAdcSrc rs@(ReadSource nm ("adc", Const (PairV (PairV chanS rtHzS) lenS))) = 
     let rtHz= unsafeReify rtHzS 
         chanNum =  unsafeReify chanS
-        len = unRealNum $ unsafeReify lenS
+        len =  unsafeReify lenS
     in [
      RunPrepare $ \env -> do setupInput rtHz
                              --print "hello world"
@@ -58,13 +58,13 @@ compileAdcSrc rs@(ReadSource nm ("adc", Const (PairV (PairV chanS rtHzS) lenS)))
                                putStrLn $"promise num "++show promN
                                let npts = round (len*(realToFrac rtHz))
                                pts <- fmap (array (0,npts) . zip [0..npts-1] . map realToFrac) $! retrieveInputWave promN npts
-                               let toV = NumV . NReal . RealNum
+                               let toV = NumV . NReal 
                                let sf idx = if idx<0 
                                                then toV $ pts!0
                                                else if idx<npts
                                                        then  toV $ pts!idx
                                                        else toV $ pts!(npts-1)
-                               H.update env ('%':nm) $ SigV 0 (RealNum len) (1/(realToFrac rtHz)) sf
+                               H.update env ('%':nm) $ SigV 0 (len) (1/(realToFrac rtHz)) sf
                                free_trial_results
                                return ()
     ]

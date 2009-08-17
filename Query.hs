@@ -63,13 +63,13 @@ signals nm _ = do
           answers . catMaybes $ map reify $ concat sigs) 
       (liftIO (print $ "dir not found:" ++nm) >> answers [])
 
-signalsDirect :: (Reify a, B.Binary a, Show a) => String -> a -> StateT QState IO [Signal a]
-signalsDirect nm _ = do
+signalsDirect :: String ->  StateT QState IO [Signal Double]
+signalsDirect nm = do
   Session bdir t0 <- getSession
   --liftIO . print $ bdir++"/signals/"++nm
   ifM (liftIO (doesDirectoryExist (bdir++"/signals/"++nm)))
       (do fnms <- getSortedDirContents $ bdir++"/signals/"++nm
-          sigs <- forM fnms $ \fn-> liftIO $ loadReifiedBinary $ bdir++"/signals/"++nm++"/"++fn 
+          sigs <- forM  fnms $ \fn-> liftIO $ loadSignalsU $ bdir++"/signals/"++nm++"/"++fn 
           return $ concat sigs) 
       (liftIO (print $ "dir not found:" ++nm) >> answers [])
 
@@ -131,7 +131,7 @@ inApproxSession nm sma = do sess <- loadApproxSession "/home/tomn/sessions/" nm
 
 sessionTmax  ::  StateT QState IO RealNum
 sessionTmax  = do
-  tstop <- events "tStop" real
+  tstop <- events "tStop" double
   case tstop of
     [] -> return 0
     evs -> return . fst $ maximumBy (comparing fst) evs

@@ -24,20 +24,16 @@ import QueryRun
 import ValueIO
 import Numbers
 
-{-spikes = uevents "spike" ()
-synin = uevents "rndSpike" ()
-stim = udurations "inputRate" double
-vm = usignals "vm" double
-gsyn = usignals "gsyn" double
- -}
+main = snrBench
+
 loomAnal = inSessionNamed "5c17e342716081de800000110961a575" $ do
              ecV <- signals "ecVoltage" real
              tStart <- events "tStart" ()
              plot [head ecV]
              liftIO . print $ meanF `sigStat`  ecV
 
-snrBench = inSessionNamed "72cf2d2c868a81de800000110961a575" $ do
-             ecV <- (take 10) `fmap` signalsDirect "ecVoltage" real
+snrBench = inSessionNamed "000" $ do
+             ecV <- signalsDirect "ecVoltage" 
              --tStart <- (take 3) `fmap` events "tStart" ()
              --liftIO . print $ tStart
              --liftIO . print $ ecV
@@ -51,19 +47,21 @@ ioBench = inTemporarySession $ do
 --              ecV <- signals "ecVoltage" real
               liftIO . print $ sigStat meanF (secs)
 
+real = double
+
 ioTest = inTemporarySession $ do
            prog <- use "TestStore"
            run prog 0
            run prog 5
            run prog 10
 
-           secs <- signalsDirect "secs" real
+           secs <- signalsDirect "secs"
            anEvent <- events "anEvent" ()
            aNumEvent <- events "aNumEvent" real
            aStringDur <- durations "aStringDur" ""
-           aPairDur <- durations "aPairDur" (real, ())
+           aPairDur <- durations "aPairDur" (real, ()) 
 
-           --assertTagsBetween "secs stdDev" (0.28,0.30) $ sigStat stdDevF secs
+           assertTagsBetween "secs stdDev" (0.28,0.30) $ sigStat stdDevF secs
            assertEqual "#secs" 3 $ length secs
            assertEqual "#events" 3 $ length anEvent
            assertEqual "#anumevent" 6 $ length aNumEvent
@@ -77,11 +75,12 @@ ioTest = inTemporarySession $ do
            assertTagsEqual "aStringDur val" "foo"  aStringDur
 
            assertTagsEqual "pairdur unit tag" () (snd <$$> aPairDur)
-           assertTagsBetween "pairdur num tag" (0.5,2.5) (fst <$$> aPairDur)
+           assertTagsBetween "pairdur num tag" (0.5,2.5) (fst <$$> aPairDur) 
 
            sigStartBetween "secs start" (4.9,5.1) $ secs !!1
            sigEndBetween "secs stop" (5.9,6.1) $ secs !!1
            sigDtBetween "secs dt" (0.0001, 0.01) $ secs !!1
+           
 
 sigStartBetween str rng (Signal t1 _ _ _) =
     assertBetween str rng t1
@@ -151,8 +150,6 @@ unsafeMain = inTemporarySession $ do
   plot (vm :+: 0 `tag` synin :+: (1e-10) `tag` spikes ) 
   liftIO $ print peakgsyn 
   --liftIO . print . area $  (flip (/) <$$> roi) `applyOver` gsyn
-
-main = snrBench
 
 safeMain = inTemporarySession $ do
   intfire <- use "Intfire"

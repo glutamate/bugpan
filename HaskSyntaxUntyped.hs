@@ -110,7 +110,7 @@ class ToVal a where
 instance ToVal Int where
 	toVal = NumV . NInt
 
-instance ToVal RealNum where
+instance ToVal Double where
 	toVal = NumV . NReal
 
 instance ToVal [Char] where

@@ -46,9 +46,6 @@ type Duration a = ((RealNum,RealNum),a)
 type Event a = (RealNum,a)
 
 
-instance Show a =>  Show (Signal a) where
-    show sig@(Signal t1 t2 dt sf) = "{"++show t1++": "++(show . take 5 $ sigToList sig)++"... :"++show t2++"}"
-
 instance (Ord a, Bounded a, Num a) => PlotWithR [Signal a] where
     getRPlotCmd sigs = 
         do ss <- mapM writeSig $ downSample 1000 sigs
@@ -69,7 +66,7 @@ instance Real a => PlotWithR [Event a] where
         do return $ RPlCmd { 
                         prePlot = [],
                         cleanUp = return (),
-                        plotArgs = [PLPoints $ map (\(t,v)-> (unRealNum t, realToFrac v)) evs]
+                        plotArgs = [PLPoints $ map (\(t,v)-> ( t, realToFrac v)) evs]
                       }
 
 instance PlotWithR [Duration RealNum] where
@@ -77,8 +74,8 @@ instance PlotWithR [Duration RealNum] where
         do return $ RPlCmd { 
                         prePlot = [],
                         cleanUp = return (),
-                        plotArgs = map (\((t1,t2),v) -> PLLines [(unRealNum t1, unRealNum v), 
-                                                                 (unRealNum t2, unRealNum v)]) durs
+                        plotArgs = map (\((t1,t2),v) -> PLLines [( t1,  v), 
+                                                                 ( t2,  v)]) durs
                       }
 --scatter plot
 instance Tagged t => PlotWithR [t (RealNum,RealNum)] where
@@ -87,7 +84,7 @@ instance Tagged t => PlotWithR [t (RealNum,RealNum)] where
         do return $ RPlCmd { 
                         prePlot = [],
                         cleanUp = return (),
-                        plotArgs = [PLPoints $ map (\(t,v)-> (unRealNum t, unRealNum v)) xys]
+                        plotArgs = [PLPoints $ map (\(t,v)-> ( t,  v)) xys]
                       }
 
 data Hist a = forall t. Tagged t => Histogram [t a]
@@ -98,16 +95,12 @@ instance Num a => PlotWithR (Hist a) where
     getRPlotCmd (Histogram tgs) = 
         plotHisto $ map getTag tgs
 
-sigPnts :: Signal a -> Int
-sigPnts (Signal t1 t2 dt sf) = round $ (t2-t1)/dt
 
 --zipSigs :: Signal a -> Signal b -> Signal (a,b)
 
 zipWithTime :: Signal a -> Signal (a,RealNum)
 zipWithTime (Signal t1 t2 dt sf) = Signal t1 t2 dt $ \pt -> (sf pt, (realToFrac pt)*dt+t1)
 
-sigToList :: Signal a -> [a]
-sigToList sig@(Signal t1 t2 dt sf) = map sf [0..sigPnts sig-1]
 
 sigInitialVal (Signal t1 t2 dt sf) = sf 0
 

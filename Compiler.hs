@@ -77,11 +77,11 @@ mainLoop  stmts =  filter inMainLoop stmts
 
 genSrc :: String -> V -> (RealNum -> RealNum -> IO V)
 genSrc "bernoulli" rateS t dt = 
-    do rnd <- RealNum `fmap` randomRIO (0,1)
+    do rnd <- randomRIO (0,1)
        return . BoolV $ rnd < ( unsafeReify rateS)*dt
 genSrc "uniform" (PairV lo hi) t dt = 
-    do rnd <- randomRIO (unRealNum $ unsafeReify lo,unRealNum $ unsafeReify hi)
-       return . NumV . NReal . RealNum $ rnd
+    do rnd <- randomRIO ( unsafeReify lo, unsafeReify hi)
+       return . NumV . NReal  $ rnd
 genSrc nms _ _ _ = error $ "unknown source: "++show nms
 
 {- note: Now, 

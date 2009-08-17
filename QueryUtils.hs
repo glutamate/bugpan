@@ -164,6 +164,3 @@ normaliseBy stat sigs = ((flip (/)) <$$> sigStat stat sigs ) `applyOver` sigs
 
 normaliseBySD :: (Floating a) => [Signal a] -> [Signal a]
 normaliseBySD = normaliseBy stdDevF
-
-stdDevF_spec :: Fold RealNum RealNum
-stdDevF_spec = stdDevF

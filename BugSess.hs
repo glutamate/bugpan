@@ -17,6 +17,7 @@ import ValueIO
 import PrettyPrint
 import Numbers
 import System.Cmd
+import Format2
 
 root = "/home/tomn/sessions/"
 
@@ -98,7 +99,7 @@ dispatch ("convert2":sessNm:_) = do
                                                        createDirectory $ pathN++sig
                                                        forM_ vs $ \(nm,sigv) -> do let fp = pathN++sig++"/"++nm
                                                                                    putStrLn $ "saving "++show sigv++ " in "++fp
-                                                                                   saveBinary fp sigv
+                                                                                   saveVs fp sigv
       where loadUntyped1 :: FilePath -> IO [(String,[V])]
             loadUntyped1 fp = do 
               ifM (doesDirectoryExist fp)
