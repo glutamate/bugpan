@@ -53,7 +53,7 @@ dispatch ("ask":sessNm:queryStr:_) = do
                           tell [ind++"return $ QResBox ("++queryStr++")"]
            
            --setTopLevelModules [""]
-           setImportsQ $ map withNothing ["Prelude","Query", "QueryTypes", "QueryUtils", "Numbers"]
+           setImportsQ $ map withNothing ["Prelude","Query", "QueryTypes", "QueryUtils", "Numbers", "Math.Probably.PlotR"]
            liftIO . putStrLn $ unlines cmd
            n <- interpret (unlines cmd) (as :: IO QueryResultBox)
            return n

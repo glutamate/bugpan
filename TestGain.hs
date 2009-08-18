@@ -24,7 +24,7 @@ import QueryRun
 import ValueIO
 import Numbers
 
-main = snrBench
+main = ioTest
 
 loomAnal = inSessionNamed "5c17e342716081de800000110961a575" $ do
              ecV <- signals "ecVoltage" real
@@ -55,21 +55,28 @@ ioTest = inTemporarySession $ do
            run prog 5
            run prog 10
 
+           storeAs "storeEvent" [(2.3::Double, ()), (2.4, ())]
+
            secs <- signalsDirect "secs"
            anEvent <- events "anEvent" ()
            aNumEvent <- events "aNumEvent" real
            aStringDur <- durations "aStringDur" ""
            aPairDur <- durations "aPairDur" (real, ()) 
+           storeEvent <- events "storeEvent" ()
 
            assertTagsBetween "secs stdDev" (0.28,0.30) $ sigStat stdDevF secs
            assertEqual "#secs" 3 $ length secs
            assertEqual "#events" 3 $ length anEvent
+           assertEqual "#storeEvents" 2 $ length storeEvent
            assertEqual "#anumevent" 6 $ length aNumEvent
            assertEqual "#strdur" 3 $ length aStringDur
            assertEqual "#pairdur" 6 $ length aPairDur
 
+
            assertEvTimesBtw "anEvent time (2/3 fail)" (0.29,0.31) $ anEvent
+           assertEvTimesBtw "storeEvent time" (2.2,2.5) $ storeEvent
            assertTagsEqual "anEvent tag" () anEvent
+           assertTagsEqual "storeEvent tag" () storeEvent
            assertTagsBetween "aNumEvent tag" (4.5, 6.6) aNumEvent
 
            assertTagsEqual "aStringDur val" "foo"  aStringDur

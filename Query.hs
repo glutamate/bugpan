@@ -101,6 +101,20 @@ duration :: Reify a => String -> a-> L.ListT (StateT QState IO) (Duration a)
 duration nm a = L.ListT $ durations nm a
 
 
+storeAs :: Reify a => String -> [a] -> StateT QState IO ()
+storeAs nm vls = do 
+  let vs = map pack vls
+  let t = typeOfReified $ head vls
+  let subDir = case t of
+                 SignalT _ -> "signals/"
+                 PairT (NumT (Just RealT)) _ -> "events/"
+                 PairT (PairT (NumT (Just RealT)) (NumT (Just RealT))) _ -> "durations/"
+                 _ -> error $ "cannot store "++nm++": unknown type"
+  Session bdir t0 <- getSession
+  liftIO $ createDirectoryIfMissing False $ oneTrailingSlash bdir++subDir++nm
+  liftIO $ saveVs (oneTrailingSlash bdir++subDir++nm++"/stored") vs
+  
+
 inLastSession :: StateT QState IO a -> IO a
 inLastSession sma = do
   s <- lastSession "/home/tomn/sessions/"

@@ -64,15 +64,15 @@ exec stmts dt tmax =
 
        (runMV, dispMV) <- cond [
                              (null prgScreen, return (Nothing,Nothing))
-                           , (isJust dispPullMV && isJust runningMV, return (runningMV, dispPullMV))
-                           , (True, do
+                           , (isJust dispPullMV && isJust runningMV, return (runningMV, dispPullMV))]
+                           $ do
                                 rMV <- newEmptyMVar
                                 scrPl <- newEmptyMVar
                                 forkOS (initGlScreen False scrPl rMV) 
                                 waitSecs 0.5
                                 return (Just rMV, Just scrPl)
-                             )
-                          ]
+                             
+                          
        maybeM dispMV $  \dpmv -> putMVar dpmv screenPull
 
 --if ((not . null $ prgScreen) && isNothing (dispPullMV) 

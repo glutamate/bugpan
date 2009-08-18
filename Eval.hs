@@ -135,8 +135,8 @@ eval es (SigAt offset sve) =
                                 let tdbl = numToDouble n
                                 let idx = round $ (tdbl-t1)/dt
                                 cond [(tdbl < t1, return (efun 0)),
-                                      (tdbl > t2, return (efun . round $ (t2-t1/dt))),
-                                      (otherwise, return (efun idx))]
+                                      (tdbl > t2, return (efun . round $ (t2-t1/dt)))
+                                      ] $ return (efun idx)
          v -> fail $ "expected sigv, got "++show v
  
 eval es (LetE ses er) = do

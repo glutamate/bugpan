@@ -232,9 +232,10 @@ isTrue (BoolV True) = True
 isNotFalse (BoolV False) = False
 isNotFalse _ = True
 
-sigInEps s@(SigV ts1 ts2 dt sf) eps = 
-    catMaybes $ for eps $ \ep-> let (tep1,tep2) = epTs ep in
-                                cond [(ts1<tep1 && ts2>tep2, Just $ SigV tep1 tep2 dt $ \t->sf(t-(round $ tep1/dt)))]
+sigInDurs s@(SigV ts1 ts2 dt sf) durs = 
+    catMaybes $ for durs $ \dur-> let (tep1,tep2) = epTs dur in
+                                  cond [(ts1<tep1 && ts2>tep2, Just $ SigV tep1 tep2 dt $ \t->sf(t-(round $ tep1/dt)))] 
+                                         Nothing
 
 evTime (PairV nv@(NumV _) _) = unsafeVToDbl nv
 

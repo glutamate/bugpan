@@ -22,11 +22,6 @@ peak sigs =  map (\sig -> swap . foldSig cmp (sigInitialVal sig, 0) $ zipWithTim
                                          else (curMax, tmax)
           swap (x,y) = (y,x)
 
-section :: [Signal a] -> [Duration b] -> [Signal a]
-section _ [] = []
-section sigs (dur:durs) = case find (sigContainsDur dur) sigs of
-                            Just sig -> section1 sig dur : section sigs durs
-                            Nothing -> section sigs durs
 
 
 applyOverWith :: (a->b->c) -> [Signal a] -> [Duration b] -> [Signal c]
@@ -83,10 +78,6 @@ freqDuring evs durs = map (freqDuring' evs) durs
     where freqDuring' evs dur@((t1, t2), durtag) = 
               ((t1, t2), (durtag, 
                         (realToFrac . length $ evs `during` [dur])/(t2-t1)))
-
-during :: [Event a] -> [Duration b] -> [Event a]
-during evs durs = concatMap (during' evs) durs
-    where during' evs dur = filter (`evInDuration` dur) evs
 
 around :: [Event b] -> [Signal a] -> [Signal a]
 around evs sigs = catMaybes $ map (around' sigs) evs
@@ -161,6 +152,11 @@ normaliseBy :: (Floating a) => Fold a a -> [Signal a] -> [Signal a]
 normaliseBy stat sigs = ((flip (/)) <$$> sigStat stat sigs ) `applyOver` sigs
 
 
-
 normaliseBySD :: (Floating a) => [Signal a] -> [Signal a]
 normaliseBySD = normaliseBy stdDevF
+
+
+subMeanNormSD ::  (Floating a) => [Signal a] -> [Signal a]
+subMeanNormSD sigs = (f <$$> sigStat stat sigs ) `applyOver` sigs
+    where stat = meanSDF
+          f (mean,sd) = \x-> (x-mean)/sd

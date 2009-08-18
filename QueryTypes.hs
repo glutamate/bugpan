@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances, FlexibleContexts, TypeSynonymInstances, ExistentialQuantification, IncoherentInstances, DeriveDataTypeable, NoMonomorphismRestriction, BangPatterns #-} 
+{-# LANGUAGE FlexibleInstances, FlexibleContexts, TypeSynonymInstances, ExistentialQuantification, IncoherentInstances, DeriveDataTypeable, NoMonomorphismRestriction, BangPatterns, TypeOperators #-} 
 
 module QueryTypes where
 
@@ -52,7 +52,7 @@ instance (Ord a, Bounded a, Num a) => PlotWithR [Signal a] where
         do ss <- mapM writeSig $ downSample 1000 sigs
            return $ RPlCmd { 
                         prePlot = map (\(df, r, t1, freq) -> concat ["dat",r, " <- ts(scan(\"", df, "\"), start=", t1, ", frequency=", freq,")"]) ss, 
-                        cleanUp = mapM_ (\(df, r, t1, freq)-> removeFile df) ss,
+                        cleanUp = return (), --mapM_ (\(df, r, t1, freq)-> removeFile df) ss,
                         plotArgs = map (\(df, r, t1, freq) -> TimeSeries ("dat"++r)) ss
                       }
         where writeSig sig@(Signal t1 t2 dt sf) = 
@@ -70,13 +70,13 @@ instance Real a => PlotWithR [Event a] where
                         plotArgs = [PLPoints $ map (\(t,v)-> ( t, realToFrac v)) evs]
                       }
 
-instance PlotWithR [Duration RealNum] where
+instance  Real a => PlotWithR [Duration a] where
     getRPlotCmd durs = 
         do return $ RPlCmd { 
                         prePlot = [],
                         cleanUp = return (),
-                        plotArgs = map (\((t1,t2),v) -> PLLines [( t1,  v), 
-                                                                 ( t2,  v)]) durs
+                        plotArgs = map (\((t1,t2),v) -> PLLines [( t1, realToFrac v), 
+                                                                 ( t2, realToFrac v)]) durs
                       }
 --scatter plot
 instance Tagged t => PlotWithR [t (RealNum,RealNum)] where
@@ -92,8 +92,26 @@ data Hist a = forall t. Tagged t => Histogram [t a]
 
 plot_ = getRPlotCmd
 
-plotMany :: [Signal Double] -> [IO RPlotCmd]
-plotMany sigs = map (\s-> getRPlotCmd [s]) sigs
+plotManySigs :: PlotWithR [a] => [a] -> [IO RPlotCmd]
+plotManySigs sigs = map (\s-> getRPlotCmd [s]) sigs
+
+class PlotWithR a => PlotMany a where
+    chopByDur :: [Duration b] -> a -> [a]
+
+instance (Ord a, Bounded a, Num a) => PlotMany [Signal a] where
+    chopByDur durs sigs = map (\dur->section sigs [dur]) durs
+
+instance (Real a) => PlotMany [Event a] where
+    chopByDur durs evs = map (\dur->during evs [dur]) durs
+
+instance (Real a) => PlotMany [Duration a] where
+    chopByDur chopDurs durs = map (\dur->sectionDur1 dur durs) chopDurs
+
+instance (PlotMany a, PlotMany b) => PlotMany (a :+: b) where
+    chopByDur durs (x :+: y) = zipWith (:+:) (chopByDur durs x) (chopByDur durs y)
+
+plotManyBy :: PlotMany b => [Duration a] -> b -> [IO RPlotCmd]
+plotManyBy durs pm = map getRPlotCmd $ chopByDur durs pm
 
 instance Num a => PlotWithR (Hist a) where
     getRPlotCmd (Histogram tgs) = 
@@ -114,6 +132,23 @@ foldSig f init sig = foldl' f init $ sigToList sig
 
 --mapMaybe :: (a->Maybe b) -> [a] -> [b]
 --mapMaybe f xs = catMaybes $ map f xs
+during :: [Event a] -> [Duration b] -> [Event a]
+during evs durs = concatMap (during' evs) durs
+    where during' evs dur = filter (`evInDuration` dur) evs
+
+
+section :: [Signal a] -> [Duration b] -> [Signal a]
+section _ [] = []
+section sigs (dur:durs) = case find (sigOverlapsDur dur) sigs of
+                            Just sig -> section1 sig dur : section sigs durs
+                            Nothing -> section sigs durs
+
+sectionDur1 :: Duration a -> [Duration b] -> [Duration b]
+sectionDur1 ((lo,hi),_) durs = concatMap f durs
+    where f ((t1,t2),v) | t2 <lo || t1 > hi = []
+                        | otherwise = [((max lo t1, min hi t2), v)]
+
+
 section1 (Signal ts1 ts2 dt sf) ((td1,td2),vd) = let (t1, t2)= (max ts1 td1, min ts2 td2)
                                                      dropPnts = round $ (t1 - ts1)/dt
                                                  in Signal t1 t2 dt $ \pt->(sf $ pt + dropPnts)
@@ -124,6 +159,10 @@ sigContainsDur ((td1,td2),vd) (Signal ts1 ts2 dt sf) = ts1 < td1 && ts2 > td2
 sigOverlapsDur :: Duration b -> Signal a -> Bool
 sigOverlapsDur ((td1,td2),vd) (Signal ts1 ts2 dt sf) = td2 > ts1 && td1<ts2 -- || td1 < ts2 && td2 >ts1
 
+durOverlapsDur :: Duration b -> Duration a -> Bool
+durOverlapsDur ((td1,td2),vd) ((ts1,ts2),vd1) = td2 > ts1 && td1<ts2 -- || td1 < ts2 && td2 >ts1
+
+
 type List a = [a]
 type Id a = a
 
@@ -131,6 +170,7 @@ vToEvent v = (evTime v, evTag v)
 vToDuration v = let (t1, t2) = epTs v in ((t1, t2), epTag v)
 
 evInDuration (t,_) ((t1,t2), _) = t<t2 && t>t1
+
 
 
 showDur ((t1,t2),v) = show t1 ++ ".."++show t2++": "++show v
@@ -232,7 +272,7 @@ instance Show a => QueryResult [Signal a] where
 instance Show a => QueryResult [Event a] where
     qReply xs = return $ show xs
 instance Show a => QueryResult [Duration a] where
-    qReply xs = return $ show xs
+    qReply xs =return $ unlines $ map show xs
 instance QueryResult (IO RPlotCmd) where
     qReply ioplot = do plot <- ioplot
                        plotPlotCmd plot

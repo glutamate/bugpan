@@ -121,7 +121,8 @@ isNotFalse _ = True
 
 sigInEps s@(SigV ts1 ts2 sf) eps = 
     catMaybes $ for eps $ \ep-> let (tep1,tep2) = epTs ep in
-                                cond [(ts1<tep1 && ts2>tep2, Just $ SigV tep1 tep2 $ \t->sf(t-tep1))]
+                                cond [(ts1<tep1 && ts2>tep2, Just $ SigV tep1 tep2 $ \t->sf(t-tep1)),
+                                      (True, Nothing]
 
 evTime (PairV (NumV (NReal t)) _) = t
 
