@@ -43,7 +43,7 @@ testgain:
 	ghc --make TestGain -lcomedi Comedi/comedi_hs_helper.o
 
 bugsess:
-	ghc --make -debug BugSess -lcomedi Comedi/comedi_hs_helper.o
+	ghc --make -O2	 BugSess -lcomedi Comedi/comedi_hs_helper.o
 
 testgainprof:
 	ghc --make TestGain -prof -auto-all -lcomedi Comedi/comedi_hs_helper.o

@@ -21,6 +21,8 @@ import qualified Data.StorableVector as SV
 import Foreign.C.Types
 import Data.Binary.IEEE754
 import Data.Int
+import Data.List
+import Numeric
 
 
 loadVs :: String -> IO [V]
@@ -28,9 +30,14 @@ loadVs fp = loadBinary fp
 
 saveVs :: String -> [V] -> IO ()
 saveVs fp sigs@((SigV _ _ _ _):_) | typeOfVal (head sigs) == SignalT (NumT (Just RealT)) = do
-    h <- openBinaryFile fp WriteMode
-    L.hPut h $ encode (length sigs)
-    mapM_ (hWriteSigV h) sigs
+  let dir = "/"++(intercalate "/" $ init $ splitBy '/' fp)++"/"
+  forM_ (zip sigs [1..]) $ \(sig,n) -> do
+    let nm = if length sigs ==1
+                then fp
+                else (dir++(showHex n ""))
+    h <- openBinaryFile nm WriteMode
+    L.hPut h $ encode (length [sig])
+    hWriteSigV h sig
     hClose h 
                                   | otherwise = saveBinary fp sigs
 saveVs fp obj = saveBinary fp obj 
