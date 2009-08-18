@@ -230,6 +230,10 @@ loadSignalsU fp = do
   let expectedTypeTag = SignalT $ NumT $ Just RealT
   h <- openBinaryFile fp ReadMode
   n <- idInt `fmap` binGet h 8
+  forM [1..n] (\i -> loadOneSigSV h)
+
+loadOneSigSV :: Handle -> IO (Signal Double)
+loadOneSigSV h = do
   ntytag <- idInt `fmap` binGet h 8
   hSeek h RelativeSeek (-8)
   tytag <- (fst . parseTT1) `fmap` binGet h (ntytag+8)
@@ -238,15 +242,16 @@ loadSignalsU fp = do
   dt <- binGet h 8
   --print (t1,t2,dt)
   arr <- SV.hGet h (round $ (t2-t1)/dt)
-  return [Signal t1 t2 dt $ \p-> arr `SV.index` p]
+  return $ Signal t1 t2 dt $ \p-> arr `SV.index` p
 
 --getArr h n= SV.hGet h n
 
 testLSU = do
-  saveVs "aSig" [aSig]
+  saveVs "aSig" [aSig, aSig]
   sigs <- loadSignalsU "aSig"
   print2 "#sigs " $ length sigs
   print2 "head sigs " $ head sigs
+  print2 "2nd sig " $ sigs!!1
   
   return ()
 

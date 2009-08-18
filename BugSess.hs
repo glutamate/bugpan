@@ -18,6 +18,7 @@ import PrettyPrint
 import Numbers
 import System.Cmd
 import Format2
+import Data.List
 
 root = "/home/tomn/sessions/"
 
@@ -29,9 +30,17 @@ main = do
 unCap [] = []
 unCap (c:cs) = toLower c : cs
 
-dispatch ("ask":sessNm:queryStr:_) = do
+preprocessQuery qs | "@=" `isInfixOf` qs = let (lhs, rhs) = span (/='@') $ qs
+                                           in "\""++(filter (/=' ') lhs)++"\" "++rhs
+                   | otherwise = qs
+                       
+
+
+dispatch ("ask":sessNm:queryStr':_) = do
   sess <- loadApproxSession root sessNm
   let sessNm = last . splitBy '/' $ baseDir sess 
+  let queryStr = preprocessQuery queryStr'
+  --putStrLn queryStr
   --print sessNm
   tps <- sessionTypes sess
   --setResourceLimit ResourceOpenFiles $ ResourceLimits (ResourceLimit 32000) (ResourceLimit 32000) 
@@ -50,7 +59,8 @@ dispatch ("ask":sessNm:queryStr:_) = do
                                                        " \""++ nm++"\" ",
                                                        (typeToProxyName $ unWrapT ty)
                                                       ]]
-                          tell [ind++"return $ QResBox ("++queryStr++")"]
+                          tell [ind++"qresval <- qResThroughSession ("++queryStr++")"]
+                          tell [ind++"return $ QResBox (qresval)"]
            
            --setTopLevelModules [""]
            setImportsQ $ map withNothing ["Prelude","Query", "QueryTypes", "QueryUtils", "Numbers", "Math.Probably.PlotR"]

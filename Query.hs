@@ -1,4 +1,4 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving, FlexibleContexts#-} 
+{-# LANGUAGE GeneralizedNewtypeDeriving, FlexibleContexts, UndecidableInstances #-} 
 
 module Query where
 
@@ -114,6 +114,15 @@ storeAs nm vls = do
   liftIO $ createDirectoryIfMissing False $ oneTrailingSlash bdir++subDir++nm
   liftIO $ saveVs (oneTrailingSlash bdir++subDir++nm++"/stored") vs
   
+
+instance (Reify a, QueryResult [a]) => QueryResult (StoreAs a) where
+    qResThroughSession sa@(StoreAs nm val) = storeAs nm val >> return sa
+    qReply (StoreAs nm val) = qReply val
+
+data StoreAs a = StoreAs String [a]
+
+x @= y = StoreAs x y
+
 
 inLastSession :: StateT QState IO a -> IO a
 inLastSession sma = do

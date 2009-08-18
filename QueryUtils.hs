@@ -123,7 +123,8 @@ sigStat' (F op init c cmb) sig@(Signal t1 t2 dt sf) =
              go 0 x = x
              go !n !x = go (n-1) (x `op` sf (npts-n))
 
-        
+       
+
 spreadOut :: (Ord a, Bounded a, Num a, Fractional a) => [Signal a] -> [Signal a]
 spreadOut [] = []
 spreadOut (sigs) = let amp = uncurry (-) . getTag $ sigStat' (both maxF minF) (head sigs)
@@ -160,3 +161,16 @@ subMeanNormSD ::  (Floating a) => [Signal a] -> [Signal a]
 subMeanNormSD sigs = (f <$$> sigStat stat sigs ) `applyOver` sigs
     where stat = meanSDF
           f (mean,sd) = \x-> (x-mean)/sd
+
+crossesUp :: [Duration Double] -> [Signal Double] -> [Event ()]
+crossesUp thresDurs sigs = concatMap f $ sectionGen sigs thresDurs
+    where f (_,(thresh,Signal t1 t2 dt sf)) = let npts = round $ (t2-t1)/dt
+                                                  pts = [0..npts-1]
+                                                  go n last hits | n >= npts = hits
+                                                                 | otherwise = let this = sf n
+                                                                               in if this >thresh && last < thresh
+                                                                                     then go (n+1) this (n:hits)
+                                                                                     else go (n+1) this (hits)
+                                              in map ((\t->(t,())) .  (+t1) . (*dt) . (realToFrac)) $ go 0 (thresh+1) []
+
+crossesDown th sigs = crossesUp (negate <$$> th) (negate <$$> sigs)

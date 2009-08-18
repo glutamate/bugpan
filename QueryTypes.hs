@@ -143,12 +143,20 @@ section sigs (dur:durs) = case find (sigOverlapsDur dur) sigs of
                             Just sig -> section1 sig dur : section sigs durs
                             Nothing -> section sigs durs
 
+sectionGen :: [Signal a] -> [Duration b] -> [Duration (b,Signal a)]
+sectionGen _ [] = []
+sectionGen sigs (dur@(ts,v):durs) = case find (sigOverlapsDur dur) sigs of
+                            Just sig -> (ts, (v,section1 sig dur)) : sectionGen sigs durs
+                            Nothing -> sectionGen sigs durs
+
+
 sectionDur1 :: Duration a -> [Duration b] -> [Duration b]
 sectionDur1 ((lo,hi),_) durs = concatMap f durs
     where f ((t1,t2),v) | t2 <lo || t1 > hi = []
                         | otherwise = [((max lo t1, min hi t2), v)]
 
 
+section1 :: Signal a -> ((RealNum, RealNum), t) -> Signal a
 section1 (Signal ts1 ts2 dt sf) ((td1,td2),vd) = let (t1, t2)= (max ts1 td1, min ts2 td2)
                                                      dropPnts = round $ (t1 - ts1)/dt
                                                  in Signal t1 t2 dt $ \pt->(sf $ pt + dropPnts)
@@ -266,6 +274,8 @@ data QueryResultBox = forall a. QueryResult a => QResBox a deriving Typeable
 
 class QueryResult a where
     qReply :: a -> IO String
+    qResThroughSession :: a -> StateT Session IO a
+    qResThroughSession = return 
 
 instance Show a => QueryResult [Signal a] where
     qReply xs = return $ unlines $ map show xs
@@ -303,6 +313,7 @@ instance QueryResult Int where
 
 instance QueryResult RealNum where
     qReply = return . show
+
     
 
 
