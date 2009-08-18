@@ -42,7 +42,10 @@ dispatch ("ask":sessNm:queryStr:_) = do
                           tell ["inSessionNamed \""++sessNm++"\" $ do"]
                           let ind = "          "
                           forM_ tps $ \(nm, ty) -> do
-                                       tell $ [concat [ind,unCap nm ++ " <- ",
+                                       if ty == SignalT (NumT (Just RealT))
+                                          then tell $ [concat [ind,unCap nm ++ " <- signalsDirect ",
+                                                       " \""++ nm++"\"" ]]
+                                          else tell $ [concat [ind,unCap nm ++ " <- ",
                                                        typeToKind ty,
                                                        " \""++ nm++"\" ",
                                                        (typeToProxyName $ unWrapT ty)
@@ -124,7 +127,7 @@ dispatch ("compact_1":sessNm:_) = do
        forM_ nms $ \nm -> do 
          fnms <- getSortedDirContents $ path++nm
          xs <- forM fnms $ \fn->loadBinary $ path++nm++"/"++fn                                    
-         let vs = idLstV $ concat xs
+         let vs = sortVs $ idLstV $ concat xs
          saveBinary (path++nm++"/compacted") vs
          --putStrLn $ nm ++ ": "++ppVal (ListV vs)
 
@@ -139,6 +142,17 @@ dispatch ("compact_2":sessNm:_) = do
                               then return () --print "skipping"
                               else removeFile $ path++nm++"/"++fn
                                                  
+
+dispatch _ = putStrLn $ unlines [
+              "",
+              "Manage bugpan sessions",
+              "",
+              "\tBugSess ask {session} '{query}'",
+              "\tBugSess compact {session}",
+              "\tBugSess convert2 {session}",
+              "\tBugSess convert1 {session}"
+
+ ]
 
 -- find . -name "compacted" -exec rm -rf {} \;
 
@@ -164,6 +178,6 @@ unWrapT t = t
 typeToProxyName :: T-> String
 typeToProxyName UnitT = "()"
 typeToProxyName StringT = "\"foo\""
-typeToProxyName (NumT (Just RealT)) = "real"
+typeToProxyName (NumT (Just RealT)) = "double"
 typeToProxyName (PairT t1 t2) = "("++typeToProxyName t1++", "++typeToProxyName t2++")"
 

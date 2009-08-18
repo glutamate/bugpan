@@ -41,6 +41,7 @@ import TNUtils
 import Data.Typeable
 import Array
 import Math.Probably.FoldingStats
+import System.IO
 
 type Duration a = ((RealNum,RealNum),a)
 type Event a = (RealNum,a)
@@ -56,7 +57,7 @@ instance (Ord a, Bounded a, Num a) => PlotWithR [Signal a] where
                       }
         where writeSig sig@(Signal t1 t2 dt sf) = 
                   do r <- ( show . idInt . hashUnique) `fmap` newUnique
-                     let datfile= "/tmp/bugplot"++r
+                     let datfile= "/tmp/bugplotSig"++r
                      writeFile datfile . unlines $ map (\t->show $ sf t) [0..(floor $ (t2-t1)/dt)-1]
                      --print "done file!"
                      return (datfile, r, show t1, show $ 1/dt)
@@ -90,6 +91,9 @@ instance Tagged t => PlotWithR [t (RealNum,RealNum)] where
 data Hist a = forall t. Tagged t => Histogram [t a]
 
 plot_ = getRPlotCmd
+
+plotMany :: [Signal Double] -> [IO RPlotCmd]
+plotMany sigs = map (\s-> getRPlotCmd [s]) sigs
 
 instance Num a => PlotWithR (Hist a) where
     getRPlotCmd (Histogram tgs) = 
@@ -224,7 +228,7 @@ class QueryResult a where
     qReply :: a -> IO String
 
 instance Show a => QueryResult [Signal a] where
-    qReply xs = return $ show xs
+    qReply xs = return $ unlines $ map show xs
 instance Show a => QueryResult [Event a] where
     qReply xs = return $ show xs
 instance Show a => QueryResult [Duration a] where
@@ -233,6 +237,23 @@ instance QueryResult (IO RPlotCmd) where
     qReply ioplot = do plot <- ioplot
                        plotPlotCmd plot
                        return ""
+instance QueryResult [IO RPlotCmd] where
+    qReply ioplots = do 
+      u <- (show. hashUnique) `fmap` newUnique
+      let htmlFile  ="/tmp/plots"++u++".html" 
+      h <- openFile (htmlFile) WriteMode
+      pls <- forM ioplots $ \ioplot -> do
+                                     plot <- ioplot
+                                     r <- (show. hashUnique) `fmap` newUnique
+                                     let fnm = "/tmp/plot"++r++".png"
+                                     putStrLn fnm
+                                     hPutStrLn h $ concat ["<img src=\"file://", fnm, "\" /><p />"]
+                                     return (fnm,plot)
+      plotCmdToPng pls
+      hClose h
+      --plotPlotCmd plot
+      system $ "gnome-open file://"++ htmlFile
+      return $ "file://"++ htmlFile
 
 instance QueryResult [Char] where
     qReply = return 

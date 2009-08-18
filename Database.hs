@@ -136,7 +136,7 @@ getSortedDirContents dir = do conts <- getDirContents dir
                               let sconts = sortBy cmpf conts
                               --liftIO $ print sconts
                               return sconts
-    where cmpf f1 f2 = case (readsPrec 5 f1, readsPrec 5 f2) of
+    where cmpf f1 f2 = case (readHex f1, readHex f2) of
                          ((n1,_):_, (n2,_):_) -> compare (idInt n1) (idInt n2)
                          _ -> EQ
 
@@ -258,6 +258,15 @@ isEpochs _ = False
 
 isSig (SigV _ _ _ _) = True
 isSig _ = False
+
+startTime (PairV nv@(NumV _) _) = unsafeVToDbl nv
+startTime (PairV (PairV (NumV (NReal t1)) ((NumV (NReal t2)))) v) = t1
+startTime (SigV t1 _ _ _) = t1
+
+sortVs :: [V] -> [V]
+sortVs [] = []
+sortVs vs = sortBy (comparing startTime) vs
+
 
 --guardBy :: (MonadPlus m) => m a -> (a->Bool) -> m a
 guardBy :: Maybe a -> (a->Bool) -> Maybe a

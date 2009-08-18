@@ -240,6 +240,7 @@ loadSignalsU fp = do
   arr <- SV.hGet h (round $ (t2-t1)/dt)
   return [Signal t1 t2 dt $ \p-> arr `SV.index` p]
 
+--getArr h n= SV.hGet h n
 
 testLSU = do
   saveVs "aSig" [aSig]
