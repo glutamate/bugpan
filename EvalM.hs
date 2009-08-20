@@ -191,6 +191,8 @@ instance Reify V where
 
 instance Reify Double where 
     reify (NumV (NReal x)) = Just x
+    reify (NumV (NInt i)) = Just $ realToFrac i
+    reify v = Nothing
     pack = NumV . NReal 
     typeOfReified _ = NumT (Just RealT)
 
