@@ -42,25 +42,34 @@ import Data.Typeable
 import Array
 import Math.Probably.FoldingStats
 import System.IO
+import ValueIO
 
 type Duration a = ((RealNum,RealNum),a)
 type Event a = (RealNum,a)
 
 
-instance (Ord a, Bounded a, Num a) => PlotWithR [Signal a] where
+instance PlotWithR [Signal Double] where
     getRPlotCmd sigs = 
         do ss <- mapM writeSig $ downSample 1000 sigs
            return $ RPlCmd { 
-                        prePlot = map (\(df, r, t1, freq) -> concat ["dat",r, " <- ts(scan(\"", df, "\"), start=", t1, ", frequency=", freq,")"]) ss, 
+                        prePlot = map rplotcmd ss, 
                         cleanUp = return (), --mapM_ (\(df, r, t1, freq)-> removeFile df) ss,
                         plotArgs = map (\(df, r, t1, freq) -> TimeSeries ("dat"++r)) ss
                       }
         where writeSig sig@(Signal t1 t2 dt sf) = 
                   do r <- ( show . idInt . hashUnique) `fmap` newUnique
                      let datfile= "/tmp/bugplotSig"++r
-                     writeFile datfile . unlines $ map (\t->show $ sf t) [0..(floor $ (t2-t1)/dt)-1]
+                     writeSigReal datfile sig
+                     --writeFile datfile . unlines $ map (\t->show $ sf t) [0..(floor $ (t2-t1)/dt)-1]
                      --print "done file!"
                      return (datfile, r, show t1, show $ 1/dt)
+              rplotcmd (df, r, t1, freq) = concat ["file",r, " <- file(\"", df,"\", \"rb\")\n",
+                                                   "zz<-readBin(file",r,", \"int\", 2, size=8)\n", 
+                                                   "zz<-readBin(file",r,", \"int\", 2, size=1)\n", 
+                                                   "ss",r," <- readBin(file",r,", \"double\", 3, size=8)\n", 
+                                                   "n",r," <- (ss",r,"[2] - ss",r,"[1])/ss",r,"[3]\n",
+                                                   "v",r," <- readBin(file",r,", \"double\", n",r,", size=8)\n",
+                                                   "dat",r," <- ts(v",r,", start=", t1, ", frequency=", freq,")\n"]
 
 instance Real a => PlotWithR [Event a] where
     getRPlotCmd evs = 
@@ -98,7 +107,7 @@ plotManySigs sigs = map (\s-> getRPlotCmd [s]) sigs
 class PlotWithR a => PlotMany a where
     chopByDur :: [Duration b] -> a -> [a]
 
-instance (Ord a, Bounded a, Num a) => PlotMany [Signal a] where
+instance PlotMany [Signal Double] where
     chopByDur durs sigs = map (\dur->section sigs [dur]) durs
 
 instance (Real a) => PlotMany [Event a] where
@@ -139,15 +148,15 @@ during evs durs = concatMap (during' evs) durs
 
 section :: [Signal a] -> [Duration b] -> [Signal a]
 section _ [] = []
-section sigs (dur:durs) = case find (sigOverlapsDur dur) sigs of
+section sigs (durs) = map (snd. snd) $ sectionGen sigs durs {-case find (sigOverlapsDur dur) sigs of
                             Just sig -> section1 sig dur : section sigs durs
-                            Nothing -> section sigs durs
+                            Nothing -> section sigs durs-}
 
 sectionGen :: [Signal a] -> [Duration b] -> [Duration (b,Signal a)]
 sectionGen _ [] = []
-sectionGen sigs (dur@(ts,v):durs) = case find (sigOverlapsDur dur) sigs of
-                            Just sig -> (ts, (v,section1 sig dur)) : sectionGen sigs durs
-                            Nothing -> sectionGen sigs durs
+sectionGen sigs (dur@(ts,v):durs) = (map f $ filter (sigOverlapsDur dur) sigs) ++ sectionGen sigs durs
+    where f sig = (ts, (v,section1 sig dur)) 
+                           
 
 
 sectionDur1 :: Duration a -> [Duration b] -> [Duration b]
@@ -296,7 +305,7 @@ instance QueryResult [IO RPlotCmd] where
                                      plot <- ioplot
                                      r <- (show. hashUnique) `fmap` newUnique
                                      let fnm = "/tmp/plot"++r++".png"
-                                     putStrLn fnm
+                                     --putStrLn fnm
                                      hPutStrLn h $ concat ["<img src=\"file://", fnm, "\" /><p />"]
                                      return (fnm,plot)
       plotCmdToPng pls

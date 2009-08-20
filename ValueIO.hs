@@ -48,7 +48,6 @@ binPut h x = L.hPut h (runPut $ myPut x)
 binGet :: MyBinary a => Handle -> Int -> IO a
 binGet h n = (runGet myGet) `fmap` L.hGet h n 
 
-
 hWriteSigV h s@ (SigV t1 t2 dt sf) = do
   binPut h $ typeTag1 . typeOfVal $ s
   binPut h t1
@@ -57,7 +56,22 @@ hWriteSigV h s@ (SigV t1 t2 dt sf) = do
 --  L.hPut h (runPut $ putWord32le ((round $ (t2-t1)/dt)::Word32))
   SV.hPut h $ SV.pack $ map (idDouble . unsafeReify . sf) $ [0..(round $ (t2-t1)/dt)-1]
 
+hWriteSigReal :: Handle -> Signal Double -> IO ()
+hWriteSigReal h s@ (Signal t1 t2 dt sf) = do
+  binPut h $ ([8,3]::[Word8])
+  binPut h t1
+  binPut h t2
+  binPut h dt
+--  L.hPut h (runPut $ putWord32le ((round $ (t2-t1)/dt)::Word32))
+  SV.hPut h $ SV.pack $ map  sf $ [0..(round $ (t2-t1)/dt)-1]
 
+writeSigReal :: String -> Signal Double -> IO ()
+writeSigReal fnm sig = do
+   h <- openBinaryFile fnm WriteMode
+   L.hPut h $ encode (length [sig])
+   hWriteSigReal h sig
+   hClose h 
+ 
 typeTag1 :: T -> [Word8]
 typeTag1 BoolT = [1]
 typeTag1 (NumT (Just IntT)) = [2]

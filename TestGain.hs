@@ -166,7 +166,7 @@ safeMain = inTemporarySession $ do
   stim  <- durations "inputRate" real
   --vm <- signals "vm"
   --plotSig (head vm)
-  let q = spike `freqDuring` stim
+  let q = freqDuring stim spike
   liftIO $ forM_ q (putStrLn . showDur)
   --io . print $ regressF `runStatsOn` q 
   return ()

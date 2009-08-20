@@ -73,8 +73,8 @@ area1 sig@(Signal t1 t2 dt sf) = ((t1, t2), foldSig sumf 0 sig)
 tag :: Tagged t =>  b -> [t a] -> [t b]
 tag tg = map (`setTag` tg)
 
-freqDuring :: [Event b] -> [Duration a] -> [Duration (a, RealNum)]
-freqDuring evs durs = map (freqDuring' evs) durs
+freqDuring :: [Duration a] -> [Event b] -> [Duration (a, RealNum)]
+freqDuring durs evs = map (freqDuring' evs) durs
     where freqDuring' evs dur@((t1, t2), durtag) = 
               ((t1, t2), (durtag, 
                         (realToFrac . length $ evs `during` [dur])/(t2-t1)))
@@ -169,8 +169,33 @@ crossesUp thresDurs sigs = concatMap f $ sectionGen sigs thresDurs
                                                   go n last hits | n >= npts = hits
                                                                  | otherwise = let this = sf n
                                                                                in if this >thresh && last < thresh
-                                                                                     then go (n+1) this (n:hits)
-                                                                                     else go (n+1) this (hits)
-                                              in map ((\t->(t,())) .  (+t1) . (*dt) . (realToFrac)) $ go 0 (thresh+1) []
+                                                                                  then go (n+1) this (n:hits)
+                                                                                  else go (n+1) this (hits)
+                                              in map ((\t->(t,())) .  (+t1) . (*dt) . (realToFrac)) $ reverse $ go 0 (thresh+1) []
 
 crossesDown th sigs = crossesUp (negate <$$> th) (negate <$$> sigs)
+
+gaussianf mean sd x = let factor = (recip $ sd*sqrt (2*pi))
+                      in factor * (exp . negate $ (((x-mean)**2)/(2*sd**2)))
+gaussian dt mean sd = let t1 =(-5*sd) 
+                      in Signal t1 (5*sd) dt $ \p-> gaussianf mean sd ((realToFrac p)*dt+t1)
+
+convolveWithin :: Num a => [Duration b] -> Signal a -> [Event a] -> [Signal a]
+convolveWithin [] _ _ = []
+convolveWithin (dur@((td1, td2), v):durs) irf@(Signal t1 t2 dt sf) evs' =
+   let evs = evs' `during` [dur]
+       sigs = map f evs
+       f (t,x) =(*x) `fmap` shift t irf
+       nullSig = Signal td1 td2 dt $ const 0
+       addSigs (Signal ts1 ts2 _ ssf) (Signal ts1' ts2' _ ssf') = Signal ts1 ts2 dt $ \p->
+                                                                  let t = (realToFrac p)*dt+ts1
+                                                                  in ssf p + (if t>ts1' && t<ts2' 
+                                                                                 then ssf' . round $ (t-ts1')/dt
+                                                                                 else 0)
+       sig = foldl' addSigs nullSig sigs
+   in sig : convolveWithin (durs) irf evs'
+
+{-countWithin :: [Duration a] -> [Event b] -> [Duration Double]
+countWithin (dur:durs) evs = concatMap f durs
+    where f dur = (realToFrac . length $ evs `during` [dur] ) `tag` [dur]
+-}
