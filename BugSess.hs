@@ -24,11 +24,15 @@ root = "/home/tomn/sessions/"
 
 
 main = do
-  args <- getArgs
-  dispatch args
+  allArgs <- getArgs
+  let (opts, args) = partition beginsWithHyphen allArgs
+  dispatch opts args
 
 unCap [] = []
 unCap (c:cs) = toLower c : cs
+
+beginsWithHyphen ('-':_) = True
+beginsWithHyphen _ = False
 
 preprocessQuery qs | "@=" `isInfixOf` qs = let (lhs, rhs) = span (/='@') $ qs
                                            in "\""++(filter (/=' ') lhs)++"\" "++rhs
@@ -36,7 +40,7 @@ preprocessQuery qs | "@=" `isInfixOf` qs = let (lhs, rhs) = span (/='@') $ qs
                        
 
 
-dispatch ("ask":sessNm:queryStr':_) = do
+dispatch opts ("ask":sessNm:queryStr':_) = do
   sess <- loadApproxSession root sessNm
   let sessNm = last . splitBy '/' $ baseDir sess 
   let queryStr = preprocessQuery queryStr'
@@ -72,12 +76,19 @@ dispatch ("ask":sessNm:queryStr':_) = do
   case out of
     Right outaction -> do QResBox qres <- outaction 
                           qreply <- qReply qres
+                          case safeLast $ lines qreply of
+                            Just s | "file://" `isPrefixOf` s -> 
+                                                 when ("-o" `elem` opts) $ do
+                                                      system $ "gnome-open "++s
+                                                      return ()
+                                   | otherwise -> return ()
+                            _ -> return ()
                           putStrLn qreply
     Left err -> print err
   return ()
       where withNothing x = (x,Nothing) 
 
-dispatch ("convert1":sessNm:_) = do
+dispatch _ ("convert1":sessNm:_) = do
   sess <- loadApproxSession root sessNm
   sigs <- getDirContents $ (oneTrailingSlash $ baseDir sess)++"signals"
   let path  = (oneTrailingSlash $ baseDir sess)++"signals/"
@@ -98,7 +109,7 @@ dispatch ("convert1":sessNm:_) = do
                       return $ xs)
                   ((print $ "dir not found:" ++fp) >> return [])
 
-dispatch ("convert2":sessNm:_) = do
+dispatch _ ("convert2":sessNm:_) = do
   sessOld <- loadApproxSession root sessNm
   sessNew <- cloneSession sessOld "_fmt3" 3
   forM_ ["signals", "events", "durations"] $ \kind -> do
@@ -124,12 +135,12 @@ dispatch ("convert2":sessNm:_) = do
                       return $ xs)
                   ((print $ "dir not found:" ++fp) >> return [])
 
-dispatch ("compact":sessNm:_) = do
+dispatch _ ("compact":sessNm:_) = do
   system $ "./BugSess compact_1 "++sessNm
   system $ "./BugSess compact_2 "++sessNm
   return ()
 
-dispatch ("compact_1":sessNm:_) = do
+dispatch _ ("compact_1":sessNm:_) = do
   sess <- loadApproxSession root sessNm
   forM_ ["events", "durations"] $ \kind -> do
        nms <- getDirContents $ (oneTrailingSlash $ baseDir sess)++kind
@@ -141,7 +152,7 @@ dispatch ("compact_1":sessNm:_) = do
          saveBinary (path++nm++"/compacted") vs
          --putStrLn $ nm ++ ": "++ppVal (ListV vs)
 
-dispatch ("compact_2":sessNm:_) = do
+dispatch _ ("compact_2":sessNm:_) = do
   sess <- loadApproxSession root sessNm
   forM_ ["events", "durations"] $ \kind -> do
        nms <- getDirContents $ (oneTrailingSlash $ baseDir sess)++kind
@@ -151,9 +162,19 @@ dispatch ("compact_2":sessNm:_) = do
          forM fnms $ \fn-> if fn == "compacted"
                               then return () --print "skipping"
                               else removeFile $ path++nm++"/"++fn
-                                                 
+                    
+dispatch _ ("list":_) = do
+  sesns <- getSessionInRootDir root
+  forM_ sesns $ \sNm -> do
+      putStr $ sNm++": "
+      inSessionNamed sNm $ do 
+                          --prg <- durations "program" ""
+                          modNm <- durations "moduleName" ""
+                          liftIO . putStr $ showDiffModules $ map snd modNm
+      putStrLn ""
+                          
 
-dispatch _ = putStrLn $ unlines [
+dispatch _ _ = putStrLn $ unlines [
               "",
               "Manage bugpan sessions",
               "",
@@ -165,6 +186,10 @@ dispatch _ = putStrLn $ unlines [
  ]
 
 -- find . -name "compacted" -exec rm -rf {} \;
+
+showDiffModules :: [String] -> String
+showDiffModules mods = intercalate ", " . map f $ group mods
+    where f mods =(unCap $head mods) ++ "("++ (show $ length mods)++")"
 
 idLstV :: [V] -> [V]
 idLstV = id

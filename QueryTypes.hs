@@ -311,7 +311,7 @@ instance QueryResult [IO RPlotCmd] where
       plotCmdToPng pls
       hClose h
       --plotPlotCmd plot
-      system $ "gnome-open file://"++ htmlFile
+      --system $ "gnome-open file://"++ htmlFile
       return $ "file://"++ htmlFile
 
 instance QueryResult [Char] where

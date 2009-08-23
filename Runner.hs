@@ -32,6 +32,12 @@ data RunnerState = RS {
 
 type RunnerM = StateT RunnerState IO
 
+type Range a = Double -> a
+
+--determines :: String -> [(String, Range V)] -> RunnerM ()
+
+--runGoals :: [(Int, RunnerM ())] -> RunnerM ()
+
 setTriggerTimeToNow :: RunnerM ()
 setTriggerTimeToNow = do tnow <- liftIO $ getClockTime
                          RS _ cmd args <- get
