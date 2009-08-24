@@ -19,6 +19,7 @@ import Numbers
 import System.Cmd
 import Format2
 import Data.List
+import System.Time
 
 root = "/home/tomn/sessions/"
 
@@ -172,7 +173,23 @@ dispatch _ ("list":_) = do
                           modNm <- durations "moduleName" ""
                           liftIO . putStr $ showDiffModules $ map snd modNm
       putStrLn ""
-                          
+ 
+dispatch _ ("show":sessNm:_) = do
+  sess <- loadApproxSession root sessNm
+  (t1,t2) <- read `fmap` readFile (baseDir sess++"/tStart")
+  let t0 = TOD t1 t2
+  putStrLn $ "Start time: "++ show t0
+  tps <- sessionTypes sess
+  inSession sess $ do 
+       --prg <- durations "program" ""
+    modNm <- durations "moduleName" ""
+    liftIO . putStrLn $ "Modules run: "++(showDiffModules $ map snd modNm)
+  putStrLn "Values:"
+  forM_ tps $ \(nm, ty) -> do
+    putStrLn $ "\t"++(unCap nm)++" :: "++pTy ty
+        where pTy (PairT (PairT (NumT (Just RealT)) (NumT (Just RealT))) t) = "Duration "++ppType t
+              pTy (PairT (NumT (Just RealT)) t) = "Event "++ppType t
+              pTy t = ppType t
 
 dispatch _ _ = putStrLn $ unlines [
               "",

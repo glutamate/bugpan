@@ -19,6 +19,7 @@ ppType (NumT (Just CmplxT)) = "Complex"
 ppType (SignalT t) = "Signal "++ppType t
 ppType (UnspecifiedT) = "??"
 ppType (UnknownT nm) = "?"++nm
+ppType (StringT) = "String"
 ppType t = show t
 
 ppVal (BoolV True) = "True"
