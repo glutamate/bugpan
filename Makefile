@@ -8,6 +8,9 @@ bnfc: BNFC/Bugpan.cf
 
 	cd BNFC && sed -i -e 's/import \(\w*\)Bugpan/import BNFC.\1Bugpan/' *.hs
 	cd BNFC && sed -i -e 's/import ErrM/import BNFC.ErrM/' *.hs
+	cd BNFC && rm *.x
+	cd BNFC && rm *.y
+
 
 
 runbugpan: 

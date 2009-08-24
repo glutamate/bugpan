@@ -4,7 +4,7 @@ module Numbers where
 
 import Data.Complex
 import Text.Printf
-import Data.Array.Vector
+--import Data.Array.Vector
 type Number = NumVl
 
 --newtype RealNum = RealNum { unRealNum :: Double} 

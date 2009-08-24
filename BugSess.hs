@@ -51,7 +51,7 @@ dispatch opts ("ask":sessNm:queryStr':_) = do
   --setResourceLimit ResourceOpenFiles $ ResourceLimits (ResourceLimit 32000) (ResourceLimit 32000) 
   --mapM_ print tps
   out <- runInterpreter $ do
-           loadModules ["Query", "QueryTypes", "QueryUtils"]
+           --loadModules ["Query", "QueryTypes", "QueryUtils"]
            cmd <- execWriterT $ do
                           tell ["inSessionNamed \""++sessNm++"\" $ do"]
                           let ind = "          "

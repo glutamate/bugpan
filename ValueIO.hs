@@ -16,7 +16,7 @@ import Unsafe.Coerce
 import Data.Array.IO
 import System.IO
 import Data.Array.MArray
-import Data.Array.Vector
+--import Data.Array.Vector
 import qualified Data.StorableVector as SV
 import Foreign.C.Types
 import Data.Binary.IEEE754
@@ -378,23 +378,6 @@ test4 = do
   --arr2 <- hGetU h
   --print $ idDoubleL $ fromU $ arr2
   --hClose h
-
-test5 = do
-  let arr =  replicateU 120000 (1.1::Double)
---  saveBinary "testInt" (2::Word32)
-  h <- openFile "testUA2" WriteMode
-  hPutU h arr
-  hClose h 
-  let arr = SV.pack (replicate 120000 (1.1::Double))
-  SV.writeFile "testSV1" arr
-
-test6 = do
-  xs <- forM [0..100] $ \i-> do
-    h <- openFile "testUA2" ReadMode
-    arr2 <- hGetU h
-    hClose h 
-    return $ idDouble $ arr2 `indexU` (100000+i)
-  print$ sum xs
 
 
 test7 = do
