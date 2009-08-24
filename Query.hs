@@ -126,7 +126,7 @@ x @= y = StoreAs x y
 
 inLastSession :: StateT QState IO a -> IO a
 inLastSession sma = do
-  s <- lastSession "/home/tomn/sessions/"
+  s <- lastSession "/var/bugpan/sessions/"
   fst `fmap`  runStateT sma s
 
 inSession :: Session -> StateT QState IO a -> IO a
@@ -134,20 +134,20 @@ inSession s sma =  fst `fmap`  runStateT sma s
 
 
 inNewSession :: StateT QState IO a -> IO a
-inNewSession sma = do sess <- newSession "/home/tomn/sessions/"
+inNewSession sma = do sess <- newSession "/var/bugpan/sessions/"
                       inSession sess sma
 
-inTemporarySession sma = do sess <- newSession "/home/tomn/sessions/"
+inTemporarySession sma = do sess <- newSession "/var/bugpan/sessions/"
                             inSession sess sma
                             deleteSession sess
 
 inSessionNamed :: String -> StateT QState IO a -> IO a
-inSessionNamed nm sma = do sess <- loadExactSession $ "/home/tomn/sessions/"++nm
+inSessionNamed nm sma = do sess <- loadExactSession $ "/var/bugpan/sessions/"++nm
                            inSession sess sma
 
 
 inApproxSession :: String -> StateT QState IO a -> IO a
-inApproxSession nm sma = do sess <- loadApproxSession "/home/tomn/sessions/" nm
+inApproxSession nm sma = do sess <- loadApproxSession "/var/bugpan/sessions/" nm
                             inSession sess sma
 
 
@@ -192,7 +192,7 @@ valsToGraph vs = foldl1 (<+>) $ map vToPlot vs
 
 -}
 
-{-testQ = do s <- lastSession "/home/tomn/sessions/"
+{-testQ = do s <- lastSession "/var/bugpan/sessions/"
            print s
            qres <- runAskM s $ signals "vm"
            mapM plotWithR qres

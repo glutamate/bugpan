@@ -21,7 +21,7 @@ import Format2
 import Data.List
 import System.Time
 
-root = "/home/tomn/sessions/"
+root = "/var/bugpan/sessions/"
 
 
 main = do
@@ -196,6 +196,8 @@ dispatch _ _ = putStrLn $ unlines [
               "Manage bugpan sessions",
               "",
               "\tBugSess ask {session} '{query}'",
+              "\tBugSess show {session}",
+              "\tBugSess list",
               "\tBugSess compact {session}",
               "\tBugSess convert2 {session}",
               "\tBugSess convert1 {session}"

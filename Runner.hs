@@ -45,7 +45,7 @@ setTriggerTimeToNow = do tnow <- liftIO $ getClockTime
 
 go :: [String] -> RunnerM a -> IO a
 go args ra = do 
-	sess <- lastSession "/home/tomn/sessions/"
+	sess <- lastSession "/var/bugpan/sessions/"
 	fst `fmap` runStateT ra (RS Nothing (oneTrailingSlash(baseDir sess)++"/program.bug") args) 
 
 --cmdFile = "/tmp/program.bug"

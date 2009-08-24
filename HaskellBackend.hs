@@ -67,7 +67,7 @@ toHask modNm dt tmax ds
 allSrcImports ds = let snms = [nm | ReadSource _ (nm, _) <- ds]
                    in concatMap (\s-> map ("import "++) $ srcImpModule s) . catMaybes $ map lookupSrc snms
 
-rootDir = "/home/tomn/sessions"
+rootDir = "/var/bugpan/sessions"
 
 mainFun exps = 
     let ind = "   " in

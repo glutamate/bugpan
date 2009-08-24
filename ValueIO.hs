@@ -303,7 +303,7 @@ unIO :: IO a -> a
 unIO = undefined
 
 test1 n = do let x = 2.0::RealNum
-             saveBinary ("/home/tomn/testBin"++show n) $ replicate n x
+             saveBinary ("/var/bugpan/testBin"++show n) $ replicate n x
 
 getD = getFloat64le
 putD = putFloat64le

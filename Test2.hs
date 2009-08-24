@@ -145,7 +145,7 @@ test = do putStrLn "\ninitial"
           execInStages (prg) 0.01 5 return
           waitSecs 1
          
-test1 = do sess <- newSession "/home/tomn/sessions/"
+test1 = do sess <- newSession "/var/bugpan/sessions/"
            runNtimes 3 0.001 0.03 0 0.1 (prelude++testProg) sess 
   --let compPrel = evalManyAtOnce prelEnv
   --let sess = emptySession {sessPrelude = prelEnv}

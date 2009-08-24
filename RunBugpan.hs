@@ -48,12 +48,12 @@ main = do
     else dispatch (RS [] Nothing Nothing Nothing Nothing) args
 
 dispatch rst ("-n":args) = do 
-  s <- newSession "/home/tomn/sessions/" 
+  s <- newSession "/var/bugpan/sessions/" 
   dispatch (rst {rstSess = Just s}) args
 
 
 dispatch rst ("-c":args) = do 
-  s <- lastSession "/home/tomn/sessions/" 
+  s <- lastSession "/var/bugpan/sessions/" 
   dispatch (rst {rstSess = Just s}) args
 
 dispatch rst ("-d":dts:args) = dispatch (rst {rstDt = Just $ read dts}) args

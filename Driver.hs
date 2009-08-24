@@ -35,7 +35,7 @@ main = do
   args <- getArgs
   runningMv <- newEmptyMVar
   dispPullMv <- newEmptyMVar
-  sess <- lastSession "/home/tomn/sessions/"
+  sess <- lastSession "/var/bugpan/sessions/"
   print sess
   let redirect = not $ "-nr" `elem` args
   when redirect $ do
