@@ -88,9 +88,11 @@ sessionTypes sess@(Session dir' _) = do
                                        --print sigs
                                        forM sigs $ \sig -> do 
                                          --print (kind, sig)
-                                         v<-loadUntyped $ dir++"/"++kind++"/"++sig
+                                         do fnms <- getSortedDirContents $ dir++"/"++kind++"/"++sig
+                                            fTT <- fileTypeTag $ dir++"/"++kind++"/"++sig++"/"++(head fnms)
+                                         --v<-loadUntyped $ dir++"/"++kind++"/"++sig
                                          --print (kind, sig, head v )
-                                         return (sig, typeOfVal $ head v)
+                                            return (sig, fTT) --typeOfVal $ head v)
   return $ concat xs
 
 loadUntyped :: FilePath -> IO [V]
