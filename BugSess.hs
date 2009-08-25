@@ -217,8 +217,11 @@ dispatch opts ("list":_) = do
       inSessionNamed sNm $ do 
                           --prg <- durations "program" ""
                           Session bdir _ <- getSession
-                          v <- liftIO $ readFile (oneTrailingSlash bdir ++ "sessionFormatVersion")
-                          liftIO. putStr $ " (v"++v++")"
+                          let vfile = (oneTrailingSlash bdir ++ "sessionFormatVersion")
+                          ifM (liftIO $ doesFileExist vfile)
+                              ( do v <- liftIO $ readFile vfile
+                                   liftIO. putStr $ " (v"++v++")")
+                              (return ())
                           when ("-m" `elem` opts) $ do
                              modNm <- durations "moduleName" ""
                              liftIO . putStr $ ": "++(showDiffModules $ map snd modNm)
