@@ -15,7 +15,6 @@ import Unsafe.Coerce
 import Data.Array.IO
 import System.IO
 import Data.Array.MArray
-import Data.Array.Vector
 import qualified Data.StorableVector as SV
 import Foreign.C.Types
 import ValueIO

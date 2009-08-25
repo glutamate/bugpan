@@ -8,4 +8,6 @@ BNFC/*.x
 BNFC/*.y
 BNFC/Makefile
 BNFC/TestBugpan
+dist/*
+*.prof
 *.exe

@@ -3,11 +3,21 @@ Version:             0.1
 Description:         Bugpan
 License:             BSD3
 License-file:        LICENSE
+Cabal-Version:       >= 1.2
 Author:              Tom Nielsen
 Maintainer:          tanielsen@gmail.com
 build-type:          Simple
-Exposed-modules:     Query, QueryTypes, QueryUtils, Numbers
-ghc-options: 	     -O2
-other-modules:       EvalM, Parse, Types,Database,Eval,Expr, Traverse, Transform, HaskSyntaxUntyped, ValueIO, PrettyPrint, BNFC.LexBugpan, BNFC.ParBugpan, BNFC.SkelBugpan,BNFC.PrintBugpan,BNFC.LayoutBugpan ,BNFC.ErrM,UnitTesting, BNFC.AbsBugpan,BuiltIn, TypeCheck
 
-Build-depends:       array, tnutils, probably, haskell98, process, directory, regex-posix, utility-ht, random, base, bytestring, binary, old-time, storablevector, mtl, data-binary-ieee754, uuid
+Library
+   Exposed-modules:  Query, QueryTypes, QueryUtils, Numbers
+   ghc-options:      -O2
+   other-modules:    EvalM, Parse, Types,Database,Eval,Expr, Traverse, Transform, HaskSyntaxUntyped, ValueIO, PrettyPrint, BNFC.LexBugpan, BNFC.ParBugpan, BNFC.SkelBugpan,BNFC.PrintBugpan,BNFC.LayoutBugpan ,BNFC.ErrM,UnitTesting, BNFC.AbsBugpan,BuiltIn, TypeCheck
+   Build-depends:    array, tnutils, probably, haskell98, process, directory, regex-posix, utility-ht, random, base, bytestring, binary, old-time, storablevector, mtl, data-binary-ieee754, uuid
+
+
+Executable bugsess   
+   Main-Is:          BugSess.hs
+   ghc-options:      -O2
+   other-modules:    EvalM, Parse, Types,Database,Eval,Expr, Traverse, Transform, HaskSyntaxUntyped, ValueIO, PrettyPrint, BNFC.LexBugpan, BNFC.ParBugpan, BNFC.SkelBugpan,BNFC.PrintBugpan,BNFC.LayoutBugpan ,BNFC.ErrM,UnitTesting, BNFC.AbsBugpan,BuiltIn, TypeCheck
+   Build-depends:    array, tnutils, probably, haskell98, process, directory, regex-posix, utility-ht, random, base, bytestring, binary, old-time, storablevector, mtl, data-binary-ieee754, uuid, hint
+

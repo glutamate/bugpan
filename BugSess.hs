@@ -12,7 +12,7 @@ import Control.Monad.Writer.Lazy
 import Language.Haskell.Interpreter
 import QueryTypes
 import Data.Char
-import System.Posix.Resource
+--import System.Posix.Resource
 import ValueIO
 import PrettyPrint
 import Numbers
@@ -268,9 +268,10 @@ dispatch _ _ = putStrLn $ unlines [
               "",
               "Manage bugpan sessions",
               "",
-              "\tBugSess ask {session} '{query}'",
+              "\tBugSess ask {session} {query}",
               "\tBugSess show {session}",
               "\tBugSess list",
+              "\tBugSess filter {query}",
               "\tBugSess compact {session}",
               "\tBugSess convert2 {session}",
               "\tBugSess convert1 {session}"
