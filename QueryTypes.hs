@@ -308,15 +308,15 @@ instance QueryResult (IO RPlotCmd) where
 instance QueryResult [IO RPlotCmd] where
     qReply ioplots = do 
       u <- (show. hashUnique) `fmap` newUnique
-      let htmlFile  ="/tmp/plots"++u++".html" 
+      let htmlFile  ="/var/bugpan/www/plots"++u++".html" 
       h <- openFile (htmlFile) WriteMode
       pls <- forM ioplots $ \ioplot -> do
                                      plot <- ioplot
                                      r <- (show. hashUnique) `fmap` newUnique
-                                     let fnm = "/tmp/plot"++r++".png"
+                                     let fnm = r++".png"
                                      --putStrLn fnm
-                                     hPutStrLn h $ concat ["<img src=\"file://", fnm, "\" /><p />"]
-                                     return (fnm,plot)
+                                     hPutStrLn h $ concat ["<img src=\"", fnm, "\" /><p />"]
+                                     return ("/var/bugpan/www/"++fnm,plot)
       plotCmdToPng pls
       hClose h
       --plotPlotCmd plot

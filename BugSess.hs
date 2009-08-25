@@ -21,6 +21,7 @@ import Format2
 import Data.List
 import System.Time
 import Data.Maybe
+import System.Process
 root = "/var/bugpan/sessions/"
 
 
@@ -68,7 +69,7 @@ dispatch opts ("testask":_) = do
     Left err -> print err
   return ()
 
-dispatch opts ("testask1":sessNm:_) = do
+{-dispatch opts ("testask1":sessNm:_) = do
   out<- inApproxSession sessNm $ do
           tStart <- events "tStart" ()
           tStop <- events "tStop" ()
@@ -83,15 +84,16 @@ dispatch opts ("testask1":sessNm:_) = do
   case out of
     QResBox qres -> do
              qreply <- qReply qres
-             case safeLast $ lines qreply of
-               Just s | "file://" `isPrefixOf` s -> 
-                                      when ("-o" `elem` opts) $ do
-                                        system $ "gnome-open "++s
-                                        return ()
-                      | otherwise -> return ()
-               _ -> return ()
              putStrLn qreply
-             return ()
+             print $ dropPrefix "file:///var/bugpan/www/" qreply
+             case dropPrefix "file:///var/bugpan/www/" qreply of
+               ("",s) -> cond [("-o" `elem` opts,  do
+                                  system $ "gnome-open "++s
+                                  return ()),
+                              ("-s" `elem` opts, do 
+                                 ip <- readProcess "ifconfig eth0 | perl -n -e 'if (m/inet addr:([\\d\\.]+)/g) { print $1 }'" [] ""
+                                 putStrLn $ "http://"++ip++"/"++s)] $ putStrLn qreply
+               _ -> return () -}
 
 
 dispatch opts ("ask":sessNm:queryStr':_) = do
@@ -104,28 +106,33 @@ dispatch opts ("ask":sessNm:queryStr':_) = do
   setCurrentDirectory "/var/bugpan/"
   --setResourceLimit ResourceOpenFiles $ ResourceLimits (ResourceLimit 32000) (ResourceLimit 32000) 
   --mapM_ print tps
+  let cmd = mkQuery tps ("\""++ sessNm++"\"") queryStr "return $ QResBox "
   out <- runInterpreter $ do
            --loadModules ["Query", "QueryTypes", "QueryUtils"]
-           let cmd = mkQuery tps ("\""++ sessNm++"\"") queryStr "return $ QResBox "
            --setTopLevelModules [""]
            setImportsQ $ map withNothing ["Prelude","Query", "QueryTypes", "QueryUtils", "Numbers", "Math.Probably.PlotR"]
-           liftIO . putStrLn $ unlines cmd
+           
            n <- interpret (unlines cmd) (as :: IO QueryResultBox)
            return n
   --QResBox qres <- (theQuery v) sessNm
   --print qres
   case out of
-    Right outaction -> do QResBox qres <- outaction 
-                          qreply <- qReply qres
-                          case safeLast $ lines qreply of
-                            Just s | "file://" `isPrefixOf` s -> 
-                                                 when ("-o" `elem` opts) $ do
-                                                      system $ "gnome-open "++s
-                                                      return ()
-                                   | otherwise -> return ()
-                            _ -> return ()
-                          putStrLn qreply
-    Left err -> print err
+    Right outaction -> do 
+             QResBox qres <- outaction 
+             qreply <- qReply qres
+             case dropPrefix "file:///var/bugpan/www/" qreply of
+               ("",s) -> cond [("-o" `elem` opts,  do
+                                        system $ "gnome-open "++qreply
+                                        return ()),
+                              ("-s" `elem` opts, do 
+                                 system "ifconfig eth0 | perl -n -e 'if (m/inet addr:([\\d\\.]+)/g) { print $1 }' | cat >/tmp/my_ip_address" 
+                                 ip <- readFile "/tmp/my_ip_address"
+                                 putStrLn $ "http://"++ip++"/"++s)] $ putStrLn qreply
+               _ -> return ()
+
+                     
+    Left err -> do putStrLn $ unlines cmd 
+                   print err
   return ()
 
 dispatch _ ("convert1":sessNm:_) = do
@@ -203,14 +210,18 @@ dispatch _ ("compact_2":sessNm:_) = do
                               then return () --print "skipping"
                               else removeFile $ path++nm++"/"++fn
                     
-dispatch _ ("list":_) = do
+dispatch opts ("list":_) = do
   sesns <- getSessionInRootDir root
   forM_ sesns $ \sNm -> do
-      putStr $ sNm++": "
+      putStr $ sNm
       inSessionNamed sNm $ do 
                           --prg <- durations "program" ""
-                          modNm <- durations "moduleName" ""
-                          liftIO . putStr $ showDiffModules $ map snd modNm
+                          Session bdir _ <- getSession
+                          v <- liftIO $ readFile (oneTrailingSlash bdir ++ "sessionFormatVersion")
+                          liftIO. putStr $ " (v"++v++")"
+                          when ("-m" `elem` opts) $ do
+                             modNm <- durations "moduleName" ""
+                             liftIO . putStr $ ": "++(showDiffModules $ map snd modNm)
       putStrLn ""
  
 dispatch _ ("filter":filtr:_) = do
@@ -286,6 +297,11 @@ showDiffModules mods = intercalate ", " . map f $ group mods
 
 idLstV :: [V] -> [V]
 idLstV = id
+
+
+myfun ("foo") = True
+
+
 
 
 -- :set -fbreak-on-exception

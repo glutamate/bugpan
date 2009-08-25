@@ -61,7 +61,7 @@ signals nm _ = do
       (do fnms <- getSortedDirContents $ bdir++"/signals/"++nm
           sigs <- forM fnms $ \fn-> liftIO $ loadVs $ bdir++"/signals/"++nm++"/"++fn 
           answers . catMaybes $ map reify $ concat sigs) 
-      (liftIO (print $ "dir not found:" ++nm) >> answers [])
+      (answers [])
 
 signalsDirect :: String -> StateT QState IO [Signal Double]
 signalsDirect nm = do
@@ -71,7 +71,7 @@ signalsDirect nm = do
       (do fnms <- getSortedDirContents $ bdir++"/signals/"++nm
           sigs <- forM fnms $ \fn-> liftIO $ loadSignalsU $ bdir++"/signals/"++nm++"/"++fn 
           return $ concat sigs) 
-      (liftIO (print $ "dir not found:" ++nm) >> answers [])
+      (answers [])
 
 signal :: Reify a => String -> a-> L.ListT (StateT QState IO) (Signal a)
 signal nm a = L.ListT $ signals nm a
@@ -83,7 +83,7 @@ events nm _ = do
       (do fnms <- getSortedDirContents $ bdir++"/events/"++nm
           utevs <- forM fnms $ \fn-> liftIO $ loadVs $ bdir++"/events/"++nm++"/"++fn
           answers . catMaybes $ map reify $ concat utevs) 
-      (liftIO (print $ "dir not found:" ++nm) >> answers [])
+      (answers [])
 
 event :: Reify a => String -> a-> L.ListT (StateT QState IO) (Event a)
 event nm a = L.ListT $ events nm a
@@ -95,7 +95,7 @@ durations nm _ = do
       (do fnms <- getSortedDirContents $ bdir++"/durations/"++nm
           eps <- forM fnms $ \fn-> liftIO $ loadVs $ bdir++"/durations/"++nm++"/"++fn
           answers . catMaybes $ map reify $ concat eps)
-      (liftIO (print $ "dir not found:" ++nm) >> answers [])            
+      (answers [])            
 
 duration :: Reify a => String -> a-> L.ListT (StateT QState IO) (Duration a)
 duration nm a = L.ListT $ durations nm a
@@ -118,6 +118,7 @@ storeAs nm vls = do
 instance (Reify a, QueryResult [a]) => QueryResult (StoreAs a) where
     qResThroughSession sa@(StoreAs nm val) = storeAs nm val >> return sa
     qReply (StoreAs nm val) = qReply val
+    qFilterSuccess (StoreAs _ xs) = qFilterSuccess xs
 
 data StoreAs a = StoreAs String [a]
 
