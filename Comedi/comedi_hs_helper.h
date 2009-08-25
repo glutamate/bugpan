@@ -20,3 +20,4 @@ void internal_trigger();
 void start_cont_output();
 comedi_t* get_comedi_ptr();
 int get_running();
+int prepare_cmd(int subdevice,comedi_cmd *cmd, double freq);

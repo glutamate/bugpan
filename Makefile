@@ -27,7 +27,7 @@ driver:
 	ghc --make Driver -threaded -lcomedi Comedi/comedi_hs_helper.o
 
 runloom:
-	ghc --make RunLoom -lcomedi Comedi/comedi_hs_helper.o
+	ghc --make RunLoom 
 
 testacq:
 	ghc --make TestAcqOnly -prof -auto-all -lcomedi Comedi/comedi_hs_helper.o

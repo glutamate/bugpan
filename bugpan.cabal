@@ -7,6 +7,7 @@ Cabal-Version:       >= 1.2
 Author:              Tom Nielsen
 Maintainer:          tanielsen@gmail.com
 build-type:          Simple
+--Extra-Include-Dirs:  /usr/include, /usr/local/include, .
 
 Library
    Exposed-modules:  Query, QueryTypes, QueryUtils, Numbers
@@ -21,3 +22,31 @@ Executable bugsess
    other-modules:    EvalM, Parse, Types,Database,Eval,Expr, Traverse, Transform, HaskSyntaxUntyped, ValueIO, PrettyPrint, BNFC.LexBugpan, BNFC.ParBugpan, BNFC.SkelBugpan,BNFC.PrintBugpan,BNFC.LayoutBugpan ,BNFC.ErrM,UnitTesting, BNFC.AbsBugpan,BuiltIn, TypeCheck
    Build-depends:    array, tnutils, probably, haskell98, process, directory, regex-posix, utility-ht, random, base, bytestring, binary, old-time, storablevector, mtl, data-binary-ieee754, uuid, hint
 
+Executable bugdriver   
+   Main-Is:            Driver.hs
+   ghc-options:        -O2 -threaded -lcomedi
+--   extra-libraries:    comedi
+--   extra-include-dirs
+--   extra-lib-dirs:     /usr/lib
+   Build-depends:      array, tnutils, probably, haskell98, process, directory, regex-posix, 
+                       utility-ht, random, base, bytestring, binary, old-time, storablevector, 
+                       mtl, data-binary-ieee754, uuid, hint, GLFW, unix, stm, OpenGL
+   c-sources:          Comedi/comedi_hs_helper.c
+--   ghc-options:      -O2 -threaded -lcomedi Comedi/comedi_hs_helper.o
+--   Includes:           comedilib.h, comedi.h
+--  Install-Includes:   comedilib.h, comedi.h
+
+
+
+
+Executable runbugpan   
+   Main-Is:          RunBugpan.hs
+   ghc-options:      -O2 -threaded -lcomedi
+--   ghc-options:      -O2 -threaded -lcomedi Comedi/comedi_hs_helper.o
+
+   Build-depends:    array, tnutils, probably, haskell98, process, directory, regex-posix, 
+                     utility-ht, random, base, bytestring, binary, old-time, storablevector, 
+                     mtl, data-binary-ieee754, uuid, hint, GLFW, unix, stm, OpenGL
+--
+   c-sources:        Comedi/comedi_hs_helper.c
+--   extra-libraries:  libcomedi

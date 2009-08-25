@@ -1,20 +1,16 @@
 module Runner where
 
 import Control.Concurrent
-import Compiler
 import Expr
-import ImpInterpret
 import Control.Monad
 import Database
 import Traverse
-import Stages
 import Transform
 import System.Time
 import Data.Maybe
 import EvalM
 import System.Posix.Files
 import System.Directory
-import Statement
 import HaskSyntaxUntyped
 import Control.Monad.State.Strict
 import System.Cmd

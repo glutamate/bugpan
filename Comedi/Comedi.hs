@@ -2,6 +2,7 @@
 {-# INCLUDE "comedi.h" #-}
 {-# INCLUDE "comedi_hs_helper.c" #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# CFILES Comedi/comedi_hs_helper.c #-}
 
 module Comedi.Comedi where
 import Foreign.C
