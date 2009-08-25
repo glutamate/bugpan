@@ -20,7 +20,7 @@ import System.Cmd
 import Format2
 import Data.List
 import System.Time
-
+import Data.Maybe
 root = "/var/bugpan/sessions/"
 
 
@@ -38,7 +38,60 @@ beginsWithHyphen _ = False
 preprocessQuery qs | "@=" `isInfixOf` qs = let (lhs, rhs) = span (/='@') $ qs
                                            in "\""++(filter (/=' ') lhs)++"\" "++rhs
                    | otherwise = qs
-                       
+
+withNothing x = (x,Nothing)                 
+
+mkQuery :: [(String, T)] -> String -> String -> String -> [String]
+mkQuery tps sessNm q resp = execWriter $ do
+                          tell ["inSessionNamed "++sessNm++" $ do {"]
+                          let ind = "          "
+                          forM_ tps $ \(nm, ty) -> do
+                                       if ty == SignalT (NumT (Just RealT))
+                                          then tell $ [concat [ind,unCap nm ++ " <- signalsDirect ",
+                                                       " \""++ nm++"\";" ]]
+                                          else tell $ [concat [ind,unCap nm ++ " <- ",
+                                                       typeToKind ty,
+                                                       " \""++ nm++"\" ",
+                                                       (typeToProxyName $ unWrapT ty), ";"
+                                                      ]]
+                          tell [ind++"qresval <- qResThroughSession ("++q++");"]
+                          tell [ind++resp++"(qresval) }"]
+
+dispatch opts ("testask":_) = do
+  setCurrentDirectory "/var/bugpan/"
+  out <- runInterpreter $ do
+           setImportsQ $ map withNothing ["Prelude"]
+           n <- interpret ("show $ 2+2") (as :: String)
+           return n
+  case out of
+    Right outaction -> putStrLn outaction
+    Left err -> print err
+  return ()
+
+dispatch opts ("testask1":sessNm:_) = do
+  out<- inApproxSession sessNm $ do
+          tStart <- events "tStart" ()
+          tStop <- events "tStop" ()
+          collision <- events "collision" ()
+          tStart <- events "tStart" ()
+          displacedAngle <- durations "displacedAngle" double
+          program <- durations "program" "foo"
+          moduleName <- durations "moduleName" "foo"
+          displacedLoom <- durations "DisplacedLoom" ()
+          qresval <- qResThroughSession (tStart)
+          return $ QResBox (qresval)
+  case out of
+    QResBox qres -> do
+             qreply <- qReply qres
+             case safeLast $ lines qreply of
+               Just s | "file://" `isPrefixOf` s -> 
+                                      when ("-o" `elem` opts) $ do
+                                        system $ "gnome-open "++s
+                                        return ()
+                      | otherwise -> return ()
+               _ -> return ()
+             putStrLn qreply
+             return ()
 
 
 dispatch opts ("ask":sessNm:queryStr':_) = do
@@ -48,25 +101,12 @@ dispatch opts ("ask":sessNm:queryStr':_) = do
   --putStrLn queryStr
   --print sessNm
   tps <- sessionTypes sess
+  setCurrentDirectory "/var/bugpan/"
   --setResourceLimit ResourceOpenFiles $ ResourceLimits (ResourceLimit 32000) (ResourceLimit 32000) 
   --mapM_ print tps
   out <- runInterpreter $ do
            --loadModules ["Query", "QueryTypes", "QueryUtils"]
-           cmd <- execWriterT $ do
-                          tell ["inSessionNamed \""++sessNm++"\" $ do"]
-                          let ind = "          "
-                          forM_ tps $ \(nm, ty) -> do
-                                       if ty == SignalT (NumT (Just RealT))
-                                          then tell $ [concat [ind,unCap nm ++ " <- signalsDirect ",
-                                                       " \""++ nm++"\"" ]]
-                                          else tell $ [concat [ind,unCap nm ++ " <- ",
-                                                       typeToKind ty,
-                                                       " \""++ nm++"\" ",
-                                                       (typeToProxyName $ unWrapT ty)
-                                                      ]]
-                          tell [ind++"qresval <- qResThroughSession ("++queryStr++")"]
-                          tell [ind++"return $ QResBox (qresval)"]
-           
+           let cmd = mkQuery tps ("\""++ sessNm++"\"") queryStr "return $ QResBox "
            --setTopLevelModules [""]
            setImportsQ $ map withNothing ["Prelude","Query", "QueryTypes", "QueryUtils", "Numbers", "Math.Probably.PlotR"]
            liftIO . putStrLn $ unlines cmd
@@ -87,7 +127,6 @@ dispatch opts ("ask":sessNm:queryStr':_) = do
                           putStrLn qreply
     Left err -> print err
   return ()
-      where withNothing x = (x,Nothing) 
 
 dispatch _ ("convert1":sessNm:_) = do
   sess <- loadApproxSession root sessNm
@@ -174,16 +213,50 @@ dispatch _ ("list":_) = do
                           liftIO . putStr $ showDiffModules $ map snd modNm
       putStrLn ""
  
-dispatch _ ("show":sessNm:_) = do
+dispatch _ ("filter":filtr:_) = do
+  sesns <- getSessionInRootDir root
+  setCurrentDirectory "/var/bugpan/"
+
+  lallNmTps <- forM sesns $ \sNm -> do
+                                  sess <- loadExactSession $ root++sNm
+                                  sessionTypes sess
+  let allNmTps = concat lallNmTps
+  let allNms = nub $ map fst $ allNmTps
+  let nmtys = catMaybes $ for allNms $ \nm->case nub $ lookupMany nm allNmTps of
+                                              (ty:[]) -> Just (nm,ty)
+                                              _ -> Nothing --excludes ambiguous
+  let spliceFirst spl (s:ss) = (spl++s):ss
+  let filtFunStr = spliceFirst "\\sess -> " $ mkQuery nmtys ("sess") filtr "return $ qFilterSuccess "
+  --putStrLn $ unlines filtFunStr  
+  filtrFunO<- runInterpreter $ do
+                --loadModules ["Query", "QueryTypes", "QueryUtils"]
+                setImportsQ $ map withNothing ["Prelude","Query", "QueryTypes", 
+                                               "QueryUtils", "Numbers", "Math.Probably.PlotR"]          
+                n <- interpret (unlines filtFunStr) (as :: String -> IO Bool)
+                return n
+  --QResBox qres <- (theQuery v) sessNm
+  --print qres
+  filFun <- case filtrFunO of
+              Right fitlrFun -> do return fitlrFun
+              Left err -> fail $ show err
+  forM_ sesns $ \sNm -> do
+    pass <- filFun sNm
+    putStrLn $ sNm++": "++show pass
+ 
+
+
+
+dispatch opts ("show":sessNm:_) = do
   sess <- loadApproxSession root sessNm
-  (t1,t2) <- read `fmap` readFile (baseDir sess++"/tStart")
-  let t0 = TOD t1 t2
-  putStrLn $ "Start time: "++ show t0
   tps <- sessionTypes sess
-  inSession sess $ do 
+  when (not $ "-t" `elem` opts) $ do
+    (t1,t2) <- read `fmap` readFile (baseDir sess++"/tStart")
+    let t0 = TOD t1 t2
+    putStrLn $ "Start time: "++ show t0
+    inSession sess $ do 
        --prg <- durations "program" ""
-    modNm <- durations "moduleName" ""
-    liftIO . putStrLn $ "Modules run: "++(showDiffModules $ map snd modNm)
+      modNm <- durations "moduleName" ""
+      liftIO . putStrLn $ "Modules run: "++(showDiffModules $ map snd modNm)
   putStrLn "Values:"
   forM_ tps $ \(nm, ty) -> do
     putStrLn $ "\t"++(unCap nm)++" :: "++pTy ty

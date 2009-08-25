@@ -181,9 +181,6 @@ applySolution = do cns <- tyConstraints `fmap` get
             return $ DeclareType nm newTy
           aS _ d = return d
 
-lookupMany :: Eq a => a -> [(a,b)] -> [b]
-lookupMany x = map snd . filter ((==x) . fst)
-
 substTyInE subs = mapE sTy
     where sTy e@(Lam nm t bd) = Lam nm (substT subs t) bd                              
           sTy e = e

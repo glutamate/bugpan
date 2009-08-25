@@ -285,17 +285,26 @@ class QueryResult a where
     qReply :: a -> IO String
     qResThroughSession :: a -> StateT Session IO a
     qResThroughSession = return 
+    qFilterSuccess :: a -> Bool
 
 instance Show a => QueryResult [Signal a] where
     qReply xs = return $ unlines $ map show xs
+    qFilterSuccess [] = False
+    qFilterSuccess _ = True
 instance Show a => QueryResult [Event a] where
     qReply xs = return $ show xs
+    qFilterSuccess [] = False
+    qFilterSuccess _ = True
 instance Show a => QueryResult [Duration a] where
     qReply xs =return $ unlines $ map show xs
+    qFilterSuccess [] = False
+    qFilterSuccess _ = True
 instance QueryResult (IO RPlotCmd) where
     qReply ioplot = do plot <- ioplot
                        plotPlotCmd plot
                        return ""
+    qFilterSuccess _ = True
+
 instance QueryResult [IO RPlotCmd] where
     qReply ioplots = do 
       u <- (show. hashUnique) `fmap` newUnique
@@ -313,15 +322,24 @@ instance QueryResult [IO RPlotCmd] where
       --plotPlotCmd plot
       --system $ "gnome-open file://"++ htmlFile
       return $ "file://"++ htmlFile
+    qFilterSuccess [] = False
+    qFilterSuccess _ = True
 
 instance QueryResult [Char] where
     qReply = return 
+    qFilterSuccess [] = False
+    qFilterSuccess _ = True
 
 instance QueryResult Int where
     qReply = return . show
+    qFilterSuccess 0 = False
+    qFilterSuccess _ = True
 
 instance QueryResult RealNum where
     qReply = return . show
+    qFilterSuccess 0 = False
+    qFilterSuccess _ = True
+
 
     
 
