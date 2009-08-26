@@ -59,8 +59,6 @@ traceTyConstraints = do tcs <- tyConstraints `fmap` get
 traceConstraints :: [(T,T)] -> TravM ()
 traceConstraints = mapM_ (\(t1,t2)->traceM $ ppType t1++" `U` "++ppType t2)
 
-guardM :: MonadPlus m => m Bool -> m ()
-guardM mb = mb >>= guard
 
 setter :: (TravS -> TravS) -> TravM ()
 setter f = do s <- get
@@ -149,15 +147,6 @@ whileChanges ma = do eraseChange
 markChange = setter $ \s-> s { changed = True }
 eraseChange = setter $ \s-> s { changed = False }
 
-whenM mp ma = do p<-mp
-                 when p ma
-
-untilM :: Monad m => m Bool -> m () -> m ()
-untilM mp ma = do p <- mp
-                  if p 
-                     then return ()
-                     else ma >> untilM mp ma
-                     
 
 genSym :: String -> TravM String
 genSym base = do tok <- counter `fmap` get
@@ -355,9 +344,3 @@ mapEM f e = mapEM' e
           pair x y = (x,y)
           -- mapE f e = error $ "mapE: unknown expr "++show e 
               
-
-ifM :: Monad m => m Bool -> m a ->  m a -> m a
-ifM mp mc ma = do p <- mp
-                  if p
-                     then mc
-                     else ma

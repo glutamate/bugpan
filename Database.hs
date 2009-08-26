@@ -113,8 +113,14 @@ lastSession rootDir = do
 
 deleteSession :: Session -> IO ()
 deleteSession (Session dir _) = system ("rm -rf "++ dir) >> return ()
-    
+   
 
+resolveApproxSession  :: FilePath -> String -> IO String
+resolveApproxSession  root nm = do
+  sessns <- getSessionInRootDir root
+  --print sessns
+  return $  fromJust $ find (nm `isPrefixOf`) sessns
+  
 loadApproxSession :: FilePath -> String -> IO Session
 loadApproxSession root nm = do
   sessns <- getSessionInRootDir root

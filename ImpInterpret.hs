@@ -4,7 +4,6 @@ import Expr
 import EvalM
 import Eval
 import Compiler
-import Traverse (ifM)
 import Numbers
 import Control.Monad.State.Strict
 import Data.IORef

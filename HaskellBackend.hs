@@ -14,7 +14,7 @@ import Data.List
 import CompiledSrcsSinks
 import Parse
 import Data.Maybe
-
+import TNUtils
 --forget about sinks, sources apart from store
 
 
