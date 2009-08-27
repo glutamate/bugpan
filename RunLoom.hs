@@ -17,8 +17,9 @@ main = do args <- getArgs
 runLoom ivl = 
     do 	wait ivl
 	dplc <- uniform (-0.1) (0.1)
-	trace "displacement" dplc
-	use "DisplacedLoom" ["angle" =: dbl dplc]
+        lov <- oneOf [0.04,0.02, 0.01]
+	trace "displacement, lov" (dplc, lov)
+	use "DisplacedLoom" ["angle" =: dbl dplc,"lov" =: dbl lov]
 	runLoom ivl
 
 isNumberStr str = all isDigit str

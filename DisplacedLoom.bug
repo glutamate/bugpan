@@ -25,10 +25,10 @@ loomObj *> screen ""
 
 collision = [(5,())]
 displacedAngle = [(0, 5, angle)]
-
+approachLoV = [(0,5,lov)]
 collision *> store ""
 displacedAngle *> store ""
-
+approachLoV *> store ""
 _tmax=6
 
 
