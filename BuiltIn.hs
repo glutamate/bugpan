@@ -35,7 +35,10 @@ bivs = [
                                       let dropF (PairV (NumV te) _) = nstep te dt > nstep t dt
                                       let takeF (PairV (NumV te) _) = nstep te dt == nstep t dt
                                       return $ ListV (takeWhile takeF $ dropWhile dropF es)),
- BiV "sigTmax" (SignalT (TyVar "a") .->. realT) (LamV $ \(SigV t1 t2 dt df)-> return $ NumV (NReal t2)),
+ BiV "sigTmax" (SignalT (TyVar "a") .->. realT) (LamV $ \s-> case s of 
+                                                               (SigV t1 t2 dt df)-> return $ NumV (NReal t2)
+                                                               _ -> error $ "buiiltin sigTmax: expected signal, got "++show s
+                                                ),
  BiV "seconds" (SignalT realT) Unit,
  BiV "tmax" realT Unit,
  BiV "dt" realT Unit]

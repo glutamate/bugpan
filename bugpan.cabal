@@ -13,14 +13,14 @@ Library
    Exposed-modules:  Query, QueryTypes, QueryUtils, Numbers
    ghc-options:      -O2
    other-modules:    EvalM, Parse, Types,Database,Eval,Expr, Traverse, Transform, HaskSyntaxUntyped, ValueIO, PrettyPrint, BNFC.LexBugpan, BNFC.ParBugpan, BNFC.SkelBugpan,BNFC.PrintBugpan,BNFC.LayoutBugpan ,BNFC.ErrM,UnitTesting, BNFC.AbsBugpan,BuiltIn, TypeCheck
-   Build-depends:    array, tnutils, probably, haskell98, process, directory, regex-posix, utility-ht, random, base, bytestring, binary, old-time, storablevector, mtl, data-binary-ieee754, uuid
+   Build-depends:    array, tnutils, probably, haskell98, process, directory, regex-posix, random, base, bytestring, binary, old-time, storablevector, mtl, data-binary-ieee754, uuid
 
 
 Executable bugsess   
    Main-Is:          BugSess.hs
    ghc-options:      -O2
    other-modules:    EvalM, Parse, Types,Database,Eval,Expr, Traverse, Transform, HaskSyntaxUntyped, ValueIO, PrettyPrint, BNFC.LexBugpan, BNFC.ParBugpan, BNFC.SkelBugpan,BNFC.PrintBugpan,BNFC.LayoutBugpan ,BNFC.ErrM,UnitTesting, BNFC.AbsBugpan,BuiltIn, TypeCheck
-   Build-depends:    array, tnutils, probably, haskell98, process, directory, regex-posix, utility-ht, random, base, bytestring, binary, old-time, storablevector, mtl, data-binary-ieee754, uuid, hint, SHA
+   Build-depends:    array, tnutils, probably, haskell98, process, directory, regex-posix, random, base, bytestring, binary, old-time, storablevector, mtl, data-binary-ieee754, uuid, hint, SHA
 
 Executable bugdriver   
    Main-Is:            Driver.hs
@@ -30,7 +30,7 @@ Executable bugdriver
 --   extra-lib-dirs:     /usr/lib
    Build-depends:      array, tnutils, probably, haskell98, process, directory, regex-posix, 
                        utility-ht, random, base, bytestring, binary, old-time, storablevector, 
-                       mtl, data-binary-ieee754, uuid, hint, GLFW, unix, stm, OpenGL
+                       mtl, data-binary-ieee754, uuid, GLFW, unix, stm, OpenGL
    c-sources:          Comedi/comedi_hs_helper.c
 --   ghc-options:      -O2 -threaded -lcomedi Comedi/comedi_hs_helper.o
 --   Includes:           comedilib.h, comedi.h
@@ -46,7 +46,7 @@ Executable runbugpan
 
    Build-depends:    array, tnutils, probably, haskell98, process, directory, regex-posix, 
                      utility-ht, random, base, bytestring, binary, old-time, storablevector, 
-                     mtl, data-binary-ieee754, uuid, hint, GLFW, unix, stm, OpenGL
+                     mtl, data-binary-ieee754, uuid, GLFW, unix, stm, OpenGL
 --
    c-sources:        Comedi/comedi_hs_helper.c
 --   extra-libraries:  libcomedi

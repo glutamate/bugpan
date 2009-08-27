@@ -69,22 +69,23 @@ compileQuery sha q = do
   whenM (not `fmap` doesDirectoryExist "/var/bugpan/queryCache/") 
         (createDirectory "/var/bugpan/queryCache/") 
   setCurrentDirectory "/var/bugpan/queryCache/"
-  let initModule = unlines $ "module Main where":map ("import "++) ["Prelude","Query", "QueryTypes", 
+  let initModule = unlines $ "module Main where":(map ("import "++) ["Prelude","Query", "QueryTypes", 
                                                                     "QueryUtils", "Numbers",
                                                                     "System.Environment",
-                                                                    "Math.Probably.PlotR"]
+                                                                    "Math.Probably.PlotR"])
+                   ++["default (Int, Double)"]
       
   let mainFun = ["", 
                  "main = do",
                  "  sess:_ <- getArgs",
-                 "  QResBox qres <- q sess",
+                 "  qres <- q sess",
                  "  qreply <- qReply qres",
                  "  putStrLn qreply"]
-  let qFun = spliceFirst "q sess = " $ mkQuery nmtys ("sess") q "return $ QResBox "
+  let qFun = spliceFirst "q sess = " $ mkQuery nmtys ("sess") q "return "
   let allmod = initModule ++ unlines qFun ++ unlines mainFun
   putStrLn allmod
   writeFile (sha++".hs") $ allmod
-  system $ "ghc --make "++sha
+  system $ "ghc --make -O2 "++sha
 
   return ()
 
@@ -127,7 +128,8 @@ dispatch opts ("ask":sessNm:queryStr':_) = do
   out <- runInterpreter $ do
            --loadModules ["Query", "QueryTypes", "QueryUtils"]
            --setTopLevelModules [""]
-           setImportsQ $ map withNothing ["Prelude","Query", "QueryTypes", "QueryUtils", "Numbers", "Math.Probably.PlotR"]
+           setImportsQ $ map withNothing ["Prelude","Query", "QueryTypes", "QueryUtils", 
+                                          "Numbers", "Math.Probably.PlotR"]
            
            n <- interpret (unlines cmd) (as :: IO QueryResultBox)
            return n

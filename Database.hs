@@ -119,13 +119,13 @@ resolveApproxSession  :: FilePath -> String -> IO String
 resolveApproxSession  root nm = do
   sessns <- getSessionInRootDir root
   --print sessns
-  return $  fromJust $ find (nm `isPrefixOf`) sessns
+  case find (nm `isPrefixOf`) sessns of
+    Just s -> return s
+    _ -> fail $ "resolveApproxSession: cannot find session "++nm++" in "++root
   
 loadApproxSession :: FilePath -> String -> IO Session
 loadApproxSession root nm = do
-  sessns <- getSessionInRootDir root
-  --print sessns
-  let sessNm = fromJust $ find (nm `isPrefixOf`) sessns
+  sessNm <- resolveApproxSession root nm
   loadExactSession $ oneTrailingSlash root++sessNm
 
 loadExactSession :: FilePath -> IO Session

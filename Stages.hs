@@ -27,14 +27,18 @@ execInStages :: [Declare] -> RealNum -> RealNum -> ([Stmt] -> IO [Stmt]) -> IO [
 execInStages ds dt tmaxGlobal postCompile = do
   let (env:stageDs) = splitByStages ds
   envAdd <- newIORef []
-  --putStrLn "\nenvironment"
-  --mapM (putStrLn . ppDecl ) env
+  putStrLn "\nenvironment"
+  mapM (putStrLn . ppDecl ) env
   forM_ stageDs $ \decls -> do
                             envAdded <- readIORef envAdd -- also change sigat nm to sigat #nm
-                            let copyEnvSigs = [ Let nm (Sig $ SigAt (Var "seconds") (Var ('#':nm))) | ('#':nm,_) <- envAdded ]
-                            let stmts' = compile $ env++copyEnvSigs++map envToDecl envAdded++decls
-                            putStrLn "\na stage"
-                            --mapM (putStrLn . ppStmt ) stmts'
+                            let sigsAdded = [ nm | ('#':nm,sig) <- envAdded ]
+                            --let copyEnvSigs = [ Let nm (Sig $ SigAt (Var "seconds") (Var ('#':nm))) | 
+                            --                                  ('#':nm,_) <- envAdded ]
+                            --instead, subst #sig for sig
+                            let decls' = snd $ runTravM decls [] (mapDE (substSigRefs sigsAdded))
+                            let stmts' = compile $ env++map envToDecl envAdded++decls
+                            --putStrLn "\na stage"
+                            --mapM (putStrLn . ppDecl ) decls
                             let buffered = [ nm | SinkConnect (Var _) ('#':nm,_ )<- decls ]
                             let tmax = localTmax tmaxGlobal decls
                             stmts <- postCompile stmts'
@@ -51,6 +55,10 @@ execInStages ds dt tmaxGlobal postCompile = do
 
   readIORef envAdd
                             
+
+substSigRefs nmsigs (Var nm) | nm `elem`  nmsigs = return $ Var nm
+                             | otherwise = return . Var $ '#':nm
+substSigRefs _ e = return e 
 
 
 envToDecl (nm, val) = Let nm $ Const val

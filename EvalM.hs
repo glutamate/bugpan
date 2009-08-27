@@ -250,7 +250,9 @@ instance Reify [Char] where
     typeOfReified _ = StringT
 
 unsafeReify :: Reify a => V -> a
-unsafeReify = fromJust . reify
+unsafeReify v = case reify v of
+                  Just x -> x
+                  Nothing -> error $ "unsafeReify: cannot reify "++show v
 
 --(Signal t1 t2 dt sf)
 data Signal a = Signal RealNum RealNum RealNum (Int -> a) deriving Typeable

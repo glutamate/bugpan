@@ -1,0 +1,87 @@
+module IntfireFull where
+
+rate = 200
+
+rin=1.0e9
+
+
+fst = \pr->case pr of (x,_) -> x
+
+snd = \pr->case pr of (_,x) -> x
+convolve s evs = {: case evs of {
+                        ((tev,_):evvs) -> if tev < sigTmax s
+                                            then (s@(<: seconds :>-tev))+(convolve s evvs)
+                                            else 0 ;
+                        _ -> 0 } :}
+
+crosses val sig = [: if (<: sig :> >= val) && (<: delay sig 0 :> < val) 
+                        then [ (<: seconds :>, ()) ] 
+                        else [] :]
+
+map f lst = case lst of 
+      	    	 [] -> []
+		 x:xs -> f x:(map f xs)
+		 
+enow = \es->((enowAux <: seconds :>) dt) es
+emap = \f->\evs->[: (map f) (enow evs) :]
+
+			
+laterF = \t->\e->((fst e)+t, snd e)
+later = \t->\es->(emap (laterF t)) es
+iterate f s0 = let s = {: if <: seconds :> <= (dt/2) 
+	       	       	     then s0 
+			     else (f <: delay s s0 :>) :}
+	        in s
+iterateFrom = \t0->\f->\s0->let s = {: if <: seconds :> <= (t0+(dt/2)) 
+	      			          then s0 
+                                          else (f <: delay s s0 :>) :} 
+                            in s
+solveStep = \sf->\v0->\old->old+(<: delay (sf old) v0 :>*dt)
+solveOde = \sf->\v0->(iterate ((solveStep sf) v0)) v0
+solveOdeFrom = \t0->\sf->\v0->((iterateFrom t0) ((solveStep sf) v0)) v0
+
+
+vrest = -0.080
+
+cm = 2.5e-12
+
+gsynmul = 1.2e-12
+
+_dt = 4.0e-5
+_tmax= 0.2
+alpha tau t = if t<0.0 then 0.0 else tau*tau*t*(exp (-t*tau)) 
+
+rndSpike = [(0.05, ())]
+
+
+gsyn = {: gsynmul * (alpha 1485 <: seconds:>) #0.02:}
+
+stage gsyn -1
+
+gcell = (convolve gsyn) rndSpike 
+cellOde = \v->{: ((<: gcell :>*(0-v)) - ((v-vrest)/rin))/cm :} 
+
+
+vm = switch 
+	    (solveOde cellOde) vrest
+	    spike ~> \_->\_->{: vrest :}
+	    refrac_end ~> \tsp->\_-> solveOdeFrom (tsp+dt) cellOde vrest
+
+spike :: [(Real, ())]
+spike = crosses (-0.05) vm
+refrac_end :: [(Real, ())]
+refrac_end = later 2.5e-3 spike
+
+inputRate = [(0,tmax,rate)]
+
+inputRate *> store ""
+
+gsyn *> store ""
+gcell *> store ""
+
+vm *> store ""
+spike *> store ""
+
+rndSpike *> store ""
+
+
