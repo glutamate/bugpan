@@ -28,7 +28,7 @@ displacedAngle = [(0, 5, angle)]
 approachLoV = [(0,5,lov)]
 collision *> store ""
 displacedAngle *> store ""
-approachLov *> store ""
+approachLoV *> store ""
 _tmax=6
 
 
