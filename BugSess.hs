@@ -6,7 +6,7 @@ import System.Environment
 import TNUtils
 import EvalM
 import System.Directory
-import Traverse (ifM)
+
 import Control.Monad
 import Control.Monad.Writer.Lazy
 import Language.Haskell.Interpreter
@@ -22,6 +22,10 @@ import Data.List
 import System.Time
 import Data.Maybe
 import System.Process
+import Data.Digest.Pure.SHA
+import qualified Data.ByteString.Lazy as BS
+import Data.ByteString.Internal
+
 root = "/var/bugpan/sessions/"
 
 
@@ -58,42 +62,55 @@ mkQuery tps sessNm q resp = execWriter $ do
                           tell [ind++"qresval <- qResThroughSession ("++q++");"]
                           tell [ind++resp++"(qresval) }"]
 
-dispatch opts ("testask":_) = do
-  setCurrentDirectory "/var/bugpan/"
-  out <- runInterpreter $ do
-           setImportsQ $ map withNothing ["Prelude"]
-           n <- interpret ("show $ 2+2") (as :: String)
-           return n
-  case out of
-    Right outaction -> putStrLn outaction
-    Left err -> print err
+compileQuery sha q = do
+  putStrLn $ "compiling query "++q
+  sesns <- getSessionInRootDir root
+  nmtys <- getNamesAndTypes sesns
+  whenM (not `fmap` doesDirectoryExist "/var/bugpan/queryCache/") 
+        (createDirectory "/var/bugpan/queryCache/") 
+  setCurrentDirectory "/var/bugpan/queryCache/"
+  let initModule = unlines $ "module Main where":map ("import "++) ["Prelude","Query", "QueryTypes", 
+                                                                    "QueryUtils", "Numbers",
+                                                                    "System.Environment",
+                                                                    "Math.Probably.PlotR"]
+      
+  let mainFun = ["", 
+                 "main = do",
+                 "  sess:_ <- getArgs",
+                 "  QResBox qres <- q sess",
+                 "  qreply <- qReply qres",
+                 "  putStrLn qreply"]
+  let qFun = spliceFirst "q sess = " $ mkQuery nmtys ("sess") q "return $ QResBox "
+  let allmod = initModule ++ unlines qFun ++ unlines mainFun
+  putStrLn allmod
+  writeFile (sha++".hs") $ allmod
+  system $ "ghc --make "++sha
+
   return ()
 
-{-dispatch opts ("testask1":sessNm:_) = do
-  out<- inApproxSession sessNm $ do
-          tStart <- events "tStart" ()
-          tStop <- events "tStop" ()
-          collision <- events "collision" ()
-          tStart <- events "tStart" ()
-          displacedAngle <- durations "displacedAngle" double
-          program <- durations "program" "foo"
-          moduleName <- durations "moduleName" "foo"
-          displacedLoom <- durations "DisplacedLoom" ()
-          qresval <- qResThroughSession (tStart)
-          return $ QResBox (qresval)
-  case out of
-    QResBox qres -> do
-             qreply <- qReply qres
-             putStrLn qreply
-             print $ dropPrefix "file:///var/bugpan/www/" qreply
-             case dropPrefix "file:///var/bugpan/www/" qreply of
-               ("",s) -> cond [("-o" `elem` opts,  do
-                                  system $ "gnome-open "++s
-                                  return ()),
-                              ("-s" `elem` opts, do 
-                                 ip <- readProcess "ifconfig eth0 | perl -n -e 'if (m/inet addr:([\\d\\.]+)/g) { print $1 }'" [] ""
-                                 putStrLn $ "http://"++ip++"/"++s)] $ putStrLn qreply
-               _ -> return () -}
+getNamesAndTypes sesns = do 
+  lallNmTps <- forM sesns $ \sNm -> do
+                                  sess <- loadExactSession $ root++sNm
+                                  sessionTypes sess
+  let allNmTps = concat lallNmTps
+  let allNms = nub $ map fst $ allNmTps
+  let nmtys = catMaybes $ for allNms $ \nm->case nub $ lookupMany nm allNmTps of
+                                              (ty:[]) -> Just (nm,ty)
+                                              _ -> Nothing --excludes ambiguous
+  return nmtys
+
+
+dispatch opts ("ask1":sessNm:queryStr':_) = do
+  let queryStr = preprocessQuery queryStr'
+  let sha = take 50 . showDigest . sha512 . BS.pack $ map c2w queryStr
+  --putStrLn sha
+  whenM (not `fmap` doesFileExist ("/var/bugpan/queryCache/"++sha)) 
+        (compileQuery sha queryStr)
+  longSessNm <- resolveApproxSession root sessNm
+  system $ "/var/bugpan/queryCache/"++sha++" "++ longSessNm
+  
+
+  return ()
 
 
 dispatch opts ("ask":sessNm:queryStr':_) = do
@@ -128,7 +145,7 @@ dispatch opts ("ask":sessNm:queryStr':_) = do
                                  system "ifconfig eth0 | perl -n -e 'if (m/inet addr:([\\d\\.]+)/g) { print $1 }' | cat >/tmp/my_ip_address" 
                                  ip <- readFile "/tmp/my_ip_address"
                                  putStrLn $ "http://"++ip++"/"++s)] $ putStrLn qreply
-               _ -> return ()
+               _ -> putStrLn qreply
 
                      
     Left err -> do putStrLn $ unlines cmd 
@@ -183,8 +200,8 @@ dispatch _ ("convert2":sessNm:_) = do
                   ((print $ "dir not found:" ++fp) >> return [])
 
 dispatch _ ("compact":sessNm:_) = do
-  system $ "./BugSess compact_1 "++sessNm
-  system $ "./BugSess compact_2 "++sessNm
+  system $ "bugsess compact_1 "++sessNm
+  system $ "bugsess compact_2 "++sessNm
   return ()
 
 dispatch _ ("compact_1":sessNm:_) = do
@@ -226,20 +243,12 @@ dispatch opts ("list":_) = do
                              modNm <- durations "moduleName" ""
                              liftIO . putStr $ ": "++(showDiffModules $ map snd modNm)
       putStrLn ""
- 
+
 dispatch _ ("filter":filtr:_) = do
   sesns <- getSessionInRootDir root
   setCurrentDirectory "/var/bugpan/"
+  nmtys <- getNamesAndTypes sesns
 
-  lallNmTps <- forM sesns $ \sNm -> do
-                                  sess <- loadExactSession $ root++sNm
-                                  sessionTypes sess
-  let allNmTps = concat lallNmTps
-  let allNms = nub $ map fst $ allNmTps
-  let nmtys = catMaybes $ for allNms $ \nm->case nub $ lookupMany nm allNmTps of
-                                              (ty:[]) -> Just (nm,ty)
-                                              _ -> Nothing --excludes ambiguous
-  let spliceFirst spl (s:ss) = (spl++s):ss
   let filtFunStr = spliceFirst "\\sess -> " $ mkQuery nmtys ("sess") filtr "return $ qFilterSuccess "
   --putStrLn $ unlines filtFunStr  
   filtrFunO<- runInterpreter $ do
@@ -282,13 +291,13 @@ dispatch _ _ = putStrLn $ unlines [
               "",
               "Manage bugpan sessions",
               "",
-              "\tBugSess ask {session} {query}",
-              "\tBugSess show {session}",
-              "\tBugSess list",
-              "\tBugSess filter {query}",
-              "\tBugSess compact {session}",
-              "\tBugSess convert2 {session}",
-              "\tBugSess convert1 {session}"
+              "\tbugsess ask {session} {query}",
+              "\tbugsess show {session}",
+              "\tbugsess list",
+              "\tbugsess filter {query}",
+              "\tbugsess compact {session}",
+              "\tbugsess convert2 {session}",
+              "\tbugsess convert1 {session}"
 
  ]
 
