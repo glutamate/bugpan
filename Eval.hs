@@ -208,6 +208,7 @@ match (PatCons pcar pcdr) (ListV (x:xs)) = do
   boundx <- match pcar x
   boundxs <- match pcdr $ ListV xs
   return $ boundx++boundxs
+match p v = Nothing
 
 applyCmp :: EvalS -> E -> E ->(NumVl->NumVl->Bool) -> EvalM V
 applyCmp es (e1) (e2) op

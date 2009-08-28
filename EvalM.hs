@@ -165,7 +165,7 @@ pair3 x y z = (PairV (PairV x y) z)
 
 typeOfVal :: V -> T
 typeOfVal (BoolV _ ) = BoolT 
-typeOfVal (NumV (NInt _)) = NumT $ Just IntT
+typeOfVal (NumV (NInt _)) = NumT $ Just RealT
 typeOfVal (NumV (NReal _)) = NumT $ Just RealT
 typeOfVal (NumV (NCmplx _)) = NumT $ Just CmplxT
 typeOfVal (PairV v w) = PairT (typeOfVal v) (typeOfVal w)

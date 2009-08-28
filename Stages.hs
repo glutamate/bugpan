@@ -27,18 +27,19 @@ execInStages :: [Declare] -> RealNum -> RealNum -> ([Stmt] -> IO [Stmt]) -> IO [
 execInStages ds dt tmaxGlobal postCompile = do
   let (env:stageDs) = splitByStages ds
   envAdd <- newIORef []
-  putStrLn "\nenvironment"
-  mapM (putStrLn . ppDecl ) env
-  forM_ stageDs $ \decls -> do
+  --putStrLn "\nenvironment"
+  --mapM (putStrLn . ppDecl ) env
+  forM_ stageDs $ \decls' -> do
                             envAdded <- readIORef envAdd -- also change sigat nm to sigat #nm
                             let sigsAdded = [ nm | ('#':nm,sig) <- envAdded ]
+                            print2 "sigsAdded" sigsAdded
                             --let copyEnvSigs = [ Let nm (Sig $ SigAt (Var "seconds") (Var ('#':nm))) | 
                             --                                  ('#':nm,_) <- envAdded ]
                             --instead, subst #sig for sig
-                            let decls' = snd $ runTravM decls [] (mapDE (substSigRefs sigsAdded))
+                            let decls = snd $ runTravM decls' [] (mapDE (mapEM $ substSigRefs sigsAdded))
                             let stmts' = compile $ env++map envToDecl envAdded++decls
-                            --putStrLn "\na stage"
-                            --mapM (putStrLn . ppDecl ) decls
+                            putStrLn "\na stage"
+                            mapM (putStrLn . ppDecl ) decls
                             let buffered = [ nm | SinkConnect (Var _) ('#':nm,_ )<- decls ]
                             let tmax = localTmax tmaxGlobal decls
                             stmts <- postCompile stmts'
@@ -56,8 +57,8 @@ execInStages ds dt tmaxGlobal postCompile = do
   readIORef envAdd
                             
 
-substSigRefs nmsigs (Var nm) | nm `elem`  nmsigs = return $ Var nm
-                             | otherwise = return . Var $ '#':nm
+substSigRefs nmsigs (Var nm) | nm `elem`  nmsigs = return $ Var $ '#':nm
+                             | otherwise = return . Var $ nm
 substSigRefs _ e = return e 
 
 

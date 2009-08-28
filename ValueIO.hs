@@ -23,6 +23,7 @@ import Data.Binary.IEEE754
 import Data.Int
 import Data.List
 import Numeric
+import PrettyPrint
 
 
 loadVs :: String -> IO [V]
@@ -118,7 +119,7 @@ putRaw v@(NumV (NInt i)) =  put i
 putRaw v@(NumV (NReal r)) =  putD r
 putRaw v@(PairV v1 w1) =  putRaw v1 >> putRaw w1
 putRaw v@(ListV xs) =  put (length xs) >> mapM_ putRaw xs
-putRaw v@(SigV t1 t2 dt sf) = error $ "foo!"++show v {-do 
+putRaw v@(SigV t1 t2 dt sf) = error $ "putRaw signal! "++show v++" :: "++ppType (typeOfVal v) {-do 
   putD $ t1 
   putD $ t2
   putD $ dt

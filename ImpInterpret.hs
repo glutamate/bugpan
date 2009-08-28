@@ -98,7 +98,7 @@ exec stmts dt tmax =
                          let es = evalS sevals 
                              evalToEnv env nm e =  case eval (extsEnv env es) e of
                                               Res v ->  (H.update envHT nm $! v) >> return ()
-                                              Error s -> fail $ "eval error in exec "++pp e++": "++nm
+                                              Error s -> fail $ "eval error in exec "++nm++" => "++pp e++": "++s
                              evalTo = evalToEnv []  
                          case stm of 
                            SigUpdateRule nm sw@(Switch ess er) -> do

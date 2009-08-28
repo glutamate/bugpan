@@ -37,13 +37,16 @@ testgainopt:
 	rm -f ValueIO.o Query.o QueryUtils.o QueryTypes.o
 	ghc --make TestGain -O2 -lcomedi Comedi/comedi_hs_helper.o
 
-testgainoptall:
-	rm -f *.o
-	ghc --make TestGain -O2 -lcomedi Comedi/comedi_hs_helper.o
+tests:	testgain iotest
+	ghc UnitTesting.hs -e 'runAllTests'
 
 
 testgain:
-	ghc --make TestGain -lcomedi Comedi/comedi_hs_helper.o
+	ghc --make Tests/TestGain -lcomedi Comedi/comedi_hs_helper.o -i..
+
+iotest:
+	ghc --make Tests/IOTest -lcomedi Comedi/comedi_hs_helper.o -i..
+
 
 bugsess:
 	ghc --make -O2	 BugSess -lcomedi Comedi/comedi_hs_helper.o
@@ -56,9 +59,6 @@ testgainprof:
 
 comedi_helper: 
 	gcc -c -g -o Comedi/comedi_hs_helper.o Comedi/comedi_hs_helper.c
-
-tests:
-	ghc UnitTesting.hs -e 'runAllTests'
 
 clean: 
 	rm *.o *.hi
