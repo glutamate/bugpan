@@ -67,13 +67,13 @@ perfTest1 = inTemporarySession $ do
          
 perfTest2 = inNewSession $ do
              intfire <- use "Intfire"
-             run (intfire `with` ["_tmax" =: dbl 0.5]) 0
+             run (intfire `with` ["_tmax" =: dbl 0.1]) 0
              vm <- signals "vm" real
              gcell <- signals "gcell" real
              gsyn <- signals "gsyn" real
              rndSpike <- events "rndSpike" ()
              liftIO $ print rndSpike
-             plot gcell
+             plot vm
 
   
 

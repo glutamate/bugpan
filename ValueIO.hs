@@ -24,7 +24,7 @@ import Data.Int
 import Data.List
 import Numeric
 import PrettyPrint
-
+import System.Cmd
 
 loadVs :: String -> IO [V]
 loadVs fp = loadBinary fp
@@ -57,8 +57,9 @@ hWriteSigV h s@ (SigV t1 t2 dt sf) = do
 --  L.hPut h (runPut $ putWord32le ((round $ (t2-t1)/dt)::Word32))
   SV.hPut h $ SV.pack $ map (idDouble . unsafeReify . sf) $ [0..(round $ (t2-t1)/dt)-1]
 
+
 hWriteSigReal :: Handle -> Signal Double -> IO ()
-hWriteSigReal h s@ (Signal t1 t2 dt sf) = do
+hWriteSigReal h s@(Signal t1 t2 dt sf) = do
   binPut h $ ([8,3]::[Word8])
   binPut h t1
   binPut h t2
@@ -107,6 +108,7 @@ putTT1 :: V -> Put
 putTT1 v = put . typeTag1 . typeOfVal $ v
 
 aSig = SigV 0 1 0.1 $ \p -> NumV ((realToFrac p) / 100)
+aSigT = Signal 0 1 0.1 $ \p -> ((realToFrac p) / 100)
 
 instance Binary V where
     put v = putTT1 v >> putRaw v
