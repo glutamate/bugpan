@@ -35,7 +35,7 @@ import Control.Concurrent
 import Database
 import HaskSyntaxUntyped
 import Data.Maybe
-import Math.Probably.PlotR
+--import Math.Probably.PlotR
 import Data.Unique
 import TNUtils
 import Data.Typeable
@@ -47,7 +47,7 @@ import ValueIO
 type Duration a = ((RealNum,RealNum),a)
 type Event a = (RealNum,a)
 
-
+{-
 instance PlotWithR [Signal Double] where
     getRPlotCmd sigs = 
         do ss <- mapM writeSig $ downSample 1000 sigs
@@ -103,28 +103,11 @@ plot_ = getRPlotCmd
 
 plotManySigs :: PlotWithR [a] => [a] -> [IO RPlotCmd]
 plotManySigs sigs = map (\s-> getRPlotCmd [s]) sigs
+-}
+--class PlotWithR a => PlotMany a where
 
-class PlotWithR a => PlotMany a where
-    chopByDur :: [Duration b] -> a -> [a]
 
-instance PlotMany [Signal Double] where
-    chopByDur durs sigs = map (\dur->section sigs [dur]) durs
 
-instance (Real a) => PlotMany [Event a] where
-    chopByDur durs evs = map (\dur->during evs [dur]) durs
-
-instance (Real a) => PlotMany [Duration a] where
-    chopByDur chopDurs durs = map (\dur->sectionDur1 dur durs) chopDurs
-
-instance (PlotMany a, PlotMany b) => PlotMany (a :+: b) where
-    chopByDur durs (x :+: y) = zipWith (:+:) (chopByDur durs x) (chopByDur durs y)
-
-plotManyBy :: PlotMany b => [Duration a] -> b -> [IO RPlotCmd]
-plotManyBy durs pm = map getRPlotCmd $ chopByDur durs pm
-
-instance Num a => PlotWithR (Hist a) where
-    getRPlotCmd (Histogram tgs) = 
-        plotHisto $ map getTag tgs
 
 
 --zipSigs :: Signal a -> Signal b -> Signal (a,b)
@@ -201,26 +184,6 @@ sscan f init sig@(Signal t1 t2 dt sf) = let arr2 = scanl f init $ sigToList sig
                                         in Signal t1 t2 dt $ \pt->arr2!!pt
 
 
-downSample n = map (downSample' (n `div` 2))
-
-downSample' :: (Ord a, Bounded a, Num a) => Int -> Signal a -> Signal a
-downSample' n sig@(Signal t1 t2 dt sf) =
-    let npw = round $ (t2-t1)/dt
-        chunkSize = floor (npw./ n)
-        nChunks =  ceiling (npw ./chunkSize)
-        newDt = (t2-t1)/realToFrac (nChunks*2)
-        narr = listArray (0,(nChunks*2)-1 ) $concatMap chunk [0..(nChunks-1)]
-        chunk i = let n1 = i*chunkSize
-                      n2 = n1 + (min chunkSize (npw - i*chunkSize -1))
-                      (x,y) = sigSegStat (both maxF minF) (n1,n2) sig
-                      in [x,y]
-     in if npw>n 
-           then (Signal t1 t2 ((t2-t1)./(nChunks*2)) $ \p-> narr!p)
-           else sig
-        {-chunk i = let arrsec = sliceU (uVpnts w) (i*chunkSize) $ min chunkSize (npw - i*chunkSize -1)
-                                           in [maximumU arrsec, minimumU arrsec]
-                             in UVecWave (toU narr) ((maxt w-mint w)/2 / realToFrac nChunks) (mint w) (nChunks*2)
--}
 
 sigSegStat :: Fold a b -> (Int, Int) -> Signal a -> b
 sigSegStat (F op init c _) (n1, n2) (Signal t1 t2 dt sf) = c $! go n1 init
@@ -228,7 +191,6 @@ sigSegStat (F op init c _) (n1, n2) (Signal t1 t2 dt sf) = c $! go n1 init
                      | otherwise = go (n+1) (x `op` (sf n))
 
 
-x ./ y = realToFrac x / realToFrac y
 
 class Tagged t where
     getTag :: t a-> a
@@ -299,7 +261,7 @@ instance Show a => QueryResult [Duration a] where
     qReply xs =return $ unlines $ map show xs
     qFilterSuccess [] = False
     qFilterSuccess _ = True
-instance QueryResult (IO RPlotCmd) where
+{-instance QueryResult (IO RPlotCmd) where
     qReply ioplot = do plot <- ioplot
                        plotPlotCmd plot
                        return ""
@@ -325,6 +287,7 @@ instance QueryResult [IO RPlotCmd] where
     qFilterSuccess [] = False
     qFilterSuccess _ = True
 
+-}
 instance QueryResult [Char] where
     qReply = return 
     qFilterSuccess [] = False

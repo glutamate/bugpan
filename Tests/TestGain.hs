@@ -20,18 +20,19 @@ import HaskSyntaxUntyped
 import Data.IORef
 import QueryUtils
 import Math.Probably.FoldingStats
-import Math.Probably.PlotR
+--import Math.Probably.PlotR
 import QueryRun
 import ValueIO
 import Numbers
 import Tests.Asserts
+import PlotGnuplot
 
 main = perfTest2
 
 loomAnal = inSessionNamed "5c17e342716081de800000110961a575" $ do
              ecV <- signals "ecVoltage" real
              tStart <- events "tStart" ()
-             plot [head ecV]
+             --plot [head ecV]
              liftIO . print $ meanF `sigStat`  ecV
 
 snrBench = inSessionNamed "000" $ do
@@ -73,7 +74,8 @@ perfTest2 = inNewSession $ do
              gsyn <- signals "gsyn" real
              rndSpike <- events "rndSpike" ()
              liftIO $ print rndSpike
-             plot vm
+             liftIO $ plotOnScreen $ [((0.01::Double,0.02::Double), -0.06::Double),
+                                     ((0.03::Double,0.05::Double), -0.05::Double)] :+: head vm
 
   
 
@@ -93,7 +95,7 @@ unsafeMain = inTemporarySession $ do
       roi = fadeOut 20e-3 $ peak gsyn 
   --plotSig . head $ applyOverWith (/) gsyn roi
   --plotSig $ section gsynn (0, 20e-3, ())
-  plot (vm :+: 0 `tag` synin :+: (1e-10) `tag` spikes ) 
+  --plot (vm :+: 0 `tag` synin :+: (1e-10) `tag` spikes ) 
   liftIO $ print peakgsyn 
   --liftIO . print . area $  (flip (/) <$$> roi) `applyOver` gsyn
 
