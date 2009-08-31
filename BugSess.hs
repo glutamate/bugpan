@@ -44,6 +44,17 @@ preprocessQuery qs | "@=" `isInfixOf` qs = let (lhs, rhs) = span (/='@') $ qs
                                            in "\""++(filter (/=' ') lhs)++"\" "++rhs
                    | otherwise = qs
 
+--matched parens, never negative level
+--escape quotes?
+validateQuery q = checkParens q 0
+
+checkParens :: String -> Int -> Bool
+checkParens [] 0 = True
+checkParens [] _ = False
+checkParens ('(':s) n = checkParens s (n+1)
+checkParens (')':s) n | n < 1 = False
+                      | otherwise = checkParens s (n-1)
+
 withNothing x = (x,Nothing)                 
 
 mkQuery :: [(String, T)] -> String -> String -> String -> [String]
@@ -103,6 +114,8 @@ getNamesAndTypes sesns = do
 
 dispatch opts ("ask1":sessNm:queryStr':_) = do
   let queryStr = preprocessQuery queryStr'
+  when (not $ validateQuery queryStr) $
+       fail $ "cannot validate query string"
   let sha = take 50 . showDigest . sha512 . BS.pack $ map c2w queryStr
   --putStrLn sha
   whenM (not `fmap` doesFileExist ("/var/bugpan/queryCache/"++sha)) 
@@ -118,6 +131,8 @@ dispatch opts ("ask":sessNm:queryStr':_) = do
   sess <- loadApproxSession root sessNm
   let sessNm = last . splitBy '/' $ baseDir sess 
   let queryStr = preprocessQuery queryStr'
+  when (not $ validateQuery queryStr) $
+       fail $ "cannot validate query string"
   --putStrLn queryStr
   --print sessNm
   tps <- sessionTypes sess
@@ -252,6 +267,9 @@ dispatch _ ("filter":filtr:_) = do
   nmtys <- getNamesAndTypes sesns
 
   let filtFunStr = spliceFirst "\\sess -> " $ mkQuery nmtys ("sess") filtr "return $ qFilterSuccess "
+  when (not $ validateQuery filtr) $
+       fail $ "cannot validate query string"
+
   --putStrLn $ unlines filtFunStr  
   filtrFunO<- runInterpreter $ do
                 --loadModules ["Query", "QueryTypes", "QueryUtils"]
