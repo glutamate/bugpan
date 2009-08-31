@@ -56,29 +56,3 @@ use :: MonadIO m => String -> m [Declare]
 use fnm = liftIO $ fileDecls fnm []
 
 with = flip makeSubs
-
-
-{-plot :: [V] -> IO ()
-plot vs = do --let g = map ansToPlot ans
-             plotGraph (valsToGraph vs)
-             return ()
-          
-
-valsToGraph :: [V] -> Graph
-valsToGraph vs = foldl1 (<+>) $ map vToPlot vs
-    where vToPlot (SigV t1 t2 dt sf)= toGraph ((toPlot $map (\t -> (t, unsafeVToDbl $ sf t)) [t1, t1+dt..t2])%Lines)
-          vToPlot e  | isEvent e = toGraph ((toPlot [(evTime e, unsafeVToDbl $ evTag e)])%FilledCircles)
-          vToPlot ep | isEpoch ep = 
-                         let (t1,t2) = epTs ep 
-                             epvl = unsafeVToDbl $ epTag ep in
-                         toGraph ((toPlot [(t1, epvl), (t2, epvl)])%Lines) 
-
--}
-
-{-testQ = do s <- lastSession "/home/tomn/sessions/"
-           print s
-           qres <- runAskM s $ signals "vm"
-           mapM plotWithR qres
-                         
-           --mapM print qres
-           return () -}

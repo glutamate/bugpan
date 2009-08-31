@@ -304,7 +304,17 @@ instance QueryResult RealNum where
     qFilterSuccess _ = True
 
 
-    
+class ChopByDur a where
+    chopByDur :: [Duration b] -> a -> [a]
+
+instance ChopByDur [Signal a] where
+    chopByDur durs sigs = map (\dur->section sigs [dur]) durs
+
+instance ChopByDur [Event a] where
+    chopByDur durs evs = map (\dur->during evs [dur]) durs
+
+instance ChopByDur [Duration a] where
+    chopByDur chopDurs durs = map (\dur->sectionDur1 dur durs) chopDurs
 
 
 --class (MonadState Session m, MonadIO m) => QueryM m where

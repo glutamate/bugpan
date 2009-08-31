@@ -1,5 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, FlexibleInstances, ExistentialQuantification #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TypeOperators, FlexibleContexts #-}
 
 module PlotGnuplot where
 
@@ -15,30 +15,94 @@ import Data.Unique
 
 uniqueIntStr = (show. hashUnique) `fmap` newUnique
 
-data GnuplotCmd = Plot String
+type GnuplotCmd = [PlotLine]
+
+data PlotLine = PL {plotData :: String,
+                    plotTitle :: String,
+                    plotWith :: String }
+
+showPlotCmd :: GnuplotCmd -> [String]
+showPlotCmd plines = map s plines
+    where s (PL dat tit wth) = "plot "++dat++tit++" "++wth
+          title (PL _ "" _) = ""
+          title (PL _ tit _) = " title '"++tit++"'"
+
 
 class PlotWithGnuplot a where
     getGnuplotCmd :: a -> IO GnuplotCmd
 
 data GnuplotBox = forall a. PlotWithGnuplot a => GnuplotBox a
 
-plotOnScreen :: PlotWithGnuplot a => a -> IO ()
-plotOnScreen x = do
-  Plot cmd <- getGnuplotCmd x
-  let cmdLines = unlines ["set datafile missing \"NaN\"",
-                          "plot "++cmd]
+instance QueryResult [GnuplotBox] where
+    qFilterSuccess [] = False
+    qFilterSuccess _ = True
+    qReply gpbxs = do 
+      u <- (show. hashUnique) `fmap` newUnique
+      let htmlFile  ="/var/bugpan/www/plots"++u++".html" 
+      h <- openFile (htmlFile) WriteMode
+      fnms <- forM gpbxs .  const $ do fnm <- (++".png") `fmap` uniqueIntStr
+                                       hPutStrLn h $ concat ["<img src=\"", fnm, "\" /><p />"]
+                                       return $ "/var/bugpan/www/"++fnm
+      gnuplotMany $ zip fnms gpbxs
+      hClose h
+      --plotPlotCmd plot
+      --system $ "gnome-open file://"++ htmlFile
+      return $ "file://"++ htmlFile
+
+plot :: PlotWithGnuplot a => a -> [GnuplotBox]
+plot x = [GnuplotBox x]
+
+plotManySigs :: PlotWithGnuplot [a] => [a] -> [GnuplotBox]
+plotManySigs ss = map (\s->GnuplotBox [s]) ss
+
+plotManyBy :: (PlotWithGnuplot b, ChopByDur b) => [Duration a] -> b -> [GnuplotBox]
+plotManyBy durs pm = map GnuplotBox $ chopByDur durs pm
+
+
+    
+
+gnuplotOnScreen :: PlotWithGnuplot a => a -> IO ()
+gnuplotOnScreen x = do
+  plines <- getGnuplotCmd x
+  let cmdLines = "set datafile missing \"NaN\"\n"++
+                  (unlines $ showPlotCmd plines)
+                       
   writeFile "/tmp/gnuplotCmds" cmdLines
   system "gnuplot -persist /tmp/gnuplotCmds"
   return ()
 
+gnuplotToPNG :: PlotWithGnuplot a => String -> a -> IO ()
+gnuplotToPNG fp x = do
+  plines <- getGnuplotCmd x
+  let cmdLines = "set datafile missing \"NaN\"\n"++
+                 "set terminal png\n"++
+                 "set output '"++fp++"'\n"++
+                  (unlines $ showPlotCmd plines)
+                       
+  writeFile "/tmp/gnuplotCmds" cmdLines
+  system "gnuplot /tmp/gnuplotCmds"
+  return ()
 
-instance PlotWithGnuplot (Signal Double) where
-    getGnuplotCmd s' = 
-        do let (s@(Signal t1 t2 dt sf):_) = downSample 1000 [s']
+gnuplotMany :: [(String, GnuplotBox)] -> IO ()
+gnuplotMany nmbxs = do
+  nmcmds <- forM nmbxs $ \(nm, GnuplotBox x) -> do
+                      cmd <- getGnuplotCmd x
+                      return (nm,cmd)
+  let start = "set datafile missing \"NaN\"\n"++
+                 "set terminal png"
+  let cmds = start++concatMap plotOne nmcmds
+  writeFile "/tmp/gnuplotCmds" cmds
+  system "gnuplot /tmp/gnuplotCmds"
+  return ()
+    where plotOne (fp, plines) = "set output '"++fp++"'\n"++
+                                 (unlines $ showPlotCmd plines)
+  
+instance PlotWithGnuplot [Signal Double] where
+    getGnuplotCmd ss = forM (downSample 1000 ss) $ \s@(Signal t1 t2 dt sf) -> do
            fnm <- ("/tmp/gnuplotsig"++) `fmap` uniqueIntStr
            writeSig fnm s
-           return . Plot $ concat ["\"", fnm, "\" binary format=\"%float64\" using ($0*",
-                                   show dt, "+", show t1, "):1 with lines"]
+           return $ PL (concat ["\"", fnm, "\" binary format=\"%float64\" using ($0*",
+                                    show dt, "+", show t1, "):1"]) "" "lines"
            where writeSig fp s@(Signal t1 t2 dt sf) = do
                    h <- openBinaryFile fp WriteMode
                    SV.hPut h $ SV.pack $ map  sf $ [0..(round $ (t2-t1)/dt)-1]
@@ -48,8 +112,8 @@ instance PlotWithGnuplot [Event Double] where
     getGnuplotCmd es = 
         do fnm <- ("/tmp/gnuplotevs"++) `fmap` uniqueIntStr
            writeEvts fnm es
-           return . Plot $ concat ["\"", fnm, "\" using 1:2 with points"]
-           where writeEvts fp evs = do
+           return [PL (concat ["\"", fnm, "\" using 1:2"]) "" "points"]
+        where writeEvts fp evs = do
                    h <- openFile fp WriteMode
                    forM_ evs $ \(t,v)-> hPutStrLn h $ show t++"\t"++show v
                    hClose h
@@ -58,7 +122,7 @@ instance PlotWithGnuplot [Duration Double] where
     getGnuplotCmd es = 
         do fnm <- ("/tmp/gnuplotdurs"++) `fmap` uniqueIntStr
            writeEvts "/tmp/gnuplotdurs" es
-           return . Plot $ concat ["\"", fnm, "\" using 1:($2) with lines"]
+           return [PL (concat ["\"", fnm, "\" using 1:($2)"]) "" "lines"]
            where writeEvts fp durs = do
                    h <- openFile fp WriteMode
                    forM_ durs $ \((t1,t2),v)-> do 
@@ -74,11 +138,15 @@ data a :+: b = a :+: b
 
 instance (PlotWithGnuplot a, PlotWithGnuplot b) => PlotWithGnuplot (a :+: b) where
     getGnuplotCmd (xs :+: ys) = do
-      Plot px <- getGnuplotCmd xs
-      Plot py <- getGnuplotCmd ys                          
-      return . Plot $ px++","++py
+      px <- getGnuplotCmd xs
+      py <- getGnuplotCmd ys                          
+      return $ px++py
 
-
+instance PlotWithGnuplot a => PlotWithGnuplot (String, a) where
+    getGnuplotCmd (title, x) = do
+      plines <- getGnuplotCmd x
+      return $ map (addTitle title) plines
+      where addTitle title (PL x _ y) = PL x title y
 
 gnuPlotSig :: Signal Double -> IO ()
 gnuPlotSig s@(Signal t1 t2 dt sf) = do
@@ -116,26 +184,14 @@ downSample' n sig@(Signal t1 t2 dt sf) =
 
 x ./ y = realToFrac x / realToFrac y
 
-{-
-class PlotWithGnuplot a => PlotMany a where
-    chopByDur :: [Duration b] -> a -> [a]
 
-instance PlotMany [Signal Double] where
-    chopByDur durs sigs = map (\dur->section sigs [dur]) durs
 
-instance (Real a) => PlotMany [Event a] where
-    chopByDur durs evs = map (\dur->during evs [dur]) durs
 
-instance (Real a) => PlotMany [Duration a] where
-    chopByDur chopDurs durs = map (\dur->sectionDur1 dur durs) chopDurs
-
-instance (PlotMany a, PlotMany b) => PlotMany (a :+: b) where
+instance (ChopByDur a, ChopByDur b) =>  ChopByDur (a :+: b) where
     chopByDur durs (x :+: y) = zipWith (:+:) (chopByDur durs x) (chopByDur durs y)
--}
-{-plotManyBy :: PlotMany b => [Duration a] -> b -> [IO RPlotCmd]
-plotManyBy durs pm = map getRPlotCmd $ chopByDur durs pm
 
-instance Num a => PlotWithR (Hist a) where
+
+{-instance Num a => PlotWithR (Hist a) where
     getRPlotCmd (Histogram tgs) = 
         plotHisto $ map getTag tgs
 
