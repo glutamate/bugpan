@@ -97,7 +97,7 @@ go rs@(RS ds (Just sess) mdt mtmax Nothing) = do
 go rs@(RS ds msess mdt mtmax (Just outNm)) = do
   let prg = getPrg rs
   let (tmax, dt) = (getTmax rs, getDt rs)
-  compileToHask outNm dt tmax prg
+  compileToHask outNm dt tmax prg []
   return ()
 
 getPrg rs@(RS ds _ mdt mtmax _) 

@@ -24,22 +24,23 @@ import EvalM
 
 --compileToHask :: String -> [Declare] -> IO String
 test = do ds <- fileDecls "Intfire" []
-          compileToHask "Intfire.hs" 0.001 0.2 ds
+          compileToHask "Intfire.hs" 0.001 0.2 ds []
 
 getDeclaredType :: [Declare] -> String -> T
 getDeclaredType ds nm = head [ t | DeclareType nm' t <- ds, nm == nm']
 
-compileToHask fp dt tmax ds = do
+compileToHask fp dt tmax ds params = do
   --putStrLn "hello"
-  let prg = toHask dt tmax ds
+  let prg = toHask dt tmax ds params
   writeFile (fp) prg
   --putStrLn prg
   return prg
 
 --toHask :: String -> [Declare] -> String
-toHask dt tmax ds 
+toHask dt tmax ds params
     = let (env:stageDs) = splitByStages ds
-          nonMainLoop = filter notbanned $ fst (runTravM env [] compilableEnv) 
+          nonMainLoop = filter (notbanned (map fst params) ) $
+                        filter (notbanned banned) $ fst (runTravM env [] compilableEnv) 
       in unlines $ ["{-# LANGUAGE NoMonomorphismRestriction #-}",
                     --"module "++capitalize modNm++" where",
                     "module Main where",
@@ -55,6 +56,8 @@ toHask dt tmax ds
                     "import TNUtils",
                     "import Database",
                     "import Control.Monad",
+                    "import System.IO.Unsafe",
+
                     "import EvalM hiding (tmax, dt)"]++
                    allSrcImports ds++
                    ["",
@@ -62,11 +65,16 @@ toHask dt tmax ds
                     "floor = realToFrac . P.floor ","",
                    "dt="++show dt, "tmax="++show tmax, "npnts="++show(round $ tmax/dt)]++
                    writeBufToSig++
+                   concatMap readParam (zip params [2..])++
                    map atTopLevel nonMainLoop++["", ""]++
                    compileStages ds tmax stageDs++["", ""] -- ["{-"]
                    --concatMap (\ds-> "\na stage":map ppDecl ds) stageDs++["-}"]
 
 --mapAccum :: (a->b) -> [a] -> [[b]]
+
+readParam ((nm,ty), idx) = [nm++" = unsafePerformIO $ do",
+                            "   args <- getArgs",
+                            "   return ((read (args!!"++show idx++"))::"++haskTypeString ty++")"]
 
 allSrcImports ds = let snms = [nm | ReadSource _ (nm, _) <- ds]
                    in concatMap (\s-> map ("import "++) $ srcImpModule s) . catMaybes $ map lookupSrc snms
@@ -76,10 +84,10 @@ rootDir = "/var/bugpan/sessions"
 mainFun ds exps = 
     let ind = "   " in
           ["main = do",
-           ind++"sessNm:_ <- getArgs",
+           ind++"sessNm:t0Str:_ <- getArgs",
            ind++"sess <- loadApproxSession \""++rootDir++"\" sessNm", 
            ind++"tnow <- getClockTime",
-           ind++"let t0 = diffInS tnow $ tSessionStart sess",
+           ind++"let t0 = read t0Str",
            ind++inTuple exps++" <- goMain",
            concatMap (\nm->ind++"saveInSession sess \""++nm++"\" t0 dt $ pack ("++nm++"::"++(haskTypeString $ getDeclaredType ds nm)++")\n") exps,
            ind++"return ()",
@@ -212,8 +220,8 @@ capitalize :: String -> String
 capitalize [] = []
 capitalize (c:cs) = toUpper c : cs
 
-notbanned (Let nm _) = not $ nm `elem` banned
-notbanned (DeclareType nm _) = not $ nm `elem` banned
+notbanned banned (Let nm _) = not $ nm `elem` banned
+notbanned banned (DeclareType nm _) = not $ nm `elem` banned
 
 atTopLevel :: Declare -> String
 atTopLevel (Let nm e) = nm ++ " = "++pp e

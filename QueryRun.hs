@@ -41,16 +41,17 @@ import HaskellBackend
 
 --type QState = (Session)
 
-compile :: [Declare] -> StateT QState IO (String)
-compile ds = do
+compile :: [Declare] -> [(String, T)] -> StateT QState IO (String)
+compile ds params = do
   let trun = (lookupDefn "_tmax" ds >>= vToDbl) `orJust` 1
   let dt = (lookupDefn "_dt" ds >>= vToDbl) `orJust` 0.001
-  let sha = take 50 . showDigest . sha512 . L.pack $ map c2w $ show ds
+  let commentParams = map (\(nm,ty)-> Comment $ "PARAMETER: "++nm++ppType ty) params
+  let sha = take 50 . showDigest . sha512 . L.pack $ map c2w $ show (ds++commentParams)
   let dsTrans = snd $ runTravM ds [] transform
   --liftIO $ mapM_ (putStrLn . ppDecl) dsTrans
   liftIO $ whenM (not `fmap` doesFileExist ("/var/bugpan/queryCache/"++sha)) 
                  (do setCurrentDirectory "/var/bugpan/queryCache/"
-                     compileToHask (sha++".hs") dt trun dsTrans
+                     compileToHask (sha++".hs") dt trun dsTrans params
                      system $ "ghc -O2 --make "++sha
                      return ())
   liftIO $ whenM (not `fmap` doesFileExist ("/var/bugpan/queryCache/"++sha)) 

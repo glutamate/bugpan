@@ -27,7 +27,7 @@ import Numbers
 import Tests.Asserts
 import PlotGnuplot
 
-main = compileTest
+main = justCompile
 
 loomAnal = inSessionNamed "5c17e342716081de800000110961a575" $ do
              ecV <- signals "ecVoltage" real
@@ -78,14 +78,19 @@ perfTest2 = inTemporarySession $ do
 
 compileTest = inTemporarySession $ do
                 intfire <- use "Intfire"
-                prg <- compile intfire
+                prg <- compile intfire []
                 invoke prg
                 vm <- signalsDirect "vm"
                 rndSpike <- events "rndSpike" ()
                 liftIO $ print rndSpike
                 liftIO $ gnuplotOnScreen vm
 
+realT = NumT (Just RealT)
 
+justCompile = inTemporarySession $ do
+                intfire <- use "Intfire"
+                prg <- compile intfire [("rate", realT)]
+                return ()
   
 
 unsafeMain = inTemporarySession $ do

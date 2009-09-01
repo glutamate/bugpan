@@ -49,6 +49,7 @@ ppDecl (Import nm substs) = "use "++nm++" { "++intercalate "," (map ppImpSubst s
 ppDecl (DeclareType nm t) = nm ++" :: "++ ppType t
 ppDecl (Stage nm i) = "stage "++nm++" "++show i
 ppDecl (Nop) = "Nop"
+ppDecl (Comment s) = "-- "++s
 
 --for display purposes only
 depth :: E->Int

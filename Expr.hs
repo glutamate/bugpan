@@ -65,6 +65,7 @@ data Declare
 	| SinkConnect E (String,E)
         | ReadSource String (String,E)
         | Stage String Int
+        | Comment String
         | Nop
 	deriving (Show, Eq, Read)
 
