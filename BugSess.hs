@@ -54,6 +54,7 @@ checkParens [] _ = False
 checkParens ('(':s) n = checkParens s (n+1)
 checkParens (')':s) n | n < 1 = False
                       | otherwise = checkParens s (n-1)
+checkParens (_:s) n = checkParens s n
 
 withNothing x = (x,Nothing)                 
 
@@ -83,7 +84,7 @@ compileQuery sha q = do
   let initModule = unlines $ "module Main where":(map ("import "++) ["Prelude","Query", "QueryTypes", 
                                                                     "QueryUtils", "Numbers",
                                                                     "System.Environment",
-                                                                    "Math.Probably.PlotR"])
+                                                                    "PlotGnuplot"])
                    ++["default (Int, Double)"]
       
   let mainFun = ["", 

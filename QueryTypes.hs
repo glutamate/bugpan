@@ -39,7 +39,6 @@ import Data.Maybe
 import Data.Unique
 import TNUtils
 import Data.Typeable
-import Array
 import Math.Probably.FoldingStats
 import System.IO
 import ValueIO

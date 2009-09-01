@@ -8,14 +8,14 @@ import Data.Binary.Get
 import Data.Binary.Put
 import qualified Data.ByteString.Lazy as L
 import Numbers
-import Array
+--import Array
 import Control.Monad 
 import TNUtils
 import Debug.Trace
 import Unsafe.Coerce
-import Data.Array.IO
+--import Data.Array.IO
 import System.IO
-import Data.Array.MArray
+--import Data.Array.MArray
 --import Data.Array.Vector
 import qualified Data.StorableVector as SV
 import Foreign.C.Types
@@ -157,7 +157,7 @@ getRaw (ListT t) = do n <- get :: Get Int
                         let n = round $ (t2-t1)/dt
                         vls <- getMany n 
                         let arr = listArray (0, length vls -1) vls
-                        return . SigV t1 t2 dt $ \pt->arr!pt -}
+                        return . SigV t1 t2 dt $ \pt->arr!pt 
 getRaw (SignalT t) = do t1 <- getD
                         t2 <- getD
                         dt <- getD
@@ -166,7 +166,7 @@ getRaw (SignalT t) = do t1 <- getD
                         vls <- getManyRaw n t
                         let arr = listArray (0, length vls -1) vls
                         return . SigV t1 t2 dt $ \pt->arr!pt
-                        
+                       -} 
 
 -- copied from Data.Binary
 getManyRaw :: Int -> T -> Get [V]
@@ -228,8 +228,8 @@ instance Binary (Signal Double) where
              dt <- getD
              n <- fmap (fromInteger . toInteger) getWord32le
              vls <- myGetMany n
-             let arr = listArray (0, length vls -1) vls
-             return . Signal t1 t2 dt $ \pt->arr!pt
+             let arr = SV.pack vls
+             return . Signal t1 t2 dt $ \pt->arr `SV.index` pt
     put (Signal t1 t2 dt sf)= do putD t1 
                                  putD t2
                                  putD dt
@@ -323,33 +323,6 @@ fromWord64 :: Word64 -> a
 fromWord64 = unsafeCoerce
 
 
----- testing IOArray
-
-data TestVec = TV [RealNum]
-             
-instance Binary TestVec where
-    put (TV xs) = mapM_ put xs
-    get = undefined
---    put (TV xs) = mapM_ put xs
-
-test2 = do
-  let tv = TV [10..19]
-  saveBinary "testIOArray" tv
-  h <- openFile "testIOArray" ReadMode
-  --arr <- idIOArrayDbl `fmap` newArray_ (0::Int,10::Int)
-  w8arr <-  newArray_ (0::Int,39::Int)
-  hGetArray h w8arr 10
-  arr <- idIOArrayW64 `fmap` castIOUArray w8arr
-  lst <- getElems arr
-  print $ map (idDouble . unsafeCoerce) lst
-  --putStrLn "boo!"
-  return ()
-
-idIOArrayDbl :: IOUArray Int Double -> IOUArray Int Double
-idIOArrayDbl = id
-
-idIOArrayW64 :: IOUArray Int Word64 -> IOUArray Int Word64
-idIOArrayW64 = id
 
 idDouble :: Double -> Double
 idDouble = id
@@ -358,55 +331,5 @@ idDoubleL :: [Double] -> [Double]
 idDoubleL = id
 
 
-test3 = do
-  --let arr = SV.pack ([0..120000]::[Double])
-  --SV.writeFile "testSV" arr
-  let tv = TV $ replicate 9 1.1
-  saveBinary "testSV" tv
-  --h <- openFile "testIOArray" ReadMode
-
-  arr2 <- SV.readFile "testSV"
-  print $ idDoubleL $ SV.unpack $ SV.map (fromWord64) arr2
-  --hClose h
-
-test4 = do
-  --let arr = SV.pack ([0..120000]::[Double])
-  --SV.writeFile "testSV" arr
-  let tv = TV [10..19]
-  saveBinary "testCDbl" tv
-  --h1 <- openFile "testUA" WriteMode
-  --hPutU h1 $ toU ([0..99]::[Double])
-  --hClose h1
-  --h <- openFile "testUA" ReadMode
-  --arr2 <- hGetU h
-  --print $ idDoubleL $ fromU $ arr2
-  --hClose h
-
-
-test7 = do
-  xs <- forM [0..100] $ \i-> do
-    arr <- SV.readFile "testSV1"
-    return $ idDouble $ arr `SV.index` (100000+i)
-   
-  print$ sum xs
-
-
-
-  --b <- loadBinary "testUA2"
-  --print (b::MyArr)
-
-data MyArr = MyArr Int [RealNum] deriving (Show)
-
-fromWord32 :: Word32 -> a
-fromWord32 = unsafeCoerce
-
-idCDouble :: CDouble -> CDouble
-idCDouble = id
-
-instance Binary MyArr where
-    put = undefined
-    get = do l <- fromWord32 `fmap` get
-             vls <- forM [0..8] $ \_ -> get 
-             return $ MyArr l vls
 
 

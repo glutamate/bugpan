@@ -12,7 +12,6 @@ import Database
 import Math.Probably.FoldingStats
 import Control.Applicative hiding ((<**>))
 import Numbers
-import Array
 import Data.Ord
 
 peak :: Ord a => [Signal a] ->[Event a]

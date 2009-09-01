@@ -8,10 +8,11 @@ import qualified Data.StorableVector as SV
 import System.IO
 import System.Cmd
 import QueryTypes
-import Array
+--import Array
 import Math.Probably.FoldingStats
 import Control.Monad
 import Data.Unique
+import Data.List
 
 uniqueIntStr = (show. hashUnique) `fmap` newUnique
 
@@ -21,11 +22,11 @@ data PlotLine = PL {plotData :: String,
                     plotTitle :: String,
                     plotWith :: String }
 
-showPlotCmd :: GnuplotCmd -> [String]
-showPlotCmd plines = map s plines
-    where s (PL dat tit wth) = "plot "++dat++tit++" "++wth
-          title (PL _ "" _) = ""
-          title (PL _ tit _) = " title '"++tit++"'"
+showPlotCmd :: GnuplotCmd -> String
+showPlotCmd plines = "plot "++(intercalate ", " $ map s plines)++"\n"
+    where s (PL dat tit wth) = dat++title tit++" with "++wth
+          title "" = ""
+          title tit = " title '"++tit++"'"
 
 
 class PlotWithGnuplot a where
@@ -65,7 +66,7 @@ gnuplotOnScreen :: PlotWithGnuplot a => a -> IO ()
 gnuplotOnScreen x = do
   plines <- getGnuplotCmd x
   let cmdLines = "set datafile missing \"NaN\"\n"++
-                  (unlines $ showPlotCmd plines)
+                  (showPlotCmd plines)
                        
   writeFile "/tmp/gnuplotCmds" cmdLines
   system "gnuplot -persist /tmp/gnuplotCmds"
@@ -77,7 +78,7 @@ gnuplotToPNG fp x = do
   let cmdLines = "set datafile missing \"NaN\"\n"++
                  "set terminal png\n"++
                  "set output '"++fp++"'\n"++
-                  (unlines $ showPlotCmd plines)
+                  (showPlotCmd plines)
                        
   writeFile "/tmp/gnuplotCmds" cmdLines
   system "gnuplot /tmp/gnuplotCmds"
@@ -89,13 +90,13 @@ gnuplotMany nmbxs = do
                       cmd <- getGnuplotCmd x
                       return (nm,cmd)
   let start = "set datafile missing \"NaN\"\n"++
-                 "set terminal png"
+                 "set terminal png\n"
   let cmds = start++concatMap plotOne nmcmds
   writeFile "/tmp/gnuplotCmds" cmds
   system "gnuplot /tmp/gnuplotCmds"
   return ()
     where plotOne (fp, plines) = "set output '"++fp++"'\n"++
-                                 (unlines $ showPlotCmd plines)
+                                 (showPlotCmd plines)
   
 instance PlotWithGnuplot [Signal Double] where
     getGnuplotCmd ss = forM (downSample 1000 ss) $ \s@(Signal t1 t2 dt sf) -> do
@@ -163,19 +164,20 @@ gnuPlotSig s@(Signal t1 t2 dt sf) = do
 
 downSample n = map (downSample' (n `div` 2))
 
-downSample' :: (Ord a, Bounded a, Num a) => Int -> Signal a -> Signal a
+--downSample' :: (Ord a, Bounded a, Num a, Storable a) => Int -> Signal a -> Signal a
+downSample' :: Int -> Signal Double -> Signal Double
 downSample' n sig@(Signal t1 t2 dt sf) =
     let npw = round $ (t2-t1)/dt
         chunkSize = floor (npw./ n)
         nChunks =  ceiling (npw ./chunkSize)
         newDt = (t2-t1)/realToFrac (nChunks*2)
-        narr = listArray (0,(nChunks*2)-1 ) $concatMap chunk [0..(nChunks-1)]
+        narr = SV.pack $concatMap chunk [0..(nChunks-1)]
         chunk i = let n1 = i*chunkSize
                       n2 = n1 + (min chunkSize (npw - i*chunkSize -1))
                       (x,y) = sigSegStat (both maxF minF) (n1,n2) sig
                       in [x,y]
      in if npw>n 
-           then (Signal t1 t2 ((t2-t1)./(nChunks*2)) $ \p-> narr!p)
+           then (Signal t1 t2 ((t2-t1)./(nChunks*2)) $ \p-> narr `SV.index` p)
            else sig
         {-chunk i = let arrsec = sliceU (uVpnts w) (i*chunkSize) $ min chunkSize (npw - i*chunkSize -1)
                                            in [maximumU arrsec, minimumU arrsec]
@@ -189,6 +191,9 @@ x ./ y = realToFrac x / realToFrac y
 
 instance (ChopByDur a, ChopByDur b) =>  ChopByDur (a :+: b) where
     chopByDur durs (x :+: y) = zipWith (:+:) (chopByDur durs x) (chopByDur durs y)
+
+instance ChopByDur a =>  ChopByDur (String,a) where
+    chopByDur durs (nm, x) = map ((,) nm) (chopByDur durs x) 
 
 
 {-instance Num a => PlotWithR (Hist a) where

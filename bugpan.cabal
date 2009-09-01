@@ -10,10 +10,10 @@ build-type:          Simple
 --Extra-Include-Dirs:  /usr/include, /usr/local/include, .
 
 Library
-   Exposed-modules:  Query, QueryTypes, QueryUtils, Numbers
+   Exposed-modules:  Query, QueryTypes, QueryUtils, Numbers, PlotGnuplot
    ghc-options:      -O2
    other-modules:    EvalM, Parse, Types,Database,Eval,Expr, Traverse, Transform, HaskSyntaxUntyped, ValueIO, PrettyPrint, BNFC.LexBugpan, BNFC.ParBugpan, BNFC.SkelBugpan,BNFC.PrintBugpan,BNFC.LayoutBugpan ,BNFC.ErrM,UnitTesting, BNFC.AbsBugpan,BuiltIn, TypeCheck
-   Build-depends:    array, tnutils, probably, haskell98, process, directory, regex-posix, random, base, bytestring, binary, old-time, storablevector, mtl, data-binary-ieee754, uuid
+   Build-depends:    tnutils, probably, process, directory, regex-posix, random, base, bytestring, binary, old-time, storablevector, mtl, data-binary-ieee754, uuid
 
 
 Executable bugsess   
