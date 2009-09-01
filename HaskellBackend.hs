@@ -15,6 +15,7 @@ import CompiledSrcsSinks
 import Parse
 import Data.Maybe
 import TNUtils
+import EvalM
 --forget about sinks, sources apart from store
 
 
@@ -23,17 +24,20 @@ import TNUtils
 
 --compileToHask :: String -> [Declare] -> IO String
 test = do ds <- fileDecls "Intfire" []
-          compileToHask "Intfire" 0.001 0.2 ds
+          compileToHask "Intfire.hs" 0.001 0.2 ds
 
-compileToHask modNm dt tmax ds = do
+getDeclaredType :: [Declare] -> String -> T
+getDeclaredType ds nm = head [ t | DeclareType nm' t <- ds, nm == nm']
+
+compileToHask fp dt tmax ds = do
   --putStrLn "hello"
-  let prg = toHask modNm dt tmax ds
-  writeFile (capitalize modNm++".hs") prg
+  let prg = toHask dt tmax ds
+  writeFile (fp) prg
   --putStrLn prg
   return prg
 
 --toHask :: String -> [Declare] -> String
-toHask modNm dt tmax ds 
+toHask dt tmax ds 
     = let (env:stageDs) = splitByStages ds
           nonMainLoop = filter notbanned $ fst (runTravM env [] compilableEnv) 
       in unlines $ ["{-# LANGUAGE NoMonomorphismRestriction #-}",
@@ -42,7 +46,7 @@ toHask modNm dt tmax ds
                     "",
                     "import Prelude hiding (floor)",
                     "import qualified Prelude as P",
-                    "import Numbers", 
+                    --"import Numbers", 
                     "import HaskShapes",
                     "import Data.IORef",
                     "import System.Environment",
@@ -59,7 +63,7 @@ toHask modNm dt tmax ds
                    "dt="++show dt, "tmax="++show tmax, "npnts="++show(round $ tmax/dt)]++
                    writeBufToSig++
                    map atTopLevel nonMainLoop++["", ""]++
-                   compileStages tmax stageDs++["", ""] -- ["{-"]
+                   compileStages ds tmax stageDs++["", ""] -- ["{-"]
                    --concatMap (\ds-> "\na stage":map ppDecl ds) stageDs++["-}"]
 
 --mapAccum :: (a->b) -> [a] -> [[b]]
@@ -69,7 +73,7 @@ allSrcImports ds = let snms = [nm | ReadSource _ (nm, _) <- ds]
 
 rootDir = "/var/bugpan/sessions"
 
-mainFun exps = 
+mainFun ds exps = 
     let ind = "   " in
           ["main = do",
            ind++"sessNm:_ <- getArgs",
@@ -77,7 +81,7 @@ mainFun exps =
            ind++"tnow <- getClockTime",
            ind++"let t0 = diffInS tnow $ tSessionStart sess",
            ind++inTuple exps++" <- goMain",
-           concatMap (\nm->ind++"saveInSession sess \""++nm++"\" t0 dt $ pack "++nm++"\n") exps,
+           concatMap (\nm->ind++"saveInSession sess \""++nm++"\" t0 dt $ pack ("++nm++"::"++(haskTypeString $ getDeclaredType ds nm)++")\n") exps,
            ind++"return ()",
 
 
@@ -92,7 +96,7 @@ writeBufToSig = ["",
                  "   in Signal 0 tmax dt sf", ""]
 
 
-compileStages tmax stgs =  mainFun allStore ++ ["goMain = do "] ++lns++retLine++stages
+compileStages ds tmax stgs =  mainFun ds allStore ++ ["goMain = do "] ++lns++retLine++stages
     where ind = "   " 
           retLine = [ind++"return "++inTuple allStore, ""]
           lns = map stgLine $ zip stgs [0..]
@@ -150,6 +154,7 @@ compStage ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++"
           writeSig (Let nm (Sig e)) | nm `elem` exps = calcAndBuffer (nm, e)
                                     | otherwise = [loopInd++"let "++nm++"Val = "++(pp $ tweakExpr e)
                                                   ,loopInd++"writeIORef "++nm++" "++nm++"Val"]
+          writeSig (Let nm (SigDelay (Var snm) _)) = writeSig (Let nm (Sig $ SigVal (Var snm)))
           writeSig (Let nm (Event e)) = [loopInd++nm++" <- return $ ("++(pp $tweakExpr e)++")++"++nm, --SORT THESE!!!!
                                         loopInd++"writeIORef "++nm++"Queue "++nm]
           writeSig (Let nm s@(Switch ses se)) = switch nm ses se

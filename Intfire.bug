@@ -19,7 +19,7 @@ gsynmul = 1.2e-12
 --gsynmul = 1.342e-12
 
 _dt = 4.0e-5
-_tmax= 0.2
+_tmax= 1
 alpha tau t = if t<0.0 then 0.0 else tau*tau*t*(exp (-t*tau)) 
 
 --rndSpikeSig <* uniform (0,1)
@@ -42,6 +42,10 @@ vm = switch
 	    spike ~> \_->\_->{: vrest :}
 	    refrac_end ~> \tsp->\_-> solveOdeFrom (tsp+dt) cellOde vrest
 
+vmpassive = (solveOde cellOde) vrest
+
+incrsig = iterate (incr) 0
+
 spike :: [(Real, ())]
 spike = crosses (-0.05) vm
 refrac_end :: [(Real, ())]
@@ -55,6 +59,8 @@ gsyn *> store ""
 gcell *> store ""
 --vm *> print ()
 vm *> store ""
+vmpassive *> store ""
+incrsig *> store ""
 spike *> store ""
 --spike *> print ()
 rndSpike *> store ""

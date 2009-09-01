@@ -169,6 +169,7 @@ getRaw (SignalT t) = do t1 <- getD
                        -} 
 
 -- copied from Data.Binary
+getRaw t = error $ "getRaw unknown type: "++show t
 getManyRaw :: Int -> T -> Get [V]
 getManyRaw n t = go [] n
  where

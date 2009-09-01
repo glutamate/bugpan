@@ -27,7 +27,7 @@ import Numbers
 import Tests.Asserts
 import PlotGnuplot
 
-main = perfTest2
+main = compileTest
 
 loomAnal = inSessionNamed "5c17e342716081de800000110961a575" $ do
              ecV <- signals "ecVoltage" real
@@ -66,16 +66,25 @@ perfTest1 = inTemporarySession $ do
              --io $ print $ synin
              liftIO . print $ meanF `sigStat` vm
          
-perfTest2 = inNewSession $ do
+perfTest2 = inTemporarySession $ do
              intfire <- use "Intfire"
              run (intfire `with` ["_tmax" =: dbl 0.1]) 0
-             vm <- signals "vm" real
-             gcell <- signals "gcell" real
-             gsyn <- signals "gsyn" real
+             vm <- signalsDirect "vm" 
+             gcell <- signalsDirect "gcell" 
+             gsyn <- signalsDirect "gsyn" 
              rndSpike <- events "rndSpike" ()
              liftIO $ print rndSpike
-             liftIO $ plotOnScreen $ [((0.01::Double,0.02::Double), -0.06::Double),
-                                     ((0.03::Double,0.05::Double), -0.05::Double)] :+: head vm
+             liftIO $ gnuplotOnScreen $ vm
+
+compileTest = inTemporarySession $ do
+                intfire <- use "Intfire"
+                prg <- compile intfire
+                invoke prg
+                vm <- signalsDirect "vm"
+                rndSpike <- events "rndSpike" ()
+                liftIO $ print rndSpike
+                liftIO $ gnuplotOnScreen vm
+
 
   
 

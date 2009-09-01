@@ -74,7 +74,7 @@ mkQuery tps sessNm q resp = execWriter $ do
                           tell [ind++"qresval <- qResThroughSession ("++q++");"]
                           tell [ind++resp++"(qresval) }"]
 
-compileQuery sha q = do
+compileQuery opts sha q = do
   putStrLn $ "compiling query "++q
   sesns <- getSessionInRootDir root
   nmtys <- getNamesAndTypes sesns
@@ -97,7 +97,9 @@ compileQuery sha q = do
   let allmod = initModule ++ unlines qFun ++ unlines mainFun
   putStrLn allmod
   writeFile (sha++".hs") $ allmod
-  system $ "ghc --make -O2 "++sha
+  if ("-p" `elem` opts)
+    then system $ "ghc --make -prof -auto-all "++sha
+    else system $ "ghc --make -O2 "++sha
 
   return ()
 
@@ -120,9 +122,11 @@ dispatch opts ("ask1":sessNm:queryStr':_) = do
   let sha = take 50 . showDigest . sha512 . BS.pack $ map c2w queryStr
   --putStrLn sha
   whenM (not `fmap` doesFileExist ("/var/bugpan/queryCache/"++sha)) 
-        (compileQuery sha queryStr)
+        (compileQuery opts sha queryStr)
   longSessNm <- resolveApproxSession root sessNm
-  system $ "/var/bugpan/queryCache/"++sha++" "++ longSessNm
+  if ("-p" `elem` opts)
+     then system $ "/var/bugpan/queryCache/"++sha++" "++ longSessNm++" +RTS -p"
+     else system $ "/var/bugpan/queryCache/"++sha++" "++ longSessNm
   
 
   return ()

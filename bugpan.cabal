@@ -10,9 +10,9 @@ build-type:          Simple
 --Extra-Include-Dirs:  /usr/include, /usr/local/include, .
 
 Library
-   Exposed-modules:  Query, QueryTypes, QueryUtils, Numbers, PlotGnuplot
+   Exposed-modules:  Query, QueryTypes, QueryUtils, Numbers, PlotGnuplot, EvalM, Database, HaskShapes
    ghc-options:      -O2
-   other-modules:    EvalM, Parse, Types,Database,Eval,Expr, Traverse, Transform, HaskSyntaxUntyped, ValueIO, PrettyPrint, BNFC.LexBugpan, BNFC.ParBugpan, BNFC.SkelBugpan,BNFC.PrintBugpan,BNFC.LayoutBugpan ,BNFC.ErrM,UnitTesting, BNFC.AbsBugpan,BuiltIn, TypeCheck
+   other-modules:    Parse, Types,Eval,Expr, Traverse, Transform, HaskSyntaxUntyped, ValueIO, PrettyPrint, BNFC.LexBugpan, BNFC.ParBugpan, BNFC.SkelBugpan,BNFC.PrintBugpan,BNFC.LayoutBugpan ,BNFC.ErrM,UnitTesting, BNFC.AbsBugpan,BuiltIn, TypeCheck
    Build-depends:    tnutils, probably, process, directory, regex-posix, random, base, bytestring, binary, old-time, storablevector, mtl, data-binary-ieee754, uuid
 
 
