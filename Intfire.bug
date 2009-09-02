@@ -23,10 +23,10 @@ _tmax= 1
 alpha tau t = if t<0.0 then 0.0 else tau*tau*t*(exp (-t*tau)) 
 
 rndSpike :: [(Real, ())]
-rndSpike <* poisson 1.0
+rndSpike <* poisson rate
 --rndSpike = eventIf (<: rndSpikeSig :> < rate*dt) 
 
---rndSpike = [(0.05, ()), (0.051, ()), (0.052, ())]
+--rndSpike = [(1.0, ()), (2.0, ()), (3.0, ())]
 
 -- peakSyn = 732 pS = 7.32-10
 -- mean weighted decay 0.6*0.42+0.29*2.71+0.11*15.5 = 2.74 ms

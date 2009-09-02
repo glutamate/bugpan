@@ -253,7 +253,11 @@ evalSinkSrcArgs = mapD eSSA
             let carg =  evalIn ds arg
             --trace ("eval "++show arg++" to "++show carg) $ return ()
             return (ReadSource vnm (snm, Const carg))
-          eSSA (Let nm (SigLimited s lim )) = do
+          eSSA e = return e 
+
+evalSigLimits :: TravM () -- and signal limits, too
+evalSigLimits = mapD eSSA
+    where eSSA (Let nm (SigLimited s lim )) = do
             ds <- decls `fmap` get
             let clim =  evalIn ds lim
             return (Let nm (SigLimited s (Const clim)))
@@ -461,7 +465,7 @@ transforms =   [(typeCheck, "typeCheck")
                 ,(explicitSignalCopying, "explicitSignalCopying")
                 ,(renameCopiedEvents, "renameCopiedEvents")
                 ,(removeNops, "removeNops")
-                ,(evalSinkSrcArgs, "evalSinkSrcArgs")
+                ,(evalSigLimits, "evalSigLimits")
                 ,(addStageAnnotations, "addStageAnnotations")
                 --,(sigAtRefersToBuffer, "sigAtRefersToBuffer")
                 ,(simplifySomeLets, "simplifySomeLets")

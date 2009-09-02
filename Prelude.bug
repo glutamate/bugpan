@@ -68,8 +68,10 @@ max = \x->\y->if x < y then y else x
 enow = \es->((enowAux <: seconds :>) dt) es
 emap = \f->\evs->[: (map f) (enow evs) :]
 convolve s evs = {: case evs of {
-                        ((tev,_):evvs) -> if (tev < <: seconds :>) &&  ((<: seconds :>-tev) < sigTmax s)
-                                            then (s@(<: seconds :>-tev))+(convolve s evvs)
+                        ((tev,_):evvs) -> if (tev < <: seconds :>) 
+				       	    then if ((<: seconds :>-tev) < sigTmax s)
+                                                    then (s@(<: seconds :>-tev))+(convolve s evvs)
+						    else (convolve s evvs)
                                             else 0 ;
                         _ -> 0 } :}
 

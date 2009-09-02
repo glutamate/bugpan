@@ -75,7 +75,7 @@ runOnce dt t0 tmax ds sess = do
   --let prel = map (\(n,v)->(n,Const v)) (sessPrelude sess)
   --let runTM = runTravM ds []
   --mapM (putStrLn . ppDecl) ds
-  let prg = snd . runTravM ds [] $ transform
+  let prg = snd . runTravM ds [] $ (transform >> evalSinkSrcArgs)
   --mapM (putStrLn . ppDecl)  prg
   ress <- execInStages prg dt tmax return
   --putStrLn $ "results for this trial: "++show ress

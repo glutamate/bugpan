@@ -79,7 +79,7 @@ perfTest2 = inTemporarySession $ do
 compileTest = inTemporarySession $ do
                 intfire <- use "Intfire"
                 prg <- compile intfire [("rate", realT)]
-                invoke prg [200]
+                invoke prg 0 [50]
                 vm <- signalsDirect "vm"
                 rndSpike <- events "rndSpike" ()
                 liftIO $ print rndSpike

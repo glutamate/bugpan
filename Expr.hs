@@ -29,6 +29,10 @@ instance Num V where
     negate (NumV n1) = NumV $ (NInt (-1))*n1
     fromInteger n = NumV . fromInteger $ n
 
+instance Fractional V where
+	(NumV n1) / (NumV n2) = NumV $ n1/n2
+	fromRational r = NumV . NReal $ fromRational r
+
  
 
 data E =  If E E E

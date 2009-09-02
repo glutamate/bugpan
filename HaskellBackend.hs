@@ -65,7 +65,7 @@ toHask dt tmax ds params
                     "floor = realToFrac . P.floor ","",
                    "dt="++show dt, "tmax="++show tmax, "npnts="++show(round $ tmax/dt)]++
                    writeBufToSig++
-                   concatMap readParam (zip params [1..])++
+                   concatMap readParam (zip params [2..])++
                    map atTopLevel nonMainLoop++["", ""]++
                    compileStages ds tmax stageDs++["", ""]++ ["{-"]++
                    concatMap (\ds-> "\na stage":map ppDecl ds) stageDs++["\nenv\n:"]++
@@ -129,9 +129,9 @@ compStage ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++"
     where ind = "   "
           loopInd = "       "
           ds = snd $ runTravM ds' [] removeSigLimits
-          dsSrcs =  [(varNm, fromJust $ lookupSrc srcNm,param) | ReadSource varNm (srcNm, Const param) <- ds]
-          atOnceSrcs = [(varNm, srcf param) | (varNm, Src _ _ _ _ (SrcOnce srcf), param)<- dsSrcs ]
-          rtSrcs = [(varNm, srcf param) | (varNm, Src _ _ _ _ (SrcRealTimeSig srcf), param)<- dsSrcs ]
+          dsSrcs =  [(varNm, fromJust $ lookupSrc srcNm,param) | ReadSource varNm (srcNm, param) <- ds]
+          atOnceSrcs = [(varNm, srcf, param) | (varNm, Src _ _ _ _ (SrcOnce srcf), param)<- dsSrcs ]
+          rtSrcs = [(varNm, srcf, param) | (varNm, Src _ _ _ _ (SrcRealTimeSig srcf), param)<- dsSrcs ]
           sigs = [ (nm,e) | Let nm (Sig e) <- ds ]
           evs = [ nm | Let nm (Event e) <- ds ]
           comments = ["--imps="++show imps,
@@ -146,7 +146,7 @@ compStage ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++"
           initLn (Let nm (Event e)) = [ind++nm++"Queue <- newIORef []"]
           initLn d = []
           debugDsSrcs = show dsSrcs
-          runAtOnceSrcs = ("{-"++debugDsSrcs++"-}"):map (\(v,s)-> ind++v++" <- "++s++" tmax dt") atOnceSrcs --DOESNT WORK FOR SIGS  OR EVTS!!
+          runAtOnceSrcs = ("{-"++debugDsSrcs++"-}"):map (\(v,s,p)-> ind++v++" <- "++s++" tmax dt "++pp p) atOnceSrcs --DOESNT WORK FOR SIGS !!
           newTmax = let tm = localTmax tmax ds' in
                     [ind++"let tmax = "++(show $ tm),
                     ind++"let npnts = idInt . round $ tmax/dt"]

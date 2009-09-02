@@ -75,7 +75,7 @@ loop ds@(DS (sess) dpmv rmv prg) = do
               return ()
             (prg',_):_ -> do
                        let runTM = runTravM prg' []
-                       let prg = snd . runTM $ transform
+                       let prg = snd . runTM $ (transform >> evalSinkSrcArgs)
                        let tmax = (lookupDefn "_tmax" prg >>= vToDbl) `orJust` 1
                        let dt = (lookupDefn "_dt" prg >>= vToDbl) `orJust` 0.001
                        tnow <- getClockTime

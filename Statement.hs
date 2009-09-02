@@ -22,4 +22,3 @@ data Stmt = InitSig String E
 
 instance Show (MVar a) where
     show mv = "<mvar>"
- 
