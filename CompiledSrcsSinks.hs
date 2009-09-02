@@ -10,9 +10,14 @@ data Src = Src { srcName :: String,
                  srcOutT :: T,
                  srcImpModule :: [String],
                  srcCode :: SrcCode }
+           deriving Show
 
 data SrcCode = SrcOnce (V->String) --type tmax -> dt -> IO (a)
              | SrcRealTimeSig (V->String) --type t -> dt -> IO (a) where sourcetype = signal a
+
+instance Show SrcCode where
+    show (SrcOnce _) = "SrcOnce"
+    show (SrcRealTimeSig _) = "SrcRealTimeSig"
 
 data Sink  = Sink { snkName :: String,
                     snkArgT :: T,
@@ -34,3 +39,4 @@ srcs = [
 
 
 snks = []
+ 

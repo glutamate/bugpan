@@ -16,6 +16,7 @@ import TNUtils
 import TypeCheck
 import Data.List
 import PrettyPrint
+import CompiledSrcsSinks
 
 -- CHEATING!!!!!
 substHasSigs :: TravM ()
@@ -341,6 +342,7 @@ declInMainLoop  (Let _ (Event _)) = True
 declInMainLoop  (Let _ (Switch _ _)) = True
 declInMainLoop  (Let _ (SigDelay _ _)) = True
 declInMainLoop  (SinkConnect _ _) = True
+declInMainLoop  (ReadSource _ _) = True
 declInMainLoop  _ = False
 
 
@@ -361,11 +363,20 @@ isSignalOrEvt (Switch _ _) = return IsSig
 isSignalOrEvt (Var "seconds") = return IsSig
 isSignalOrEvt (Var "dt") = return IsNeitherSigNorEvt
 isSignalOrEvt (Var nm) = ifM (isDefBySrc nm)
-                             (return IsSig)
+                             (do snm <- srcDefn nm
+                                 return $ typeOfSrc snm)
                              (do def <- lookUp nm
                                  isSignalOrEvt def)
-
 isSignalOrEvt _ = return IsNeitherSigNorEvt
+
+typeOfSrc "adc" = IsSig
+typeOfSrc snm = case lookupSrc snm of
+                 Just (Src _ _ (SignalT _) _ _) -> IsSig
+                 Just (Src _ _ (EventT _) _ _) -> IsEvt
+                 Just (Src _ _ (ListT (PairT realT _)) _ _) -> IsEvt
+                 Just (Src _ _ _ _ _) -> IsNeitherSigNorEvt
+                 Nothing -> IsNeitherSigNorEvt
+                 
 
 hasBoundVars :: E-> TravM Bool
 hasBoundVars e = or `fmap` queryM hasBvars e
@@ -380,7 +391,7 @@ hasSig e = {- trace (pp e ) $ -} or `fmap` queryM (hasSigAux []) e
           hasSigAux _ (Event _) = return [True]
           hasSigAux _ (SigDelay _ _) = return [True]
           hasSigAux lu v@(Var nm) = 
-              ifM ({-mor (inBoundVars nm) (isDefBySrc nm)) -} (dontLookUp nm))
+              ifM ({-mor (inBoundVars nm) (isDefBySrc nm)) -} (dontLookUp nm)) 
                   (return [False])
                   $ do defn <- stripSig `fmap` lookUp nm
                        --pth <- exprPath `fmap` get
@@ -418,6 +429,9 @@ isDefBySrc nm = do ds <- decls `fmap` get
                    return $ any test ds
     where test (ReadSource n _) = n == nm
           test _ = False
+
+srcDefn nm = do ds <- decls `fmap` get
+                return $ head [ snm | ReadSource n (snm,_) <- ds, n == nm ]
  
 {-compilablePrelude :: TravM [Declare]
 compilablePrelude = 
@@ -468,7 +482,8 @@ splitByStages ds =
         (mainL, env) = partition declInMainLoop ds 
         stageDs st = let nms = [ nm | Stage nm s <- ds, s==st ]
                          in [ d | d@(Let nm _) <- ds, nm `elem` nms ]++
-                            [ d | d@(SinkConnect _ (('#':nm),_)) <- ds, nm `elem` nms]
+                            [ d | d@(SinkConnect _ (('#':nm),_)) <- ds, nm `elem` nms]++
+                            [ d | d@(ReadSource _ (nm,_)) <- ds, nm `elem` nms]
 --                            [ d | d@(SinkConnect (Var nm) ("store",_)) <- ds, nm `elem` nms]
                             
         stagedDecls = map stageDs stages

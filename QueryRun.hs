@@ -59,10 +59,12 @@ compile ds params = do
   --hash declares, look in cache
   return sha
 
-invoke :: String -> StateT QState IO ()
-invoke sha = do
+invoke :: String -> [V] -> StateT QState IO ()
+invoke sha vals= do
   Session sessNm _ <- getSession
-  liftIO $ system $ "/var/bugpan/queryCache/"++sha++" "++(last $ splitBy '/' sessNm)
+  let valargs = intercalate " " $ map ppVal vals
+  liftIO . print $ "/var/bugpan/queryCache/"++sha++" "++(last $ splitBy '/' sessNm)++" "++valargs
+  liftIO $ system $ "/var/bugpan/queryCache/"++sha++" "++(last $ splitBy '/' sessNm)++" "++valargs
   return ()
 
 run :: [Declare] -> RealNum -> StateT QState IO ()

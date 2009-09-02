@@ -65,10 +65,11 @@ toHask dt tmax ds params
                     "floor = realToFrac . P.floor ","",
                    "dt="++show dt, "tmax="++show tmax, "npnts="++show(round $ tmax/dt)]++
                    writeBufToSig++
-                   concatMap readParam (zip params [2..])++
+                   concatMap readParam (zip params [1..])++
                    map atTopLevel nonMainLoop++["", ""]++
-                   compileStages ds tmax stageDs++["", ""] -- ["{-"]
-                   --concatMap (\ds-> "\na stage":map ppDecl ds) stageDs++["-}"]
+                   compileStages ds tmax stageDs++["", ""]++ ["{-"]++
+                   concatMap (\ds-> "\na stage":map ppDecl ds) stageDs++["\nenv\n:"]++
+                   map ppDecl env++ ["-}"]
 
 --mapAccum :: (a->b) -> [a] -> [[b]]
 
@@ -144,7 +145,8 @@ compStage ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++"
           initLn (Let nm (SigDelay (Var snm) v0)) = [ind++nm++" <- newIORef "++pp v0]
           initLn (Let nm (Event e)) = [ind++nm++"Queue <- newIORef []"]
           initLn d = []
-          runAtOnceSrcs = map (\(v,s)-> ind++v++" <- "++s++" tmax dt") atOnceSrcs --DOESNT WORK FOR SIGS  OR EVTS!!
+          debugDsSrcs = show dsSrcs
+          runAtOnceSrcs = ("{-"++debugDsSrcs++"-}"):map (\(v,s)-> ind++v++" <- "++s++" tmax dt") atOnceSrcs --DOESNT WORK FOR SIGS  OR EVTS!!
           newTmax = let tm = localTmax tmax ds' in
                     [ind++"let tmax = "++(show $ tm),
                     ind++"let npnts = idInt . round $ tmax/dt"]

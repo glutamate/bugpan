@@ -3,7 +3,7 @@
 module Database where
 
 import EvalM
-import Eval
+--import Eval
 import Expr
 import Data.Maybe
 import Data.List
@@ -26,8 +26,8 @@ import System.Cmd
 import Data.UUID
 import Data.UUID.V1
 import Numeric
-import Traverse
-import Transform
+--import Traverse
+--import Transform
 --import Stages
 import Data.Ord
 import Control.Concurrent
