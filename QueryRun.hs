@@ -1,4 +1,4 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving, FlexibleContexts#-} 
+{-# LANGUAGE GeneralizedNewtypeDeriving, FlexibleContexts, ExistentialQuantification #-} 
 
 module QueryRun where
 
@@ -80,3 +80,20 @@ use :: MonadIO m => String -> m [Declare]
 use fnm = liftIO $ fileDecls fnm []
 
 with = flip makeSubs
+
+
+data Goal = Run String [(String,V)]
+          | Wait Double
+          | forall a. IfG [a] Goal Goal
+          | Goal :>>: Goal
+
+type Range a = Double -> a
+
+determine :: String -> [(String, Range V)] -> Goal
+determine = undefined
+
+optimise :: String -> [(String, Range V)] -> ([(String, V)] -> Double) -> Goal
+optimise = undefined
+
+until :: [a] -> Goal -> Goal
+until = undefined
