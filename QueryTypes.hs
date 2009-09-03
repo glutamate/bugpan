@@ -46,46 +46,18 @@ import ValueIO
 type Duration a = ((RealNum,RealNum),a)
 type Event a = (RealNum,a)
 
+data QState = QState { qsSess:: Session,
+                       lastTStart:: Double,
+                       lastTStop :: Double,
+                       realTime :: Bool}
+
+getSession = qsSess `fmap` get
+
+simulatedTime = do qs <- get
+                   put $ qs { realTime = False }
+
+
 {-
-instance PlotWithR [Signal Double] where
-    getRPlotCmd sigs = 
-        do ss <- mapM writeSig $ downSample 1000 sigs
-           return $ RPlCmd { 
-                        prePlot = map rplotcmd ss, 
-                        cleanUp = return (), --mapM_ (\(df, r, t1, freq)-> removeFile df) ss,
-                        plotArgs = map (\(df, r, t1, freq) -> TimeSeries ("dat"++r)) ss
-                      }
-        where writeSig sig@(Signal t1 t2 dt sf) = 
-                  do r <- ( show . idInt . hashUnique) `fmap` newUnique
-                     let datfile= "/tmp/bugplotSig"++r
-                     writeSigReal datfile sig
-                     --writeFile datfile . unlines $ map (\t->show $ sf t) [0..(floor $ (t2-t1)/dt)-1]
-                     --print "done file!"
-                     return (datfile, r, show t1, show $ 1/dt)
-              rplotcmd (df, r, t1, freq) = concat ["file",r, " <- file(\"", df,"\", \"rb\")\n",
-                                                   "zz<-readBin(file",r,", \"int\", 2, size=8)\n", 
-                                                   "zz<-readBin(file",r,", \"int\", 2, size=1)\n", 
-                                                   "ss",r," <- readBin(file",r,", \"double\", 3, size=8)\n", 
-                                                   "n",r," <- (ss",r,"[2] - ss",r,"[1])/ss",r,"[3]\n",
-                                                   "v",r," <- readBin(file",r,", \"double\", n",r,", size=8)\n",
-                                                   "dat",r," <- ts(v",r,", start=", t1, ", frequency=", freq,")\n"]
-
-instance Real a => PlotWithR [Event a] where
-    getRPlotCmd evs = 
-        do return $ RPlCmd { 
-                        prePlot = [],
-                        cleanUp = return (),
-                        plotArgs = [PLPoints $ map (\(t,v)-> ( t, realToFrac v)) evs]
-                      }
-
-instance  Real a => PlotWithR [Duration a] where
-    getRPlotCmd durs = 
-        do return $ RPlCmd { 
-                        prePlot = [],
-                        cleanUp = return (),
-                        plotArgs = map (\((t1,t2),v) -> PLLines [( t1, realToFrac v), 
-                                                                 ( t2, realToFrac v)]) durs
-                      }
 --scatter plot
 instance Tagged t => PlotWithR [t (RealNum,RealNum)] where
     getRPlotCmd ts = 
@@ -104,9 +76,6 @@ plotManySigs :: PlotWithR [a] => [a] -> [IO RPlotCmd]
 plotManySigs sigs = map (\s-> getRPlotCmd [s]) sigs
 -}
 --class PlotWithR a => PlotMany a where
-
-
-
 
 
 --zipSigs :: Signal a -> Signal b -> Signal (a,b)
@@ -244,7 +213,7 @@ data QueryResultBox = forall a. QueryResult a => QResBox a deriving Typeable
 
 class QueryResult a where
     qReply :: a -> IO String
-    qResThroughSession :: a -> StateT Session IO a
+    qResThroughSession :: a -> StateT QState IO a
     qResThroughSession = return 
     qFilterSuccess :: a -> Bool
 

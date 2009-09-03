@@ -42,11 +42,6 @@ import PrettyPrint
 import ValueIO
 import qualified Data.Binary as B
 
-type QState = (Session)
-
-getSession = id `fmap` get
-
-answers = return
  
 double :: Double
 double = undefined
@@ -60,8 +55,8 @@ signals nm _ = do
   ifM (liftIO (doesDirectoryExist (bdir++"/signals/"++nm)))
       (do fnms <- getSortedDirContents $ bdir++"/signals/"++nm
           sigs <- forM fnms $ \fn-> liftIO $ loadVs $ bdir++"/signals/"++nm++"/"++fn 
-          answers . catMaybes $ map reify $ concat sigs) 
-      (answers [])
+          return . catMaybes $ map reify $ concat sigs) 
+      (return [])
 
 signalsDirect :: String -> StateT QState IO [Signal Double]
 signalsDirect nm = do
@@ -71,7 +66,7 @@ signalsDirect nm = do
       (do fnms <- getSortedDirContents $ bdir++"/signals/"++nm
           sigs <- forM fnms $ \fn-> liftIO $ loadSignalsU $ bdir++"/signals/"++nm++"/"++fn 
           return $ concat sigs) 
-      (answers [])
+      (return [])
 
 
 events :: Reify (Event a) => String -> a-> StateT QState IO [Event a]
@@ -80,8 +75,8 @@ events nm _ = do
   ifM (liftIO (doesDirectoryExist (bdir++"/events/"++nm)))
       (do fnms <- getSortedDirContents $ bdir++"/events/"++nm
           utevs <- forM fnms $ \fn-> liftIO $ loadVs $ bdir++"/events/"++nm++"/"++fn
-          answers . catMaybes $ map reify $ concat utevs) 
-      (answers [])
+          return . catMaybes $ map reify $ concat utevs) 
+      (return [])
 
 eventsDirect :: LoadDirectly [(Double,a)] => String -> a-> StateT QState IO [Event a]
 eventsDirect nm _ = do
@@ -91,7 +86,7 @@ eventsDirect nm _ = do
       (do fnms <- getSortedDirContents $ bdir++"/events/"++nm
           sigs <- forM fnms $ \fn-> liftIO $ loadDirectly $ bdir++"/events/"++nm++"/"++fn 
           return $ concat sigs) 
-      (answers [])
+      (return [])
 
 durations :: Reify (Duration a) => String -> a-> StateT QState IO [Duration a]
 durations nm _ = do
@@ -99,8 +94,8 @@ durations nm _ = do
   ifM (liftIO (doesDirectoryExist (bdir++"/durations/"++nm)))
       (do fnms <- getSortedDirContents $ bdir++"/durations/"++nm
           eps <- forM fnms $ \fn-> liftIO $ loadVs $ bdir++"/durations/"++nm++"/"++fn
-          answers . catMaybes $ map reify $ concat eps)
-      (answers [])            
+          return . catMaybes $ map reify $ concat eps)
+      (return [])            
 
 durationsDirect :: LoadDirectly [(Double,a)] => String -> a-> StateT QState IO [Event a]
 durationsDirect nm _ = do
@@ -110,7 +105,7 @@ durationsDirect nm _ = do
       (do fnms <- getSortedDirContents $ bdir++"/durations/"++nm
           sigs <- forM fnms $ \fn-> liftIO $ loadDirectly $ bdir++"/durations/"++nm++"/"++fn 
           return $ concat sigs) 
-      (answers [])
+      (return [])
 
 
 storeAs :: Reify a => String -> [a] -> StateT QState IO ()
@@ -140,10 +135,10 @@ x @= y = StoreAs x y
 inLastSession :: StateT QState IO a -> IO a
 inLastSession sma = do
   s <- lastSession "/var/bugpan/sessions/"
-  fst `fmap`  runStateT sma s
+  fst `fmap`  (runStateT sma $ QState s 0 0 True)
 
 inSession :: Session -> StateT QState IO a -> IO a
-inSession s sma =  fst `fmap`  runStateT sma s
+inSession s sma =  fst `fmap`  (runStateT sma $ QState s 0 0 True)
 
 
 inNewSession :: StateT QState IO a -> IO a

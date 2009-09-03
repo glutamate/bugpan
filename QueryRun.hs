@@ -41,7 +41,9 @@ import HaskellBackend
 
 --type QState = (Session)
 
-compile :: [Declare] -> [(String, T)] -> StateT QState IO (String)
+type CompiledToken = (String,Double,[(String, T)] )
+
+compile :: [Declare] -> [(String, T)] -> StateT QState IO CompiledToken
 compile ds params = do
   let trun = (lookupDefn "_tmax" ds >>= vToDbl) `orJust` 1
   let dt = (lookupDefn "_dt" ds >>= vToDbl) `orJust` 0.001
@@ -57,29 +59,54 @@ compile ds params = do
   liftIO $ whenM (not `fmap` doesFileExist ("/var/bugpan/queryCache/"++sha)) 
              (fail "could not compile")
   --hash declares, look in cache
-  return sha
+  return (sha, trun, params)
 
-invoke :: String -> Double -> [V] -> StateT QState IO ()
-invoke sha t0 vals= do
+invoke :: CompiledToken ->[(String,V)] -> StateT QState IO ()
+invoke (sha, tmax,pars) vals= do
+  s <- get
+  t0 <- getTnow
   Session sessNm _ <- getSession
-  let valargs = intercalate " " $ map ppVal vals
+  let valargs = intercalate " " $ map (ppVal . snd) vals --ideally check ordering
   let cmdStr = "/var/bugpan/queryCache/"++sha++" "++(last $ splitBy '/' sessNm)++" "++show t0 ++" "++valargs
   liftIO . putStrLn $ cmdStr
   liftIO $ system $ cmdStr
+  put $ s { lastTStart = t0,
+            lastTStop = t0 + tmax}
   return ()
 
-run :: [Declare] -> RealNum -> StateT QState IO ()
-run ds t0 = do
+run :: [Declare] -> StateT QState IO ()
+run ds = do
+  s <- get
   sess <- getSession
+  t0 <- getTnow
   let trun = (lookupDefn "_tmax" ds >>= vToDbl) `orJust` 1
   let dt = (lookupDefn "_dt" ds >>= vToDbl) `orJust` 0.001
   --liftIO $ mapM (putStrLn . ppDecl) ds
   liftIO $ runOnce dt t0 trun ds sess
+  put $ s { lastTStart = t0,
+            lastTStop = t0 + trun}
+
+getTnow = ifM (realTime `fmap` get)
+              (do Session _ t0 <- getSession
+                  tnow <- liftIO $ getClockTime
+                  return $ diffInS tnow t0)
+              (lastTStop `fmap` get)
 
 use :: MonadIO m => String -> m [Declare]
 use fnm = liftIO $ fileDecls fnm []
 
 with = flip makeSubs
+
+pause :: Double -> StateT QState IO ()
+pause secs= ifM (realTime `fmap` get)
+                (do s <- get
+                    Session _ t0 <- getSession
+                    tlastStart <- lastTStart `fmap` get
+                    put $ s { lastTStop = lastTStart s + secs}
+                    liftIO $ waitUntil t0 (tlastStart+secs)
+                    return ())
+                (do s <- get
+                    put $ s { lastTStop = lastTStart s + secs} )
 
 
 data Goal = Run String [(String,V)]

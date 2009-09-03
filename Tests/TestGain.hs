@@ -56,7 +56,7 @@ real = double
 perfTest1 = inTemporarySession $ do
              intfire <- use "Intfire"
              run (intfire`with` ["_tmax" =: dbl 0.5]) 0
-             sess <- get
+             sess <- getSession
              liftIO $ do ts <- sessionTypes sess
                          print ts
              vm <- signals "vm" real
