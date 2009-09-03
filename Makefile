@@ -30,14 +30,14 @@ runloom:
 	ghc --make RunLoom 
 
 testacq:
-	ghc --make TestAcqOnly -prof -auto-all -lcomedi Comedi/comedi_hs_helper.o
-	sudo time ./TestAcqOnly +RTS -p
+	ghc --make Tests/TestAcqOnly -lcomedi Comedi/comedi_hs_helper.o
+#	sudo time ./TestAcqOnly +RTS -p
 
 testgainopt:
 	rm -f ValueIO.o Query.o QueryUtils.o QueryTypes.o
 	ghc --make TestGain -O2 -lcomedi Comedi/comedi_hs_helper.o
 
-tests:	testgain iotest
+tests:	testgain iotest testacq
 	ghc UnitTesting.hs -e 'runAllTests'
 
 

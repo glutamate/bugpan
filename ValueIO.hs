@@ -269,6 +269,55 @@ loadOneSigSV h = do
   arr <- SV.hGet h (round $ (t2-t1)/dt)
   return $ Signal t1 t2 dt $ \p-> arr `SV.index` p
 
+readN'TT h = do 
+      n <- idInt `fmap` binGet h 8
+      ntytag <- idInt `fmap` binGet h 8
+      hSeek h RelativeSeek (-8)
+      tytag <- (fst . parseTT1) `fmap` binGet h (ntytag+8)
+      return (n,tytag)
+
+class LoadDirectly a where
+    loadDirectly :: String -> IO a
+ 
+instance LoadDirectly [(Double,())] where
+    loadDirectly fp = do
+      h <- openBinaryFile fp ReadMode
+      (n,tytag) <- readN'TT h
+      print2 fp (n,tytag)
+      arr <- SV.hGet h n
+      return $ zip (SV.unpack arr) $ repeat ()
+
+instance LoadDirectly [(Double,Double)] where
+    loadDirectly fp = do
+      h <- openBinaryFile fp ReadMode
+      (n,tytag) <- readN'TT h
+      print2 fp (n,tytag)
+      arr <- SV.hGet h (n*2)
+      return $ listToListOfPairs (SV.unpack arr)
+
+instance LoadDirectly [((Double,Double),())] where
+    loadDirectly fp = do
+      h <- openBinaryFile fp ReadMode
+      (n,tytag) <- readN'TT h
+      print2 fp (n,tytag)
+      arr <- SV.hGet h (n*2)
+      return $ zip (listToListOfPairs (SV.unpack arr)) $ repeat ()
+
+instance LoadDirectly [((Double,Double),Double)] where
+    loadDirectly fp = do
+      h <- openBinaryFile fp ReadMode
+      (n,tytag) <- readN'TT h
+      print2 fp (n,tytag)
+      arr <- SV.hGet h (n*3)
+      return $ (funny (SV.unpack arr))
+          where funny (x:y:z:rest) = ((x,y),z) : funny rest
+                funny _ = []
+
+
+listToListOfPairs :: [a] -> [(a,a)]
+listToListOfPairs (x:y:rest) = (x,y) : listToListOfPairs rest
+listToListOfPairs _ = []
+
 --getArr h n= SV.hGet h n
 
 testLSU = do

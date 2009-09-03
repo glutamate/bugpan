@@ -14,7 +14,7 @@ import Stages
 import Traverse
 import Transform-}
 import Control.Monad
-import qualified Control.Monad.List as L
+--import qualified Control.Monad.List as L
 import Control.Monad.State.Lazy
 import System.Directory
 import System.Time
@@ -73,8 +73,6 @@ signalsDirect nm = do
           return $ concat sigs) 
       (answers [])
 
-signal :: Reify a => String -> a-> L.ListT (StateT QState IO) (Signal a)
-signal nm a = L.ListT $ signals nm a
 
 events :: Reify (Event a) => String -> a-> StateT QState IO [Event a]
 events nm _ = do
@@ -85,8 +83,15 @@ events nm _ = do
           answers . catMaybes $ map reify $ concat utevs) 
       (answers [])
 
-event :: Reify a => String -> a-> L.ListT (StateT QState IO) (Event a)
-event nm a = L.ListT $ events nm a
+eventsDirect :: LoadDirectly [(Double,a)] => String -> a-> StateT QState IO [Event a]
+eventsDirect nm _ = do
+  Session bdir t0 <- getSession
+  --liftIO . print $ bdir++"/signals/"++nm
+  ifM (liftIO (doesDirectoryExist (bdir++"/events/"++nm)))
+      (do fnms <- getSortedDirContents $ bdir++"/events/"++nm
+          sigs <- forM fnms $ \fn-> liftIO $ loadDirectly $ bdir++"/events/"++nm++"/"++fn 
+          return $ concat sigs) 
+      (answers [])
 
 durations :: Reify (Duration a) => String -> a-> StateT QState IO [Duration a]
 durations nm _ = do
@@ -97,8 +102,15 @@ durations nm _ = do
           answers . catMaybes $ map reify $ concat eps)
       (answers [])            
 
-duration :: Reify a => String -> a-> L.ListT (StateT QState IO) (Duration a)
-duration nm a = L.ListT $ durations nm a
+durationsDirect :: LoadDirectly [(Double,a)] => String -> a-> StateT QState IO [Event a]
+durationsDirect nm _ = do
+  Session bdir t0 <- getSession
+  --liftIO . print $ bdir++"/signals/"++nm
+  ifM (liftIO (doesDirectoryExist (bdir++"/durations/"++nm)))
+      (do fnms <- getSortedDirContents $ bdir++"/durations/"++nm
+          sigs <- forM fnms $ \fn-> liftIO $ loadDirectly $ bdir++"/durations/"++nm++"/"++fn 
+          return $ concat sigs) 
+      (answers [])
 
 
 storeAs :: Reify a => String -> [a] -> StateT QState IO ()
