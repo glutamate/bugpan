@@ -34,6 +34,8 @@ class PlotWithGnuplot a where
 
 data GnuplotBox = forall a. PlotWithGnuplot a => GnuplotBox a
 
+
+
 instance QueryResult [GnuplotBox] where
     qFilterSuccess [] = False
     qFilterSuccess _ = True
@@ -59,7 +61,8 @@ plotManySigs ss = map (\s->GnuplotBox [s]) ss
 plotManyBy :: (PlotWithGnuplot b, ChopByDur b) => [Duration a] -> b -> [GnuplotBox]
 plotManyBy durs pm = map GnuplotBox $ chopByDur durs pm
 
-
+scatter :: Tagged t => [t (Double,Double)] -> [GnuplotBox]
+scatter = plot . map getTag -- uses Event PLotWithGnuplot instance :-)
     
 
 gnuplotOnScreen :: PlotWithGnuplot a => a -> IO ()

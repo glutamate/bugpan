@@ -43,8 +43,8 @@ import Math.Probably.FoldingStats
 import System.IO
 import ValueIO
 
-type Duration a = ((RealNum,RealNum),a)
-type Event a = (RealNum,a)
+type Duration a = ((Double,Double),a)
+type Event a = (Double,a)
 
 data QState = QState { qsSess:: Session,
                        lastTStart:: Double,
@@ -59,7 +59,7 @@ simulatedTime = do qs <- get
 
 {-
 --scatter plot
-instance Tagged t => PlotWithR [t (RealNum,RealNum)] where
+instance Tagged t => PlotWithR [t (Double,Double)] where
     getRPlotCmd ts = 
         let xys = map getTag ts in
         do return $ RPlCmd { 
@@ -80,7 +80,7 @@ plotManySigs sigs = map (\s-> getRPlotCmd [s]) sigs
 
 --zipSigs :: Signal a -> Signal b -> Signal (a,b)
 
-zipWithTime :: Signal a -> Signal (a,RealNum)
+zipWithTime :: Signal a -> Signal (a,Double)
 zipWithTime (Signal t1 t2 dt sf) = Signal t1 t2 dt $ \pt -> (sf pt, (realToFrac pt)*dt+t1)
 
 
@@ -116,7 +116,7 @@ sectionDur1 ((lo,hi),_) durs = concatMap f durs
                         | otherwise = [((max lo t1, min hi t2), v)]
 
 
-section1 :: Signal a -> ((RealNum, RealNum), t) -> Signal a
+section1 :: Signal a -> ((Double, Double), t) -> Signal a
 section1 (Signal ts1 ts2 dt sf) ((td1,td2),vd) = let (t1, t2)= (max ts1 td1, min ts2 td2)
                                                      dropPnts = round $ (t1 - ts1)/dt
                                                  in Signal t1 t2 dt $ \pt->(sf $ pt + dropPnts)
@@ -163,16 +163,16 @@ sigSegStat (F op init c _) (n1, n2) (Signal t1 t2 dt sf) = c $! go n1 init
 class Tagged t where
     getTag :: t a-> a
     setTag :: t a-> b ->t b
-    getTStart :: t a -> RealNum
-    getTStop :: t a -> RealNum
+    getTStart :: t a -> Double
+    getTStop :: t a -> Double
 
-instance Tagged ((,) RealNum) where
+instance Tagged ((,) Double) where
     getTag = snd
     setTag (t,_) v = (t,v)
     getTStart (t,_) = t
     getTStop (t,_) = t
 
-instance Tagged ((,) (RealNum, RealNum)) where
+instance Tagged ((,) (Double, Double)) where
     getTag (_,v) = v
     setTag ((t1,t2),_) v = ((t1,t2), v)
     getTStart ((t1,t2),_) = t1
@@ -182,10 +182,10 @@ foldTagged ::  Tagged t => (a -> b -> a) -> a -> [t b] -> a
 foldTagged f init col = foldl' f init $ map getTag col
 
 
-instance Functor ((,) RealNum) where
+instance Functor ((,) Double) where
     fmap f (t,v) = (t, f v)
 
-{-instance Functor ((,) (RealNum, RealNum)) where
+{-instance Functor ((,) (Double, Double)) where
     fmap f ((t1,t2), v) = ((t1,t2),f v) -}
  
 instance Functor Signal where
@@ -193,10 +193,10 @@ instance Functor Signal where
         Signal t1 t2 dt $ \ix -> f (sf ix)
 
 
-instance Shiftable (RealNum,a) where
+instance Shiftable (Double,a) where
     shift ts (t,v) = (t+ts, v)
 
-instance Shiftable ((RealNum,RealNum),a) where
+instance Shiftable ((Double,Double),a) where
     shift ts ((t1,t2),v) = ((t1+ts,t2+ts),v)
 
 instance Shiftable (Signal a) where
@@ -266,7 +266,7 @@ instance QueryResult Int where
     qFilterSuccess 0 = False
     qFilterSuccess _ = True
 
-instance QueryResult RealNum where
+instance QueryResult Double where
     qReply = return . show
     qFilterSuccess 0 = False
     qFilterSuccess _ = True

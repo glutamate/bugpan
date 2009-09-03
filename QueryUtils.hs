@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns, NoMonomorphismRestriction #-}
+{-# LANGUAGE BangPatterns, NoMonomorphismRestriction, FlexibleContexts #-}
 
 module QueryUtils where
 
@@ -32,6 +32,12 @@ applyOver :: [Duration (a->b)] -> [Signal a] -> [Signal b]
 applyOver durs sigs = concatMap (aux durs) sigs --is sig within a dur? if so, apply
     where aux durs sig = map (aux1 sig) $ filter (`sigOverlapsDur` sig) durs
           aux1 sig dur = (getTag dur) `fmap` section1 sig dur
+
+--applyOverDur :: [Duration (a->b)] -> [Duration a] -> [Duration b] 
+(<**>) :: (Functor f, ChopByDur [f a]) => [Duration (a -> b)] -> [f a] -> [f b]
+durf <**> durx = concatMap apply $ zip durf $ chopByDur durf durx 
+    where apply ((_, f), durxs) = map (fmap f) durxs
+          
 
 --with :: a -> (a-> b) -> b
 --with x f = f x
@@ -149,7 +155,7 @@ dur x = [((minBound, maxBound), x)]
 
 
 normaliseBy :: (Floating a) => Fold a a -> [Signal a] -> [Signal a]
-normaliseBy stat sigs = ((flip (/)) <$$> sigStat stat sigs ) `applyOver` sigs
+normaliseBy stat sigs = ((flip (/)) <$$> sigStat stat sigs ) <**> sigs
 
 
 normaliseBySD :: (Floating a) => [Signal a] -> [Signal a]
@@ -157,7 +163,7 @@ normaliseBySD = normaliseBy stdDevF
 
 
 subMeanNormSD ::  (Floating a) => [Signal a] -> [Signal a]
-subMeanNormSD sigs = (f <$$> sigStat stat sigs ) `applyOver` sigs
+subMeanNormSD sigs = (f <$$> sigStat stat sigs ) <**> sigs
     where stat = meanSDF
           f (mean,sd) = \x-> (x-mean)/sd
 
@@ -194,7 +200,12 @@ convolveWithin (dur@((td1, td2), v):durs) irf@(Signal t1 t2 dt sf) evs' =
        sig = foldl' addSigs nullSig sigs
    in sig : convolveWithin (durs) irf evs'
 
+--[Duration a] -> [Duration b] -> [Duration (a,b)]
+zipD :: (Functor f, ChopByDur [f b]) => [Duration a] -> [f b] -> [f (a, b)]
+zipD durx dury = ((,) <$$> durx) <**> dury
+
 {-countWithin :: [Duration a] -> [Event b] -> [Duration Double]
 countWithin (dur:durs) evs = concatMap f durs
     where f dur = (realToFrac . length $ evs `during` [dur] ) `tag` [dur]
 -}
+
