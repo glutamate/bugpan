@@ -12,7 +12,7 @@ build-type:          Simple
 Library
    Exposed-modules:  Query, QueryTypes, QueryUtils, Numbers, PlotGnuplot, EvalM, Database, HaskShapes, RandomSources
    ghc-options:      -O2
-   other-modules:    Parse, Types,Eval,Expr, Traverse, Transform, HaskSyntaxUntyped, ValueIO, PrettyPrint, BNFC.LexBugpan, BNFC.ParBugpan, BNFC.SkelBugpan,BNFC.PrintBugpan,BNFC.LayoutBugpan ,BNFC.ErrM,UnitTesting, BNFC.AbsBugpan,BuiltIn, TypeCheck
+   other-modules:    Parse, Types,Eval,Expr, Traverse, Transform, HaskSyntaxUntyped, ValueIO, PrettyPrint, BNFC.LexBugpan, BNFC.ParBugpan, BNFC.SkelBugpan,BNFC.PrintBugpan,BNFC.LayoutBugpan ,BNFC.ErrM,UnitTesting, BNFC.AbsBugpan,BuiltIn, TypeCheck, CompiledSrcsSinks
    Build-depends:    tnutils, probably, process, directory, regex-posix, random, base, bytestring, binary, old-time, storablevector, mtl, data-binary-ieee754, uuid
 
 

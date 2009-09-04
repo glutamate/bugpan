@@ -116,8 +116,28 @@ data Goal = Run String [(String,V)]
 
 type Range a = Double -> a
 
-determine :: String -> [(String, Range V)] -> Goal
-determine = undefined
+uniform lo hi = \x -> (hi-lo)*(realToFrac x)+lo
+oneOf xs = \x -> let idx = round $ x*(realToFrac $ length xs -1)
+                 in xs !! idx
+
+uniformLog lo hi = let (llo, lhi) = (log lo, log hi)
+                   in \x -> exp (uniform llo lhi x)
+
+pickFromRange :: Range a -> IO a
+pickFromRange f = do
+  unitVal <- randomRIO (0, 1)
+  return $ f unitVal
+
+--determine :: String -> [(String, Range V)] -> Goal
+--determine = undefined
+
+determine :: CompiledToken -> [(String, Range V)] -> StateT QState IO ()
+determine tok@(sha, tmax,parlist) rngs = do
+  vals <- forM rngs $ \(nm, rng) -> liftM ((,) nm) (liftIO $ pickFromRange rng)
+  invoke tok vals
+  return ()
+  
+  
 
 optimise :: String -> [(String, Range V)] -> ([(String, V)] -> Double) -> Goal
 optimise = undefined

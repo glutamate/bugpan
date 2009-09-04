@@ -28,9 +28,13 @@ showPlotCmd plines = "plot "++(intercalate ", " $ map s plines)++"\n"
           title "" = ""
           title tit = " title '"++tit++"'"
 
+data Rectangle = Rect (Double, Double) (Double,Double)
+
 
 class PlotWithGnuplot a where
     getGnuplotCmd :: a -> IO GnuplotCmd
+    multiPlot :: a -> Rectangle -> IO GnuplotCmd
+    multiPlot a _ = getGnuplotCmd a
 
 data GnuplotBox = forall a. PlotWithGnuplot a => GnuplotBox a
 
@@ -61,8 +65,8 @@ plotManySigs ss = map (\s->GnuplotBox [s]) ss
 plotManyBy :: (PlotWithGnuplot b, ChopByDur b) => [Duration a] -> b -> [GnuplotBox]
 plotManyBy durs pm = map GnuplotBox $ chopByDur durs pm
 
-scatter :: Tagged t => [t (Double,Double)] -> [GnuplotBox]
-scatter = plot . map getTag -- uses Event PLotWithGnuplot instance :-)
+scatter :: Tagged t => [t (a,b)] -> [(a,b)]
+scatter = map getTag -- uses Event PLotWithGnuplot instance :-)
     
 
 gnuplotOnScreen :: PlotWithGnuplot a => a -> IO ()
@@ -125,7 +129,7 @@ instance PlotWithGnuplot [Event Double] where
 instance PlotWithGnuplot [Duration Double] where
     getGnuplotCmd es = 
         do fnm <- ("/tmp/gnuplotdurs"++) `fmap` uniqueIntStr
-           writeEvts "/tmp/gnuplotdurs" es
+           writeEvts fnm es
            return [PL (concat ["\"", fnm, "\" using 1:($2)"]) "" "lines"]
            where writeEvts fp durs = do
                    h <- openFile fp WriteMode
@@ -136,9 +140,19 @@ instance PlotWithGnuplot [Duration Double] where
                    hClose h
 
 
-infixr 2 :+:
+infixr 3 :+:
+infixr 2 :|:
+infixr 1 :--:
 
 data a :+: b = a :+: b
+
+data a :|: b = a :|: b
+
+data a :--: b = a :--: b
+
+data PcntDiv a = Pcnt Int a
+
+data WithColour a = WithColour String a
 
 instance (PlotWithGnuplot a, PlotWithGnuplot b) => PlotWithGnuplot (a :+: b) where
     getGnuplotCmd (xs :+: ys) = do
