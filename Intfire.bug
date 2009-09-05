@@ -43,9 +43,9 @@ vm = switch
 	    spike ~> \_->\_->{: vrest :}
 	    refrac_end ~> \tsp->\_-> solveOdeFrom (tsp+dt) cellOde vrest
 
-vmpassive = (solveOde cellOde) vrest
+--vmpassive = (solveOde cellOde) vrest
 
-incrsig = iterate (incr) 0
+--incrsig = iterate (incr) 0
 
 spike :: [(Real, ())]
 spike = crosses (-0.05) vm
@@ -56,12 +56,12 @@ inputRate = [(0,tmax,rate)]
 
 inputRate *> store ""
 
-gsyn *> store ""
-gcell *> store ""
+--gsyn *> store ""
+--gcell *> store ""
 --vm *> print ()
 vm *> store ""
-vmpassive *> store ""
-incrsig *> store ""
+--vmpassive *> store ""
+--incrsig *> store ""
 spike *> store ""
 --spike *> print ()
 rndSpike *> store ""

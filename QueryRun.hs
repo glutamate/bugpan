@@ -39,7 +39,6 @@ import PrettyPrint
 import Query
 import HaskellBackend
 
---type QState = (Session)
 
 type CompiledToken = (String,Double,[(String, T)] )
 
@@ -51,6 +50,7 @@ compile ds params = do
   let sha = take 50 . showDigest . sha512 . L.pack $ map c2w $ show (ds++commentParams)
   let dsTrans = snd $ runTravM ds [] transform
   --liftIO $ mapM_ (putStrLn . ppDecl) dsTrans
+  liftIO $ createDirectoryIfMissing False "/var/bugpan/queryCache/"
   liftIO $ whenM (not `fmap` doesFileExist ("/var/bugpan/queryCache/"++sha)) 
                  (do setCurrentDirectory "/var/bugpan/queryCache/"
                      compileToHask (sha++".hs") dt trun dsTrans params
@@ -137,6 +137,10 @@ determine tok@(sha, tmax,parlist) rngs = do
   invoke tok vals
   return ()
   
+
+times :: Monad m => Int -> m () -> m ()
+times 0 _ = return ()
+times n m = m >> (n-1) `times` m
   
 
 optimise :: String -> [(String, Range V)] -> ([(String, V)] -> Double) -> Goal

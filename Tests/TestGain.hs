@@ -27,7 +27,7 @@ import Numbers
 import Tests.Asserts
 import PlotGnuplot
 
-main = compileTest
+main = plotGain
 
 loomAnal = inSessionNamed "5c17e342716081de800000110961a575" $ do
              ecV <- signals "ecVoltage" real
@@ -45,17 +45,27 @@ snrBench = inSessionNamed "000" $ do
              liftIO . print $ sigStat minF ecV
 ioBench = inTemporarySession $ do
               prog <- use "TestStore"
-              run (prog`with` ["_tmax" =: dbl 10]) 0
+              run (prog`with` ["_tmax" =: dbl 10]) 
               secs <- signals "secs" real
 --              ecV <- signals "ecVoltage" real
               liftIO . print $ sigStat meanF (secs)
 
 real = double
 
+plotGain = inTemporarySession $ do
+             intfire <- use "Intfire"
+             prg <- compile intfire [("rate", realT)]
+             10 `times` determine prg [("rate", uniform 0 400)]
+             spikes <- events "spike" ()
+             vm <- signalsDirect "vm"
+             inrate <- durations "inputRate" real
+             let outrate = freqDuring inrate $ spikes
+             liftIO $ gnuplotOnScreen $ scatter outrate :==: take 1 vm
+
 
 perfTest1 = inTemporarySession $ do
              intfire <- use "Intfire"
-             run (intfire`with` ["_tmax" =: dbl 0.5]) 0
+             run (intfire`with` ["_tmax" =: dbl 0.5]) 
              sess <- getSession
              liftIO $ do ts <- sessionTypes sess
                          print ts
@@ -68,7 +78,7 @@ perfTest1 = inTemporarySession $ do
          
 perfTest2 = inTemporarySession $ do
              intfire <- use "Intfire"
-             run (intfire `with` ["_tmax" =: dbl 0.1]) 0
+             run (intfire `with` ["_tmax" =: dbl 0.1]) 
              vm <- signalsDirect "vm" 
              gcell <- signalsDirect "gcell" 
              gsyn <- signalsDirect "gsyn" 
@@ -79,7 +89,7 @@ perfTest2 = inTemporarySession $ do
 compileTest = inTemporarySession $ do
                 intfire <- use "Intfire"
                 prg <- compile intfire [("rate", realT)]
-                invoke prg 0 [50]
+                invoke prg [("rate" , 50)]
                 vm <- signalsDirect "vm"
                 rndSpike <- events "rndSpike" ()
                 liftIO $ print rndSpike
@@ -97,7 +107,7 @@ unsafeMain = inTemporarySession $ do
   intfire <- use "Intfire"
   --putStrLn $ ppProg "IntFire" intfire
   --forM_ [0,10..100] $ \rate -> urun (intfire `with` ["rate" =: dbl rate] ) (rate/10)
-  run (intfire) 0
+  run (intfire) 
   --print gsy
   spikes <- events "spike" ()
   synin <- events "rndSpike" ()
@@ -115,7 +125,7 @@ unsafeMain = inTemporarySession $ do
 
 safeMain = inTemporarySession $ do
   intfire <- use "Intfire"
-  forM_ [0,10..100] $ \rate -> run (intfire `with` ["rate" =: dbl rate] ) (rate/10)
+  forM_ [0,10..100] $ \rate -> run (intfire `with` ["rate" =: dbl rate] ) 
   --run intfire 0.1
   spike <- events "spike" ()
   stim  <- durations "inputRate" real

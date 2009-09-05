@@ -14,6 +14,7 @@ import Control.Monad
 import Data.Unique
 import Data.List
 
+
 uniqueIntStr = (show. hashUnique) `fmap` newUnique
 
 type GnuplotCmd = [PlotLine]
@@ -28,13 +29,24 @@ showPlotCmd plines = "plot "++(intercalate ", " $ map s plines)++"\n"
           title "" = ""
           title tit = " title '"++tit++"'"
 
-data Rectangle = Rect (Double, Double) (Double,Double)
+showMultiPlot :: [(Rectangle, GnuplotCmd)] -> String
+showMultiPlot rpls = "set multiplot\n" ++ concatMap pl rpls ++"unset multiplot\n"
+    where pl (Rect (x0,y0) (x1,y1), plines) = concat ["set origin ", 
+                                                      show x0, ",", show y0, "\n",
+                                                      "set size ", show (x1-y0),
+                                                      ",", show (y1-y0), "\n",
+                                                      showPlotCmd plines]
+                                                      
 
+data Rectangle = Rect (Double, Double) (Double,Double)
+unitRect = Rect (0,0) (1,1)
 
 class PlotWithGnuplot a where
     getGnuplotCmd :: a -> IO GnuplotCmd
-    multiPlot :: a -> Rectangle -> IO GnuplotCmd
-    multiPlot a _ = getGnuplotCmd a
+    getGnuplotCmd a = (snd . head) `fmap` multiPlot unitRect a
+
+    multiPlot :: Rectangle -> a -> IO [(Rectangle, GnuplotCmd)]
+    multiPlot r a = (\x->[(r, x)]) `fmap` getGnuplotCmd a
 
 data GnuplotBox = forall a. PlotWithGnuplot a => GnuplotBox a
 
@@ -71,9 +83,9 @@ scatter = map getTag -- uses Event PLotWithGnuplot instance :-)
 
 gnuplotOnScreen :: PlotWithGnuplot a => a -> IO ()
 gnuplotOnScreen x = do
-  plines <- getGnuplotCmd x
+  plines <- multiPlot unitRect x
   let cmdLines = "set datafile missing \"NaN\"\n"++
-                  (showPlotCmd plines)
+                  (showMultiPlot plines)
                        
   writeFile "/tmp/gnuplotCmds" cmdLines
   system "gnuplot -persist /tmp/gnuplotCmds"
@@ -81,20 +93,21 @@ gnuplotOnScreen x = do
 
 gnuplotToPNG :: PlotWithGnuplot a => String -> a -> IO ()
 gnuplotToPNG fp x = do
-  plines <- getGnuplotCmd x
+  plines <- multiPlot unitRect x
   let cmdLines = "set datafile missing \"NaN\"\n"++
                  "set terminal png\n"++
                  "set output '"++fp++"'\n"++
-                  (showPlotCmd plines)
+                  (showMultiPlot plines)
                        
   writeFile "/tmp/gnuplotCmds" cmdLines
   system "gnuplot /tmp/gnuplotCmds"
   return ()
 
+
 gnuplotMany :: [(String, GnuplotBox)] -> IO ()
 gnuplotMany nmbxs = do
   nmcmds <- forM nmbxs $ \(nm, GnuplotBox x) -> do
-                      cmd <- getGnuplotCmd x
+                      cmd <- multiPlot unitRect x
                       return (nm,cmd)
   let start = "set datafile missing \"NaN\"\n"++
                  "set terminal png\n"
@@ -103,7 +116,7 @@ gnuplotMany nmbxs = do
   system "gnuplot /tmp/gnuplotCmds"
   return ()
     where plotOne (fp, plines) = "set output '"++fp++"'\n"++
-                                 (showPlotCmd plines)
+                                 (showMultiPlot plines)
   
 instance PlotWithGnuplot [Signal Double] where
     getGnuplotCmd ss = forM (downSample 1000 ss) $ \s@(Signal t1 t2 dt sf) -> do
@@ -139,54 +152,70 @@ instance PlotWithGnuplot [Duration Double] where
                           hPutStrLn h $ show t2++"\tNaN"
                    hClose h
 
-
+infixl 4 %
 infixr 3 :+:
 infixr 2 :|:
 infixr 1 :--:
 
 data a :+: b = a :+: b
 
-data a :|: b = a :|: b
+data a :||: b = a :||: b
+data a :|: b = PcntDiv a :|: PcntDiv b
 
-data a :--: b = a :--: b
+data a :--: b = PcntDiv a :--: PcntDiv b
+data a :==: b =  a :==: b
 
-data PcntDiv a = Pcnt Int a
+data PcntDiv a = Pcnt Double a
 
 data WithColour a = WithColour String a
 
+x % a = Pcnt x a
+
+
+instance (PlotWithGnuplot a, PlotWithGnuplot b) => PlotWithGnuplot (a :||: b) where
+    multiPlot r (xs :||: ys) = multiPlot r (50% xs :|: 50% ys)
+
+instance (PlotWithGnuplot a, PlotWithGnuplot b) => PlotWithGnuplot (a :==: b) where
+    multiPlot r (xs :==: ys) = multiPlot r (50% xs :--: 50% ys)
+
+
+instance (PlotWithGnuplot a, PlotWithGnuplot b) => PlotWithGnuplot ( a :|: b) where
+    multiPlot (Rect (x0, y0) (x1,y1)) (Pcnt pcp p :|: Pcnt pcq q) = do
+      let xsep = x0+(pcp/(pcp+pcq))*(x1-x0)
+      px <- multiPlot ( Rect (x0,y0) (xsep, y1) ) p
+      py <- multiPlot ( Rect (xsep,y0) (x1, y1) ) q
+      return $ px++py 
+
+instance (PlotWithGnuplot a, PlotWithGnuplot b) => PlotWithGnuplot ( a :--: b) where
+    multiPlot (Rect (x0, y0) (x1,y1)) (Pcnt pcp p :--: Pcnt pcq q) = do
+      let ysep = y0+(pcp/(pcp+pcq))*(y1-y0)
+      px <- multiPlot ( Rect (x0,y0) (x1, ysep) ) p
+      py <- multiPlot ( Rect (x0, ysep) (x1, y1) ) q
+      return $ px++py 
+
 instance (PlotWithGnuplot a, PlotWithGnuplot b) => PlotWithGnuplot (a :+: b) where
-    getGnuplotCmd (xs :+: ys) = do
-      px <- getGnuplotCmd xs
-      py <- getGnuplotCmd ys                          
+    multiPlot r (xs :+: ys) = do
+      px <- multiPlot r xs
+      py <- multiPlot r ys                          
       return $ px++py
 
 instance PlotWithGnuplot a => PlotWithGnuplot (String, a) where
-    getGnuplotCmd (title, x) = do
-      plines <- getGnuplotCmd x
-      return $ map (addTitle title) plines
+    multiPlot r (title, x) = do
+      pls <- multiPlot r x
+      return $ map (\(r', plines) -> (r' ,map (addTitle title) plines)) pls
       where addTitle title (PL x _ y) = PL x title y
 
-gnuPlotSig :: Signal Double -> IO ()
-gnuPlotSig s@(Signal t1 t2 dt sf) = do
-  h <- openBinaryFile "/tmp/gnuplotsig" WriteMode
-  SV.hPut h $ SV.pack $ map  sf $ [0..(round $ (t2-t1)/dt)-1]
-  hClose h
-  let cmds = unlines [concat ["plot \"/tmp/gnuplotsig\" binary format=\"%float64\" using ($0*",
-                              show dt, "+", show t1, "):1 with lines"]]
-  writeFile "/tmp/gnuplotCmds" cmds
-  system "gnuplot /tmp/gnuplotCmds -persist"
-  return ()
 
---echo 'plot "/tmp/gnuplotsig" binary format="%float64" using ($0*0.1+3.3):1 with lines' | gnuplot -persist
 
 downSample n = map (downSample' (n `div` 2))
 
 --downSample' :: (Ord a, Bounded a, Num a, Storable a) => Int -> Signal a -> Signal a
 downSample' :: Int -> Signal Double -> Signal Double
 downSample' n sig@(Signal t1 t2 dt sf) =
-    let npw = round $ (t2-t1)/dt
-        chunkSize = floor (npw./ n)
-        nChunks =  ceiling (npw ./chunkSize)
+    let x ./. y = realToFrac x / realToFrac y
+        npw = round $ (t2-t1)/dt
+        chunkSize = floor (npw./. n)
+        nChunks =  ceiling (npw ./. chunkSize)
         newDt = (t2-t1)/realToFrac (nChunks*2)
         narr = SV.pack $concatMap chunk [0..(nChunks-1)]
         chunk i = let n1 = i*chunkSize
@@ -194,14 +223,10 @@ downSample' n sig@(Signal t1 t2 dt sf) =
                       (x,y) = sigSegStat (both maxF minF) (n1,n2) sig
                       in [x,y]
      in if npw>n 
-           then (Signal t1 t2 ((t2-t1)./(nChunks*2)) $ \p-> narr `SV.index` p)
+           then (Signal t1 t2 ((t2-t1)./.(nChunks*2)) $ \p-> narr `SV.index` p)
            else sig
-        {-chunk i = let arrsec = sliceU (uVpnts w) (i*chunkSize) $ min chunkSize (npw - i*chunkSize -1)
-                                           in [maximumU arrsec, minimumU arrsec]
-                             in UVecWave (toU narr) ((maxt w-mint w)/2 / realToFrac nChunks) (mint w) (nChunks*2)
--}
 
-x ./ y = realToFrac x / realToFrac y
+
 
 
 

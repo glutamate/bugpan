@@ -158,6 +158,11 @@ inApproxSession :: String -> StateT QState IO a -> IO a
 inApproxSession nm sma = do sess <- loadApproxSession "/var/bugpan/sessions/" nm
                             inSession sess sma
 
+inEverySessionIn :: StateT QState IO a -> IO [a]
+inEverySessionIn sma = do
+  sessNms <- getSessionInRootDir "/var/bugpan/sessions/"
+  sessns <- mapM (loadExactSession . ("/var/bugpan/sessions/"++)) sessNms
+  forM sessns $ \s -> inSession s sma
 
 
 sessionTmax  ::  StateT QState IO RealNum

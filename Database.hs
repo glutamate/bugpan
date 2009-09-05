@@ -56,14 +56,14 @@ newSession rootDir = do
   muuid <- (fmap (filter (/='-') . toString)) `fmap` nextUUID
   print muuid
   Just uuid <- return muuid
-  let baseDir = oneTrailingSlash rootDir++ uuid
+  let baseDir = rootDir ./ uuid
   --print baseDir
   createDirectory baseDir
-  createDirectory $ baseDir++"/signals"
-  createDirectory $ baseDir++"/events"
-  createDirectory $ baseDir++"/durations"
-  writeFile (baseDir++"/tStart") $ show (t1, t2)
-  writeFile (baseDir++"/sessionFormatVersion") $ "3"
+  createDirectory $ baseDir./ "signals"
+  createDirectory $ baseDir./ "events"
+  createDirectory $ baseDir./ "durations"
+  writeFile (baseDir./ "tStart") $ show (t1, t2)
+  writeFile (baseDir./ "sessionFormatVersion") $ "3"
   return $ Session baseDir t0
 --sessEvalState s = EvalS 0 0 Nothing (qenv s ++( evalManyAtOnce $ sessPrelude s))
 
@@ -71,11 +71,11 @@ cloneSession :: Session -> String-> Int -> IO Session
 cloneSession (Session oldBasedir t0@(TOD t1 t2)) postfix newVersion = do
   let baseDir = withoutTrailing '/' oldBasedir ++ postfix
   createDirectory baseDir
-  createDirectory $ baseDir++"/signals"
-  createDirectory $ baseDir++"/events"
-  createDirectory $ baseDir++"/durations"
-  writeFile (baseDir++"/tStart") $ show (t1, t2)
-  writeFile (baseDir++"/sessionFormatVersion") $ show newVersion
+  createDirectory $ baseDir ./ "signals"
+  createDirectory $ baseDir ./ "events"
+  createDirectory $ baseDir ./ "durations"
+  writeFile (baseDir ./ "tStart") $ show (t1, t2)
+  writeFile (baseDir ./ "sessionFormatVersion") $ show newVersion
   return $ Session baseDir t0
 --sessEvalState s = EvalS 0 0 Nothing (qenv s ++( evalManyAtOnce $ sessPrelude s))
 
@@ -84,13 +84,13 @@ sessionTypes :: Session ->  IO [(String, T)]
 sessionTypes sess@(Session dir' _) = do
   let dir = oneTrailingSlash dir'
   xs <- forM ["signals", "events", "durations"] $ \kind -> do
-                                       sigs <- getDirContents $ dir++"/"++kind
+                                       sigs <- getDirContents $ dir ./ kind
                                        --print sigs
                                        forM sigs $ \sig -> do 
                                          --print (kind, sig)
-                                         do fnms <- getSortedDirContents $ dir++"/"++kind++"/"++sig
-                                            fTT <- fileTypeTag $ dir++"/"++kind++"/"++sig++"/"++(head fnms)
-                                         --v<-loadUntyped $ dir++"/"++kind++"/"++sig
+                                         do fnms <- getSortedDirContents $ dir ./ kind ./ sig
+                                            fTT <- fileTypeTag $ dir ./ kind ./ sig ./ (head fnms)
+                                         --v<-loadUntyped $ dir./  kind./  sig
                                          --print (kind, sig, head v )
                                             return (sig, fTT) --typeOfVal $ head v)
   return $ concat xs
@@ -99,7 +99,7 @@ loadUntyped :: FilePath -> IO [V]
 loadUntyped fp = do 
   ifM (doesDirectoryExist fp)
       (do fnms <- getSortedDirContents fp
-          xs <- forM fnms $ \fn-> loadVs $ fp++"/"++fn
+          xs <- forM fnms $ \fn-> loadVs $ fp./  fn
           return $ concat xs)
       ((print $ "dir not found:" ++fp) >> return [])
 
@@ -130,14 +130,13 @@ loadApproxSession root nm = do
 
 loadExactSession :: FilePath -> IO Session
 loadExactSession dir = do
-  t0 <- read `fmap` readFile (dir++"/tStart")
+  t0 <- read `fmap` readFile (dir ./ "tStart")
   return $ Session dir (TOD (fst t0) (snd t0))
-    
 
 getSessionInRootDir rootDir = do
   sesns <- getDirContents rootDir
   --mapM print sesns
-  filterM (\objNm -> do isDir <- doesDirectoryExist $ oneTrailingSlash rootDir++objNm
+  filterM (\objNm -> do isDir <- doesDirectoryExist $ rootDir ./ objNm
                         return $ isDir) sesns
 
 getSortedDirContents dir = do conts <- getDirContents dir
@@ -197,10 +196,10 @@ addRunToSession decls t0 tmax dt ress sess@(Session basedir sesst0)
           progEp = [("program",  [PairV (PairV t1 t2) (StringV (unlines $ map ppDecl decls))])]++moduleEps
                     
           saveInSubDir subdir nm obj = do
-            let dir = (basedir++"/"++subdir++"/"++nm)
+            let dir = (basedir ./ subdir ./ nm)
             createDirectoryIfMissing False dir
             let ntics = round $ t0/dt
-            saveVs (dir++"/"++showHex ntics "") obj
+            saveVs (dir ./ showHex ntics "") obj
       in do -- Session newEvs newSigSegs newEps ((t0,t0+tmax, decls):programsRun sess) (qenv sess) (sessPrelude sess)
         putStrLn $ "saving session: "++show nmsToStore
         --putStrLn $ "from results: "++ show ress
@@ -220,20 +219,20 @@ addRunToSession decls t0 tmax dt ress sess@(Session basedir sesst0)
 
 --simpler interface
 saveInSession sess@(Session basedir _) nm t0 dt sig@(SigV t1 t2 sigdt sf) = do
-  let dir = basedir++"/signals/"++nm
+  let dir = basedir ./ "signals/"++nm
   createDirectoryIfMissing False dir
   let ntics = round $ t0/dt
-  saveVs (dir++"/"++showHex ntics "") $ [shift t0 sig]
+  saveVs (dir./  showHex ntics "") $ [shift t0 sig]
 saveInSession sess@(Session basedir sesst0) nm t0 dt lst@(ListV evs) | isEvents lst = do
-  let dir = basedir++"/events/"++nm
+  let dir = basedir ./ "events/"++nm
   createDirectoryIfMissing False dir
   let ntics = round $ t0/dt
-  saveVs (dir++"/"++showHex ntics "") . reverse $ map (shift t0) evs
+  saveVs (dir./  showHex ntics "") . reverse $ map (shift t0) evs
                                                                      | isEpochs lst = do 
-  let dir = basedir++"/durations/"++nm
+  let dir = basedir ./ "durations/"++nm
   createDirectoryIfMissing False dir
   let ntics = round $ t0/dt
-  saveVs (dir++"/"++showHex ntics "") $ map (shift t0) evs
+  saveVs (dir ./ showHex ntics "") $ map (shift t0) evs
 
 isTrue (BoolV True) = True
 
