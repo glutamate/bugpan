@@ -54,13 +54,13 @@ real = double
 
 plotGain = inTemporarySession $ do
              intfire <- use "Intfire"
-             prg <- compile intfire [("rate", realT)]
-             10 `times` determine prg [("rate", uniform 0 400)]
+             prg <- compile (intfire `with` ["_tmax" =: 0.5]) [("rate", realT)]
+             10 `times` determine prg [("rate", uniform 600 1000)]
              spikes <- events "spike" ()
              vm <- signalsDirect "vm"
              inrate <- durations "inputRate" real
              let outrate = freqDuring inrate $ spikes
-             liftIO $ gnuplotOnScreen $ scatter outrate :==: take 1 vm
+             liftIO $ gnuplotOnScreen $ scatter outrate :||: take 1 vm
 
 
 perfTest1 = inTemporarySession $ do

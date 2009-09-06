@@ -67,8 +67,9 @@ invoke (sha, tmax,pars) vals= do
   t0 <- getTnow
   Session sessNm _ <- getSession
   let valargs = intercalate " " $ map (ppVal . snd) vals --ideally check ordering
-  let cmdStr = "/var/bugpan/queryCache/"++sha++" "++(last $ splitBy '/' sessNm)++" "++show t0 ++" "++valargs
+  let cmdStr = "time /var/bugpan/queryCache/"++sha++" "++(last $ splitBy '/' sessNm)++" "++show t0 ++" "++valargs
   liftIO . putStrLn $ cmdStr
+  liftIO $ putStrLn ""
   liftIO $ system $ cmdStr
   put $ s { lastTStart = t0,
             lastTStop = t0 + tmax}
@@ -119,6 +120,8 @@ type Range a = Double -> a
 uniform lo hi = \x -> (hi-lo)*(realToFrac x)+lo
 oneOf xs = \x -> let idx = round $ x*(realToFrac $ length xs -1)
                  in xs !! idx
+
+always x = \_ -> x
 
 uniformLog lo hi = let (llo, lhi) = (log lo, log hi)
                    in \x -> exp (uniform llo lhi x)

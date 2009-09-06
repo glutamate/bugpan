@@ -35,7 +35,9 @@ srcs = [
  Src "poisson1" (realT) (realT) ["RandomSources"]
      $ SrcOnce ("poisson1"),
  Src "poisson" (realT) (ListT (PairT realT UnitT)) ["RandomSources"]
-     $ SrcOnce ("poisson")]
+     $ SrcOnce ("poisson"),
+ Src "regular" (realT) (ListT (PairT realT UnitT)) ["RandomSources"]
+     $ SrcOnce ("regular")]
 
 
 snks = []

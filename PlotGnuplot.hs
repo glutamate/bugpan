@@ -21,7 +21,7 @@ type GnuplotCmd = [PlotLine]
 
 data PlotLine = PL {plotData :: String,
                     plotTitle :: String,
-                    plotWith :: String }
+                    plotWith :: String } deriving Show
 
 showPlotCmd :: GnuplotCmd -> String
 showPlotCmd plines = "plot "++(intercalate ", " $ map s plines)++"\n"
@@ -31,14 +31,15 @@ showPlotCmd plines = "plot "++(intercalate ", " $ map s plines)++"\n"
 
 showMultiPlot :: [(Rectangle, GnuplotCmd)] -> String
 showMultiPlot rpls = "set multiplot\n" ++ concatMap pl rpls ++"unset multiplot\n"
-    where pl (Rect (x0,y0) (x1,y1), plines) = concat ["set origin ", 
-                                                      show x0, ",", show y0, "\n",
-                                                      "set size ", show (x1-y0),
-                                                      ",", show (y1-y0), "\n",
-                                                      showPlotCmd plines]
+    where pl (r@(Rect (x0,y0) (x1,y1)), plines)=concat ["#"++show r++"\n",
+                                                        "set origin ", 
+                                                        show x0, ",", show y0, "\n",
+                                                        "set size ", show (x1-x0),
+                                                        ",", show (y1-y0), "\n",
+                                                        showPlotCmd plines]
                                                       
 
-data Rectangle = Rect (Double, Double) (Double,Double)
+data Rectangle = Rect (Double, Double) (Double,Double) deriving Show
 unitRect = Rect (0,0) (1,1)
 
 class PlotWithGnuplot a where
@@ -189,9 +190,9 @@ instance (PlotWithGnuplot a, PlotWithGnuplot b) => PlotWithGnuplot ( a :|: b) wh
 instance (PlotWithGnuplot a, PlotWithGnuplot b) => PlotWithGnuplot ( a :--: b) where
     multiPlot (Rect (x0, y0) (x1,y1)) (Pcnt pcp p :--: Pcnt pcq q) = do
       let ysep = y0+(pcp/(pcp+pcq))*(y1-y0)
-      px <- multiPlot ( Rect (x0,y0) (x1, ysep) ) p
-      py <- multiPlot ( Rect (x0, ysep) (x1, y1) ) q
-      return $ px++py 
+      px <- multiPlot ( Rect (x0,y0) (x1, ysep) ) q
+      py <- multiPlot ( Rect (x0, ysep) (x1, y1) ) p
+      return $ py++px 
 
 instance (PlotWithGnuplot a, PlotWithGnuplot b) => PlotWithGnuplot (a :+: b) where
     multiPlot r (xs :+: ys) = do
