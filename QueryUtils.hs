@@ -137,12 +137,13 @@ spreadOut (sigs) = let amp = uncurry (-) . getTag $ sigStat' (both maxF minF) (h
                    in map (\(s,m) -> fmap (+m) s) (zip sigs adds)
 
 
-intervals :: Tagged t => [t a] -> [t (a,RealNum)]
+intervals :: Tagged t => [t a] -> [t Double]
 intervals tgs = map calcInt . zip tgs $ tail tgs
-                where calcInt (t1, t2) = setTag t1 $ (getTag t1, getTStart t2 - getTStart t1)
+                where calcInt (t1, t2) = setTag t1 $ getTStart t2 - getTStart t1
 
---intervalsOver ::  Tagged t => Duration a -> [t a] -> [t RealNum]
-intervalsOver durs evs = concatMap ((snd <$$>) . intervals) $ chopByDur durs evs
+intervalsOver :: (Tagged t, ChopByDur [t a]) =>
+                 [Duration b] -> [t a] -> [t Double]
+intervalsOver durs evs = concatMap (intervals) $ chopByDur durs evs
 
 minMaxDiffF = pure (-) <*> maxF <*> minF
 sigNoiseRatioF = pure (/) <*> minMaxDiffF <*> stdDevPF

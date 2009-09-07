@@ -1,5 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, FlexibleInstances, ExistentialQuantification #-}
-{-# LANGUAGE TypeOperators, FlexibleContexts #-}
+{-# LANGUAGE TypeOperators, FlexibleContexts, GADTs #-}
 
 module PlotGnuplot where
 
@@ -8,12 +8,61 @@ import qualified Data.StorableVector as SV
 import System.IO
 import System.Cmd
 import QueryTypes
---import Array
+import Array
 import Math.Probably.FoldingStats
 import Control.Monad
 import Data.Unique
 import Data.List
+import Control.Monad.Trans
 
+data Histo where -- GADT bec i don't know syntax for double existential (no longer needed)
+    Histo :: Tagged t => Int -> [t Double] -> Histo 
+    AsPdf :: String -> Histo -> Histo
+
+instance QueryResult Histo where
+    qFilterSuccess _ = True
+    qReply (Histo nbins vls) = rHisto nbins vls "x11(width=10,height=7)"
+    qReply (AsPdf nm (Histo nbins vls)) = rHisto nbins vls $ "pdf(\""++nm++"\")"
+
+
+instance PlotWithGnuplot Histo where
+    getGnuplotCmd (Histo n vls) = do
+            fnm <- ("/tmp/gnuplothist"++) `fmap` uniqueIntStr
+            writeHist fnm n $ map getTag vls
+            return [PL (concat ["\"", fnm, "\" using 1:2"]) "" "boxes"]
+        where writeHist fp n vls = do
+                   let (counts, lo, hi, binSize) = histList n vls
+                   h <- openFile fp WriteMode
+                   let dat = zip [lo, lo+binSize..hi] counts
+                   forM_  dat $ \(x,y)-> hPutStrLn h $ show x++"\t"++show y
+                   hClose h
+
+histArr :: (Ix a, Num b) => (a,a) -> [a] -> Array a b
+histArr bnds is = accumArray (+) 0 bnds [(i, 1) | i<-is, inRange bnds i]
+
+histList :: (RealFrac a) => Int -> [a] -> ([a] , a, a, a)
+histList nbins vls = let lo = foldl1 min vls
+                         hi = foldl1 max vls
+                         binSize = (hi-lo)/realToFrac nbins+1
+                         ixs = map (\v-> floor $ (v-lo)/binSize ) vls
+                         hArr = histArr (0,nbins-1) $ ixs
+                     in (elems hArr, lo, hi, binSize)
+                   
+
+
+rHisto nbins vls outdev = liftIO $ do
+               fnm <- (("/tmp/rhisto"++) . show. hashUnique) `fmap` newUnique
+               writeFile fnm .  unlines $ map (show . getTStart) vls
+               fnmCmd <- (("/tmp/rhisto"++) . show. hashUnique) `fmap` newUnique
+               writeFile fnmCmd $ unlines [outdev,
+                                           "xs <- scan(\""++ fnm++"\")",
+                                           "hist(xs,"++show nbins++")",
+                                           "z<-locator(1)",
+                                           "q()"]
+               system $ "R --vanilla --slave < "++fnmCmd
+               return ""
+
+rHistoScreen n vs = rHisto n vs "x11(width=10,height=7)"
 
 uniqueIntStr = (show. hashUnique) `fmap` newUnique
 

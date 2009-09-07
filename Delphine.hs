@@ -31,6 +31,7 @@ import Data.Ord
 import Control.Monad 
 import Data.Unique
 import System.Cmd
+import PlotGnuplot
 
 main = do
   args <- getArgs
@@ -50,21 +51,12 @@ dispatch ("analyse":sess:_) = do
 
     --let ivls = map getTag $ intervalsOver scratch $ spikes
     --rHisto 100 $ crossCorrelateOver scratch ci1Spikes flexSpikes
-    rHisto 100 $ crossCorrelateOver scratch ci1Spikes extSpikes
+    rHistoScreen 100 $ crossCorrelateOver scratch ci1Spikes extSpikes
     
     return ()
 
 --rHisto :: MonadIO m => [Double] -> m ()
-rHisto nbins vls = io $ do
-               fnm <- (("/tmp/rhisto"++) . show. hashUnique) `fmap` newUnique
-               writeFile fnm .  unlines $ map (show . getTStart) vls
-               fnmCmd <- (("/tmp/rhisto"++) . show. hashUnique) `fmap` newUnique
-               writeFile fnmCmd $ unlines ["pdf(\"pdf_ci1_ext.pdf\")",
-                                           "xs <- scan(\""++ fnm++"\")",
-                                           "hist(xs,"++show nbins++")",
-                                           "z<-locator(1)",
-                                           "q()"]
-               system $ "R --vanilla --slave < "++fnmCmd
+
 
 
 importAnimalIn dir = do
