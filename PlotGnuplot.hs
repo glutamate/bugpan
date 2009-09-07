@@ -196,9 +196,9 @@ instance (PlotWithGnuplot a, PlotWithGnuplot b) => PlotWithGnuplot ( a :--: b) w
 
 instance (PlotWithGnuplot a, PlotWithGnuplot b) => PlotWithGnuplot (a :+: b) where
     multiPlot r (xs :+: ys) = do
-      px <- multiPlot r xs
-      py <- multiPlot r ys                          
-      return $ px++py
+      px <- getGnuplotCmd xs
+      py <- getGnuplotCmd ys                          
+      return $ [(r,px++py)]
 
 instance PlotWithGnuplot a => PlotWithGnuplot (String, a) where
     multiPlot r (title, x) = do

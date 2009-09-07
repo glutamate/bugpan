@@ -1,4 +1,4 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving, FlexibleContexts, UndecidableInstances #-} 
+{-# LANGUAGE GeneralizedNewtypeDeriving, FlexibleContexts, UndecidableInstances, NoMonomorphismRestriction #-} 
 
 module Query where
 
@@ -40,6 +40,7 @@ import Parse
 import TNUtils 
 import PrettyPrint
 import ValueIO
+import Data.Unique
 import qualified Data.Binary as B
 
  
@@ -112,6 +113,7 @@ storeAs :: Reify a => String -> [a] -> StateT QState IO ()
 storeAs nm vls = do 
   let vs = map pack vls
   let t = typeOfReified $ head vls
+  let uniqueIntStr = (show. hashUnique) `fmap` newUnique
   let subDir = case t of
                  SignalT _ -> "signals/"
                  PairT (NumT (Just RealT)) _ -> "events/"
@@ -119,7 +121,8 @@ storeAs nm vls = do
                  _ -> error $ "cannot store "++nm++": unknown type"
   Session bdir t0 <- getSession
   liftIO $ createDirectoryIfMissing False $ oneTrailingSlash bdir++subDir++nm
-  liftIO $ saveVs (oneTrailingSlash bdir++subDir++nm++"/stored") vs
+  suffix <- liftIO $ uniqueIntStr
+  liftIO $ saveVs (oneTrailingSlash bdir++subDir++nm++"/stored"++suffix) vs
   
 
 instance (Reify a, QueryResult [a]) => QueryResult (StoreAs a) where
@@ -145,6 +148,11 @@ inNewSession :: StateT QState IO a -> IO a
 inNewSession sma = do sess <- newSession "/var/bugpan/sessions/"
                       inSession sess sma
 
+inNewSessionWith :: String -> ClockTime -> StateT QState IO a -> IO a
+inNewSessionWith nm t0 sma = do sess <- createSession "/var/bugpan/sessions/" t0 nm
+                                inSession sess sma
+
+
 inTemporarySession sma = do sess <- newSession "/var/bugpan/sessions/"
                             inSession sess sma
                             deleteSession sess
@@ -158,8 +166,8 @@ inApproxSession :: String -> StateT QState IO a -> IO a
 inApproxSession nm sma = do sess <- loadApproxSession "/var/bugpan/sessions/" nm
                             inSession sess sma
 
-inEverySessionIn :: StateT QState IO a -> IO [a]
-inEverySessionIn sma = do
+inEverySession :: StateT QState IO a -> IO [a]
+inEverySession sma = do
   sessNms <- getSessionInRootDir "/var/bugpan/sessions/"
   sessns <- mapM (loadExactSession . ("/var/bugpan/sessions/"++)) sessNms
   forM sessns $ \s -> inSession s sma
@@ -186,7 +194,8 @@ tst1 = do
   v <- loadBinary "/tmp/bugtest"
   print $ ppVal v
 
- 
+io = liftIO 
+
 
 {-plot :: [V] -> IO ()
 plot vs = do --let g = map ansToPlot ans

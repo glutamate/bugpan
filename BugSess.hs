@@ -361,4 +361,5 @@ typeToProxyName UnitT = "()"
 typeToProxyName StringT = "\"foo\""
 typeToProxyName (NumT (Just RealT)) = "double"
 typeToProxyName (PairT t1 t2) = "("++typeToProxyName t1++", "++typeToProxyName t2++")"
+typeToProxyName BoolT = "True"
 

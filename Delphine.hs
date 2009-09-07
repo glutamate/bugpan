@@ -14,8 +14,7 @@ import Expr
 --import Stages
 import Query
 import QueryTypes
-import Control.Monad.Trans
-import Control.Monad.State.Lazy
+--import Control.Monad.State.Lazy
 import HaskSyntaxUntyped
 --import QueryUnsafe
 --import Data.IORef
@@ -27,11 +26,46 @@ import ValueIO
 import Numbers
 --import Tests.Asserts
 import PlotGnuplot
+import System.Environment
 import Data.Ord
+import Control.Monad 
+import Data.Unique
+import System.Cmd
 
 main = do
+  args <- getArgs
+  dispatch args
+
+dispatch ("import":_) = do
   importAnimalIn "AM"
   importAnimalIn "AR"
+  return ()
+
+dispatch ("analyse":sess:_) = do
+  inSessionNamed sess $ do
+    scratch <- durations "scratch" ()
+    flexSpikes <- events "flex1Spikes" ()
+    extSpikes <- events "extSpikes" ()
+    ci1Spikes <- events "ci1Spikes" ()
+
+    --let ivls = map getTag $ intervalsOver scratch $ spikes
+    --rHisto 100 $ crossCorrelateOver scratch ci1Spikes flexSpikes
+    rHisto 100 $ crossCorrelateOver scratch ci1Spikes extSpikes
+    
+    return ()
+
+--rHisto :: MonadIO m => [Double] -> m ()
+rHisto nbins vls = io $ do
+               fnm <- (("/tmp/rhisto"++) . show. hashUnique) `fmap` newUnique
+               writeFile fnm .  unlines $ map (show . getTStart) vls
+               fnmCmd <- (("/tmp/rhisto"++) . show. hashUnique) `fmap` newUnique
+               writeFile fnmCmd $ unlines ["pdf(\"pdf_ci1_ext.pdf\")",
+                                           "xs <- scan(\""++ fnm++"\")",
+                                           "hist(xs,"++show nbins++")",
+                                           "z<-locator(1)",
+                                           "q()"]
+               system $ "R --vanilla --slave < "++fnmCmd
+
 
 importAnimalIn dir = do
   allfiles <- getDirContents dir
@@ -41,13 +75,13 @@ importAnimalIn dir = do
   let sessNm = anim $ snd $ head finfos
   let dt = 1.7398/8699
   let dtAngles = 0.05
-  print $ map fst finfos
+  mapM_ (putStrLn . fst) finfos
   inNewSessionWith sessNm (fileT0 firstInfo) $ do
-       forM finfos $ \(fnm,finfo) -> do
-           (angles, spikes, ephys) <- liftIO $ impLBR $ dir ./ fnm
+       forM_ finfos $ \(fnm,finfo) -> do
+           (angles, spikes, ephys) <- io $ impLBR $ dir ./ fnm 
            let scratchLength = (realToFrac $ length $ head ephys)*dt
            let t0 = filesSecDiff finfo firstInfo
-           let onedur x = [((t0, t0+scratchLength),x)]
+           let onedur x = [((t0, t0+scratchLength),x)] 
            storeAs "flexor1" [listToSig dt t0 $ ephys!!0]
            storeAs "flexor2" [listToSig dt t0 $ ephys!!1]
            storeAs "extensor" [listToSig dt t0 $ ephys!!2]
@@ -101,9 +135,11 @@ data FileNameInfo = FNI {
       isPosterior :: Bool
     } deriving (Show, Eq)
 
+secsSinceMidnight (FNI _ _ _ _ d1 mo1 h1 mi1 s1 _ _) = s1+60*mi1+3600*h1
+
 --sort on creation time
 instance Ord FileNameInfo where 
-    fn1 <= fn2 = hour fn1 < hour fn2 || minute fn1 < minute fn2 || second fn1 <= second fn2 
+    compare fn1 fn2 = compare (secsSinceMidnight fn1) (secsSinceMidnight fn2)
 
 
 parseFileName :: String -> FileNameInfo

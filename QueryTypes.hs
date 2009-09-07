@@ -182,8 +182,8 @@ foldTagged ::  Tagged t => (a -> b -> a) -> a -> [t b] -> a
 foldTagged f init col = foldl' f init $ map getTag col
 
 
-instance Functor ((,) Double) where
-    fmap f (t,v) = (t, f v)
+--instance Functor ((,) Double) where
+--    fmap f (t,v) = (t, f v)
 
 {-instance Functor ((,) (Double, Double)) where
     fmap f ((t1,t2), v) = ((t1,t2),f v) -}

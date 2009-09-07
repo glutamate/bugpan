@@ -141,6 +141,9 @@ intervals :: Tagged t => [t a] -> [t (a,RealNum)]
 intervals tgs = map calcInt . zip tgs $ tail tgs
                 where calcInt (t1, t2) = setTag t1 $ (getTag t1, getTStart t2 - getTStart t1)
 
+--intervalsOver ::  Tagged t => Duration a -> [t a] -> [t RealNum]
+intervalsOver durs evs = concatMap ((snd <$$>) . intervals) $ chopByDur durs evs
+
 minMaxDiffF = pure (-) <*> maxF <*> minF
 sigNoiseRatioF = pure (/) <*> minMaxDiffF <*> stdDevPF
 
@@ -209,3 +212,7 @@ countWithin (dur:durs) evs = concatMap f durs
     where f dur = (realToFrac . length $ evs `during` [dur] ) `tag` [dur]
 -}
 
+crossCorrelateOver :: [Duration a] -> [Event a] -> [Event b] -> [Event ()]
+crossCorrelateOver dur e1 e2 = concatMap f $ zip (chopByDur dur e1) (chopByDur dur e2)
+    where f (evs1, evs2) = concatMap (g evs2) evs1
+          g evs2 (t0,_) = map (\(t2,_)->(t2-t0,())) evs2

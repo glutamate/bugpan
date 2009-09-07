@@ -45,6 +45,17 @@ withoutTrailing c cs = if last cs == c
                           else cs
 
 
+createSession rootDir t0@(TOD t1 t2) name = do
+  let baseDir = rootDir ./ name
+  --print baseDir
+  createDirectory baseDir
+  createDirectory $ baseDir./ "signals"
+  createDirectory $ baseDir./ "events"
+  createDirectory $ baseDir./ "durations"
+  writeFile (baseDir./ "tStart") $ show (t1, t2)
+  writeFile (baseDir./ "sessionFormatVersion") $ "3"
+  return $ Session baseDir t0
+
 newSession :: FilePath -> IO Session
 newSession rootDir = do
   t0@(TOD t1 t2) <- getClockTime  
@@ -56,15 +67,7 @@ newSession rootDir = do
   muuid <- (fmap (filter (/='-') . toString)) `fmap` nextUUID
   print muuid
   Just uuid <- return muuid
-  let baseDir = rootDir ./ uuid
-  --print baseDir
-  createDirectory baseDir
-  createDirectory $ baseDir./ "signals"
-  createDirectory $ baseDir./ "events"
-  createDirectory $ baseDir./ "durations"
-  writeFile (baseDir./ "tStart") $ show (t1, t2)
-  writeFile (baseDir./ "sessionFormatVersion") $ "3"
-  return $ Session baseDir t0
+  createSession rootDir t0 uuid
 --sessEvalState s = EvalS 0 0 Nothing (qenv s ++( evalManyAtOnce $ sessPrelude s))
 
 cloneSession :: Session -> String-> Int -> IO Session

@@ -243,6 +243,13 @@ instance Reify () where
     reify _ = Nothing
     pack () = Unit
     typeOfReified _ = UnitT
+
+instance Reify Bool where
+    reify (BoolV b) = Just b
+    reify _ = Nothing
+    pack = BoolV
+    typeOfReified _ = BoolT
+
 instance Reify [Char] where
     reify (StringV s) = Just s
     reify _ = Nothing
