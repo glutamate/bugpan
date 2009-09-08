@@ -41,6 +41,7 @@ saveVs fp sigs@((SigV _ _ _ _):_) | typeOfVal (head sigs) == SignalT (NumT (Just
     hWriteSigV h sig
     hClose h 
                                   | otherwise = saveBinary fp sigs
+saveVs _ [] = return ()
 saveVs fp obj = saveBinary fp obj 
 
 binPut :: MyBinary a => Handle -> a -> IO ()

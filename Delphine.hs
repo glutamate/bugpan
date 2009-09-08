@@ -39,25 +39,40 @@ main = do
 
 dispatch ("import":_) = do
   importAnimalIn "AM"
-  importAnimalIn "AR"
+  --importAnimalIn "AR"
   return ()
 
 dispatch ("analyse":sess:_) = do
   inSessionNamed sess $ do
     scratch <- durations "scratch" ()
+    --flexSpikes <- events "flex1Spikes" ()
     flexSpikes <- events "flex1Spikes" ()
-    extSpikes <- events "extSpikes" ()
     ci1Spikes <- events "ci1Spikes" ()
+    seti <- events "setiSpikes" ()
+    feti <- events "fetiSpikes" ()
+    flexor1 <- signalsDirect "flexor1"
+    ci1 <- signalsDirect "ci1"
 
     --let ivls = map getTag $ intervalsOver scratch $ spikes
     --rHisto 100 $ crossCorrelateOver scratch ci1Spikes flexSpikes
-    rHistoScreen 100 $ crossCorrelateOver scratch ci1Spikes extSpikes
+    io $ gnuplotToPS "cc_ci_seti.ps" $ ("cc ci1Spikes seti", 
+                              Histo 100 $  (>(0)) // (<0.5) //  crossCorrelateOver scratch ci1Spikes seti)
+    io $ gnuplotToPS "cc_flex_seti.ps" $ ("cc flexor seti", 
+                              Histo 200 $ (>(-1)) // (<1) // crossCorrelateOver scratch flexSpikes seti)
+    io $ gnuplotToPS "cc_ci_feti.ps" $ ("cc ci1Spikes feti", 
+                              Histo 100 $  (>(-1)) // (<2) //  crossCorrelateOver scratch ci1Spikes feti)
+{-    io $ gnuplotToPS "afterCI.ps" $ ("0-50 ms after ciSpike", 
+                            averageSigs $ limitSigs' (-0.010) (0.010) $ around (during (fadeOut 0.05 ci1Spikes) flexSpikes) flexor1)-}
+    io $ gnuplotOnScreen $ ("all CI spikes", 
+                            averageSigs $ limitSigs' (-0.010) (0.010) $ take 100 $ around (ci1Spikes) ci1)
     
-    return ()
+    return () 
 
 --rHisto :: MonadIO m => [Double] -> m ()
-
-
+ 
+brenda :: [Signal Double] -> [GnuplotBox]
+brenda sigs = [GnuplotBox $ Brenda $ averageSigs sigs]
+ 
 
 importAnimalIn dir = do
   allfiles <- getDirContents dir
@@ -73,7 +88,8 @@ importAnimalIn dir = do
            (angles, spikes, ephys) <- io $ impLBR $ dir ./ fnm 
            let scratchLength = (realToFrac $ length $ head ephys)*dt
            let t0 = filesSecDiff finfo firstInfo
-           let onedur x = [((t0, t0+scratchLength),x)] 
+           let onedurD x = [((t0, t0+scratchLength),realToFrac x)]::[((Double,Double),Double)]
+           let onedur x = [((t0, t0+scratchLength), x)]
            storeAs "flexor1" [listToSig dt t0 $ ephys!!0]
            storeAs "flexor2" [listToSig dt t0 $ ephys!!1]
            storeAs "extensor" [listToSig dt t0 $ ephys!!2]
@@ -84,25 +100,27 @@ importAnimalIn dir = do
            storeAs "tiTa" [listToSig dtAngles t0 $ angles!!2]
            storeAs "thCx" [listToSig dtAngles t0 $ angles!!3]
 
-           storeAs "flex1Spikes" $ spikesToEvents dt t0 $ spikes !!0
-           storeAs "flex2Spikes" $ spikesToEvents dt t0 $ spikes !!1
-           storeAs "extSpikes" $ spikesToEvents dt t0 $ spikes !!2
-           storeAs "ci1Spikes" $ spikesToEvents dt t0 $ spikes !!3
+           storeAs "flex1Spikes" $ spikesToEvents dt t0 1 $ spikes !!0
+           storeAs "flex2Spikes" $ spikesToEvents dt t0 1 $ spikes !!1
+           storeAs "setiSpikes" $ spikesToEvents dt t0 1 $ spikes !!2
+           storeAs "fetiSpikes" $ spikesToEvents dt t0 2 $ spikes !!2
+           --storeAs "n5aSpikes" $ spikesToEvents dt t0 1 $ spikes !!3
+           storeAs "ci1Spikes" $ spikesToEvents dt t0 1 $ spikes !!3
 
            storeAs "scratch" $ onedur ()
-           storeAs "load" $ onedur $ load finfo
-           storeAs "depol" $ onedur $ depol finfo
-           storeAs "cycles" $ onedur $ cycles finfo 
+           storeAs "load" $ onedurD $ load finfo
+           storeAs "depol" $ onedurD $ depol finfo
+           storeAs "cycles" $ onedurD $ cycles finfo 
            storeAs "isPosterior" $ onedur $ isPosterior finfo
-           storeAs "repNum" $ onedur $ repnum finfo
+           storeAs "repNum" $ onedurD $ repnum finfo
            storeAs "tStart" $ [(t0,())]
            storeAs "tStop" $ [(t0+scratchLength,())]
         
 
 
-spikesToEvents :: Double -> Double -> [Int] -> [Event ()]
-spikesToEvents dt t0 ints = let ts = map ((+t0) . snd) $ filter ((>0) . fst) $ zip ints $ map (*dt) [0..]
-                            in zip ts $ repeat ()
+spikesToEvents :: Double -> Double -> Int -> [Int] -> [Event ()]
+spikesToEvents dt t0 ident ints = let ts = map ((+t0) . snd) $ filter ((==ident) . fst) $ zip ints $ map (*dt) [0..]
+                                  in zip ts $ repeat ()
 
 months = enumFromTo January December
 

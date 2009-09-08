@@ -92,8 +92,8 @@ foldSig f init sig = foldl' f init $ sigToList sig
 
 --mapMaybe :: (a->Maybe b) -> [a] -> [b]
 --mapMaybe f xs = catMaybes $ map f xs
-during :: [Event a] -> [Duration b] -> [Event a]
-during evs durs = concatMap (during' evs) durs
+during :: [Duration b] -> [Event a] -> [Event a]
+during durs evs = concatMap (during' evs) durs
     where during' evs dur = filter (`evInDuration` dur) evs
 
 
@@ -188,10 +188,6 @@ foldTagged f init col = foldl' f init $ map getTag col
 {-instance Functor ((,) (Double, Double)) where
     fmap f ((t1,t2), v) = ((t1,t2),f v) -}
  
-instance Functor Signal where
-    fmap f (Signal t1 t2 dt sf) = 
-        Signal t1 t2 dt $ \ix -> f (sf ix)
-
 
 instance Shiftable (Double,a) where
     shift ts (t,v) = (t+ts, v)
@@ -202,12 +198,22 @@ instance Shiftable ((Double,Double),a) where
 instance Shiftable (Signal a) where
     shift ts (Signal t1 t2 dt sf) = Signal (t1+ts) (t2+ts) dt sf 
 
+instance Shiftable a => Shiftable [a] where
+    shift ts vls = map (shift ts) vls
+
 
 individually :: ListT m a -> m [a]
 individually = runListT
 
 eachOf :: Monad m => [a] -> ListT m a
 eachOf xs = ListT . return $ xs
+
+ask :: QueryResult a => a -> StateT QState IO ()
+ask qx = do
+  x <- qResThroughSession qx
+  str <- liftIO $ qReply x
+  liftIO $ putStrLn str
+
 
 data QueryResultBox = forall a. QueryResult a => QResBox a deriving Typeable
 
@@ -279,7 +285,7 @@ instance ChopByDur [Signal a] where
     chopByDur durs sigs = map (\dur->section sigs [dur]) durs
 
 instance ChopByDur [Event a] where
-    chopByDur durs evs = map (\dur->during evs [dur]) durs
+    chopByDur durs evs = map (\dur->during [dur] evs) durs
 
 instance ChopByDur [Duration a] where
     chopByDur chopDurs durs = map (\dur->sectionDur1 dur durs) chopDurs

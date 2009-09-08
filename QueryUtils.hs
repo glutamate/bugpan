@@ -55,6 +55,8 @@ fadeIn t = map (\(tev,v)-> ((tev-t, tev), v))
 filterTag :: Tagged t => (a->Bool) -> [t a] -> [t a]
 filterTag p = filter (p . getTag)
 
+infixr //
+
 (//) :: Tagged t => (a->Bool) -> [t a] -> [t a]
 (//) = filterTag
 
@@ -82,7 +84,7 @@ freqDuring :: [Duration a] -> [Event b] -> [Duration (a, RealNum)]
 freqDuring durs evs = map (freqDuring' evs) durs
     where freqDuring' evs dur@((t1, t2), durtag) = 
               ((t1, t2), (durtag, 
-                        (realToFrac . length $ evs `during` [dur])/(t2-t1)))
+                        (realToFrac . length $ during [dur] evs)/(t2-t1)))
 
 around :: [Event b] -> [Signal a] -> [Signal a]
 around evs sigs = catMaybes $ map (around' sigs) evs
@@ -192,7 +194,7 @@ gaussian dt mean sd = let t1 =(-5*sd)
 convolveWithin :: Num a => [Duration b] -> Signal a -> [Event a] -> [Signal a]
 convolveWithin [] _ _ = []
 convolveWithin (dur@((td1, td2), v):durs) irf@(Signal t1 t2 dt sf) evs' =
-   let evs = evs' `during` [dur]
+   let evs = during [dur] evs' 
        sigs = map f evs
        f (t,x) =(*x) `fmap` shift t irf
        nullSig = Signal td1 td2 dt $ const 0
@@ -213,7 +215,26 @@ countWithin (dur:durs) evs = concatMap f durs
     where f dur = (realToFrac . length $ evs `during` [dur] ) `tag` [dur]
 -}
 
-crossCorrelateOver :: [Duration a] -> [Event a] -> [Event b] -> [Event ()]
+crossCorrelateOver :: [Duration a] -> [Event a] -> [Event b] -> [Event Double]
 crossCorrelateOver dur e1 e2 = concatMap f $ zip (chopByDur dur e1) (chopByDur dur e2)
     where f (evs1, evs2) = concatMap (g evs2) evs1
-          g evs2 (t0,_) = map (\(t2,_)->(t2-t0,())) evs2
+          g evs2 (t0,_) = map (\(t2,_)->(t2,t2-t0)) evs2
+
+limitSigs :: Double -> Double -> [Signal a] -> [Signal a]
+limitSigs lo hi sigs = map (limitSig (min lo hi) (max lo hi)) sigs
+
+limitSigs' :: Double -> Double -> [Signal a] -> [Signal a]
+limitSigs' lo hi sigs = catMaybes $ map (limitSig' (min lo hi) (max lo hi)) sigs
+
+limitSig' lo hi (Signal t1 t2 dt sf) | t1 > lo || t2< hi = Nothing
+                                     | otherwise = let t1' = max t1 lo
+                                                       t2' = min hi t2
+                                                       pshift = round $ (t1' - t1)/dt
+                                                   in Just $ Signal t1' t2' dt $ \p-> sf $ p+pshift
+
+
+averageSigs :: Floating a => [Signal a] -> [Signal a]
+averageSigs sigs = let (mu, sem) = runStat meanSEMF sigs
+                   in [mu,mu+sem, mu-sem]
+
+--chiSquare :: [[Duration a]] -> 

@@ -11,3 +11,7 @@ BNFC/TestBugpan
 dist/*
 *.prof
 *.exe
+*.ps
+*.txt
+*.pdf
+*_comb.lbr

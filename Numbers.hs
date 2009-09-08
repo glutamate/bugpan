@@ -98,6 +98,7 @@ instance Floating NumVl where
 	atanh = onDbl atanh
 	cosh = onDbl cosh
 	sinh = onDbl sinh
+        sqrt = onDbl sqrt
 	pi = NReal pi
 	
 

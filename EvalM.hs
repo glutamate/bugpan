@@ -262,7 +262,9 @@ unsafeReify v = case reify v of
                   Nothing -> error $ "unsafeReify: cannot reify "++show v
 
 --(Signal t1 t2 dt sf)
-data Signal a = Signal RealNum RealNum RealNum (Int -> a) deriving Typeable
+data Signal a = Signal RealNum RealNum RealNum (Int -> a)
+                | ConstSig a 
+                  deriving Typeable
 
 sigPnts :: Signal a -> Int
 sigPnts (Signal t1 t2 dt sf) = round $ (t2-t1)/dt
@@ -284,4 +286,54 @@ instance Reify a => Reify (Signal a) where
         where unSig :: Signal a -> a
               unSig = undefined
 
+limitSig lo hi (Signal t1 t2 dt sf) = let t1' = max t1 lo
+                                          t2' = min hi t2
+                                          pshift = round $ (t1' - t1)/dt
+                                      in Signal t1' t2' dt $ \p-> sf $ p+pshift
+combineSigs op (Signal t1 t2 dt sf) (Signal t1' t2' dt' sf')  = -- | dt == dt'
+    let t1f = max t1 t1'
+        t2f = min t2 t2'
+        shift1 = round $ (t1f - t1)/dt
+        shift1' = round $ (t1f - t1')/dt'
+    in Signal t1f t2f dt' $ \p-> op (sf $ p+shift1) (sf' $ p+shift1')
+combineSigs op (ConstSig x) (Signal t1 t2 dt sf)  = -- | dt == dt'
+    Signal t1 t2 dt $ \p-> op (sf p) (x)
+combineSigs op s1@(Signal t1 t2 dt sf) s2@(ConstSig x) = combineSigs op s2 s1
+combineSigs op (ConstSig x) (ConstSig y) = ConstSig $ op x y
 
+instance Functor Signal where
+    fmap f (Signal t1 t2 dt sf) = 
+        Signal t1 t2 dt $ \ix -> f (sf ix)
+    fmap f (ConstSig x) = ConstSig $ f x
+
+instance Eq (Signal a) where
+    s1 == s2 = False
+
+instance Num a => Num (Signal a) where
+     (+) = combineSigs (+)
+     (-) = combineSigs (-)
+     (*) = combineSigs (*)
+     abs s = abs `fmap` s
+     signum s = undefined
+     fromInteger x = ConstSig . fromInteger $ x
+
+instance Fractional a => Fractional (Signal a) where
+    (/) = combineSigs (/)
+    fromRational x =  ConstSig . fromRational $ x
+
+instance Floating a => Floating (Signal a) where
+    pi = ConstSig pi
+    cos = fmap cos
+    sin = fmap sin
+    tan = fmap tan
+    log = fmap log
+    exp = fmap exp
+    acos = fmap acos
+    asin = fmap asin
+    atan = fmap atan
+    acosh = fmap acosh
+    asinh = fmap asinh
+    atanh = fmap atanh
+    cosh = fmap cosh
+    sinh = fmap sinh
+    sqrt = fmap sqrt

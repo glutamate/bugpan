@@ -32,6 +32,8 @@ instance PlotWithGnuplot Histo where
             return [PL (concat ["\"", fnm, "\" using 1:2"]) "" "boxes"]
         where writeHist fp n vls = do
                    let (counts, lo, hi, binSize) = histList n vls
+                   --print n
+                   --print (counts, lo, hi, binSize)
                    h <- openFile fp WriteMode
                    let dat = zip [lo, lo+binSize..hi] counts
                    forM_  dat $ \(x,y)-> hPutStrLn h $ show x++"\t"++show y
@@ -43,7 +45,7 @@ histArr bnds is = accumArray (+) 0 bnds [(i, 1) | i<-is, inRange bnds i]
 histList :: (RealFrac a) => Int -> [a] -> ([a] , a, a, a)
 histList nbins vls = let lo = foldl1 min vls
                          hi = foldl1 max vls
-                         binSize = (hi-lo)/realToFrac nbins+1
+                         binSize = (hi-lo)/(realToFrac nbins+1)
                          ixs = map (\v-> floor $ (v-lo)/binSize ) vls
                          hArr = histArr (0,nbins-1) $ ixs
                      in (elems hArr, lo, hi, binSize)
@@ -153,6 +155,18 @@ gnuplotToPNG fp x = do
   system "gnuplot /tmp/gnuplotCmds"
   return ()
 
+gnuplotToPS:: PlotWithGnuplot a => String -> a -> IO ()
+gnuplotToPS fp x = do
+  plines <- multiPlot unitRect x
+  let cmdLines = "set datafile missing \"NaN\"\n"++
+                 "set terminal postscript\n"++
+                 "set output '"++fp++"'\n"++
+                  (showMultiPlot plines)
+                       
+  writeFile "/tmp/gnuplotCmds" cmdLines
+  system "gnuplot /tmp/gnuplotCmds"
+  return ()
+
 
 gnuplotMany :: [(String, GnuplotBox)] -> IO ()
 gnuplotMany nmbxs = do
@@ -174,10 +188,11 @@ instance PlotWithGnuplot [Signal Double] where
            writeSig fnm s
            return $ PL (concat ["\"", fnm, "\" binary format=\"%float64\" using ($0*",
                                     show dt, "+", show t1, "):1"]) "" "lines"
-           where writeSig fp s@(Signal t1 t2 dt sf) = do
-                   h <- openBinaryFile fp WriteMode
-                   SV.hPut h $ SV.pack $ map  sf $ [0..(round $ (t2-t1)/dt)-1]
-                   hClose h
+          
+writeSig fp s@(Signal t1 t2 dt sf) = do
+  h <- openBinaryFile fp WriteMode
+  SV.hPut h $ SV.pack $ map  sf $ [0..(round $ (t2-t1)/dt)-1]
+  hClose h
 
 instance PlotWithGnuplot [Event Double] where
     getGnuplotCmd es = 
@@ -200,6 +215,20 @@ instance PlotWithGnuplot [Duration Double] where
                           hPutStrLn h $ show t1++"\t"++show v
                           hPutStrLn h $ show t2++"\t"++show v
                           hPutStrLn h $ show t2++"\tNaN"
+                   hClose h
+
+data Brenda = Brenda [Signal Double]
+
+instance PlotWithGnuplot Brenda where
+    getGnuplotCmd (Brenda l@(avg:plusSEM:minusSEM:[])) = 
+        forM (downSample 1000 l) $ \s@(Signal t1 t2 dt sf) -> do
+           fnm <- ("/tmp/gnuplotsig"++) `fmap` uniqueIntStr
+           writeSig fnm s
+           return $ PL (concat ["\"", fnm, "\" binary format=\"%float64\" using ($0*",
+                                    show dt, "+", show t1, "):1"]) "" "lines"
+           where writeSigArea fp s1@(Signal t1 t2 dt sf) s2@(Signal t1' t2' dt' sf') = do
+                   h <- openBinaryFile fp WriteMode
+                   SV.hPut h $ SV.pack $ map  sf $ [0..(round $ (t2-t1)/dt)-1]
                    hClose h
 
 infixl 4 %
