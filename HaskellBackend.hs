@@ -41,7 +41,7 @@ toHask dt tmax ds params
     = let (env:stageDs) = splitByStages ds
           nonMainLoop = filter (notbanned (map fst params) ) $
                         filter (notbanned banned) $ fst (runTravM env [] compilableEnv) 
-      in unlines $ ["{-# LANGUAGE NoMonomorphismRestriction #-}",
+      in unlines $ ["{-# LANGUAGE NoMonomorphismRestriction, BangPatterns#-}",
                     --"module "++capitalize modNm++" where",
                     "module Main where",
                     "",
@@ -118,12 +118,83 @@ compileStages ds tmax stgs =  mainFun ds allStore ++ ["goMain = do "] ++lns++ret
           expTuple [] = ""
           expTuple nms = inTuple nms ++ " <- "
           stages = concatMap comStageLine $ zip stgs [0..]
-          comStageLine (ds,n) = compStage ds tmax n (accumExports (n-1)) (exports!!n) ((eventExports ds \\ imps n) \\ (exports!!n))
+          comStageLine (ds,n) = compStageP ds tmax n (accumExports (n-1)) (exports!!n) ((eventExports ds \\ imps n) \\ (exports!!n))
 
 removeSigLimits :: TravM ()
 removeSigLimits = mapD rSL
     where rSL (Let nm (SigLimited e _)) = return (Let nm (Sig e))
           rSL d = return d
+
+foo :: IO ()
+foo = do 
+  let f 0 =1
+      f 1 = 0
+
+
+  return ()
+compStageP ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++" = do "):lns
+    where ind = "   "
+          ds = snd $ runTravM ds' [] removeSigLimits
+          dsSrcs =  [(varNm, fromJust $ lookupSrc srcNm,param) | ReadSource varNm (srcNm, param) <- ds]
+          atOnceSrcs = [(varNm, srcf, param) | (varNm, Src _ _ _ _ (SrcOnce srcf), param)<- dsSrcs ]
+          rtSrcs = [(varNm, srcf, param) | (varNm, Src _ _ _ _ (SrcRealTimeSig srcf), param)<- dsSrcs ]
+          sigs = ("seconds", (Var "npnts"-Var"n")/Var "dt"):[ (nm,e) | Let nm (Sig e) <- ds ]
+          evs = [ nm | Let nm (Event e) <- ds ]
+          lns = newTmax++runAtOnceSrcs++ defineStep++runLine++retLine
+          newTmax = let tm = localTmax tmax ds' in
+                    [ind++"let tmax = "++(show $ tm),
+                    ind++"let npnts = idInt . round $ tmax/dt"]
+          runLine = [ind++"let ("++intercalate "," exps++") = step npnts "++(intercalate " " $ initVls)]
+          retLine = [ind++"return ("++(intercalate "," $ map ("bufToSig tmax "++) exps)++")\n"]
+          expBufs = map (++"Buf") exps
+          consExpBufs = map (\nm-> (nm++"Buf", Cons (Var nm) (Var (nm++"Buf")))) exps
+          delays = [ (nm,Var snm) | Let nm (SigDelay (Var snm) v0) <- ds ]
+          switches = [ (nm,sw) | Let nm sw@(Switch eslams s0) <- ds ]
+
+          arg (Let nm (Sig e)) = Just nm
+          arg (Let nm (SigDelay (Var snm) v0)) = Just nm
+          arg (Let nm (Switch eslams s0)) = Just nm
+          arg s = Nothing
+          bufArgs = map (++"Buf") exps
+          args = map ('!':) $ ["seconds"]++catMaybes (map arg ds)++bufArgs
+          
+          initV (Let nm (Sig e)) = Just nm
+          initV (Let nm (SigDelay (Var snm) v0)) = Just nm
+          initV (Let nm (Switch eslams s0)) = Just nm
+          initV s = Nothing
+          bufInits = map (\_->"[]") exps
+          initVls =["0"]++catMaybes (map initV ds)++bufInits
+
+          callE (Let nm (Sig e)) = Just e
+          callE (Let nm (SigDelay (Var snm) v0)) = Just $ Var snm
+--          callE (Let nm (Switch eslams s0)) = Just 
+          callE s = Nothing
+          bufCallEs = map (\nm-> (Cons (Var nm) (Var (nm++"Buf")))) exps
+          callEs = ((Var "npnts"-Var"n")/Var "dt"):catMaybes (map callE ds)++bufCallEs
+          
+          sigsAndAll = sigs ++ delays ++ consExpBufs 
+          breakStep =  "\n                         " 
+          runAtOnceSrcs = map (\(v,s,p)-> ind++v++" <- "++s++" tmax dt "++pp p) atOnceSrcs 
+          --initVls = ["0"]++map (\_->"undefined") (init sigs)++ (map (inPar . pp . tweakExprP .snd) delays)++map (\_->"[]") exps
+          defineStep = [ind++"let step 0 "++(intercalate " " $ map (bang. fst) sigsAndAll) ++" = ("++
+                          (intercalate ", " $ expBufs )++")",
+                        ind++"    step n "++(intercalate " " $ map (bang. fst) sigsAndAll)++" = \n"++replicate 20 ' '++
+                          "step (n-1) "++breakStep++(intercalate breakStep $ map (inPar . pp . tweakExprP . snd) sigsAndAll)] 
+
+bang nm = '!':nm
+
+tweakExprP e = mapE (changeRead . unSharp . unVal) e 
+    where unVal (SigVal (Var ('#':nm))) = Var (nm) -- ++"Val")
+          unVal (SigVal (Var nm)) = Var (nm) -- ++"Val")
+          unVal e = e
+          unSharp (Var ('#':nm)) = Var nm
+          unSharp e = e
+          changeRead (SigAt t s) = (App (App (Var "readSig") (s)) t)
+          changeRead e = e
+
+inPar s = "("++s++")"
+
+
 
 compStage ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++" = do "):lns
     where ind = "   "
@@ -146,7 +217,7 @@ compStage ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++"
           initLn (Let nm (Event e)) = [ind++nm++"Queue <- newIORef []"]
           initLn d = []
           debugDsSrcs = show dsSrcs
-          runAtOnceSrcs = ("{-"++debugDsSrcs++"-}"):map (\(v,s,p)-> ind++v++" <- "++s++" tmax dt "++pp p) atOnceSrcs --DOESNT WORK FOR SIGS !!
+          runAtOnceSrcs = ("{-"++debugDsSrcs++"-}"):map (\(v,s,p)-> ind++v++" <- "++s++" tmax dt "++pp p) atOnceSrcs 
           newTmax = let tm = localTmax tmax ds' in
                     [ind++"let tmax = "++(show $ tm),
                     ind++"let npnts = idInt . round $ tmax/dt"]
