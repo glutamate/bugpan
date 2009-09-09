@@ -56,8 +56,8 @@ inputRate = [(0,tmax,rate)]
 
 inputRate *> store ""
 
---gsyn *> store ""
---gcell *> store ""
+gsyn *> store ""
+gcell *> store ""
 --vm *> print ()
 vm *> store ""
 --vmpassive *> store ""

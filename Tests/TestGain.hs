@@ -60,8 +60,8 @@ plotGain = --inSessionNamed "9a05d5b49d3081de8000001676695ca4" $ do
              spikes <- events "spike" ()
              vm <- signalsDirect "vm"
              inrate <- durations "inputRate" real
-             --let outrate = freqDuring inrate $ spikes
-             --liftIO $ gnuplotOnScreen $ scatter outrate :||: take 1 vm
+             let outrate = freqDuring inrate $ spikes
+             liftIO $ gnuplotOnScreen $ take 1 vm
              return ()
 
 perfTest1 = inTemporarySession $ do
