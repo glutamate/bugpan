@@ -21,8 +21,8 @@ data Histo where -- GADT bec i don't know syntax for double existential (no long
 
 instance QueryResult Histo where
     qFilterSuccess _ = True
-    qReply (Histo nbins vls) = rHisto nbins vls "x11(width=10,height=7)"
-    qReply (AsPdf nm (Histo nbins vls)) = rHisto nbins vls $ "pdf(\""++nm++"\")"
+    qReply (Histo nbins vls) _ = rHisto nbins vls "x11(width=10,height=7)"
+    qReply (AsPdf nm (Histo nbins vls)) _ = rHisto nbins vls $ "pdf(\""++nm++"\")"
 
 
 instance PlotWithGnuplot Histo where
@@ -107,7 +107,7 @@ data GnuplotBox = forall a. PlotWithGnuplot a => GnuplotBox a
 instance QueryResult [GnuplotBox] where
     qFilterSuccess [] = False
     qFilterSuccess _ = True
-    qReply gpbxs = do 
+    qReply gpbxs _ = do 
       u <- (show. hashUnique) `fmap` newUnique
       let htmlFile  ="/var/bugpan/www/plots"++u++".html" 
       h <- openFile (htmlFile) WriteMode

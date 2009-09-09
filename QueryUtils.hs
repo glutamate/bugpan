@@ -80,6 +80,10 @@ area1 sig@(Signal t1 t2 dt sf) = ((t1, t2), foldSig sumf 0 sig)
 tag :: Tagged t =>  b -> [t a] -> [t b]
 tag tg = map (`setTag` tg)
 
+tagd :: Tagged t =>  Double -> [t a] -> [t Double]
+tagd = tag
+
+
 freqDuring :: [Duration a] -> [Event b] -> [Duration (a, RealNum)]
 freqDuring durs evs = map (freqDuring' evs) durs
     where freqDuring' evs dur@((t1, t2), durtag) = 
@@ -152,6 +156,9 @@ sigNoiseRatioF = pure (/) <*> minMaxDiffF <*> stdDevPF
 
 dur :: a -> [Duration a]
 dur x = [((minBound, maxBound), x)]
+
+durd :: Double -> [Duration Double]
+durd = dur
 
 -- <**> :: [Duration (a->b)] -> [Duration a] -> [Duration b]
 

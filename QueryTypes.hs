@@ -211,28 +211,28 @@ eachOf xs = ListT . return $ xs
 ask :: QueryResult a => a -> StateT QState IO ()
 ask qx = do
   x <- qResThroughSession qx
-  str <- liftIO $ qReply x
+  str <- liftIO $ qReply x []
   liftIO $ putStrLn str
 
 
 data QueryResultBox = forall a. QueryResult a => QResBox a deriving Typeable
 
 class QueryResult a where
-    qReply :: a -> IO String
+    qReply :: a -> [String] -> IO String
     qResThroughSession :: a -> StateT QState IO a
     qResThroughSession = return 
     qFilterSuccess :: a -> Bool
 
 instance Show a => QueryResult [Signal a] where
-    qReply xs = return $ unlines $ map show xs
+    qReply xs _ = return $ unlines $ map show xs
     qFilterSuccess [] = False
     qFilterSuccess _ = True
 instance Show a => QueryResult [Event a] where
-    qReply xs = return $ show xs
+    qReply xs _ = return $ show xs
     qFilterSuccess [] = False
     qFilterSuccess _ = True
 instance Show a => QueryResult [Duration a] where
-    qReply xs =return $ unlines $ map show xs
+    qReply xs _ = return $ unlines $ map show xs
     qFilterSuccess [] = False
     qFilterSuccess _ = True
 {-instance QueryResult (IO RPlotCmd) where
@@ -263,17 +263,17 @@ instance QueryResult [IO RPlotCmd] where
 
 -}
 instance QueryResult [Char] where
-    qReply = return 
+    qReply s _ = return s 
     qFilterSuccess [] = False
     qFilterSuccess _ = True
 
 instance QueryResult Int where
-    qReply = return . show
+    qReply x _ = return $  show x
     qFilterSuccess 0 = False
     qFilterSuccess _ = True
 
 instance QueryResult Double where
-    qReply = return . show
+    qReply x _ = return $ show x
     qFilterSuccess 0 = False
     qFilterSuccess _ = True
 

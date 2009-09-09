@@ -118,7 +118,7 @@ compileStages ds tmax stgs =  mainFun ds allStore ++ ["goMain = do "] ++lns++ret
           expTuple [] = ""
           expTuple nms = inTuple nms ++ " <- "
           stages = concatMap comStageLine $ zip stgs [0..]
-          comStageLine (ds,n) = compStageP ds tmax n (accumExports (n-1)) (exports!!n) ((eventExports ds \\ imps n) \\ (exports!!n))
+          comStageLine (ds,n) = compStage ds tmax n (accumExports (n-1)) (exports!!n) ((eventExports ds \\ imps n) \\ (exports!!n))
 
 removeSigLimits :: TravM ()
 removeSigLimits = mapD rSL

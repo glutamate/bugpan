@@ -110,29 +110,43 @@ durationsDirect nm _ = do
 
 
 storeAs :: Reify a => String -> [a] -> StateT QState IO ()
-storeAs nm vls = do 
+storeAs = storeAs' False
+
+storeAsOvwrt :: Reify a => String -> [a] -> StateT QState IO ()
+storeAsOvwrt = storeAs' True
+
+storeAs' ovwrt nm vls = do 
   let vs = map pack vls
   let t = typeOfReified $ head vls
   let uniqueIntStr = (show. hashUnique) `fmap` newUnique
+  suffix <- liftIO $ uniqueIntStr
   let subDir = case t of
                  SignalT _ -> "signals/"
                  PairT (NumT (Just RealT)) _ -> "events/"
                  PairT (PairT (NumT (Just RealT)) (NumT (Just RealT))) _ -> "durations/"
-                 _ -> error $ "cannot store "++nm++": unknown type"
+                 _ -> error $ "cannot store "++nm++": unknown type" 
   Session bdir t0 <- getSession
-  liftIO $ createDirectoryIfMissing False $ oneTrailingSlash bdir++subDir++nm
-  suffix <- liftIO $ uniqueIntStr
-  liftIO $ saveVs (oneTrailingSlash bdir++subDir++nm++"/stored"++suffix) vs
-  
+  if ovwrt
+     then liftIO $ do
+       whenM (doesDirectoryExist $ bdir ./ subDir ./ nm)
+             (removeDirectoryRecursive $ bdir ./ subDir ./ nm)
+       createDirectory $ bdir ./ subDir ./ nm
+       saveVs (oneTrailingSlash bdir++subDir++nm++"/stored"++suffix) vs
+     else liftIO $ do
+       whenM (not `fmap` (doesDirectoryExist $ bdir ./ subDir ./ nm))
+             (do createDirectory $ bdir ./ subDir ./ nm
+                 saveVs (oneTrailingSlash bdir++subDir++nm++"/stored"++suffix) vs)
 
 instance (Reify a, QueryResult [a]) => QueryResult (StoreAs a) where
-    qResThroughSession sa@(StoreAs nm val) = storeAs nm val >> return sa
-    qReply (StoreAs nm val) = qReply val
-    qFilterSuccess (StoreAs _ xs) = qFilterSuccess xs
+    qResThroughSession sa@(StoreAs nm val False) = storeAs nm val >> return sa
+    qResThroughSession sa@(StoreAs nm val True) = storeAsOvwrt nm val >> return sa
+    qReply (StoreAs nm val _) = qReply val
+    qFilterSuccess (StoreAs _ xs _) = qFilterSuccess xs
 
-data StoreAs a = StoreAs String [a]
+data StoreAs a = StoreAs String [a] Bool
 
-x @= y = StoreAs x y
+x @= y = StoreAs x y False
+x @=! y = StoreAs x y True
 
 
 inLastSession :: StateT QState IO a -> IO a

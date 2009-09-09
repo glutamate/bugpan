@@ -116,7 +116,9 @@ getNamesAndTypes sesns = do
 
 
 dispatch opts ("ask1":sessNm:queryStr':_) = do
-  let queryStr = preprocessQuery queryStr'
+  queryStr <- if "-f" `elem` opts 
+                 then preprocessQuery `fmap` readFile queryStr'
+                 else return $ preprocessQuery queryStr'
   when (not $ validateQuery queryStr) $
        fail $ "cannot validate query string"
   let sha = take 50 . showDigest . sha512 . BS.pack $ map c2w queryStr
@@ -125,8 +127,8 @@ dispatch opts ("ask1":sessNm:queryStr':_) = do
         (compileQuery opts sha queryStr)
   longSessNm <- resolveApproxSession root sessNm
   if ("-p" `elem` opts)
-     then system $ "/var/bugpan/queryCache/"++sha++" "++ longSessNm++" +RTS -p"
-     else system $ "/var/bugpan/queryCache/"++sha++" "++ longSessNm
+     then system $ "/var/bugpan/queryCache/"++sha++" "++ longSessNm++" "++(intercalate " " opts)++" +RTS -p"
+     else system $ "/var/bugpan/queryCache/"++sha++" "++ longSessNm++" "++(intercalate " " opts)
   
 
   return ()
@@ -158,7 +160,7 @@ dispatch opts ("ask":sessNm:queryStr':_) = do
   case out of
     Right outaction -> do 
              QResBox qres <- outaction 
-             qreply <- qReply qres
+             qreply <- qReply qres opts
              case dropPrefix "file:///var/bugpan/www/" qreply of
                ("",s) -> cond [("-o" `elem` opts,  do
                                         system $ "gnome-open "++qreply
@@ -232,10 +234,15 @@ dispatch _ ("compact_1":sessNm:_) = do
        nms <- getDirContents $ (oneTrailingSlash $ baseDir sess)++kind
        let path  = (oneTrailingSlash $ baseDir sess)++kind++"/"
        forM_ nms $ \nm -> do 
-         fnms <- getSortedDirContents $ path++nm
+         allfnms <- getSortedDirContents $ path++nm
+         let fnms = filter (not . ("compacted" `isPrefixOf`)) allfnms
+--         print2 ("files to compact in "++nm) fnms
+         
+         let fileNoMax = foldl (max) 0 $ catMaybes $ map (safeRead . (drop 9)) $ filter ("compacted" `isPrefixOf`) allfnms
+--         print2 "filemaxno " fileNoMax
          xs <- forM fnms $ \fn->loadBinary $ path++nm++"/"++fn                                    
          let vs = sortVs $ idLstV $ concat xs
-         saveBinary (path++nm++"/compacted") vs
+         saveBinary (path++nm++"/compacted"++show (fileNoMax + idInt 1)) vs
          --putStrLn $ nm ++ ": "++ppVal (ListV vs)
 
 dispatch _ ("compact_2":sessNm:_) = do
@@ -245,7 +252,7 @@ dispatch _ ("compact_2":sessNm:_) = do
        let path  = (oneTrailingSlash $ baseDir sess)++kind++"/"
        forM_ nms $ \nm -> do 
          fnms <- getSortedDirContents $ path++nm
-         forM fnms $ \fn-> if fn == "compacted"
+         forM fnms $ \fn-> if ("compacted" `isPrefixOf` fn)
                               then return () --print "skipping"
                               else removeFile $ path++nm++"/"++fn
                     
