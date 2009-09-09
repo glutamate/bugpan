@@ -83,7 +83,9 @@ allSrcImports ds = let snms = [nm | ReadSource _ (nm, _) <- ds]
 rootDir = "/var/bugpan/sessions"
 
 mainFun ds exps = 
-    let ind = "   " in
+    let ind = "   "
+        modNm = head [nm | Let "moduleName" (Const (StringV nm)) <- ds]
+    in
           ["main = do",
            ind++"sessNm:t0Str:_ <- getArgs",
            ind++"sess <- loadApproxSession \""++rootDir++"\" sessNm", 
@@ -91,6 +93,10 @@ mainFun ds exps =
            ind++"let t0 = read t0Str",
            ind++inTuple exps++" <- goMain",
            concatMap (\nm->ind++"saveInSession sess \""++nm++"\" t0 dt $ pack ("++nm++"::"++(haskTypeString $ getDeclaredType ds nm)++")\n") exps,
+           ind++"saveInSession sess \"tStart\" t0 dt $ pack ([(0,())]::[(Double,())])\n",
+           ind++"saveInSession sess \"tStop\" t0 dt $ pack ([(tmax,())]::[(Double,())])\n",
+           ind++"saveInSession sess \"running\" t0 dt $ pack ([((0,tmax),())]::[((Double,Double),())])\n",
+           ind++"saveInSession sess \"moduleName\" t0 dt $ pack ([((0,tmax),\""++unCap modNm++"\")]::[((Double,Double),String)])\n",
            ind++"return ()",
 
 

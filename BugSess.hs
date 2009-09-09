@@ -34,12 +34,6 @@ main = do
   let (opts, args) = partition beginsWithHyphen allArgs
   dispatch opts args
 
-unCap [] = []
-unCap (c:cs) = toLower c : cs
-
-beginsWithHyphen ('-':_) = True
-beginsWithHyphen _ = False
-
 preprocessQuery qs | "@=" `isInfixOf` qs = let (lhs, rhs) = span (/='@') $ qs
                                            in "\""++(filter (/=' ') lhs)++"\" "++rhs
                    | otherwise = qs

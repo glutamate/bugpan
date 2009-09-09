@@ -52,8 +52,8 @@ ioBench = inTemporarySession $ do
 
 real = double
 
-plotGain = inSessionNamed "9a05d5b49d3081de8000001676695ca4" $ do
-           --inNewSession $ do
+plotGain = --inSessionNamed "9a05d5b49d3081de8000001676695ca4" $ do
+           inNewSession $ do
              intfire <- use "Intfire"
              prg <- compile (intfire `with` ["_tmax" =: 0.5]) [("rate", realT)]
              10 `times` determine prg [("rate", uniform 600 1000)]
