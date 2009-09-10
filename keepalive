@@ -1,0 +1,14 @@
+#! /usr/bin/perl
+
+my @pid;
+
+while () {
+
+@pid = `pgrep $ARGV[0]`;
+if($#pid) {
+       system $ARGV[0] . ' ' . $ARGV[1] . ' ' . $ARGV[2] ;
+} 
+sleep 1;
+
+}
+
