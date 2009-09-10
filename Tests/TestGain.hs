@@ -25,6 +25,7 @@ import QueryRun
 import ValueIO
 import Numbers
 import Tests.Asserts
+import TNUtils
 import PlotGnuplot
 
 main = plotGain
@@ -55,13 +56,16 @@ real = double
 plotGain = --inSessionNamed "9a05d5b49d3081de8000001676695ca4" $ do
            inNewSession $ do
              intfire <- use "Intfire"
-             prg <- compile (intfire `with` ["_tmax" =: 0.5]) [("rate", realT)]
-             10 `times` determine prg [("rate", uniform 600 1000)]
+             prg <- compile (intfire `with` ["_tmax" =: 2]) [("rate", realT)]
+             1 `times` determine prg [("rate", uniform 600 1000)]
              spikes <- events "spike" ()
              vm <- signalsDirect "vm"
+             gsyn <- signalsDirect "gsyn"
+             rndSpike <- events "rndSpike" ()
              inrate <- durations "inputRate" real
              let outrate = freqDuring inrate $ spikes
-             liftIO $ gnuplotOnScreen $ take 1 vm
+             liftIO $ gnuplotOnScreen $ ("gsyn", gsyn) :||: ("vm", take 1 vm)
+             --liftIO $ print2 "inputSpikes" rndSpike
              return ()
 
 perfTest1 = inTemporarySession $ do

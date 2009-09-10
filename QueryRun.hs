@@ -54,7 +54,7 @@ compile ds params = do
   liftIO $ whenM (not `fmap` doesFileExist ("/var/bugpan/queryCache/"++sha)) 
                  (do setCurrentDirectory "/var/bugpan/queryCache/"
                      compileToHask (sha++".hs") dt trun dsTrans params
-                     system $ "ghc -O2 --make "++sha
+                     system $ "ghc -O2 --make "++sha -- -prof -auto-all
                      return ())
   liftIO $ whenM (not `fmap` doesFileExist ("/var/bugpan/queryCache/"++sha)) 
              (fail "could not compile")
@@ -70,7 +70,7 @@ invoke (sha, tmax,pars) vals= do
   let cmdStr = "time /var/bugpan/queryCache/"++sha++" "++(last $ splitBy '/' sessNm)++" "++show t0 ++" "++valargs
   liftIO . putStrLn $ cmdStr
   liftIO $ putStrLn ""
-  liftIO $ system $ cmdStr
+  liftIO $ system $ cmdStr -- ++" +RTS -p"
   put $ s { lastTStart = t0,
             lastTStop = t0 + tmax}
   return ()

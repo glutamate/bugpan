@@ -56,10 +56,13 @@ inputRate = [(0,tmax,rate)]
 
 inputRate *> store ""
 
+secs = {: <: seconds :> :}
+
 gsyn *> store ""
 gcell *> store ""
 --vm *> print ()
 vm *> store ""
+secs *> store ""
 --vmpassive *> store ""
 --incrsig *> store ""
 spike *> store ""
