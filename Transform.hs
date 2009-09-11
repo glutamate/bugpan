@@ -18,7 +18,6 @@ import Data.List
 import PrettyPrint
 import CompiledSrcsSinks
 
--- CHEATING!!!!!
 substHasSigs :: TravM ()
 substHasSigs = mapDE $ \tle -> mapEM subst tle
     where subst e@(App (Var nm) arg) = do
@@ -63,7 +62,7 @@ recursiveSigGenApplication = mapDE tle
                                 let (args, innerDefn) = unLam defn
                                 let subInner = subVar nm (Var f) innerDefn
                                 let sigDefn = lamMany (unSig subInner) args
-                                let newInnerDefn = Sig (LetE [(f, UnspecifiedT, sigDefn)] 
+                                let newInnerDefn = Sig (LetE [(PatVar f UnspecifiedT, sigDefn)] 
                                                              (appMany (Var f) . snd $ unApp e))
                                 --traceM "recursiveSigGenApplication"
                                 --traceM nm
@@ -165,18 +164,18 @@ unDelays = mapDE unDelays'
             ifM (inBoundVars nm)
                 (return e)
                 (do dnm <- genSym $ nm++"_delay"
-                    insertAtEnd [Let dnm (SigDelay (Var nm) initE)]
+                    insertAtEnd [Let (PatVar dnm UnspecifiedT) (SigDelay (Var nm) initE)]
                     return (Var dnm))
           undel e = return e
             
 letFloating ::TravM ()
 letFloating = mapDE letFl
     where letFl (LetE ses er) = do
-            nns <- mapM genSym (map fst3 ses)
-            let nonns = zip (map fst3 ses) nns
-            nes <- forM (zip ses nns) $ \((n,t,e), nn) -> do
+            nns <- mapM genSym (map (unsafePatToName . fst) ses)
+            let nonns = zip (map (unsafePatToName . fst) ses) nns
+            nes <- forM (zip ses nns) $ \((PatVar n t,e), nn) -> do
                                   return $ [DeclareType nn t,
-                                            Let nn (changeVars nonns e)]
+                                            Let (PatVar nn t) (changeVars nonns e)]
             insertBefore $ concat nes
             return (changeVars nonns er) 
 
@@ -202,7 +201,7 @@ sigFloating = mapDE sigFl
           sigFloat e = return e
           reallyFloatSig se = do 
             sn <- genSym "sigfl"
-            insertBefore [Let sn (Sig se)]
+            insertBefore [Let (PatVar sn UnspecifiedT) (Sig se)]
             return (Var sn)
 
 
@@ -217,8 +216,8 @@ explicitSignalCopying = mapDE explC
 
 renameCopiedEvents :: TravM ()
 renameCopiedEvents = mapD rnmCE
-    where rnmCE (Let nm (Var nm')) = do renameEverywhere nm' nm -- ideally check which one
-                                        return Nop
+    where rnmCE (Let (PatVar nm _) (Var nm')) = do renameEverywhere nm' nm -- ideally check which one
+                                                   return Nop
           rnmCE d = return d 
 
 removeNops :: TravM ()
@@ -231,7 +230,7 @@ floatConnectedSignals = mapD fCS
     where fCS e@(SinkConnect (Var nm) snm) = return e
           fCS e@(SinkConnect se (snm, arg)) = 
               do sn <- genSym snm
-                 insertBefore [Let sn se]
+                 insertBefore [Let (PatVar sn UnspecifiedT) se]
                  return (SinkConnect (Var sn) (snm,arg))
           fCS e = return e
 
@@ -265,7 +264,7 @@ evalSigLimits = mapD eSSA
 
 globalizeE :: String -> E -> TravM String
 globalizeE s e = do gs <- genSym s
-                    insertBefore [Let gs e]
+                    insertBefore [Let (PatVar gs UnspecifiedT) e]
                     return gs
 
 floatSwitchEvents :: TravM ()
@@ -289,7 +288,7 @@ connectsLast = do ds <- decls `fmap` get
 addStageAnnotations = whileChanges $ do
   ds <- decls `fmap` get
   let sAnnos = [ (nm, stage) | Stage nm stage <- ds ]
-  let allSigs = [ nm | Let nm _ <- filter declInMainLoop ds ]
+  let allSigs = [ nm | Let (PatVar nm _) _ <- filter declInMainLoop ds ]
   let existSnks = [n | SinkConnect (Var n1) (('#':n), _) <- ds, n1==n]
   let newSnks =[SinkConnect (Var nm) (('#':nm), Const Unit) | Stage nm _ <- ds, not $ nm `elem` existSnks  ]
   forM_ sAnnos $ \(nm, stage)-> do 
@@ -311,18 +310,18 @@ sigAtRefersToBuffer = mapDE $ \tle -> mapEM sAbuf tle
 --what if n2 is referred to?
 simplifySomeLets :: TravM ()
 simplifySomeLets = mapDE $ \tle -> mapEM sSL tle
-    where sSL e@(LetE [(n1,t,e1)] (Var n2)) | n1 == n2 && (not $ Var n1 `isSubTermIn` e1)= return e1
-                                            | otherwise = return e
+    where sSL e@(LetE [(PatVar n1 t,e1)] (Var n2)) | n1 == n2 && (not $ Var n1 `isSubTermIn` e1)= return e1
+                                                   | otherwise = return e
           sSL e = return e
 
 massageDelayRefsInSwitch :: TravM ()
 massageDelayRefsInSwitch = mapD mDRIS
-    where mDRIS d@(Let gn (Switch mes le@(LetE [(n1,t,s1)] (Var n2)))) 
-                           | n1 == n2  = return (Let gn $ Switch (mDris2 gn mes) $ mapE (sub n1 gn) le)
+    where mDRIS d@(Let gn (Switch mes le@(LetE [(PatVar n1 t,s1)] (Var n2)))) 
+                           | n1 == n2  = return (Let gn $ Switch (mDris2 gn mes) $ mapE (sub n1 $ unsafePatToName gn) le)
                            | otherwise = return d 
           mDRIS d = return d
           mDris2 gn [] = []
-          mDris2 gn ((ev, ls@(Lam tn _ (Lam vn _ (LetE [(n1,t1,s1)] (Var n2))))):tl) = (ev, mapE (sub n1 gn) ls):mDris2 gn tl
+          mDris2 gn ((ev, ls@(Lam tn _ (Lam vn _ (LetE [(PatVar n1 t1,s1)] (Var n2))))):tl) = (ev, mapE (sub n1 $ unsafePatToName gn) ls):mDris2 gn tl
           mDris2 gn (hd:tl) = hd:mDris2 gn tl
           sub sn tn e@(SigDelay (Var sn1) v0) | sn1 == sn = SigDelay (Var tn) v0
                                               | otherwise = e
@@ -485,7 +484,7 @@ splitByStages ds =
     let stages = nub [ s | Stage _ s <- ds ]
         (mainL, env) = partition declInMainLoop ds 
         stageDs st = let nms = [ nm | Stage nm s <- ds, s==st ]
-                         in [ d | d@(Let nm _) <- ds, nm `elem` nms ]++
+                         in [ d | d@(Let (PatVar nm _) _) <- ds, nm `elem` nms ]++
                             [ d | d@(SinkConnect _ (('#':nm),_)) <- ds, nm `elem` nms]++
                             [ d | d@(ReadSource _ (nm,_)) <- ds, nm `elem` nms]
 --                            [ d | d@(SinkConnect (Var nm) ("store",_)) <- ds, nm `elem` nms]

@@ -40,7 +40,7 @@ ppVal (StringV s) = show s
 ppProg :: String -> [Declare]->String
 ppProg modNm ds= "module "++modNm++" where\n"++(unlines $ map ppDecl ds)
 
-ppDecl (Let nm e ) = nm++" = " ++ pp e
+ppDecl (Let nm e ) = ppPat nm++" = " ++ pp e
 ppDecl (SinkConnect e (src,arg)) = (pp e++" *> " ++ src++ " "++pp arg)
 ppDecl (ReadSource varNm (src, arg)) = (varNm++" <* " ++ src ++ " "++pp arg)
 ppDecl (Import nm []) = "use "++nm 
@@ -108,10 +108,10 @@ pp (M2 Sub e1 e2) = pp2op e1 "-" e2
 pp (M2 Div e1 e2) = pp2op e1 "/" e2
 pp (M1 Exp e) = "exp " ++ ppa e
 pp (M1 Ln e) = "log " ++ ppa e
-pp (LetE [(n,t,e)] efinal) = concat ["let "++n++"="++ppa e ++" in ", ppa efinal]
+pp (LetE [(p,e)] efinal) = concat ["let "++ppPat p++"="++ppa e ++" in ", ppa efinal]
     where ppes es = map (\(n,t,e)-> n++" = "++pp e) es 
 pp (LetE les efinal) = concat ["let {", intercalate ";" $ ppes les, "} in ", ppa efinal]
-    where ppes es = map (\(n,t,e)-> n++" = "++pp e) es 
+    where ppes es = map (\(n,e)-> ppPat n++" = "++pp e) es 
 pp (Box d) = "box "++ppa d
 pp (Translate t e) = "translate "++ppa t++" "++ppa e
 pp (Colour t e) = "colour "++ppa t++" "++ppa e

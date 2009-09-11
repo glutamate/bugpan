@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances, DeriveDataTypeable #-}
 
 module Expr where
 
@@ -8,10 +8,11 @@ import Numbers
 import EvalM
 import Data.List
 import TNUtils
+import Data.Generics
 
-data Math1 = Ln | Exp | Re | Im deriving (Show, Eq, Read)
-data Math2 = Add | Sub | Mul | Div deriving (Show, Eq, Read)
-data CmpOp = Lt | Gt | Eq | Ne | Le | Ge deriving (Show, Eq, Read)
+data Math1 = Ln | Exp | Re | Im deriving (Show, Eq, Read, Data, Typeable)
+data Math2 = Add | Sub | Mul | Div deriving (Show, Eq, Read, Data, Typeable)
+data CmpOp = Lt | Gt | Eq | Ne | Le | Ge deriving (Show, Eq, Read, Data, Typeable)
 
 --data EvalM a = Res {unEvalM :: a} | Error String
 
@@ -55,15 +56,16 @@ data E =  If E E E
         | SigDelay E E
         | Switch [(E,E)] E
         | Event E
-        | LetE [(String,T,E)] E
+        | Forget E E
+        | LetE [(Pat,E)] E
         | Box E
         | Translate E E
         | Colour E E
         | HasType T E
-	deriving (Show, Eq, Read)
+	deriving (Show, Eq, Read, Data, Typeable)
 
 data Declare 
-	= Let String E
+	= Let Pat E
         | DeclareType String T
 	| Import String [(String, E)]
 	| SinkConnect E (String,E)
@@ -84,149 +86,28 @@ flatE :: E -> [E]
 flatE = queryE (unitList)
     where unitList x = [x]
 
+gqueryE :: (E-> [a]) -> E -> [a]
+gqueryE qf = everything (++) ([] `mkQ` qf)
+
+
 queryE :: (E-> [a]) -> E -> [a]
-queryE q e@(If p c a) = q e ++ m p ++ m c ++m a
-	where m = queryE q
-
-queryE q e@(LetE ses er) = q e ++ m er ++ concatMap (m . trd3) ses  
-	where m = queryE q
-queryE q e@(Switch ses er) = concat [q e, m er, 
-                                     concatMap (m . fst) ses,
-                                     concatMap (m . snd) ses]
-	where m = queryE q
-
-queryE q e@(Lam n t bd) = q e ++ m bd
-	where m = queryE q
-queryE q e@(App le ae) = q e ++ m le ++ m ae
-	where m = queryE q
-queryE q e@(Pair e1 e2) = q e++m e1 ++ m e2
-	where m = queryE q
-queryE q e@(Cons e1 e2) = q e++m e1 ++ m e2
-	where m = queryE q
-queryE q e@(M1 _ e1) = q e++m e1
-	where m = queryE q
-queryE q e@(M2 _ e1 e2) = q e++m e1 ++ m e2
-	where m = queryE q
-queryE q e@(Cmp _ e1 e2) = q e++m e1 ++ m e2
-	where m = queryE q
-queryE q e@(And e1 e2) = q e++m e1 ++ m e2
-	where m = queryE q
-queryE q e@(Or e1 e2) = q e++m e1 ++ m e2
-	where m = queryE q
-queryE q e@(Not e1) = q e++m e1
-	where m = queryE q
-queryE q e@(Sig e1) = q e++m e1
-	where m = queryE q
-queryE q e@(SigVal e1) = q e++m e1
-	where m = queryE q
-queryE q e@(SigDelay e1 e2) = q e++m e1++ m e2
-	where m = queryE q
-queryE q e@(SigLimited e1 e2) = q e++m e1++ m e2
-	where m = queryE q
-queryE q e@(Event e1) = q e++m e1
-	where m = queryE q
-queryE q e@(Const _) = q e
-	where m = queryE q
-queryE q e@(SigAt e1 e2) = q e++m e1++m e2
-	where m = queryE q
-queryE q e@(Case ce cs) = q e++q ce++concatMap (m . snd) cs
-	where m = queryE q
-queryE q e@(Var _) = q e
-queryE q e@(Nil) = q e
-queryE q e@(Box e1) = q e++m e1
-	where m = queryE q
-queryE q e@(Translate e1 e2) = q e++m e1++m e2
-	where m = queryE q
-queryE q e@(Colour e1 e2) = q e++m e1++m e2
-	where m = queryE q
-queryE q e@(HasType _ e1) = q e++m e1
-	where m = queryE q
-
-
---queryE q e = error $ "queryE: unknown expr "++show e 
-
-{-freeVars :: E -> [String]
-freeVars e = fv [] e
-    where fv e (If p c a) = fv e p ++ fv e c ++ fv e a
-          fv e (Lam n t bd) = fv (n:e) bd
-          fv e (App lm ar) = fv e lm ++ fv e ar
-          fv e (Var n) | n `elem` e = []
-                       | otherwise = [n]
-          fv e (Sig s) = fv e s
-          fv e (SigVal s) = fv e s
-          fv e (SigAt s1 s2 ) = fv e s1 ++ fv e s2
-          fv e (M1 _ s) = fv e s
-          fv e (M2 _ s1 s2 ) = fv e s1 ++ fv e s2
-          fv e (Not s) = fv e s
-          fv e (Cmp _ s1 s2) = fv e s1 ++ fv e s2
-          fv e (And s1 s2) = fv e s1 ++ fv e s2
-          fv e (Or s1 s2) = fv e s1 ++ fv e s2
-          fv e (Cons s1 s2) = fv e s1 ++ fv e s2
-          fv e (Pair s1 s2) = fv e s1 ++ fv e s2
-          fv e (SigDelay s1 s2) = fv e s1++ fv e s2
-          fv e (Box s1) = fv e s1
-          fv e (Translate s1 s2) = fv e s1++ fv e s2
-          fv e (Colour s1 s2) = fv e s1++ fv e s2
-          fv e (HasType _ s2) =fv e s2
-          fv e (Event s1) = fv e s1
-          fv e (Const _) = []
-          fv e (Nil) = []
-          fv e (LetE ses er) = fv (map fst3 ses++e) er ++ concatMap (fv (map fst3 ses++e) . trd3) ses 
-          fv e (Case te pats) = fv e te ++ concatMap (\(pat, ep) -> fv (patIntroducedVars pat++e) ep) pats
-          
-          --fv e (expr) = [] -}
+queryE = gqueryE
 
 alphaConvert :: E -> E -> E -> E
 alphaConvert from to = mapE f
     where f e | e == from = to
               | otherwise = e
 
+gmapE :: (E -> E) -> E -> E
+gmapE f = everywhere (mkT f)
+
 mapE :: (E-> E)-> E -> E
-mapE f (If p c a) = f (If (m p) (m c) (m a))
-    where m = mapE f 
-mapE f (Lam n t bd) = f (Lam n t (m bd))
-    where m = mapE f
-mapE f (App le ae) = f (App (m le) (m ae))
-    where m = mapE f
-mapE f (Var n) = f (Var n)
-mapE f (Sig s) = f (Sig (mapE f s))
-mapE f (SigVal s) = f (SigVal (mapE f s))
-mapE f (SigDelay s1 s2) = f (SigDelay (mapE f s1) (mapE f s2))
-mapE f (SigLimited s1 s2) = f (SigLimited (mapE f s1) (mapE f s2))
-mapE f (SigAt s1 s2) = f (SigAt (mapE f s1) (mapE f s2))
-mapE f (M1 m s) = f (M1 m (mapE f s))
-mapE f (M2 m s1 s2) = f (M2 m (mapE f s1) (mapE f s2))
-mapE f (And s1 s2) = f (And (mapE f s1) (mapE f s2))
-mapE f (Or s1 s2) = f (Or (mapE f s1) (mapE f s2))
-mapE f (Cons s1 s2) = f (Cons (mapE f s1) (mapE f s2))
-mapE f (Not s) = f (Not (mapE f s))
-mapE f (Cmp o s1 s2) = f (Cmp o (mapE f s1) (mapE f s2))
-mapE f (Pair s1 s2) = f (Pair (mapE f s1) (mapE f s2))
-mapE f (Event s2) = f (Event (mapE f s2))
-mapE f (Const c) = f (Const c)
-mapE f (Nil) = f (Nil)
-mapE f (LetE ses er) = 
-    f (LetE (map (\(n,t,e)-> (n, t, mapE f e)) ses) (mapE f er))
-mapE f (Switch ses er) = 
-    f (Switch (map (\(e1,e2)-> (mapE f e1, mapE f e2)) ses) (mapE f er))
-mapE f (Case te pats) = 
-    f (Case (mapE f te) (map (\(p,e)-> (p, mapE f e)) pats))
-
-
-mapE f (Box s1) = f (Box (mapE f s1))
-mapE f (Translate s1 s2) = f (Translate (mapE f s1) (mapE f s2))
-mapE f (Colour s1 s2) = f (Colour (mapE f s1) (mapE f s2))
-mapE f (HasType t s2) = f (HasType t (mapE f s2))
+mapE = gmapE
 
 unLam :: E -> ([String], E)
 unLam e = unLam' e []
 unLam' (Lam nm _ bd) nms = unLam' bd (nm:nms)
 unLam' e nms = (nms, e)
-
-
---mapE f e = error $ "mapE: unknown expr "++show e 
-
---mapE f e = f e
 
 subVar n es e = mapE f e where 
     f (Var n') | n== n' = es
@@ -263,19 +144,17 @@ instance Floating E where
         acosh = (Var "acosh" $>)
         atanh = (Var "atanh" $>)
 
-        -- sin = M1 Sin
-        -- cos = M1 Cos
-
-
-
 data Pat = 	  PatVar String T
 		| PatIgnore
 		| PatLit V
 		| PatPair Pat Pat
 		| PatNil 
 		| PatCons Pat Pat
+                | PatDeriv Pat
 		-- | PatGuard E Pat
-		deriving (Show, Eq, Read)
+		deriving (Show, Eq, Read, Data, Typeable)
+
+unsafePatToName (PatVar nm _) = nm
 
 patIntroducedVars (PatVar nm t) = [nm]
 patIntroducedVars (PatCons h t)= patIntroducedVars h ++ patIntroducedVars t
@@ -307,35 +186,6 @@ e1 .==. e2 = Cmp Eq e1 e2
 
 e1 .&. e2 = And e1 e2
 e1 .|. e2 = Or e1 e2
-
-
-{-
-t = Const $ BoolV True
-f = Const $ BoolV False
-
-
-class ToE a where
-    toExpr :: a -> E
-
-instance ToE E where
-    toExpr = id
-
-instance ToE [Char] where
-    toExpr = Var
-
-sig :: ToE a => a -> E
-sig = Sig . toExpr
-
-sigVal :: ToE a => a -> E
-sigVal = SigVal . toExpr
-
-sigDelay :: (ToE a, ToE b) => a -> b-> E
-sigDelay x y = SigDelay (toExpr x) (toExpr y)
-
-x ^$> y = (toExpr x) $> (toExpr y)
-
--}
-
 
 lookupDefn _ [] = Nothing
 lookupDefn nm ((Let nm' (Const v)):ds) | nm == nm' = Just $ v

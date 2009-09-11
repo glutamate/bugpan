@@ -54,4 +54,4 @@ sndV (PairV x y) = y
 
 bivNms = [nm | BiV nm _ _ <- bivs ]
 
-bivDecls = [Let nm (Const vl) | BiV nm _ vl <- bivs, not (nm `elem` ["seconds", "dt"]) ]
+bivDecls = [Let (PatVar nm t) (Const vl) | BiV nm t vl <- bivs, not (nm `elem` ["seconds", "dt"]) ]

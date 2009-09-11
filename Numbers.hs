@@ -1,9 +1,10 @@
-{-# LANGUAGE Rank2Types, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE Rank2Types, GeneralizedNewtypeDeriving, DeriveDataTypeable #-}
 
 module Numbers where
 
 import Data.Complex
 import Text.Printf
+import Data.Generics
 --import Data.Array.Vector
 type Number = NumVl
 
@@ -26,7 +27,7 @@ data NumVl = NInt Int
 	   -- | NRat Int Int
 	   | NReal RealNum
 	   | NCmplx (Complex RealNum)
-	     deriving (Show, Read)
+	     deriving (Show, Read, Data, Typeable)
 
 instance Eq NumVl where
     n1 == n2 = let (x,y) = sameize n1 n2 in x =~= y

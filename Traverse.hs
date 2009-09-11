@@ -26,9 +26,9 @@ type TravM = StateT TravS Identity
 alterDefinition :: String -> (E->E) -> TravM ()
 alterDefinition nm f = do 
   ds <- decls `fmap` get
-  let line = [ (def,lnum) | (Let nm1 def ,lnum) <- zip ds [0..], nm==nm1]
+  let line = [ (def,lnum, t) | (Let (PatVar nm1 t) def ,lnum) <- zip ds [0..], nm==nm1]
   case line of
-    (e, num):_ -> setter $ \s-> s { decls = setIdx num (Let nm $ f e) ds }
+    (e, num, t):_ -> setter $ \s-> s { decls = setIdx num (Let (PatVar nm t) $ f e) ds }
     [] -> return ()
 
 alterTypeDefinition :: String -> T -> TravM ()
@@ -50,7 +50,7 @@ traceDecls = do ds <- decls `fmap` get
                 mapM_ (\d->traceM $ ppDecl d) ds
 traceDefn :: String -> TravM ()
 traceDefn nm = do ds <- decls `fmap` get
-                  mapM_ (\d->traceM $ ppDecl d) [ d | d@(Let nm1 e) <- ds, nm1 == nm]
+                  mapM_ (\d->traceM $ ppDecl d) [ d | d@(Let (PatVar nm1 _) e) <- ds, nm1 == nm]
 
 traceTyConstraints :: TravM ()
 traceTyConstraints = do tcs <- tyConstraints `fmap` get
@@ -123,8 +123,8 @@ renameEverywhere :: String -> String -> TravM ()
 renameEverywhere oldn newn 
     = do ds <- decls `fmap` get
          setter $ \s-> s { decls = map rnm ds}
-    where rnm (Let nm e) | nm == oldn = Let newn $ mapE rne e
-                         | otherwise =  Let nm $ mapE rne e
+    where rnm (Let (PatVar nm t) e) | nm == oldn = Let (PatVar newn t) $ mapE rne e
+                                    | otherwise =  Let (PatVar nm t)  $ mapE rne e
           rnm (SinkConnect e nm) = SinkConnect (mapE rne e) nm
           rnm (Stage nm s) | nm == oldn = Stage newn s
                            | otherwise = Stage nm s
@@ -221,7 +221,7 @@ insertAfter ds = markChange >> (setter $ \s-> let ln = lineNum s
                                               in s { decls = ds', lineNum = ln+length ds })
 
 declsToEnv [] = []
-declsToEnv ((Let n e):ds) = (n,e):declsToEnv ds
+declsToEnv (Let (PatVar n t) e:ds) = (n,e):declsToEnv ds
 declsToEnv (_:ds) = declsToEnv ds 
 
 concatM :: Monad m => [m [a]] -> m [a]
@@ -231,68 +231,44 @@ concatM (mlst:mlsts) = do lst <- mlst
                           return (lst++lsts)
 
 queryM :: (E-> TravM [a]) -> E -> TravM [a]
-queryM q e@(If p c a) = concatM [q e,m p, m c,m a]
-	where m = queryM q
-
-queryM q e@(LetE ses er) = withBvars (map fst3 ses) $
-                           concatM [q e, 
-                                    concat `fmap` mapM m (map trd3 ses), 
-                                    m er]
+queryM q e = queryM' e
     where m = queryM q
-queryM q e@(Switch ses er) = concatM [q e, 
+          queryM' e@(If p c a) = concatM [q e,m p, m c,m a]
+          queryM' e@(LetE ses er) = withBvars (concatMap (patIntroducedVars . fst) ses) $
+                           concatM [q e, 
+                                    concat `fmap` mapM m (map snd ses), 
+                                    m er]
+          queryM' e@(Switch ses er) = concatM [q e, 
                                       concat `fmap` mapM m (map fst ses), 
                                       concat `fmap` mapM m (map snd ses), 
                                       m er]
-    where m = queryM q
-queryM q e@(Lam n t bd) = withBvars [n] $ concatM [q e, m bd]
-	where m = queryM q
-queryM q e@(App le ae) = concatM [q e, m le, m ae]
-	where m = queryM q
-queryM q e@(Pair e1 e2) = concatM [q e, m e1, m e2]
-	where m = queryM q
-queryM q e@(Cons e1 e2) =concatM [ q e, m e1, m e2]
-	where m = queryM q
-queryM q e@(M1 _ e1) = concatM [q e, m e1]
-	where m = queryM q
-queryM q e@(M2 _ e1 e2) = concatM [q e, m e1, m e2] 
-	where m = queryM q
-queryM q e@(Cmp _ e1 e2) = concatM [q e, m e1, m e2]
-	where m = queryM q
-queryM q e@(And e1 e2) = concatM [q e, m e1, m e2]
-	where m = queryM q
-queryM q e@(Or e1 e2) = concatM [q e, m e1, m e2]
-	where m = queryM q
-queryM q e@(Not e1) = concatM [q e, m e1]
-	where m = queryM q
-queryM q e@(Sig e1) = concatM [q e, m e1]
-	where m = queryM q
-queryM q e@(SigVal e1) = concatM [q e, m e1]
-	where m = queryM q
-queryM q e@(SigDelay e1 e2) = concatM [q e, m e1,  m e2]
-	where m = queryM q
-queryM q e@(SigLimited e1 e2) = concatM [q e, m e1,  m e2]
-	where m = queryM q
-queryM q e@(Event e1) = concatM [q e, m e1]
-	where m = queryM q
-queryM q e@(Const _) = concatM [q e]
-	where m = queryM q
-queryM q e@(SigAt e1 e2) = concatM [q e, m e1, m e2]
-	where m = queryM q
---queryM q e@(Case ce cs) = q e, q ce, concatMap (m . snd) cs
---	where m = queryM q
-queryM q e@(Var _) = concatM [q e]
-queryM q e@(Nil) = concatM [q e]
-
-queryM q e@(Box e1) = concatM [q e, m e1]
-	where m = queryM q
-queryM q e@(Translate e1 e2) = concatM [q e, m e1, m e2]
-	where m = queryM q
-queryM q e@(Colour e1 e2) = concatM [q e, m e1, m e2]
-	where m = queryM q
-queryM q e@(HasType _ e1) = concatM [q e, m e1]
-	where m = queryM q
-queryM q e@(Case ce cs) = concatM [q e, q ce, concat `fmap` mapM (\(p,ep)-> withBvars (patIntroducedVars p) $ m ep) cs]
-	where m = queryM q 
+          queryM' e@(Lam n t bd) = withBvars [n] $ concatM [q e, m bd]
+          queryM' e@(App le ae) = concatM [q e, m le, m ae]
+          queryM' e@(Pair e1 e2) = concatM [q e, m e1, m e2]
+          queryM' e@(Cons e1 e2) =concatM [ q e, m e1, m e2]
+          queryM' e@(M1 _ e1) = concatM [q e, m e1]
+          queryM' e@(M2 _ e1 e2) = concatM [q e, m e1, m e2] 
+          queryM' e@(Cmp _ e1 e2) = concatM [q e, m e1, m e2]
+          queryM' e@(And e1 e2) = concatM [q e, m e1, m e2]
+          queryM' e@(Or e1 e2) = concatM [q e, m e1, m e2]
+          queryM' e@(Not e1) = concatM [q e, m e1]
+          queryM' e@(Sig e1) = concatM [q e, m e1]
+          queryM' e@(SigVal e1) = concatM [q e, m e1]
+          queryM' e@(SigDelay e1 e2) = concatM [q e, m e1,  m e2]
+          queryM' e@(SigLimited e1 e2) = concatM [q e, m e1,  m e2]
+          queryM' e@(Event e1) = concatM [q e, m e1]
+          queryM' e@(Const _) = concatM [q e]
+          queryM' e@(SigAt e1 e2) = concatM [q e, m e1, m e2]
+          queryM' e@(Var _) = concatM [q e]
+          queryM' e@(Nil) = concatM [q e]
+          queryM' e@(Box e1) = concatM [q e, m e1]
+          queryM' e@(Translate e1 e2) = concatM [q e, m e1, m e2]
+          queryM' e@(Colour e1 e2) = concatM [q e, m e1, m e2]
+          queryM' e@(HasType _ e1) = concatM [q e, m e1]
+          queryM' e@(Case ce cs) = concatM [q e, q ce, 
+                                            concat `fmap` mapM (\(p,ep)->  
+                                                                withBvars (patIntroducedVars p) 
+                                                                          (m ep)) cs]
 
 --queryM q e = fail $ "queryM: unknown expr "++show  e 
 
@@ -327,9 +303,8 @@ mapEM f e = mapEM' e
           mapEM' (HasType t s2) = (return (HasType t) `ap` m s2) >>= f
 
           mapEM' (LetE ses er) = (
-              withBvars (map fst3 ses) $ 
-              return LetE `ap` mapM (\(n,t,e)-> do e' <- m e
-                                                   return (n, t,e')) ses 
+              withBvars (concatMap (patIntroducedVars . fst) ses) $ 
+              return LetE `ap` mapM (\(p,e)-> return ((,) p) `ap` m e) ses 
                           `ap` m er) >>= f
           mapEM' (Case e pats) = (return Case `ap` 
                                          m e `ap` 
@@ -337,9 +312,7 @@ mapEM f e = mapEM' e
                                                (pair pat) `fmap` (withBvars (patIntroducedVars pat) $ m ep)) pats 
                           ) >>= f
           mapEM' (Switch ses er) = (
-              return Switch `ap` mapM (\(e1,e2)-> do e1' <- m e1
-                                                     e2' <- m e2
-                                                     return (e1',e2')) ses 
+              return Switch `ap` mapM (\(e1,e2)-> return (,) `ap` m e1 `ap` m e2) ses 
                             `ap` m er) >>= f
           pair x y = (x,y)
           -- mapE f e = error $ "mapE: unknown expr "++show e 

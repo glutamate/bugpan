@@ -58,7 +58,8 @@ typeCheck = do addBuiltinsTypeAnnos
                                       in error err
           tc d = return d -}
 
-tyCheckD d@(Let nm e)=do decTys <- allDeclaredTypes
+tyCheckD d@(Let (PatVar nm tp) e) = 
+                      do decTys <- allDeclaredTypes
                          clearTyConstraints
                          case lookup nm decTys of
                            Just t -> do tinf <- checkTy e
@@ -76,6 +77,7 @@ tyCheckD d@(Let nm e)=do decTys <- allDeclaredTypes
                                          --                      traceDefn "fst"
                                          tcalc <- checkTy e'
                                          addTyConstraint (t,tcalc)
+                                         addTyConstraint (t,tp) -- ?
                                          --traceM ""
                                          --traceM2 "solving for " nm
                                          --traceTyConstraints
@@ -97,10 +99,10 @@ labelUnspecifiedTypes = mapDE (mapEM lUT) >> topLevelMap
     where 
           topLevelMap = do decTys <- allDeclaredTypes
                            mapD (lUT' decTys)
-          lUT' tenv d@(Let nm bd) | nm `elem` (map fst tenv) = return d
-                                  | otherwise = do tvar <- genSym nm
-                                                   insertBefore [DeclareType nm $  UnknownT tvar]
-                                                   return d
+          lUT' tenv d@(Let (PatVar nm tp) bd) | nm `elem` (map fst tenv) = return d
+                                              | otherwise = do tvar <- genSym nm
+                                                               insertBefore [DeclareType nm $  UnknownT tvar]
+                                                               return d
           lUT' _ d = return d
 
 lUT (Lam nm UnspecifiedT bd) = do tvar <- genSym nm
@@ -110,8 +112,8 @@ lUT (Case et pates) = return Case `ap` return et `ap` forM pates (\(pat,e)-> ret
                                                                              lUTPat pat `ap` 
                                                                              return e)
 lUT e = return e
-lUTLet (nm,UnspecifiedT,e) = do tvar <- genSym nm
-                                return (nm,UnknownT tvar,e)
+lUTLet (PatVar nm UnspecifiedT,e) = do tvar <- genSym nm
+                                       return (PatVar nm $ UnknownT tvar,e)
 lUTLet l = return l
 lUTPat (PatVar nm UnspecifiedT) = do tvar <- genSym nm
                                      return (PatVar nm $ UnknownT tvar)
@@ -132,7 +134,8 @@ symbolType nm = do path <- exprPath `fmap` get
     where definesTy :: String -> E -> Maybe T
           definesTy nm (Lam nm1 t _) | nm== nm1 = Just t
                                      | otherwise = Nothing
-          definesTy nm (LetE assocs _) = (fst) `fmap` (lookup nm $ map threeToPairR assocs)
+          definesTy nm (LetE assocs _) = 
+              (lookup nm $ map (\(PatVar nm1 t, e)-> (nm1, t))  assocs)
           definesTy nm (Case _ ((pat,e):[])) = safeHead [ t | PatVar nmv t <- flatPat pat, nm == nmv]
           definesTy _ _ = Nothing
           lookupGlobal :: String -> TravM (T,Bool)
@@ -253,8 +256,8 @@ checkTy (Case et pates) = do t1 <- checkTy et
                              addManyConstraints ts
                              return $ head ts
 checkTy e@(LetE ses es) = do te <- withPath e $ checkTy es
-                             forM_ ses $ \(nm, t,el)-> withPath e $ do tc <- checkTy el
-                                                                       addTyConstraint (t,tc)
+                             forM_ ses $ \(PatVar nm t,el)-> withPath e $ do tc <- checkTy el
+                                                                             addTyConstraint (t,tc)
                              return te
 checkTy e@(And e1 e2) = do t1 <- checkTy e1 
                            t2 <- checkTy e2 

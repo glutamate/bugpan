@@ -20,14 +20,14 @@ class Assignable s where
 
 instance Assignable Declare where
     x =: y = let (nm:vars) = splitBySpaces x in 
-             Let nm $ addLams (reverse vars) y 
+             Let (PatVar nm UnspecifiedT) $ addLams (reverse vars) y 
 
 instance Assignable (String, E) where -- LetE
     x =: y = (x, y)
 
 
-instance Assignable (String, T, E) where -- LetE
-    x =: y = (x, UnspecifiedT, y)
+instance Assignable (Pat, E) where -- LetE
+    x =: y = (PatVar x UnspecifiedT, y)
 
 
 instance Assignable (E, E) where -- LetE

@@ -21,9 +21,9 @@ ident nm=nm
 
 
 convertProgram :: B.Program -> [Declare]
-convertProgram (B.Prog (B.BIdent b) ds) =  map convDecl ds ++ [Let "moduleName" $ Const (StringV b)] 
+convertProgram (B.Prog (B.BIdent b) ds) =  map convDecl ds ++ [Let (PatVar "moduleName" StringT) $ Const (StringV b)] 
 
-convDecl (B.DLet (B.BIdent b) args e) = Let (ident b) . addLamsP (reverse args) $ cE e
+convDecl (B.DLet (B.BIdent b) args e) = Let (PatVar (ident b) UnspecifiedT) . addLamsP (reverse args) $ cE e
 convDecl (B.DType (B.BIdent b) t) = DeclareType (ident b) $cType t
 convDecl (B.DSinkConn e (B.BIdent b) arg) = SinkConnect (cE e) (b, cE arg)
 convDecl (B.DImport (B.BIdent b)) = Import (ident b) [] 
@@ -88,7 +88,7 @@ cE (B.Switch s1 ses) =
 
 cE (B.ELet les e) = 
     LetE
-       (map (\(B.LetLine (B.BIdent b) es) -> ((ident b), UnspecifiedT, cE es)) les)
+       (map (\(B.LetLine (B.BIdent b) es) -> (PatVar (ident b) UnspecifiedT, cE es)) les)
        (cE e)
 cE (B.ECase e pats) = 
     Case (cE e)
@@ -159,7 +159,7 @@ fileDecls fnm' subs = do
                 
 
 onlyOneModuleName :: [Declare] -> [Declare]
-onlyOneModuleName ds = let isModNm (Let "moduleName" (Const (StringV nm))) = Just nm
+onlyOneModuleName ds = let isModNm (Let (PatVar "moduleName" _) (Const (StringV nm))) = Just nm
                            isModNm _ = Nothing
                            (modNms, otherDs ) = partition (isJust . isModNm) ds
                        in otherDs ++ [last modNms]
@@ -167,9 +167,9 @@ onlyOneModuleName ds = let isModNm (Let "moduleName" (Const (StringV nm))) = Jus
 makeSubs :: [(String, E)] -> [Declare] -> [Declare]
 makeSubs [] ds = ds
 makeSubs ((nm,e):subs) ds = makeSubs subs $ makeSub ds
-    where makeSub [] = [Let nm e]
-          makeSub (l@(Let nm' e'):ds) | nm' == nm = (Let nm e):ds
-                                      | otherwise = l:makeSub ds
+    where makeSub [] = [Let (PatVar nm UnspecifiedT) e]
+          makeSub (l@(Let (PatVar nm' t) e'):ds) | nm' == nm = (Let (PatVar nm t) e):ds
+                                                 | otherwise = l:makeSub ds
                         
           makeSub (d:ds) = d:makeSub ds
 
@@ -198,7 +198,7 @@ test_parse = ["2+2" `parsesTo` (2+3),
              "(1,2)" `parsesTo`(Pair 1 2),
              "(1,2,3)" `parsesTo` (Pair (Pair 1 2) 3)]
 
-test_no_semicolons = "let x = 1\nlet y=2\n" `progParsesTo` [Let "x" 1, Let "y" 2]
+--test_no_semicolons = "let x = 1\nlet y=2\n" `progParsesTo` [Let "x" 1, Let "y" 2]
 
 test_parse_negnums = ["-1" `parsesTo` (-1),
                       "(1,-2)" `parsesTo`(Pair 1 (-2)),

@@ -189,7 +189,7 @@ addRunToSession decls t0 tmax dt ress sess@(Session basedir sesst0)
                                 _ -> Nothing
           t1 = NumV. NReal $ t0
           t2 = NumV. NReal $ t0+tmax
-          moduleName = safeHead [nm | Let "moduleName" (Const (StringV nm)) <- decls]
+          moduleName = safeHead [nm | Let (PatVar "moduleName" _) (Const (StringV nm)) <- decls]
           moduleEps = case moduleName of
                         Nothing -> []
                         Just nm -> [("moduleName", [PairV (PairV t1 t2) (StringV (nm))]),

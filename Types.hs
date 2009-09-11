@@ -54,7 +54,7 @@ exprType e (M2 op ne1 ne2) declt = do
   neTy <- unifyTypes ne2Ty ne1Ty
   unifyTypes (NumT Nothing) neTy
               
-exprType env (LetE [(nm,t,e)] (Var nm')) declt | nm == nm' = t
+exprType env (LetE [(PatVar nm t,e)] (Var nm')) declt | nm == nm' = t
   where t = exprType ((nm,fromJust t):env) e declt   
   
 exprType env (Sig se) (Just (SignalT sigt)) = do

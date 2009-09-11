@@ -12,7 +12,7 @@ import Data.Maybe
 --import Debug.Trace
 import Numbers
 import Data.Array
-import Data.Typeable
+import Data.Generics hiding (Unit)
 import TNUtils
 import qualified Data.StorableVector as SV
 
@@ -25,7 +25,7 @@ curTime = fromJust . cur_t
 
 --type EvalM a = ErrorT String (ReaderT EvalS Identity) a
 
-data EvalM a = Res a | Error String
+data EvalM a = Res a | Error String deriving (Data, Typeable)
 
 emptyEvalS = EvalS 1 1 Nothing []
 --    deriving (Functor, Monad, MonadPlus, Error, MonadReader)
@@ -78,7 +78,7 @@ data V  = BoolV Bool
         | BoxV V V V --shape,loc,  colour
         | Unit
         | StringV String
-	deriving (Show, Read)
+	deriving (Show, Read, Data, Typeable)
 
 instance Eq V where
     BoolV x == BoolV y = x==y
@@ -120,9 +120,9 @@ data T  = BoolT
         | TyVar String
         | UnknownT String
         | UnspecifiedT
-	deriving (Show, Eq, Read)
+	deriving (Show, Eq, Read, Data, Typeable)
 
-data NumT = IntT | RealT | CmplxT deriving (Eq, Show, Read, Ord)
+data NumT = IntT | RealT | CmplxT deriving (Eq, Show, Read, Ord, Data, Typeable)
 
 withTime t  es =  es {cur_t=Just t}
 
