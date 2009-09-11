@@ -1,8 +1,10 @@
+{-# LANGUAGE BangPatterns #-}
 module HaskShapes where
 
 import Data.IORef
 import EvalM
 import Data.Array
+import Database
 
 data Shape a = Box ((a,a), a)
              | Translate ((a,a), a) (Shape a)
@@ -15,6 +17,17 @@ colour = Colour
 appendIORef ref x = do xs <- readIORef ref
                        writeIORef ref (x:xs)
 
+{-convAux s@(Signal t1 t2 dt sf) tnow evvs = aux 0 evvs
+    where aux !sm ((tev, _):evvs) = if tev < tnow
+                                       then if (tnow - tev < t2)
+                                               then aux (sm + (readSig s $ tnow- tev) ) evvs 
+                                               else aux sm evvs
+                                       else 0 -}
+
+convAux s@(Signal t1 t2 dt sf) tmax evvs = 
+        let tms = map fst evvs
+            s0 = Signal 0 tmax dt $ \_-> 0 in
+        foldl (combineToLongestSig (+)) s0 $ map (\t-> shift t s) tms
 
 enowAux t dt evs = let nstep t dt = round (t/dt)
                        dropF (te,_) = nstep te dt > nstep t dt

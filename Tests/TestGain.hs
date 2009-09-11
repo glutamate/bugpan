@@ -56,7 +56,7 @@ real = double
 plotGain = --inSessionNamed "9a05d5b49d3081de8000001676695ca4" $ do
            inNewSession $ do
              intfire <- use "Intfire"
-             prg <- compile (intfire `with` ["_tmax" =: 2]) [("rate", realT)]
+             prg <- compile (intfire `with` ["_tmax" =: 1]) [("rate", realT)]
              1 `times` determine prg [("rate", uniform 600 1000)]
              spikes <- events "spike" ()
              vm <- signalsDirect "vm"
@@ -140,3 +140,8 @@ safeMain = inTemporarySession $ do
   liftIO $ forM_ q (putStrLn . showDur)
   --io . print $ regressF `runStatsOn` q 
   return ()
+
+
+-- Local Variables:
+-- compile-command: "cd ~/bugpan && make testgain && rm /var/bugpan/queryCache/* && Tests/TestGain"
+-- End:

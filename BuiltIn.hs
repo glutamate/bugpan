@@ -39,9 +39,18 @@ bivs = [
                                                                (SigV t1 t2 dt df)-> return $ NumV (NReal t2)
                                                                _ -> error $ "buiiltin sigTmax: expected signal, got "++show s
                                                 ),
+ {-BiV "convAux" (SignalT realT .->. realT .->. eventsT AnyT .->. realT) (LamV $ \(SigV t1 t2 dt sf) -> return $ 
+                                                                        LamV $ \(NumV (NReal tnow)) -> return $
+                                                                        LamV $ \(ListV evvs) -> do
+                                                                          return $ sum $ map (\(PairV tev n) -> n) evvs
+                                                                       ),-}
+ BiV "convAux" (SignalT realT .->. (realT .->. (eventsT AnyT .->. SignalT realT))) (LamV $ \x->return Unit),
  BiV "seconds" (SignalT realT) Unit,
  BiV "tmax" realT Unit,
  BiV "dt" realT Unit]
+
+fstV (PairV x y) = x
+sndV (PairV x y) = y
 
 bivNms = [nm | BiV nm _ _ <- bivs ]
 

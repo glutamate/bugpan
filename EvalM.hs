@@ -14,6 +14,7 @@ import Numbers
 import Data.Array
 import Data.Typeable
 import TNUtils
+import qualified Data.StorableVector as SV
 
 data EvalS = EvalS { dt:: Double,
                      tmax :: Double,
@@ -263,7 +264,8 @@ unsafeReify v = case reify v of
 
 --(Signal t1 t2 dt sf)
 data Signal a = Signal RealNum RealNum RealNum (Int -> a)
-                | ConstSig a 
+              | SigArray Double Double Double (SV.Vector a)
+              | ConstSig a 
                   deriving Typeable
 
 sigPnts :: Signal a -> Int
@@ -300,6 +302,17 @@ combineSigs op (ConstSig x) (Signal t1 t2 dt sf)  = -- | dt == dt'
     Signal t1 t2 dt $ \p-> op (sf p) (x)
 combineSigs op s1@(Signal t1 t2 dt sf) s2@(ConstSig x) = combineSigs op s2 s1
 combineSigs op (ConstSig x) (ConstSig y) = ConstSig $ op x y
+
+combineToLongestSig op s1@(Signal t1 t2 dt sf) 
+                       s2@(Signal t1' t2' dt' sf') | t2' - t1' > t2-t1 = 
+                                                       combineToLongestSig op s2 s1
+                                                   | otherwise = 
+    let p1 = round $ (t1' - t1)/dt
+        p2 = round $ (t2' - t1)/dt
+        shift1 = round $ (t1' - t1)/dt
+    in Signal t1 t2 dt $ \p-> if p > p1 && p < p2 
+                                 then op (sf p) (sf' $ p-shift1)
+                                 else sf p
 
 instance Functor Signal where
     fmap f (Signal t1 t2 dt sf) = 
