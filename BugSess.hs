@@ -85,7 +85,7 @@ compileQuery opts sha q = do
                  "main = do",
                  "  sess:_ <- getArgs",
                  "  qres <- q sess",
-                 "  qreply <- qReply qres",
+                 "  qreply <- qReply qres "++show opts,
                  "  putStrLn qreply"]
   let qFun = spliceFirst "q sess = " $ mkQuery nmtys ("sess") q "return "
   let allmod = initModule ++ unlines qFun ++ unlines mainFun
