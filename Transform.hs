@@ -190,7 +190,8 @@ forgetFloating = mapDE forgetFl
             sn <- genSym "forgetFloat"
             insertBefore [Let (PatVar sn UnspecifiedT) (Forget se tm)]
             return (Var sn)
-                
+          forgetFloat (e) = return e
+          
 sigFloating :: TravM () -- only sigFloat in values of type sig a. FIXME
 sigFloating = mapDE sigFl
     where sigFl e@(Lam bd t arg) = return e -- cheap hack to fix above issue

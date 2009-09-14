@@ -120,6 +120,7 @@ storeAs' ovwrt nm vls = do
   let t = typeOfReified $ head vls
   let uniqueIntStr = (show. hashUnique) `fmap` newUnique
   suffix <- liftIO $ uniqueIntStr
+  --liftIO $ print vs
   let subDir = case t of
                  SignalT _ -> "signals/"
                  PairT (NumT (Just RealT)) _ -> "events/"
