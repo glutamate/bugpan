@@ -48,6 +48,7 @@ data Exp =
  | SigAt Exp Exp
  | SigDelay Exp Exp
  | Event Exp
+ | Forget Exp Exp
  | Switch Exp [SwitchLine]
  | Box Exp
  | Translate Exp Exp

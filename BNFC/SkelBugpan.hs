@@ -62,6 +62,7 @@ transExp x = case x of
   SigAt exp0 exp  -> failure x
   SigDelay exp0 exp  -> failure x
   Event exp  -> failure x
+  Forget exp0 exp  -> failure x
   Switch exp switchlines  -> failure x
   Box exp  -> failure x
   Translate exp0 exp  -> failure x

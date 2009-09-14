@@ -58,6 +58,7 @@ SigDelay. Exp4 ::= "delay" Exp4 Exp5  ;
 
 
 Event. Exp4 ::= "[:" Exp ":]" ;
+Forget. Exp4 ::= "forget" Exp4 Exp5  ;
 Switch. Exp ::= "switch" "{" Exp ";" [SwitchLine] "}";
 Box. Exp5 ::= "box" Exp4;
 Translate. Exp4 ::= "translate" Exp4 Exp5;
