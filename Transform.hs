@@ -180,6 +180,16 @@ letFloating = mapDE letFl
             return (changeVars nonns er) 
 
           letFl e = return e
+
+forgetFloating :: TravM ()
+forgetFloating = mapDE forgetFl
+    where forgetFl e@(Lam bd t arg) = return e -- cheap hack to fix above issue
+          forgetFl (Forget se tm) = return Forget `ap` mapEM forgetFloat se `ap` return tm
+          forgetFl e = mapEM forgetFloat e
+          forgetFloat (Forget se tm) = do
+            sn <- genSym "forgetFloat"
+            insertBefore [Let (PatVar sn UnspecifiedT) (Forget se tm)]
+            return (Var sn)
                 
 sigFloating :: TravM () -- only sigFloat in values of type sig a. FIXME
 sigFloating = mapDE sigFl
@@ -260,6 +270,10 @@ evalSigLimits = mapD eSSA
             ds <- decls `fmap` get
             let clim =  evalIn ds lim
             return (Let nm (SigLimited s (Const clim)))
+          eSSA (Let nm (Forget lim e)) = do
+            ds <- decls `fmap` get
+            let clim =  evalIn ds lim
+            return (Let nm (Forget (Const clim) e))
           eSSA e = return e 
 
 globalizeE :: String -> E -> TravM String
@@ -461,6 +475,7 @@ transforms =   [(typeCheck, "typeCheck")
                 ,(whileChanges betaRedMakesShape, "betaRedMakesShape")
                 ,(letFloating, "letFloating")
                 ,(sigFloating, "sigFloating")
+                ,(forgetFloating, "sigFloating")
                 ,(floatSwitchEvents, "floatSwitchEvents")
                 ,(substHasSigs, "substHasSigs")
                 ,(betaRedHasSigs , "betaRedHasSigs")

@@ -310,7 +310,19 @@ checkTy (SigDelay s v0) = do tyv0 <- checkTy v0
                                        addTyConstraint (tys, SignalT telem)
                                        addTyConstraint (tyv0, telem)
                                        return $ SignalT telem
-                          
+
+checkTy (Forget tm ev)  = do te <- checkTy ev
+                             tmt <- checkTy tm
+                             addTyConstraint (tmt, realT)
+                             case te of
+                                ListT (PairT (NumT (Just RealT)) telem) -> do 
+                                       return te
+                                _ -> do telem <- UnknownT `fmap` (genSym "checkForget")
+                                        let tev = ListT (PairT (NumT (Just RealT)) telem)
+                                        addTyConstraint (te, tev)
+                                        return $ tev
+                                       
+                           
 checkTy (Event e) = do tev <- checkTy e
                        --traceM2 "event expr type: " tev
                        telem <- UnknownT `fmap` (genSym "checkEvent")
