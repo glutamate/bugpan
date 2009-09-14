@@ -60,6 +60,9 @@ typeCheck = do addBuiltinsTypeAnnos
 
 tyCheckD d@(Let (PatVar nm tp) e) = 
                       do decTys <- allDeclaredTypes
+                         tpn <-  if tp== UnspecifiedT
+                                    then UnknownT `fmap` genSym nm
+                                    else return tp
                          clearTyConstraints
                          case lookup nm decTys of
                            Just t -> do tinf <- checkTy e
@@ -77,7 +80,7 @@ tyCheckD d@(Let (PatVar nm tp) e) =
                                          --                      traceDefn "fst"
                                          tcalc <- checkTy e'
                                          addTyConstraint (t,tcalc)
-                                         addTyConstraint (t,tp) -- ?
+                                         addTyConstraint (t,tpn) -- ?
                                          --traceM ""
                                          --traceM2 "solving for " nm
                                          --traceTyConstraints
@@ -90,6 +93,10 @@ tyCheckD d@(Let (PatVar nm tp) e) =
 --tyCheckD d = return d
                          
 
+--shouldBeLabeled (UnknownT _) = True
+shouldBeLabeled UnspecifiedT = True
+shouldBeLabeled _ = False
+
 addBuiltinsTypeAnnos :: TravM ()
 addBuiltinsTypeAnnos = mapM_ addTyAnno bivs
     where addTyAnno (BiV nm ty _) = insertAtTop [DeclareType nm ty]
@@ -100,9 +107,10 @@ labelUnspecifiedTypes = mapDE (mapEM lUT) >> topLevelMap
           topLevelMap = do decTys <- allDeclaredTypes
                            mapD (lUT' decTys)
           lUT' tenv d@(Let (PatVar nm tp) bd) | nm `elem` (map fst tenv) = return d
+                                              | not $ shouldBeLabeled tp = return d
                                               | otherwise = do tvar <- genSym nm
-                                                               insertBefore [DeclareType nm $  UnknownT tvar]
-                                                               return d
+                                                               insertBefore [DeclareType nm $ UnknownT tvar]
+                                                               return (Let (PatVar nm $ UnknownT tvar) bd)
           lUT' _ d = return d
 
 lUT (Lam nm UnspecifiedT bd) = do tvar <- genSym nm

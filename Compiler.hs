@@ -16,18 +16,18 @@ compile ds = let c = concatMap compileDec (filter noDtSeconds (bivDecls++ds)) in
              concat [constEnv c, initSigVals c, mainLoop c] 
 
 noDtSeconds :: Declare -> Bool
-noDtSeconds (Let "dt" _) = False
-noDtSeconds (Let "seconds" _) = False
+noDtSeconds (Let (PatVar "dt" _) _) = False
+noDtSeconds (Let (PatVar "seconds" _) _) = False
 noDtSeconds _ = True
                  
 
 compileDec :: Declare -> [Stmt]
-compileDec (Let nm (Sig se)) = [SigUpdateRule nm $ unVal se] 
-compileDec (Let nm (SigLimited se lim)) = [SigUpdateRule nm $ unVal se] 
-compileDec (Let nm (SigDelay (Var sn) v0)) = [SigUpdateRule nm (Var sn), 
+compileDec (Let (PatVar nm _) (Sig se)) = [SigUpdateRule nm $ unVal se] 
+compileDec (Let (PatVar nm _) (SigLimited se lim)) = [SigUpdateRule nm $ unVal se] 
+compileDec (Let (PatVar nm _) (SigDelay (Var sn) v0)) = [SigUpdateRule nm (Var sn), 
                                               InitSig nm v0]
-compileDec (Let nm (Event ee)) = [EventAddRule nm $ unVal ee]
-compileDec (Let nm (Switch ses ser)) = 
+compileDec (Let (PatVar nm _) (Event ee)) = [EventAddRule nm $ unVal ee]
+compileDec (Let (PatVar nm _) (Switch ses ser)) = 
                [SigUpdateRule nm (Switch (map noSig ses) $ unSig (unVal ser))]
     where noSig (e,s) = (e, unVal $ mapE unSig s)
           unSig (Sig se) = se 
@@ -35,7 +35,7 @@ compileDec (Let nm (Switch ses ser)) =
 
 compileDec rs@(ReadSource nm ("adc", _)) = compileAdcSrc rs
 compileDec (ReadSource nm (srcNm, (Const arg))) = [ReadSrcAction nm $ genSrc srcNm arg]
-compileDec (Let nm e) = [Env nm $ unVal e]
+compileDec (Let (PatVar nm _) e) = [Env nm $ unVal e]
 compileDec (SinkConnect (Var nm) (snkNm,_)) = [SigSnkConn nm snkNm]
 compileDec (Stage _ _) = []
 compileDec (DeclareType _ _) = []

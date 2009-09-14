@@ -87,6 +87,18 @@ run ds = do
   put $ s { lastTStart = t0,
             lastTStop = t0 + trun}
 
+runFrom :: [Declare] -> Double -> StateT QState IO ()
+runFrom ds t0 = do
+  s <- get
+  sess <- getSession
+  --t0 <- getTnow
+  let trun = (lookupDefn "_tmax" ds >>= vToDbl) `orJust` 1
+  let dt = (lookupDefn "_dt" ds >>= vToDbl) `orJust` 0.001
+  --liftIO $ mapM (putStrLn . ppDecl) ds
+  liftIO $ runOnce dt t0 trun ds sess
+  put $ s { lastTStart = t0,
+            lastTStop = t0 + trun}
+
 getTnow = ifM (realTime `fmap` get)
               (do Session _ t0 <- getSession
                   tnow <- liftIO $ getClockTime

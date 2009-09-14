@@ -32,9 +32,9 @@ real = double
 
 ioTest = inTemporarySession $ do
            prog <- use "TestStore"
-           run prog 
-           run prog 
-           run prog 
+           runFrom prog 0 
+           runFrom prog 5 
+           runFrom prog 10
 
            storeAs "storeEvent" [(2.3::Double, ()), (2.4, ())]
 

@@ -62,7 +62,7 @@ substSigRefs nmsigs (Var nm) | nm `elem`  nmsigs = return $ Var $ '#':nm
 substSigRefs _ e = return e 
 
 
-envToDecl (nm, val) = Let nm $ Const val
+envToDecl (nm, val) = Let (PatVar nm UnspecifiedT) $ Const val
 
 addToIORefList :: IORef [a] -> [a] -> IO ()
 addToIORefList ioref xs = do ys <- readIORef ioref

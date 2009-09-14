@@ -230,7 +230,7 @@ floatConnectedSignals = mapD fCS
     where fCS e@(SinkConnect (Var nm) snm) = return e
           fCS e@(SinkConnect se (snm, arg)) = 
               do sn <- genSym snm
-                 insertBefore [Let (PatVar sn UnspecifiedT) se]
+                 insertBefore [Let (PatVar sn (typeOfSrc snm)) se]
                  return (SinkConnect (Var sn) (snm,arg))
           fCS e = return e
 
@@ -367,18 +367,25 @@ isSignalOrEvt (Var "seconds") = return IsSig
 isSignalOrEvt (Var "dt") = return IsNeitherSigNorEvt
 isSignalOrEvt (Var nm) = ifM (isDefBySrc nm)
                              (do snm <- srcDefn nm
-                                 return $ typeOfSrc snm)
+                                 return $ typeOfSrc' snm)
                              (do def <- lookUp nm
                                  isSignalOrEvt def)
 isSignalOrEvt _ = return IsNeitherSigNorEvt
 
-typeOfSrc "adc" = IsSig
-typeOfSrc snm = case lookupSrc snm of
+typeOfSrc' "adc" = IsSig
+typeOfSrc' snm = case lookupSrc snm of
                  Just (Src _ _ (SignalT _) _ _) -> IsSig
                  Just (Src _ _ (EventT _) _ _) -> IsEvt
+--                 Just (Src _ _ (ListT (PairT (PairT (NumT (Just RealT)) (NumT (Just RealT))) _)) _ _) -> IsEvt
                  Just (Src _ _ (ListT (PairT realT _)) _ _) -> IsEvt
                  Just (Src _ _ _ _ _) -> IsNeitherSigNorEvt
                  Nothing -> IsNeitherSigNorEvt
+
+typeOfSrc "adc" = SignalT (NumT (Just RealT))
+typeOfSrc snm = case lookupSrc snm of
+                  Just (Src _ _ t _ _) -> t
+                  Nothing -> error $ "can't find source "++snm
+
                  
 
 hasBoundVars :: E-> TravM Bool

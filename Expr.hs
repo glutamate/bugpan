@@ -188,8 +188,8 @@ e1 .&. e2 = And e1 e2
 e1 .|. e2 = Or e1 e2
 
 lookupDefn _ [] = Nothing
-lookupDefn nm ((Let nm' (Const v)):ds) | nm == nm' = Just $ v
-                                       | otherwise = lookupDefn nm ds
+lookupDefn nm ((Let (PatVar nm' _) (Const v)):ds) | nm == nm' = Just $ v
+                                                  | otherwise = lookupDefn nm ds
 lookupDefn nm (d:ds) = lookupDefn nm ds
 
 

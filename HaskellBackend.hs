@@ -247,8 +247,8 @@ compStage ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++"
           dsSrcs =  [(varNm, fromJust $ lookupSrc srcNm,param) | ReadSource varNm (srcNm, param) <- ds]
           atOnceSrcs = [(varNm, srcf, param) | (varNm, Src _ _ _ _ (SrcOnce srcf), param)<- dsSrcs ]
           rtSrcs = [(varNm, srcf, param) | (varNm, Src _ _ _ _ (SrcRealTimeSig srcf), param)<- dsSrcs ]
-          sigs = [ (nm,e) | Let nm (Sig e) <- ds ]
-          evs = [ nm | Let nm (Event e) <- ds ]
+          sigs = [ (nm,e) | Let  (PatVar nm _) (Sig e) <- ds ]
+          evs = [ nm | Let (PatVar nm _) (Event e) <- ds ]
           comments = ["--imps="++show imps,
                       "--exps="++show exps,
                      "--evexps="++show evExps]
@@ -298,8 +298,8 @@ compStage ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++"
                                   ]
           readSigBuffers = map (\nm->ind++nm++"BufVal <- readIORef "++nm++"Buf") exps
           readEventBuffers = map evQ evExps
-          evQ  | nm `elem` evs = ind++nm++"QVal <- readIORef "++nm++"Queue"
-               | otherwise = ind++"let "++nm++"QVal = "++nm
+          evQ nm | nm `elem` evs = ind++nm++"QVal <- readIORef "++nm++"Queue"
+                 | otherwise = ind++"let "++nm++"QVal = "++nm
           returnLine = [ind++"return "++(inTuple $ map (\nm-> "bufToSig tmax "++nm++"BufVal") exps ++ map (++"QVal") evExps)]
 
 tweakExpr e = mapE (changeRead . unSharp . unVal) e 
@@ -351,12 +351,12 @@ compilableEnv =  do
   ds <- (decls) `fmap` get
   cDs <- filterM filtf ds
   return $ cDs
-      where filtf (Let nm e) = ifM (reactive e) (return False) (return True)
+      where filtf (Let _ e) = ifM (reactive e) (return False) (return True)
             filtf (DeclareType nm t) = do
                    lu <- safeLookUp nm
                    case lu of 
                      Nothing -> return False
-                     Just defn -> filtf (Let nm defn)
+                     Just defn -> filtf (Let (PatVar nm t) defn)
             filtf _ = return False
 
 reactive :: E->TravM Bool
