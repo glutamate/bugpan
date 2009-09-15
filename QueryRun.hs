@@ -55,6 +55,9 @@ isRemoteDriver = (isJust . remoteCmdFile) `fmap` get
 
 type CompiledToken = (String,Double,[(String, T)] )
 
+compileFile fp params = do tok <- use fp
+                           compile tok params
+
 compile :: [Declare] -> [(String, T)] -> StateT QState IO CompiledToken
 compile ds params = do
   let trun = (lookupDefn "_tmax" ds >>= vToDbl) `orJust` 1
