@@ -26,6 +26,7 @@ import Data.Digest.Pure.SHA
 import qualified Data.ByteString.Lazy as BS
 import Data.ByteString.Internal
 import PlotGnuplot
+import QueryUtils
 
 root = "/var/bugpan/sessions/"
 
@@ -322,6 +323,12 @@ dispatch opts ("plotsigs":sessNm:sigNm:_) = do
   putStrLn qreply
 
   return ()
+
+dispatch opts ("mksdur":sessNm:durnm:val:_) = do
+  qres <- inApproxSession sessNm $ do
+            storeAs durnm $ dur val
+  return ()
+
     
 dispatch _ _ = putStrLn $ unlines [
               "",

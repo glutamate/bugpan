@@ -19,5 +19,5 @@ main = inLastSession $ do
                       forM [1..30] $ \i -> do
                          pause 60
                          invoke loom [("lov", 0.04)]
-                         inLast ("repetition" := idInt i)
+                         inLast $ "repetition" := idInt i
 
