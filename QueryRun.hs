@@ -95,11 +95,13 @@ run ds = do
 
 runFrom :: [Declare] -> Double -> StateT QState IO ()
 runFrom ds t0 = ifM (isRemoteDriver)
-                    (runFromLocally ds t0)
                     (runFromRemotely ds t0)
+                    (runFromLocally ds t0)
 
 runFromRemotely :: [Declare] -> Double -> StateT QState IO ()
 runFromRemotely ds t0 = do 
+  s <- get
+  --liftIO $ print s
   Just cmdFl <- remoteCmdFile `fmap` get
   args <- shArgs `fmap` get
   s <- get

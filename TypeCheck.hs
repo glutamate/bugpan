@@ -12,6 +12,7 @@ import Data.List
 import BuiltIn
 import Data.Ord
 import Debug.Trace
+import HaskSyntaxUntyped
 
 allDeclaredTypes :: TravM [(String, T)]
 allDeclaredTypes = do

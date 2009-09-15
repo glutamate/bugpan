@@ -17,6 +17,7 @@ import Statement
 import TNUtils
 import Data.Array
 import PrettyPrint
+import HaskSyntaxUntyped
 
 exec :: [Stmt] -> RealNum -> RealNum -> IO [(String, V)]
 exec stmts dt tmax = 
@@ -92,6 +93,7 @@ exec stmts dt tmax =
          when (runRealTime) (waitUntil t0 t)
 
          H.update envHT "seconds" (NumV . NReal $ t)
+         let seconds = (NumV . NReal $ t)
          forM_ prgNoScreen $ \stm -> do 
                          --putStrLn $ ppStmt stm
                          sevals <- H.toList envHT                       
@@ -121,13 +123,22 @@ exec stmts dt tmax =
                                     --putStrLn $ nm++": "++ pp e
                                     evalTo nm e
                                     return ()
+                           EventAddRule  nm (Forget (Const (NumV (NReal tm))) e) -> do
+                                    --print $ "updating "++nm
+                                    evs<-fromJust `fmap` H.lookup envHT nm
+                                    let newevs = case eval es e of
+                                                   Res v -> v
+                                                   Error s-> error $ "error in updating "++nm++": s"
+                                    H.update envHT nm $! ListV $ filter ((>(t-tm)) .unsafeReify . fstV) $  (appVs newevs evs) 
+                                    --print $ "done"
+                                    return ()
                            EventAddRule  nm e -> do
                                     --print $ "updating "++nm
                                     evs<-fromJust `fmap` H.lookup envHT nm
                                     let newevs = case eval es e of
                                                    Res v -> v
                                                    Error s-> error $ "error in updating "++nm++": s"
-                                    H.update envHT nm $! (appVs newevs evs) 
+                                    H.update envHT nm $! ListV (appVs newevs evs) 
                                     --print $ "done"
                                     return ()
                            SigSnkConn nm "print" -> do 
@@ -184,7 +195,7 @@ exec stmts dt tmax =
        H.toList envHT 
 
 
-           
+        
 
 
 noScreen _ (SigSnkConn _ "screen") = False
@@ -199,7 +210,7 @@ unUpdateRule _ = Nothing
 toHsTime :: V->(RealNum,V)
 toHsTime (PairV (NumV nv) v) = (numToDouble nv,v)
 
-appVs (ListV ws) (ListV vs) = ListV (ws++vs) 
+appVs (ListV ws) (ListV vs) = (ws++vs) 
 
 
 --lastEvent

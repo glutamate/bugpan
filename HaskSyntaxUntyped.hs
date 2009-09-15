@@ -33,6 +33,9 @@ instance Assignable (Pat, E) where -- LetE
 instance Assignable (E, E) where -- LetE
     x =: y = (Var x, y)
 
+fstV (PairV x y) = x
+sndV (PairV x y) = y
+
 
 unsafeUniqueInt = unsafePerformIO (hashUnique `fmap` newUnique)
 
@@ -77,7 +80,7 @@ list :: [E] -> E
 list [] = Nil
 list (x:xs) = Cons x (list xs)
 
-pair x y = Pair x y
+--pair x y = Pair x y
 
 foo = If true "x" "y"
 
@@ -127,6 +130,13 @@ instance (ToVal a, ToVal b) => ToVal (a,b) where
 	toVal (x,y) = PairV (toVal x) (toVal y)
 
 
+
+anyNumT = NumT Nothing
+realT = NumT (Just RealT)
+intT = NumT (Just IntT)
+(.->.) = LamT
+eventT t = PairT (anyNumT) (t)
+eventsT t = ListT $ eventT t
 
 
 

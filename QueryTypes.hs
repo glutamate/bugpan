@@ -52,7 +52,7 @@ data QState = QState { qsSess:: Session,
                        realTime :: Bool,
                        shArgs :: [String],
                        remoteCmdFile :: Maybe String
-                     }
+                     } deriving Show
 
 getSession = qsSess `fmap` get
 

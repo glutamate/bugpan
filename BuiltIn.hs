@@ -18,12 +18,6 @@ data BiV = BiV { bivName :: String,
 
 nstep t dt = roundNum (t/dt)
 
-anyNumT = NumT Nothing
-realT = NumT (Just RealT)
-intT = NumT (Just IntT)
-(.->.) = LamT
-eventT t = PairT (anyNumT) (t)
-eventsT t = ListT $ eventT t
 
 bivs = [ 
  BiV "round" (realT .->. realT) (LamV $ \(NumV n)->return . NumV $ roundNum n),
@@ -49,8 +43,6 @@ bivs = [
  BiV "tmax" realT Unit,
  BiV "dt" realT Unit]
 
-fstV (PairV x y) = x
-sndV (PairV x y) = y
 
 bivNms = [nm | BiV nm _ _ <- bivs ]
 

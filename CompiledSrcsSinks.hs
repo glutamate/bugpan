@@ -1,9 +1,10 @@
 module CompiledSrcsSinks where
 
 import EvalM
-import BuiltIn
+--import BuiltIn
 import PrettyPrint
 import TNUtils
+import HaskSyntaxUntyped
 
 data Src = Src { srcName :: String,
                  srcArgT :: T,

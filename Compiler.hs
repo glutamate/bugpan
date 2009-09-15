@@ -27,6 +27,7 @@ compileDec (Let (PatVar nm _) (SigLimited se lim)) = [SigUpdateRule nm $ unVal s
 compileDec (Let (PatVar nm _) (SigDelay (Var sn) v0)) = [SigUpdateRule nm (Var sn), 
                                               InitSig nm v0]
 compileDec (Let (PatVar nm _) (Event ee)) = [EventAddRule nm $ unVal ee]
+compileDec (Let (PatVar nm _) (Forget tm ee)) = [EventAddRule nm $ Forget tm $ unVal ee]
 compileDec (Let (PatVar nm _) (Switch ses ser)) = 
                [SigUpdateRule nm (Switch (map noSig ses) $ unSig (unVal ser))]
     where noSig (e,s) = (e, unVal $ mapE unSig s)
