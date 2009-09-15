@@ -42,6 +42,7 @@ import PrettyPrint
 import ValueIO
 import Data.Unique
 import qualified Data.Binary as B
+import System.Environment
 
  
 double :: Double
@@ -153,10 +154,12 @@ x @=! y = StoreAs x y True
 inLastSession :: StateT QState IO a -> IO a
 inLastSession sma = do
   s <- lastSession "/var/bugpan/sessions/"
-  fst `fmap`  (runStateT sma $ QState s 0 0 True)
+  inSession s sma
+  --fst `fmap`  (runStateT sma $ QState s 0 0 True)
 
 inSession :: Session -> StateT QState IO a -> IO a
-inSession s sma =  fst `fmap`  (runStateT sma $ QState s 0 0 True)
+inSession s sma =  do args <- getArgs
+                      fst `fmap`  (runStateT sma $ QState s 0 0 True args Nothing)
 
 
 inNewSession :: StateT QState IO a -> IO a

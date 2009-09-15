@@ -244,4 +244,13 @@ averageSigs :: Floating a => [Signal a] -> [Signal a]
 averageSigs sigs = let (mu, sem) = runStat meanSEMF sigs
                    in [mu,mu+sem, mu-sem]
 
+
+tagMany :: Tagged t => [a] -> [t b] -> [t a]
+tagMany [] _ = []
+tagMany _ [] = []
+tagMany (x:xs) (t:tgs) = setTag t x : tagMany xs tgs 
+
+cycleLabel :: [Int] -> [Duration a] -> [Duration Int]
+cycleLabel xs dur = tagMany (cycle xs) dur
+
 --chiSquare :: [[Duration a]] -> 

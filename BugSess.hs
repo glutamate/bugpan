@@ -25,6 +25,7 @@ import System.Process
 import Data.Digest.Pure.SHA
 import qualified Data.ByteString.Lazy as BS
 import Data.ByteString.Internal
+import PlotGnuplot
 
 root = "/var/bugpan/sessions/"
 
@@ -313,6 +314,15 @@ dispatch opts ("show":sessNm:_) = do
               pTy (PairT (NumT (Just RealT)) t) = "Event "++ppType t
               pTy t = ppType t
 
+dispatch opts ("plotsigs":sessNm:sigNm:_) = do
+  qres <- inApproxSession sessNm $ do
+            sig <- signalsDirect sigNm
+            return $ plotManySigs sig
+  qreply <- qReply qres opts
+  putStrLn qreply
+
+  return ()
+    
 dispatch _ _ = putStrLn $ unlines [
               "",
               "Manage bugpan sessions",

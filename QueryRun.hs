@@ -1,4 +1,4 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving, FlexibleContexts, ExistentialQuantification #-} 
+{-# LANGUAGE GeneralizedNewtypeDeriving, FlexibleContexts, ExistentialQuantification, TypeOperators #-} 
 
 module QueryRun where
 
@@ -38,7 +38,20 @@ import TNUtils
 import PrettyPrint
 import Query
 import HaskellBackend
+import ValueIO
 
+simulatedTime :: StateT QState IO ()
+simulatedTime = do qs <- get
+                   put $ qs { realTime = False }
+
+useRemoteDriver :: StateT QState IO ()
+useRemoteDriver = do Session bdir _ <- getSession
+                     qs <- get
+                     put $ qs { remoteCmdFile = Just $ bdir ./ "program.bug", 
+                                realTime = True}
+
+isRemoteDriver :: StateT QState IO Bool
+isRemoteDriver = (isJust . remoteCmdFile) `fmap` get
 
 type CompiledToken = (String,Double,[(String, T)] )
 
@@ -77,9 +90,31 @@ invoke (sha, tmax,pars) vals= do
 
 run :: [Declare] -> StateT QState IO ()
 run ds = do
+  t0 <- getTnow
+  runFrom ds t0
+
+runFrom :: [Declare] -> Double -> StateT QState IO ()
+runFrom ds t0 = ifM (isRemoteDriver)
+                    (runFromLocally ds t0)
+                    (runFromRemotely ds t0)
+
+runFromRemotely :: [Declare] -> Double -> StateT QState IO ()
+runFromRemotely ds t0 = do 
+  Just cmdFl <- remoteCmdFile `fmap` get
+  args <- shArgs `fmap` get
+  s <- get
+  let trun = (lookupDefn "_tmax" ds >>= vToDbl) `orJust` 1
+  if "-nodaq" `elem` args
+     then liftIO $ writeFile cmdFl $ show (noDaqTrans ds)
+     else liftIO $ writeFile cmdFl $ show ds -- ppProg "RunProgram" ds
+  put $ s { lastTStart = t0, lastTStop = t0 + trun }
+  --TStop 
+
+
+runFromLocally :: [Declare] -> Double -> StateT QState IO ()
+runFromLocally ds t0 = do
   s <- get
   sess <- getSession
-  t0 <- getTnow
   let trun = (lookupDefn "_tmax" ds >>= vToDbl) `orJust` 1
   let dt = (lookupDefn "_dt" ds >>= vToDbl) `orJust` 0.001
   --liftIO $ mapM (putStrLn . ppDecl) ds
@@ -87,17 +122,18 @@ run ds = do
   put $ s { lastTStart = t0,
             lastTStop = t0 + trun}
 
-runFrom :: [Declare] -> Double -> StateT QState IO ()
-runFrom ds t0 = do
-  s <- get
-  sess <- getSession
-  --t0 <- getTnow
-  let trun = (lookupDefn "_tmax" ds >>= vToDbl) `orJust` 1
-  let dt = (lookupDefn "_dt" ds >>= vToDbl) `orJust` 0.001
-  --liftIO $ mapM (putStrLn . ppDecl) ds
-  liftIO $ runOnce dt t0 trun ds sess
-  put $ s { lastTStart = t0,
-            lastTStop = t0 + trun}
+data a := b = a := b
+
+inLast :: Reify a => (String := a) -> StateT QState IO ()
+inLast (nm := val) = do 
+  Session bdir _ <- getSession
+  running <- durations "running" ()
+  case safeLast running of 
+    Nothing -> return ()
+    Just ((t1,t2),()) -> liftIO $ do createDirectoryIfMissing False $ bdir ./ "durations" ./ nm
+                                     fnm <- uniqueFileInDir "stored" $ bdir ./ "durations" ./ nm
+                                     saveVs fnm [pack ((t1,t2),val)]
+                                     return ()
 
 getTnow = ifM (realTime `fmap` get)
               (do Session _ t0 <- getSession
@@ -138,9 +174,9 @@ always x = \_ -> x
 uniformLog lo hi = let (llo, lhi) = (log lo, log hi)
                    in \x -> exp (uniform llo lhi x)
 
-pickFromRange :: Range a -> IO a
-pickFromRange f = do
-  unitVal <- randomRIO (0, 1)
+pick :: MonadIO m => Range a -> m a
+pick f = do
+  unitVal <- liftIO $ randomRIO (0, 1)
   return $ f unitVal
 
 --determine :: String -> [(String, Range V)] -> Goal
@@ -148,7 +184,7 @@ pickFromRange f = do
 
 determine :: CompiledToken -> [(String, Range V)] -> StateT QState IO ()
 determine tok@(sha, tmax,parlist) rngs = do
-  vals <- forM rngs $ \(nm, rng) -> liftM ((,) nm) (liftIO $ pickFromRange rng)
+  vals <- forM rngs $ \(nm, rng) -> liftM ((,) nm) (liftIO $ pick rng)
   invoke tok vals
   return ()
   
@@ -163,3 +199,10 @@ optimise = undefined
 
 until :: [a] -> Goal -> Goal
 until = undefined
+
+
+noDaqTrans ds = let daqVars = [ nm | ReadSource nm ("adc", _) <- ds ]
+                    hasDaqVar (ReadSource nm _) = nm `elem` daqVars
+                    hasDaqVar (SinkConnect (Var nm) _) = nm `elem` daqVars
+                    hasDaqVar _ = False
+                in filter (not . hasDaqVar) ds

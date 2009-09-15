@@ -49,12 +49,14 @@ type Event a = (Double,a)
 data QState = QState { qsSess:: Session,
                        lastTStart:: Double,
                        lastTStop :: Double,
-                       realTime :: Bool}
+                       realTime :: Bool,
+                       shArgs :: [String],
+                       remoteCmdFile :: Maybe String
+                     }
 
 getSession = qsSess `fmap` get
 
-simulatedTime = do qs <- get
-                   put $ qs { realTime = False }
+
 
 
 {-
