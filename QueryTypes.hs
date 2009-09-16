@@ -203,12 +203,12 @@ grid opts = "-g" `elem` opts
 
 data QueryResultBox = forall a. QueryResult a => QResBox a deriving Typeable
 
-webSpark :: [V] -> IO String
-webSpark xs  = do  let (vls, _, _, _) = histList 50 $ map unsafeReify xs
+webSpark :: SparkOptions -> [V] -> IO String
+webSpark so xs= do let (vls, _, _, _) = histList 50 $ map unsafeReify xs
 
                    u <- (show. hashUnique) `fmap` newUnique
                    let fnm = "/var/bugpan/www/spark"++u++".png" 
-                   make barSpark vls >>= savePngFile fnm
+                   make so vls >>= savePngFile fnm
                    return $ "<img src=\""++fnm++"\" />"
 
 class QueryResult a where
@@ -219,7 +219,9 @@ class QueryResult a where
 
 instance (Ord a, Bounded a, Num a, Storable a, Reify a) => QueryResult [Signal a] where
     qReply [sig] opts | grid opts = let sig' = downSample' 100 sig
-                                    in webSpark $ map pack $ sigToList sig'
+                                        vls = sigToList sig'
+                                        minPt = negate $ foldl1 (min)  vls
+                                    in webSpark smoothSpark $ map (pack . (+minPt)) $ vls
     qReply [] opts = return "[]"
     qReply xs opts = return $ unlines $ map show xs
     qFilterSuccess [] = False
@@ -231,8 +233,8 @@ instance (Show a, Reify a) => QueryResult [Event a] where
                      | otherwise = return $ show xs
     qReply [] opts = return "[]"
     qReply xs opts | grid opts = case (pack . snd . head $ xs) of
-                                   Unit   -> webSpark $ map (pack . fst) xs -- histo of intervals. instead: dot for occ?
-                                   NumV _ -> webSpark $ map (pack . snd) xs
+                                   Unit   -> webSpark barSpark $ map (pack . fst) xs -- histo of intervals. instead: dot for occ?
+                                   NumV _ -> webSpark barSpark $ map (pack . snd) xs
                                    _ -> return $ show xs
                    | otherwise = return $ show xs
     qFilterSuccess [] = False
@@ -244,8 +246,8 @@ instance (Show a, Reify a) => QueryResult [Duration a] where
                      | otherwise = return $ show xs
     qReply [] opts = return "[]"
     qReply xs opts | grid opts = case (pack . snd . head $ xs) of --instead: line for each, height extent?
-                                   Unit   -> webSpark $ map (pack . uncurry (-) . fst) xs --histo of time extents.
-                                   NumV _ -> webSpark $ map (pack . snd) xs    
+                                   Unit   -> webSpark barSpark $ map (pack . uncurry (-) . fst) xs --histo of time extents.
+                                   NumV _ -> webSpark barSpark $ map (pack . snd) xs    
                                    _ -> return $ unlines $ map show xs
                    | otherwise = return $ unlines $ map show xs
     --qReply xs opts = return $ unlines $ map show xs

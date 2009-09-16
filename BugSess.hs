@@ -79,15 +79,16 @@ compileQuery opts sha q = do
   setCurrentDirectory "/var/bugpan/queryCache/"
   let initModule = unlines $ "module Main where":(map ("import "++) ["Prelude","Query", "QueryTypes", 
                                                                     "QueryUtils", "Numbers",
-                                                                    "System.Environment",
+                                                                    "System.Environment","Data.List", "TNUtils",
                                                                     "PlotGnuplot"])
                    ++["default (Int, Double)"]
       
   let mainFun = ["", 
                  "main = do",
-                 "  sess:_ <- getArgs",
+                 "  allArgs <- getArgs",
+                 "  let (opts, sess:_) = partition beginsWithHyphen allArgs",
                  "  qres <- q sess",
-                 "  qreply <- qReply qres "++show opts,
+                 "  qreply <- qReply qres opts",
                  "  putStrLn qreply"]
   let qFun = spliceFirst "q sess = " $ mkQuery nmtys ("sess") q "return "
   let allmod = initModule ++ unlines qFun ++ unlines mainFun
@@ -377,7 +378,9 @@ unWrapT t = t
 typeToProxyName :: T-> String
 typeToProxyName UnitT = "()"
 typeToProxyName StringT = "\"foo\""
+typeToProxyName (NumT (Just IntT)) = "(1::Int)"
 typeToProxyName (NumT (Just RealT)) = "double"
 typeToProxyName (PairT t1 t2) = "("++typeToProxyName t1++", "++typeToProxyName t2++")"
 typeToProxyName BoolT = "True"
+typeToProxyName t = error $ "typeToProxyName: unknown type "++show t
 
