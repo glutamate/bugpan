@@ -4,11 +4,9 @@
 module PlotGnuplot where
 
 import EvalM
-import qualified Data.StorableVector as SV
 import System.IO
 import System.Cmd
 import QueryTypes
-import Array
 import Math.Probably.FoldingStats
 import Control.Monad
 import Data.Unique
@@ -39,17 +37,6 @@ instance PlotWithGnuplot Histo where
                    forM_  dat $ \(x,y)-> hPutStrLn h $ show x++"\t"++show y
                    hClose h
 
-histArr :: (Ix a, Num b) => (a,a) -> [a] -> Array a b
-histArr bnds is = accumArray (+) 0 bnds [(i, 1) | i<-is, inRange bnds i]
-
-histList :: (RealFrac a) => Int -> [a] -> ([a] , a, a, a)
-histList nbins vls = let lo = foldl1 min vls
-                         hi = foldl1 max vls
-                         binSize = (hi-lo)/(realToFrac nbins+1)
-                         ixs = map (\v-> floor $ (v-lo)/binSize ) vls
-                         hArr = histArr (0,nbins-1) $ ixs
-                     in (elems hArr, lo, hi, binSize)
-                   
 
 
 rHisto nbins vls outdev = liftIO $ do
@@ -283,27 +270,6 @@ instance PlotWithGnuplot a => PlotWithGnuplot (String, a) where
       pls <- multiPlot r x
       return $ map (\(r', plines) -> (r' ,map (addTitle title) plines)) pls
       where addTitle title (PL x _ y) = PL x title y
-
-
-
-downSample n = map (downSample' (n `div` 2))
-
---downSample' :: (Ord a, Bounded a, Num a, Storable a) => Int -> Signal a -> Signal a
-downSample' :: Int -> Signal Double -> Signal Double
-downSample' n sig@(Signal t1 t2 dt sf) =
-    let x ./. y = realToFrac x / realToFrac y
-        npw = round $ (t2-t1)/dt
-        chunkSize = floor (npw./. n)
-        nChunks =  ceiling (npw ./. chunkSize)
-        newDt = (t2-t1)/realToFrac (nChunks*2)
-        narr = SV.pack $concatMap chunk [0..(nChunks-1)]
-        chunk i = let n1 = i*chunkSize
-                      n2 = n1 + (min chunkSize (npw - i*chunkSize -1))
-                      (x,y) = sigSegStat (both maxF minF) (n1,n2) sig
-                      in [x,y]
-     in if npw>n 
-           then (Signal t1 t2 ((t2-t1)./.(nChunks*2)) $ \p-> narr `SV.index` p)
-           else sig
 
 
 

@@ -42,6 +42,12 @@ import Data.Typeable
 import Math.Probably.FoldingStats
 import System.IO
 import ValueIO
+import Array
+import qualified Data.StorableVector as SV
+import Foreign.Storable
+
+
+import Graphics.Rendering.HSparklines
 
 type Duration a = ((Double,Double),a)
 type Event a = (Double,a)
@@ -58,30 +64,6 @@ getSession = qsSess `fmap` get
 
 
 
-
-{-
---scatter plot
-instance Tagged t => PlotWithR [t (Double,Double)] where
-    getRPlotCmd ts = 
-        let xys = map getTag ts in
-        do return $ RPlCmd { 
-                        prePlot = [],
-                        cleanUp = return (),
-                        plotArgs = [PLPoints $ map (\(t,v)-> ( t,  v)) xys]
-                      }
-
-data Hist a = forall t. Tagged t => Histogram [t a]
-
-plot_ = getRPlotCmd
-
-plotManySigs :: PlotWithR [a] => [a] -> [IO RPlotCmd]
-plotManySigs sigs = map (\s-> getRPlotCmd [s]) sigs
--}
---class PlotWithR a => PlotMany a where
-
-
---zipSigs :: Signal a -> Signal b -> Signal (a,b)
-
 zipWithTime :: Signal a -> Signal (a,Double)
 zipWithTime (Signal t1 t2 dt sf) = Signal t1 t2 dt $ \pt -> (sf pt, (realToFrac pt)*dt+t1)
 
@@ -92,8 +74,6 @@ foldSig :: (a->b->a) -> a -> Signal b -> a
 foldSig f init sig = foldl' f init $ sigToList sig
 
 
---mapMaybe :: (a->Maybe b) -> [a] -> [b]
---mapMaybe f xs = catMaybes $ map f xs
 during :: [Duration b] -> [Event a] -> [Event a]
 during durs evs = concatMap (during' evs) durs
     where during' evs dur = filter (`evInDuration` dur) evs
@@ -216,8 +196,20 @@ ask qx = do
   str <- liftIO $ qReply x []
   liftIO $ putStrLn str
 
+isSingle [x] = True
+isSingle _ = False
+
+grid opts = "-g" `elem` opts 
 
 data QueryResultBox = forall a. QueryResult a => QResBox a deriving Typeable
+
+webSpark :: [V] -> IO String
+webSpark xs  = do  let (vls, _, _, _) = histList 50 $ map unsafeReify xs
+
+                   u <- (show. hashUnique) `fmap` newUnique
+                   let fnm = "/var/bugpan/www/spark"++u++".png" 
+                   make barSpark vls >>= savePngFile fnm
+                   return $ "<img src=\""++fnm++"\" />"
 
 class QueryResult a where
     qReply :: a -> [String] -> IO String
@@ -225,16 +217,38 @@ class QueryResult a where
     qResThroughSession = return 
     qFilterSuccess :: a -> Bool
 
-instance Show a => QueryResult [Signal a] where
-    qReply xs _ = return $ unlines $ map show xs
+instance (Ord a, Bounded a, Num a, Storable a, Reify a) => QueryResult [Signal a] where
+    qReply [sig] opts | grid opts = let sig' = downSample' 100 sig
+                                    in webSpark $ map pack $ sigToList sig'
+    qReply [] opts = return "[]"
+    qReply xs opts = return $ unlines $ map show xs
     qFilterSuccess [] = False
     qFilterSuccess _ = True
-instance Show a => QueryResult [Event a] where
-    qReply xs _ = return $ show xs
+instance (Show a, Reify a) => QueryResult [Event a] where
+    qReply [xs] opts | grid opts = if Unit == (pack . snd $ xs)
+                                      then return . show . fst  $ xs
+                                      else return . show . snd  $ xs
+                     | otherwise = return $ show xs
+    qReply [] opts = return "[]"
+    qReply xs opts | grid opts = case (pack . snd . head $ xs) of
+                                   Unit   -> webSpark $ map (pack . fst) xs -- histo of intervals. instead: dot for occ?
+                                   NumV _ -> webSpark $ map (pack . snd) xs
+                                   _ -> return $ show xs
+                   | otherwise = return $ show xs
     qFilterSuccess [] = False
     qFilterSuccess _ = True
-instance Show a => QueryResult [Duration a] where
-    qReply xs _ = return $ unlines $ map show xs
+instance (Show a, Reify a) => QueryResult [Duration a] where
+    qReply [xs] opts | grid opts = if Unit == (pack . snd $ xs)
+                                      then return . (\(t1,t2)->show t1++" -> "++show t2) . fst  $ xs
+                                      else return . show . snd  $ xs
+                     | otherwise = return $ show xs
+    qReply [] opts = return "[]"
+    qReply xs opts | grid opts = case (pack . snd . head $ xs) of --instead: line for each, height extent?
+                                   Unit   -> webSpark $ map (pack . uncurry (-) . fst) xs --histo of time extents.
+                                   NumV _ -> webSpark $ map (pack . snd) xs    
+                                   _ -> return $ unlines $ map show xs
+                   | otherwise = return $ unlines $ map show xs
+    --qReply xs opts = return $ unlines $ map show xs
     qFilterSuccess [] = False
     qFilterSuccess _ = True
 {-instance QueryResult (IO RPlotCmd) where
@@ -293,57 +307,32 @@ instance ChopByDur [Duration a] where
     chopByDur chopDurs durs = map (\dur->sectionDur1 dur durs) chopDurs
 
 
---class (MonadState Session m, MonadIO m) => QueryM m where
---    answers :: [a] -> m a
+histArr :: (Ix a, Num b) => (a,a) -> [a] -> Array a b
+histArr bnds is = accumArray (+) 0 bnds [(i, 1) | i<-is, inRange bnds i]
 
---class MCompose m1 m2 m3 | m1 m2 -> m3 where
---    mcompose :: 
-    
+histList :: (RealFrac a) => Int -> [a] -> ([a] , a, a, a)
+histList nbins vls = let lo = foldl1 min vls
+                         hi = foldl1 max vls
+                         binSize = (hi-lo)/(realToFrac nbins+1)
+                         ixs = map (\v-> floor $ (v-lo)/binSize ) vls
+                         hArr = histArr (0,nbins-1) $ ixs
+                     in (elems hArr, lo, hi, binSize)
+                   
+downSample n = map (downSample' (n `div` 2))
 
-
---instance QueryM (ListT (StateT Session IO)) Id where
- --   answers xs = ListT . return $ xs
-
---instance QueryM (StateT Session IO) where
---    answers = return 
-
-
---newtype AskM a = AskM { unAskM :: ListT (StateT Session IO) a }
- --   deriving (Monad, MonadIO, Functor, MonadState Session, MonadPlus)
-
---runAskM :: Session -> AskM a -> IO [a]
---runAskM sess (AskM lsioA) = fst `fmap` runStateT (runListT (lsioA)) sess
-
---answers :: [a] -> AskM a
---answers xs = AskM (ListT . return $ xs)
---answer x = AskM (ListT . return $ [x])
-
-
---old stuff 
-{-askM :: Q -> AskM V
-askM (Map lame q) = do
-  let f v = unEvalM $ eval emptyEvalS (App lame (Const v))
-  f `fmap` askM q
-
-askM (Filter pred q) = do
-  let f v = unEvalM $ eval emptyEvalS (App pred (Const v))
-  vs <- askM q
-  guard (isNotFalse $ f vs)
-  return vs
-
-askM (Has qep qevs) = do 
-  ev <- askM qevs
-  ep <- askM qep
-  guard (ev `evInEpoch` ep)
-  return ep
-
-
-data Q = QVar String
-       -- | Filter E Q
-       -- | Map E Q
-       | Filter E Q
-       | Map E Q
-       | Has Q Q
-       | In Q Q
-       | Around Q Q
--}
+downSample' :: (Ord a, Bounded a, Num a, Storable a) => Int -> Signal a -> Signal a
+--downSample' :: Int -> Signal Double -> Signal Double
+downSample' n sig@(Signal t1 t2 dt sf) =
+    let x ./. y = realToFrac x / realToFrac y
+        npw = round $ (t2-t1)/dt
+        chunkSize = floor (npw./. n)
+        nChunks =  ceiling (npw ./. chunkSize)
+        newDt = (t2-t1)/realToFrac (nChunks*2)
+        narr = SV.pack $concatMap chunk [0..(nChunks-1)]
+        chunk i = let n1 = i*chunkSize
+                      n2 = n1 + (min chunkSize (npw - i*chunkSize -1))
+                      (x,y) = sigSegStat (both maxF minF) (n1,n2) sig
+                      in [x,y]
+     in if npw>n 
+           then (Signal t1 t2 ((t2-t1)./.(nChunks*2)) $ \p-> narr `SV.index` p)
+           else sig

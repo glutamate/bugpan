@@ -1,4 +1,4 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving, FlexibleContexts, ExistentialQuantification, TypeOperators #-} 
+{-# LANGUAGE GeneralizedNewtypeDeriving, FlexibleInstances, FlexibleContexts, ExistentialQuantification, TypeOperators #-} 
 
 module QueryRun where
 
@@ -39,6 +39,9 @@ import PrettyPrint
 import Query
 import HaskellBackend
 import ValueIO
+import Data.Monoid
+import Control.Applicative
+
 
 simulatedTime :: StateT QState IO ()
 simulatedTime = do qs <- get
@@ -211,3 +214,17 @@ noDaqTrans ds = let daqVars = [ nm | ReadSource nm ("adc", _) <- ds ]
                     hasDaqVar (SinkConnect (Var nm) _) = nm `elem` daqVars
                     hasDaqVar _ = False
                 in filter (not . hasDaqVar) ds
+
+newtype StaticIO a = SIO (a, IO ())
+
+instance Monoid a => Monoid (StaticIO a) where
+    mempty = SIO (mempty, return ())
+    mappend (SIO (x, iox)) (SIO (y, ioy)) = SIO (x `mappend` y, iox >> ioy)
+
+instance Functor StaticIO where
+    fmap f (SIO (x, a)) = SIO (f x, a)
+
+instance Applicative StaticIO where
+    pure x = SIO (x, return ())
+    (SIO (f,io1)) <*> (SIO (x, io2)) = SIO (f x, io1 >> io2)
+

@@ -197,6 +197,13 @@ instance Reify Double where
     pack = NumV . NReal 
     typeOfReified _ = NumT (Just RealT)
 
+instance Reify Float where 
+    reify (NumV (NReal x)) = Just $ realToFrac x
+    reify (NumV (NInt i)) = Just $ realToFrac i
+    reify v = Nothing
+    pack = NumV . NReal . realToFrac
+    typeOfReified _ = NumT (Just RealT)
+
 instance Reify Int where 
     reify (NumV n) = let NInt i = numCast n NI
                      in Just i
