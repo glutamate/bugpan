@@ -12,6 +12,7 @@ import Control.Monad
 import Data.Unique
 import Data.List
 import Control.Monad.Trans
+import qualified Data.StorableVector as SV
 
 data Histo where -- GADT bec i don't know syntax for double existential (no longer needed)
     Histo :: Tagged t => Int -> [t Double] -> Histo 
