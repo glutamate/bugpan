@@ -36,7 +36,9 @@ stage gsyn -1
 
 gcell :: Signal Real
 --gcell = convAux gsyn tmax rndSpike 
-gcell = (convolve gsyn) rndSpike 
+--fspikes = forget 0.02 rndSpike
+
+gcell = (convolve gsyn) (forget 0.02 rndSpike )
 cellOde = \v->{: ((<: gcell :>*(0-v)) - ((v-vrest)/rin))/cm :} 
 
 

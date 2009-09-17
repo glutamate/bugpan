@@ -57,8 +57,8 @@ plotGain = --inSessionNamed "9a05d5b49d3081de8000001676695ca4" $ do
            inTemporarySession $ do
              simulatedTime
              intfire <- use "Intfire"
-             prg <- compile (intfire `with` ["_tmax" =: 1]) [("rate", realT)]
-             1 `times` determine prg [("rate", uniform 600 1000)]
+             prg <- compile (intfire `with` ["_tmax" =: 4]) [("rate", realT)]
+             1 `times` determine prg [("rate", uniform 770 780)]
              spikes <- events "spike" ()
              vm <- signalsDirect "vm"
              gsyn <- signalsDirect "gsyn"
@@ -100,8 +100,6 @@ compileTest = inTemporarySession $ do
                 rndSpike <- events "rndSpike" ()
                 liftIO $ print rndSpike
                 liftIO $ gnuplotOnScreen vm
-
-realT = NumT (Just RealT)
 
 justCompile = inTemporarySession $ do
                 intfire <- use "Intfire"

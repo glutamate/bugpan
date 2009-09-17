@@ -184,11 +184,11 @@ letFloating = mapDE letFl
 forgetFloating :: TravM ()
 forgetFloating = mapDE forgetFl
     where forgetFl e@(Lam bd t arg) = return e -- cheap hack to fix above issue
-          forgetFl (Forget se tm) = return Forget `ap` mapEM forgetFloat se `ap` return tm
+          forgetFl (Forget tm se) = return Forget `ap` return tm `ap` mapEM forgetFloat se
           forgetFl e = mapEM forgetFloat e
-          forgetFloat (Forget se tm) = do
+          forgetFloat (Forget tm se) = do
             sn <- genSym "forgetFloat"
-            insertBefore [Let (PatVar sn UnspecifiedT) (Forget se tm)]
+            insertBefore [Let (PatVar sn UnspecifiedT) (Forget tm se)]
             return (Var sn)
           forgetFloat (e) = return e
           
@@ -359,6 +359,7 @@ declInMainLoop  (Let _ (SigLimited _ _)) = True
 declInMainLoop  (Let _ (Event _)) = True
 declInMainLoop  (Let _ (Switch _ _)) = True
 declInMainLoop  (Let _ (SigDelay _ _)) = True
+declInMainLoop  (Let _ (Forget _ _)) = True
 declInMainLoop  (SinkConnect _ _) = True
 declInMainLoop  (ReadSource _ _) = True
 declInMainLoop  _ = False

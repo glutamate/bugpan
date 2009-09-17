@@ -143,6 +143,10 @@ foo = do
 
   return ()
 
+--lookup tp see that it is not realtime
+--isEventFullyDefined ds nm = not. null $ [() | ReadSource varNm (srcNm, arg) <- ds, varNm == nm ]
+
+
 catMayMap f xs = catMaybes . map f $ xs
 
 compStageP ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++" = do "):lns
@@ -157,7 +161,7 @@ compStageP ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++
           newTmax = let tm = localTmax tmax ds' in
                     [ind++"let tmax = "++(show $ tm),
                     ind++"let npnts = idInt . round $ tmax/dt"]
-          runLine = [ind++"let ("++intercalate "," (exps++evExps)++") = step1 npnts "++(intercalate " " $ initVls)]
+          runLine = [ind++"("++intercalate "," (exps++evExps)++") <- return $ step1 npnts "++(intercalate " " $ initVls)]
           retLine = [ind++"return ("++(intercalate "," $ map ("bufToSig tmax "++) exps++ evExps)++")\n"]
           --returnLine = [ind++"return "++(inTuple $ map (\nm-> "bufToSig tmax "++nm++"BufVal") exps ++ map (++"QVal") evExps)]
           expBufs = map (++"Buf") exps
@@ -167,12 +171,14 @@ compStageP ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++
           arg (Let (PatVar nm _) (Event e)) = Just nm
           arg (Let (PatVar nm _) (SigDelay (Var snm) v0)) = Just nm
           arg (Let (PatVar nm _) (Switch eslams s0)) = Just nm
+          arg (Let (PatVar nm _) (Forget tm se)) = Just nm
           arg s = Nothing
           bufArgs = map (++"Buf") exps
           args = ["seconds"]++catMaybes (map arg ds)++bufArgs
           
           initV (Let nm (Sig e)) = Just "undefined"
           initV (Let nm (Event e)) = Just "[]"
+          initV (Let nm (Forget tm e)) = Just $ pp e
           initV (Let nm (SigDelay (Var snm) v0)) = Just $ pp v0
           initV (Let nm (Switch eslams s0)) = Just "undefined"
           initV s = Nothing
@@ -193,8 +199,13 @@ compStageP ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++
 
           lets (Let (PatVar nm _) (Sig e)) = Just (nm++"NxtV", pp . (tweakExprP (nmOrd nm) ds) $ e)
           lets (Let (PatVar nm _) (SigDelay (Var snm) _)) = Just (nm++"NxtV",snm++"NxtV" )
-          lets (Let (PatVar nm _) (Event e)) = Just $ (nm++"NxtV", "("++(pp . (tweakExprP (nmOrd nm) ds) $ e) ++")++"++nm)
-          lets (Let (PatVar nm _) (Switch ses s0)) = Just (nm++"NxtV",  "selSwitch ["++(intercalate "," $ map (switchLine nm) ses)++"] ("++(pp . unSig $ (tweakExprP (nmOrd nm) ds) s0)++")")
+          lets (Let (PatVar nm _) (Event e)) = 
+                                  Just $ (nm++"NxtV", "("++(pp . (tweakExprP (nmOrd nm) ds) $ e) ++")++"++nm)
+          lets (Let (PatVar nm _) (Forget (Const tmV) se)) = 
+                        Just $ (nm++"NxtV", "dropWhile ((<(seconds-"++ppVal tmV++")) . fst) "++nm)
+          lets (Let (PatVar nm _) (Switch ses s0)) = 
+                                  Just (nm++"NxtV",  "selSwitch ["++(intercalate "," $ map (switchLine nm) ses)++
+                                                     "] ("++(pp . unSig $ (tweakExprP (nmOrd nm) ds) s0)++")")
           lets e = Nothing
 
           letss = ("secondsNxtV", "realToFrac (npnts- n)*dt"):catMaybes (map lets ds)
