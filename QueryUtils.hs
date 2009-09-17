@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns, NoMonomorphismRestriction, FlexibleContexts #-}
+{-# LANGUAGE BangPatterns, NoMonomorphismRestriction, FlexibleContexts, ScopedTypeVariables #-}
 
 module QueryUtils where
 
@@ -252,13 +252,24 @@ tagMany _ [] = []
 tagMany (x:xs) (t:tgs) = setTag t x : tagMany xs tgs 
 
 cycleLabel :: [Int] -> [Duration a] -> [Duration Int]
-cycleLabel xs dur = tagMany (cycle xs) dur
+cycleLabel xs durs = tagMany (cycle xs) durs
+
+whollyCycleLabel :: [Int] -> [Duration a] -> [Duration Int]
+whollyCycleLabel xs durs = let nxs = length xs 
+                           in if length durs >= nxs
+                                 then tagMany xs (take nxs durs) ++ whollyCycleLabel xs (drop nxs durs)
+                                 else []
 
 groupBy :: (Functor f, ChopByDur [f b], Eq a) => [Duration a] -> [f b] -> [(a, [f b])]
-groupBy durs eps = let uncatted = zip (map getTag durs) $ chopByDur durs eps
+groupBy durs eps = let uncatted = zip (map getTag durs) $ chopped
+                       chopped = chopByDur durs eps
                        differentAs = nub $ map fst uncatted
-                       --catThem a = (a, concat $ lookupMany a uncatted)
-                       --catted = map catThem uncatted
-                   in uncatted
+                       catThem a = (a, concat $ lookupMany a uncatted)
+                       catted = map catThem differentAs
+                   in catted
+
+groupStats :: Tagged t => [(a, [t b])] -> Fold b c -> [(a, c)]
+groupStats gp stat = map runS gp
+    where runS (x, tgs) = (x, runStat stat $map getTag tgs)
 
 --chiSquare :: [[Duration a]] -> 
