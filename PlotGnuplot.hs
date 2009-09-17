@@ -171,6 +171,7 @@ gnuplotMany nmbxs = do
                                  (showMultiPlot plines)
   
 instance PlotWithGnuplot [Signal Double] where
+    getGnuplotCmd [] = return []
     getGnuplotCmd ss = forM (downSample 1000 ss) $ \s@(Signal t1 t2 dt sf) -> do
            fnm <- ("/tmp/gnuplotsig"++) `fmap` uniqueIntStr
            writeSig fnm s
@@ -183,6 +184,7 @@ writeSig fp s@(Signal t1 t2 dt sf) = do
   hClose h
 
 instance PlotWithGnuplot [Event Double] where
+    getGnuplotCmd [] = return []
     getGnuplotCmd es = 
         do fnm <- ("/tmp/gnuplotevs"++) `fmap` uniqueIntStr
            writeEvts fnm es
@@ -193,6 +195,7 @@ instance PlotWithGnuplot [Event Double] where
                    hClose h
 
 instance PlotWithGnuplot [Duration Double] where
+    getGnuplotCmd [] = return []
     getGnuplotCmd es = 
         do fnm <- ("/tmp/gnuplotdurs"++) `fmap` uniqueIntStr
            writeEvts fnm es

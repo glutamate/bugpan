@@ -110,10 +110,10 @@ durationsDirect nm _ = do
       (return [])
 
 
-storeAs :: Reify a => String -> [a] -> StateT QState IO ()
+storeAs :: Reify a => String -> [a] -> StateT QState IO [a]
 storeAs = storeAs' False
 
-storeAsOvwrt :: Reify a => String -> [a] -> StateT QState IO ()
+storeAsOvwrt :: Reify a => String -> [a] -> StateT QState IO [a]
 storeAsOvwrt = storeAs' True
 
 storeAs' ovwrt nm vls = do 
@@ -138,6 +138,14 @@ storeAs' ovwrt nm vls = do
        whenM (not `fmap` (doesDirectoryExist $ bdir ./ subDir ./ nm))
              (do createDirectory $ bdir ./ subDir ./ nm
                  saveVs (oneTrailingSlash bdir++subDir++nm++"/stored"++suffix) vs)
+  return vls
+
+exists :: String -> StateT QState IO Bool
+exists  nm =   do   Session bdir t0 <- getSession
+                    or `fmap` sequence [liftIO $ doesDirectoryExist $ bdir ./ "signals" ./ nm,
+                                        liftIO $ doesDirectoryExist $ bdir ./ "events" ./ nm,
+                                        liftIO $ doesDirectoryExist $ bdir ./ "durations" ./ nm]
+                             
 
 instance (Reify a, QueryResult [a]) => QueryResult (StoreAs a) where
     qResThroughSession sa@(StoreAs nm val False) = storeAs nm val >> return sa

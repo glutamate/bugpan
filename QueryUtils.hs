@@ -13,6 +13,7 @@ import Math.Probably.FoldingStats
 import Control.Applicative hiding ((<**>))
 import Numbers
 import Data.Ord
+import TNUtils
 
 peak :: Ord a => [Signal a] ->[Event a]
 peak sigs =  map (\sig -> swap . foldSig cmp (sigInitialVal sig, 0) $ zipWithTime sig) sigs 
@@ -252,5 +253,12 @@ tagMany (x:xs) (t:tgs) = setTag t x : tagMany xs tgs
 
 cycleLabel :: [Int] -> [Duration a] -> [Duration Int]
 cycleLabel xs dur = tagMany (cycle xs) dur
+
+groupBy :: (Functor f, ChopByDur [f b], Eq a) => [Duration a] -> [f b] -> [(a, [f b])]
+groupBy durs eps = let uncatted = zip (map getTag durs) $ chopByDur durs eps
+                       differentAs = nub $ map fst uncatted
+                       --catThem a = (a, concat $ lookupMany a uncatted)
+                       --catted = map catThem uncatted
+                   in uncatted
 
 --chiSquare :: [[Duration a]] -> 
