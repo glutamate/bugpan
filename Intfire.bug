@@ -70,6 +70,7 @@ secs *> store ""
 --vmpassive *> store ""
 --incrsig *> store ""
 spike *> store ""
+refrac_end *> store ""
 --spike *> print ()
 rndSpike *> store ""
 

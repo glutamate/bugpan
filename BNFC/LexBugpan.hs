@@ -88,7 +88,7 @@ eitherResIdent tv s = treeFind resWords
                               | s > a  = treeFind right
                               | s == a = t
 
-resWords = b "forget" (b "Signal" (b "Int" (b "Duration" (b "Bool" N N) (b "Event" N N)) (b "Real" (b "Number" N N) (b "Shape" N N))) (b "delay" (b "case" (b "box" N N) (b "colour" N N)) (b "exp" (b "else" N N) (b "false" N N)))) (b "re" (b "let" (b "im" (b "if" N N) (b "in" N N)) (b "module" (b "ln" N N) (b "of" N N))) (b "translate" (b "switch" (b "stage" N N) (b "then" N N)) (b "use" (b "true" N N) (b "where" N N))))
+resWords = b "fby" (b "Signal" (b "Int" (b "Duration" (b "D" (b "Bool" N N) N) (b "Event" N N)) (b "Real" (b "Number" N N) (b "Shape" N N))) (b "delay" (b "case" (b "box" N N) (b "colour" N N)) (b "exp" (b "else" N N) (b "false" N N)))) (b "re" (b "let" (b "im" (b "if" (b "forget" N N) N) (b "in" N N)) (b "module" (b "ln" N N) (b "of" N N))) (b "translate" (b "switch" (b "stage" N N) (b "then" N N)) (b "use" (b "true" N N) (b "where" N N))))
    where b s = B s (TS s)
 
 unescapeInitTail :: String -> String

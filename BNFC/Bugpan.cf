@@ -1,6 +1,6 @@
 Prog. Program ::= "module" BIdent "where" "{" [Declare] "}";
 
-DLet. Declare ::= BIdent [Arg] "=" Exp ;
+DLet. Declare ::= Pat [Arg] "=" Exp ;
 DImport. Declare ::= "use" BIdent ;
 DImportSubst. Declare ::= "use" BIdent "{" [ImpSubstLine] "}";
 DType. Declare ::= BIdent "::" Type ;
@@ -22,16 +22,11 @@ Realpart. Exp5 ::= "re" Exp ;
 Imagpart. Exp5 ::= "im" Exp ;
 
 EConst. Exp6 ::= Const ;
-
-
-
 And. Exp1 ::= Exp1 "&&" Exp2 ;
 Or. Exp1 ::= Exp1 "||" Exp2 ;
 Not. Exp2 ::= "!" Exp3 ;
 
 ECmp.Exp1 ::= Exp1 CmpOp Exp2 ;
-
-
 
 If. Exp ::= "if" Exp "then" Exp "else" Exp ;
 
@@ -53,8 +48,8 @@ SigLimited. Exp1 ::= "{:" Exp "#" Exp ":}" ;
 SigVal. Exp6 ::= "<:" Exp ":>" ;
 SigAt. Exp2 ::= Exp2 "@" Exp3 ;
 SigDelay. Exp4 ::= "delay" Exp4 Exp5  ;
--- SigDeriv. Exp2 ::= "D" 
--- SigFby. Exp2 ::= Exp2 "fby" Exp3;
+SigDeriv. Exp2 ::= "D" Exp3;
+SigFby. Exp2 ::= Exp2 "fby" Exp3;
 
 
 Event. Exp4 ::= "[:" Exp ":]" ;
@@ -68,7 +63,7 @@ ELet.Exp ::= "let" "{" [LetLine] "}" "in" Exp ;
 ECase.Exp ::= "case" Exp "of" "{" [CaseLine] "}"  ;
 
 SwitchLine. SwitchLine ::= Exp "~>" Exp ;
-LetLine. LetLine ::= BIdent "=" Exp ;
+LetLine. LetLine ::= Pat "=" Exp ;
 CaseLine. CaseLine ::= Pat "->" Exp ;
 Arg. Arg ::= Pat1 ;
 
@@ -80,7 +75,7 @@ PLit. Pat1 ::= Const ;
 PPair. Pat1 ::= "(" Pat "," Pat ")" ;
 PNil. Pat1 ::= "[]" ;
 PCons. Pat ::= Pat ":" Pat ;
---PDeriv. Pat ::= "D" Pat;
+PDeriv. Pat ::= "D" Pat;
 
 CInt. Const ::= Integer ;
 CDbl. Const ::= Double ;

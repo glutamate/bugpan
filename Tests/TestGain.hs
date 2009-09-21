@@ -58,15 +58,17 @@ plotGain = --inSessionNamed "9a05d5b49d3081de8000001676695ca4" $ do
              simulatedTime
              intfire <- use "Intfire"
              prg <- compile (intfire `with` ["_tmax" =: 4]) [("rate", realT)]
-             1 `times` determine prg [("rate", uniform 770 780)]
+             1 `times` determine prg [("rate", uniform 800 900)]
              spikes <- events "spike" ()
              vm <- signalsDirect "vm"
              gsyn <- signalsDirect "gsyn"
-             rndSpike <- events "rndSpike" ()
+             spike <- events "spike" ()
+             refend <- events "refrac_end" ()
              inrate <- durations "inputRate" real
              let outrate = freqDuring inrate $ spikes
-             liftIO $ gnuplotOnScreen $ ("gsyn", gsyn) :||: ("vm", take 1 vm)
-             --liftIO $ print2 "inputSpikes" rndSpike
+             ask $ plot ("vm", take 1 vm)
+             liftIO $ print2 "spike" spike
+             liftIO $ print2 "refrac_end" refend
              return ()
 
 perfTest1 = inTemporarySession $ do

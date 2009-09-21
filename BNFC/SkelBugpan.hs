@@ -21,7 +21,7 @@ transProgram x = case x of
 
 transDeclare :: Declare -> Result
 transDeclare x = case x of
-  DLet bident args exp  -> failure x
+  DLet pat args exp  -> failure x
   DImport bident  -> failure x
   DImportSubst bident impsubstlines  -> failure x
   DType bident type'  -> failure x
@@ -61,6 +61,8 @@ transExp x = case x of
   SigVal exp  -> failure x
   SigAt exp0 exp  -> failure x
   SigDelay exp0 exp  -> failure x
+  SigDeriv exp  -> failure x
+  SigFby exp0 exp  -> failure x
   Event exp  -> failure x
   Forget exp0 exp  -> failure x
   Switch exp switchlines  -> failure x
@@ -78,7 +80,7 @@ transSwitchLine x = case x of
 
 transLetLine :: LetLine -> Result
 transLetLine x = case x of
-  LetLine bident exp  -> failure x
+  LetLine pat exp  -> failure x
 
 
 transCaseLine :: CaseLine -> Result
@@ -104,6 +106,7 @@ transPat x = case x of
   PPair pat0 pat  -> failure x
   PNil  -> failure x
   PCons pat0 pat  -> failure x
+  PDeriv pat  -> failure x
 
 
 transConst :: Const -> Result

@@ -224,6 +224,9 @@ compStageP ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++
 
 bang nm = '!':nm
 
+isEvent :: String -> [Declare] -> Bool
+isEvent nm ds = not $ null [() | Let (PatVar nm' _) (Event e) <- ds, nm' ==nm]
+
 nmOrderinDS ds nm = aux 0 ds 
     where aux n [] = error $ "nmOrderinDS: can't find "++nm
           aux n ((Let (PatVar nm' _) _):dss) | nm' == nm = n
@@ -235,6 +238,8 @@ tweakExprP n ds e = mapE (changeRead . unSharp . unVal) e
           unVal (SigVal (Var "seconds")) = Var "secondsNxtV"
           unVal (SigVal (Var nm)) | nmOrderinDS ds nm < n = Var (nm++"NxtV") -- ++"Val")
                                   | otherwise = Var nm
+          unVal (Var nm) | isEvent nm ds && nmOrderinDS ds nm < n = Var (nm++"NxtV") -- ++"Val")
+                         | otherwise = Var nm
           unVal e = e
           unSharp (Var ('#':nm)) = Var nm
           unSharp e = e

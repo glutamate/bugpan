@@ -94,7 +94,7 @@ instance Print Program where
 
 instance Print Declare where
   prt i e = case e of
-   DLet bident args exp -> prPrec i 0 (concatD [prt 0 bident , prt 0 args , doc (showString "=") , prt 0 exp])
+   DLet pat args exp -> prPrec i 0 (concatD [prt 0 pat , prt 0 args , doc (showString "=") , prt 0 exp])
    DImport bident -> prPrec i 0 (concatD [doc (showString "use") , prt 0 bident])
    DImportSubst bident impsubstlines -> prPrec i 0 (concatD [doc (showString "use") , prt 0 bident , doc (showString "{") , prt 0 impsubstlines , doc (showString "}")])
    DType bident type' -> prPrec i 0 (concatD [prt 0 bident , doc (showString "::") , prt 0 type'])
@@ -138,6 +138,8 @@ instance Print Exp where
    SigVal exp -> prPrec i 6 (concatD [doc (showString "<:") , prt 0 exp , doc (showString ":>")])
    SigAt exp0 exp -> prPrec i 2 (concatD [prt 2 exp0 , doc (showString "@") , prt 3 exp])
    SigDelay exp0 exp -> prPrec i 4 (concatD [doc (showString "delay") , prt 4 exp0 , prt 5 exp])
+   SigDeriv exp -> prPrec i 2 (concatD [doc (showString "D") , prt 3 exp])
+   SigFby exp0 exp -> prPrec i 2 (concatD [prt 2 exp0 , doc (showString "fby") , prt 3 exp])
    Event exp -> prPrec i 4 (concatD [doc (showString "[:") , prt 0 exp , doc (showString ":]")])
    Forget exp0 exp -> prPrec i 4 (concatD [doc (showString "forget") , prt 4 exp0 , prt 5 exp])
    Switch exp switchlines -> prPrec i 0 (concatD [doc (showString "switch") , doc (showString "{") , prt 0 exp , doc (showString ";") , prt 0 switchlines , doc (showString "}")])
@@ -163,7 +165,7 @@ instance Print SwitchLine where
 
 instance Print LetLine where
   prt i e = case e of
-   LetLine bident exp -> prPrec i 0 (concatD [prt 0 bident , doc (showString "=") , prt 0 exp])
+   LetLine pat exp -> prPrec i 0 (concatD [prt 0 pat , doc (showString "=") , prt 0 exp])
 
   prtList es = case es of
    [] -> (concatD [])
@@ -204,6 +206,7 @@ instance Print Pat where
    PPair pat0 pat -> prPrec i 1 (concatD [doc (showString "(") , prt 0 pat0 , doc (showString ",") , prt 0 pat , doc (showString ")")])
    PNil  -> prPrec i 1 (concatD [doc (showString "[]")])
    PCons pat0 pat -> prPrec i 0 (concatD [prt 0 pat0 , doc (showString ":") , prt 0 pat])
+   PDeriv pat -> prPrec i 0 (concatD [doc (showString "D") , prt 0 pat])
 
 
 instance Print Const where

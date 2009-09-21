@@ -8,7 +8,7 @@ data Program =
   deriving (Eq,Ord,Show)
 
 data Declare =
-   DLet BIdent [Arg] Exp
+   DLet Pat [Arg] Exp
  | DImport BIdent
  | DImportSubst BIdent [ImpSubstLine]
  | DType BIdent Type
@@ -47,6 +47,8 @@ data Exp =
  | SigVal Exp
  | SigAt Exp Exp
  | SigDelay Exp Exp
+ | SigDeriv Exp
+ | SigFby Exp Exp
  | Event Exp
  | Forget Exp Exp
  | Switch Exp [SwitchLine]
@@ -62,7 +64,7 @@ data SwitchLine =
   deriving (Eq,Ord,Show)
 
 data LetLine =
-   LetLine BIdent Exp
+   LetLine Pat Exp
   deriving (Eq,Ord,Show)
 
 data CaseLine =
@@ -84,6 +86,7 @@ data Pat =
  | PPair Pat Pat
  | PNil
  | PCons Pat Pat
+ | PDeriv Pat
   deriving (Eq,Ord,Show)
 
 data Const =

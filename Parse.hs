@@ -23,7 +23,7 @@ ident nm=nm
 convertProgram :: B.Program -> [Declare]
 convertProgram (B.Prog (B.BIdent b) ds) =  map convDecl ds ++ [Let (PatVar "moduleName" StringT) $ Const (StringV b)] 
 
-convDecl (B.DLet (B.BIdent b) args e) = Let (PatVar (ident b) UnspecifiedT) . addLamsP (reverse args) $ cE e
+convDecl (B.DLet pat args e) = Let (cPat pat) . addLamsP (reverse args) $ cE e
 convDecl (B.DType (B.BIdent b) t) = DeclareType (ident b) $cType t
 convDecl (B.DSinkConn e (B.BIdent b) arg) = SinkConnect (cE e) (b, cE arg)
 convDecl (B.DImport (B.BIdent b)) = Import (ident b) [] 
@@ -89,7 +89,7 @@ cE (B.Switch s1 ses) =
 
 cE (B.ELet les e) = 
     LetE
-       (map (\(B.LetLine (B.BIdent b) es) -> (PatVar (ident b) UnspecifiedT, cE es)) les)
+       (map (\(B.LetLine pat es) -> (cPat pat, cE es)) les)
        (cE e)
 cE (B.ECase e pats) = 
     Case (cE e)
