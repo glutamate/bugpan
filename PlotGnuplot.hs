@@ -169,7 +169,7 @@ gnuplotMany opts nmbxs = do
   let start = "set datafile missing \"NaN\"\n"
   let h = optVal 'h' 480 opts
   let w = optVal 'w' 640 opts
-  let term = "set terminal png size "++ show h++","++show w++"\n"
+  let term = "set terminal png size "++ show w++","++show h++"\n"
   let cmds = start++term ++concatMap plotOne nmcmds
   writeFile "/tmp/gnuplotCmds" cmds
   system "gnuplot /tmp/gnuplotCmds"

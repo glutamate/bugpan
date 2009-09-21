@@ -263,7 +263,7 @@ whollyCycleLabel xs durs = let nxs = length xs
 groupBy :: (Functor f, ChopByDur [f b], Eq a) => [Duration a] -> [f b] -> [(a, [f b])]
 groupBy durs eps = let uncatted = zip (map getTag durs) $ chopped
                        chopped = chopByDur durs eps
-                       differentAs = nub $ map fst uncatted
+                       differentAs = nub $ map getTag durs
                        catThem a = (a, concat $ lookupMany a uncatted)
                        catted = map catThem differentAs
                    in catted
@@ -271,5 +271,10 @@ groupBy durs eps = let uncatted = zip (map getTag durs) $ chopped
 groupStats :: Tagged t => [(a, [t b])] -> Fold b c -> [(a, c)]
 groupStats gp stat = map runS gp
     where runS (x, tgs) = (x, runStat stat $map getTag tgs)
+
+tagTime :: Tagged t => [t a] -> [t Double]
+tagTime tgs = map (\tgd -> setTag tgd $ getTStart tgd) tgs
+
+
 
 --chiSquare :: [[Duration a]] -> 
