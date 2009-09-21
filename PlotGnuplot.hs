@@ -13,6 +13,7 @@ import Data.Unique
 import Data.List
 import Control.Monad.Trans
 import qualified Data.StorableVector as SV
+import TNUtils
 
 data Histo where -- GADT bec i don't know syntax for double existential (no longer needed)
     Histo :: Tagged t => Int -> [t Double] -> Histo 
@@ -95,14 +96,14 @@ data GnuplotBox = forall a. PlotWithGnuplot a => GnuplotBox a
 instance QueryResult [GnuplotBox] where
     qFilterSuccess [] = False
     qFilterSuccess _ = True
-    qReply gpbxs _ = do 
+    qReply gpbxs opts = do 
       u <- (show. hashUnique) `fmap` newUnique
       let htmlFile  ="/var/bugpan/www/plots"++u++".html" 
       h <- openFile (htmlFile) WriteMode
       fnms <- forM gpbxs .  const $ do fnm <- (++".png") `fmap` uniqueIntStr
-                                       hPutStrLn h $ concat ["<img src=\"", fnm, "\" /><p />"]
+                                       hPutStrLn h $ concat ["<img src=\"", fnm, "\" style=\"float: left\"/>"]
                                        return $ "/var/bugpan/www/"++fnm
-      gnuplotMany $ zip fnms gpbxs
+      gnuplotMany opts $ zip fnms gpbxs
       hClose h
       --plotPlotCmd plot
       --system $ "gnome-open file://"++ htmlFile
@@ -155,15 +156,21 @@ gnuplotToPS fp x = do
   system "gnuplot /tmp/gnuplotCmds"
   return ()
 
+optVal :: Read a => Char -> a -> [String] -> a 
+optVal key def opts = case find (['-', key] `isPrefixOf`) opts of
+                        Nothing -> def
+                        Just ('-':_:s) -> safeRead s `orJust` def
 
-gnuplotMany :: [(String, GnuplotBox)] -> IO ()
-gnuplotMany nmbxs = do
+gnuplotMany :: [String] -> [(String, GnuplotBox)] -> IO ()
+gnuplotMany opts nmbxs = do
   nmcmds <- forM nmbxs $ \(nm, GnuplotBox x) -> do
                       cmd <- multiPlot unitRect x
                       return (nm,cmd)
-  let start = "set datafile missing \"NaN\"\n"++
-                 "set terminal png\n"
-  let cmds = start++concatMap plotOne nmcmds
+  let start = "set datafile missing \"NaN\"\n"
+  let h = optVal 'h' 480 opts
+  let w = optVal 'w' 640 opts
+  let term = "set terminal png size "++ show h++","++show w++"\n"
+  let cmds = start++term ++concatMap plotOne nmcmds
   writeFile "/tmp/gnuplotCmds" cmds
   system "gnuplot /tmp/gnuplotCmds"
   return ()
