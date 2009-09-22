@@ -28,6 +28,7 @@ import qualified Data.ByteString.Lazy as BS
 import Data.ByteString.Internal
 import PlotGnuplot
 import QueryUtils
+import QueryPlots
 
 root = "/var/bugpan/sessions/"
 
@@ -78,7 +79,7 @@ compileQuery opts sha q = do
   whenM (not `fmap` doesDirectoryExist "/var/bugpan/queryCache/") 
         (createDirectory "/var/bugpan/queryCache/") 
   setCurrentDirectory "/var/bugpan/queryCache/"
-  let initModule = unlines $ "module Main where":(map ("import "++) ["Prelude","Query", "QueryTypes", 
+  let initModule = unlines $ "module Main where":(map ("import "++) ["Prelude","Query", "QueryTypes", "QueryPlots", 
                                                                     "QueryUtils", "Numbers",
                                                                     "System.Environment","Data.List", "TNUtils",
                                                                     "PlotGnuplot"])

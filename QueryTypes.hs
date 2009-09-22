@@ -47,8 +47,7 @@ import qualified Data.StorableVector as SV
 import Foreign.Storable
 import System.Posix.Files
 
-
-import Graphics.Rendering.HSparklines
+--import Graphics.Rendering.HSparklines
 
 type Duration a = ((Double,Double),a)
 type Event a = (Double,a)
@@ -202,34 +201,8 @@ isSingle _ = False
 
 grid opts = "-g" `elem` opts 
 
-optVal :: Read a => Char -> a -> [String] -> a 
-optVal key def opts = case find (['-', key] `isPrefixOf`) opts of
-                        Nothing -> def
-                        Just ('-':_:s) -> safeRead s `orJust` def
-
-optStr :: Char -> String -> [String] -> String
-optStr key def opts = case find (['-', key] `isPrefixOf`) opts of
-                        Nothing -> def
-                        Just ('-':_:s) -> s
-
-
 data QueryResultBox = forall a. QueryResult a => QResBox a deriving Typeable
 
-webSpark :: [String] -> SparkOptions -> [V] -> IO String
-webSpark opts so xs= do 
-  let (vls, _, _, _) = histList 50 $ map unsafeReify xs    
-  u <- (show. hashUnique) `fmap` newUnique
-  let resdir = optStr 'd' "somewhere" opts
-  unlessM (doesDirectoryExist $ "/var/bugpan/www/"++resdir) $ do
-                       createDirectoryIfMissing False $ "/var/bugpan/www/"++resdir
-                       system $ "chmod 777 /var/bugpan/www/"++resdir
-                       return ()
-  --p <- getPermissions 
-  --setPermissions ("/var/bugpan/www/"++resdir) $ p { writable = True }
-  let fnm = "/var/bugpan/www/"./resdir./"spark"++u++".png" 
-  make so vls >>= savePngFile fnm
-  system $ "chmod 777 /var/bugpan/www/"++resdir./"/* 2>/dev/null"
-  return $ "<img src=\""++fnm++"\" />"
 
 class QueryResult a where
     qReply :: a -> [String] -> IO String
@@ -237,69 +210,7 @@ class QueryResult a where
     qResThroughSession = return 
     qFilterSuccess :: a -> Bool
 
-instance (Ord a, Bounded a, Num a, Storable a, Reify a) => QueryResult [Signal a] where
-    qReply [sig] opts | grid opts = let sig' = downSample' 100 sig
-                                        vls = sigToList sig'
-                                        minPt = negate $ foldl1 (min)  vls
-                                    in webSpark opts smoothSpark $ map (pack . (+minPt)) $ vls
-    qReply [] opts = return "[]"
-    qReply xs opts = return $ unlines $ map show xs
-    qFilterSuccess [] = False
-    qFilterSuccess _ = True
-instance (Show a, Reify a) => QueryResult [Event a] where
-    qReply [xs] opts | grid opts = if Unit == (pack . snd $ xs)
-                                      then return . show . fst  $ xs
-                                      else return . show . snd  $ xs
-                     | otherwise = return $ show xs
-    qReply [] opts = return "[]"
-    qReply xs opts | grid opts = case (pack . snd . head $ xs) of
-                                   Unit   -> webSpark opts barSpark $ map (pack . fst) xs -- histo of intervals. instead: dot for occ?
-                                   NumV _ -> webSpark opts barSpark $ map (pack . snd) xs
-                                   _ -> return $ show xs
-                   | otherwise = return $ show xs
-    qFilterSuccess [] = False
-    qFilterSuccess _ = True
-instance (Show a, Reify a) => QueryResult [Duration a] where
-    qReply [xs] opts | grid opts = if Unit == (pack . snd $ xs)
-                                      then return . (\(t1,t2)->show t1++" -> "++show t2) . fst  $ xs
-                                      else return . show . snd  $ xs
-                     | otherwise = return $ show xs
-    qReply [] opts = return "[]"
-    qReply xs opts | grid opts = case (pack . snd . head $ xs) of --instead: line for each, height extent?
-                                   Unit   -> webSpark opts barSpark $ map (pack . uncurry (-) . fst) xs --histo of time extents.
-                                   NumV _ -> webSpark opts barSpark $ map (pack . snd) xs    
-                                   _ -> return $ unlines $ map show xs
-                   | otherwise = return $ unlines $ map show xs
-    --qReply xs opts = return $ unlines $ map show xs
-    qFilterSuccess [] = False
-    qFilterSuccess _ = True
-{-instance QueryResult (IO RPlotCmd) where
-    qReply ioplot = do plot <- ioplot
-                       plotPlotCmd plot
-                       return ""
-    qFilterSuccess _ = True
 
-instance QueryResult [IO RPlotCmd] where
-    qReply ioplots = do 
-      u <- (show. hashUnique) `fmap` newUnique
-      let htmlFile  ="/var/bugpan/www/plots"++u++".html" 
-      h <- openFile (htmlFile) WriteMode
-      pls <- forM ioplots $ \ioplot -> do
-                                     plot <- ioplot
-                                     r <- (show. hashUnique) `fmap` newUnique
-                                     let fnm = r++".png"
-                                     --putStrLn fnm
-                                     hPutStrLn h $ concat ["<img src=\"", fnm, "\" /><p />"]
-                                     return ("/var/bugpan/www/"++fnm,plot)
-      plotCmdToPng pls
-      hClose h
-      --plotPlotCmd plot
-      --system $ "gnome-open file://"++ htmlFile
-      return $ "file://"++ htmlFile
-    qFilterSuccess [] = False
-    qFilterSuccess _ = True
-
--}
 instance QueryResult [Char] where
     qReply s _ = return s 
     qFilterSuccess [] = False
@@ -328,18 +239,6 @@ instance ChopByDur [Event a] where
 instance ChopByDur [Duration a] where
     chopByDur chopDurs durs = map (\dur->sectionDur1 dur durs) chopDurs
 
-
-histArr :: (Ix a, Num b) => (a,a) -> [a] -> Array a b
-histArr bnds is = accumArray (+) 0 bnds [(i, 1) | i<-is, inRange bnds i]
-
-histList :: (RealFrac a) => Int -> [a] -> ([a] , a, a, a)
-histList nbins vls = let lo = foldl1 min vls
-                         hi = foldl1 max vls
-                         binSize = (hi-lo)/(realToFrac nbins+1)
-                         ixs = map (\v-> floor $ (v-lo)/binSize ) vls
-                         hArr = histArr (0,nbins-1) $ ixs
-                     in (elems hArr, lo, hi, binSize)
-                   
 downSample n = map (downSample' (n `div` 2))
 
 downSample' :: (Ord a, Bounded a, Num a, Storable a) => Int -> Signal a -> Signal a

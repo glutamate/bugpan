@@ -26,7 +26,7 @@ import ValueIO
 import Numbers
 import Tests.Asserts
 import TNUtils
-import PlotGnuplot
+import QueryPlots
 
 main = plotGain
 
@@ -91,8 +91,8 @@ perfTest2 = inTemporarySession $ do
              gcell <- signalsDirect "gcell" 
              gsyn <- signalsDirect "gsyn" 
              rndSpike <- events "rndSpike" ()
-             liftIO $ print rndSpike
-             liftIO $ gnuplotOnScreen $ vm
+             ask rndSpike
+             ask $plot vm
 
 compileTest = inTemporarySession $ do
                 intfire <- use "Intfire"
@@ -100,8 +100,8 @@ compileTest = inTemporarySession $ do
                 invoke prg [("rate" , 50)]
                 vm <- signalsDirect "vm"
                 rndSpike <- events "rndSpike" ()
-                liftIO $ print rndSpike
-                liftIO $ gnuplotOnScreen vm
+                ask rndSpike
+                ask$ plot vm
 
 justCompile = inTemporarySession $ do
                 intfire <- use "Intfire"
