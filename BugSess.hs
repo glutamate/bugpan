@@ -360,6 +360,14 @@ dispatch opts ("mksdur":sessNm:durnm:val:_) = do
             storeAs durnm $ dur val
   return ()
 
+
+dispatch opts ("mkndur":sessNm:durnm:val:_) = do
+  qres <- inApproxSession sessNm $ do
+            case safeRead val of
+              Just x -> storeAs durnm (durd x) >> return ()
+              Nothing -> return ()
+  return ()
+
     
 dispatch _ _ = putStrLn $ unlines [
               "",
