@@ -15,3 +15,16 @@ dist/*
 *.txt
 *.pdf
 *_comb.lbr
+Intfire.hs
+BugSess
+Delphine
+Driver
+Intfire
+RunBugpan
+RunLoom
+IOTest
+TestAcqOnly
+TestGain
+AnalyseLoom
+IntFireFullOut
+HaskellBackend_with_local_params.hs
