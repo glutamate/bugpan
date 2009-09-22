@@ -45,6 +45,7 @@ import ValueIO
 import Array
 import qualified Data.StorableVector as SV
 import Foreign.Storable
+import System.Posix.Files
 
 
 import Graphics.Rendering.HSparklines
@@ -201,15 +202,32 @@ isSingle _ = False
 
 grid opts = "-g" `elem` opts 
 
+optVal :: Read a => Char -> a -> [String] -> a 
+optVal key def opts = case find (['-', key] `isPrefixOf`) opts of
+                        Nothing -> def
+                        Just ('-':_:s) -> safeRead s `orJust` def
+
+optStr :: Char -> String -> [String] -> String
+optStr key def opts = case find (['-', key] `isPrefixOf`) opts of
+                        Nothing -> def
+                        Just ('-':_:s) -> s
+
+
 data QueryResultBox = forall a. QueryResult a => QResBox a deriving Typeable
 
-webSpark :: SparkOptions -> [V] -> IO String
-webSpark so xs= do let (vls, _, _, _) = histList 50 $ map unsafeReify xs
-
-                   u <- (show. hashUnique) `fmap` newUnique
-                   let fnm = "/var/bugpan/www/spark"++u++".png" 
-                   make so vls >>= savePngFile fnm
-                   return $ "<img src=\""++fnm++"\" />"
+webSpark :: [String] -> SparkOptions -> [V] -> IO String
+webSpark opts so xs= do 
+  let (vls, _, _, _) = histList 50 $ map unsafeReify xs    
+  u <- (show. hashUnique) `fmap` newUnique
+  let resdir = optStr 'd' "somewhere" opts
+  createDirectoryIfMissing False $ "/var/bugpan/www/"++resdir
+  system $ "chmod 777 /var/bugpan/www/"++resdir
+  --p <- getPermissions 
+  --setPermissions ("/var/bugpan/www/"++resdir) $ p { writable = True }
+  let fnm = "/var/bugpan/www/"./resdir./"spark"++u++".png" 
+  make so vls >>= savePngFile fnm
+  system $ "chmod 777 /var/bugpan/www/"++resdir./"/*"
+  return $ "<img src=\""++fnm++"\" />"
 
 class QueryResult a where
     qReply :: a -> [String] -> IO String
@@ -221,7 +239,7 @@ instance (Ord a, Bounded a, Num a, Storable a, Reify a) => QueryResult [Signal a
     qReply [sig] opts | grid opts = let sig' = downSample' 100 sig
                                         vls = sigToList sig'
                                         minPt = negate $ foldl1 (min)  vls
-                                    in webSpark smoothSpark $ map (pack . (+minPt)) $ vls
+                                    in webSpark opts smoothSpark $ map (pack . (+minPt)) $ vls
     qReply [] opts = return "[]"
     qReply xs opts = return $ unlines $ map show xs
     qFilterSuccess [] = False
@@ -233,8 +251,8 @@ instance (Show a, Reify a) => QueryResult [Event a] where
                      | otherwise = return $ show xs
     qReply [] opts = return "[]"
     qReply xs opts | grid opts = case (pack . snd . head $ xs) of
-                                   Unit   -> webSpark barSpark $ map (pack . fst) xs -- histo of intervals. instead: dot for occ?
-                                   NumV _ -> webSpark barSpark $ map (pack . snd) xs
+                                   Unit   -> webSpark opts barSpark $ map (pack . fst) xs -- histo of intervals. instead: dot for occ?
+                                   NumV _ -> webSpark opts barSpark $ map (pack . snd) xs
                                    _ -> return $ show xs
                    | otherwise = return $ show xs
     qFilterSuccess [] = False
@@ -246,8 +264,8 @@ instance (Show a, Reify a) => QueryResult [Duration a] where
                      | otherwise = return $ show xs
     qReply [] opts = return "[]"
     qReply xs opts | grid opts = case (pack . snd . head $ xs) of --instead: line for each, height extent?
-                                   Unit   -> webSpark barSpark $ map (pack . uncurry (-) . fst) xs --histo of time extents.
-                                   NumV _ -> webSpark barSpark $ map (pack . snd) xs    
+                                   Unit   -> webSpark opts barSpark $ map (pack . uncurry (-) . fst) xs --histo of time extents.
+                                   NumV _ -> webSpark opts barSpark $ map (pack . snd) xs    
                                    _ -> return $ unlines $ map show xs
                    | otherwise = return $ unlines $ map show xs
     --qReply xs opts = return $ unlines $ map show xs

@@ -14,6 +14,9 @@ import Data.List
 import Control.Monad.Trans
 import qualified Data.StorableVector as SV
 import TNUtils
+import System.Directory
+import System.Posix.Files
+
 
 data Histo where -- GADT bec i don't know syntax for double existential (no longer needed)
     Histo :: Tagged t => Int -> [t Double] -> Histo 
@@ -64,6 +67,7 @@ data PlotLine = PL {plotData :: String,
                     plotWith :: String } deriving Show
 
 showPlotCmd :: GnuplotCmd -> String
+showPlotCmd [] = ""
 showPlotCmd plines = "plot "++(intercalate ", " $ map s plines)++"\n"
     where s (PL dat tit wth) = dat++title tit++" with "++wth
           title "" = ""
@@ -97,16 +101,24 @@ instance QueryResult [GnuplotBox] where
     qFilterSuccess [] = False
     qFilterSuccess _ = True
     qReply gpbxs opts = do 
+      let resdir = optStr 'd' "somewhere" opts
+      createDirectoryIfMissing False $ "/var/bugpan/www/"++resdir
+--      setFileMode ("/var/bugpan/www/"++resdir) 777
+      system $ "chmod 777 /var/bugpan/www/"++resdir
+      --p <- getPermissions ("/var/bugpan/www/"++resdir) 
+      --setPermissions ("/var/bugpan/www/"++resdir) $ p { writable = True }
       u <- (show. hashUnique) `fmap` newUnique
-      let htmlFile  ="/var/bugpan/www/plots"++u++".html" 
+      let htmlFile  ="/var/bugpan/www/"./resdir./("plots"++u++".html" )
       h <- openFile (htmlFile) WriteMode
       fnms <- forM gpbxs .  const $ do fnm <- (++".png") `fmap` uniqueIntStr
-                                       hPutStrLn h $ concat ["<img src=\"", fnm, "\" style=\"float: left\"/>"]
-                                       return $ "/var/bugpan/www/"++fnm
+                                       hPutStrLn h $ concat ["<img src=\"", "/var/bugpan/www/"./resdir./fnm, "\" style=\"float: left\"/>"]
+                                       return $ "/var/bugpan/www/"./resdir./fnm
       gnuplotMany opts $ zip fnms gpbxs
       hClose h
       --plotPlotCmd plot
       --system $ "gnome-open file://"++ htmlFile
+      system $ "chmod 777 /var/bugpan/www/"++resdir./"/*"
+
       return $ "file://"++ htmlFile
 
 plot :: PlotWithGnuplot a => a -> [GnuplotBox]
@@ -156,15 +168,12 @@ gnuplotToPS fp x = do
   system "gnuplot /tmp/gnuplotCmds"
   return ()
 
-optVal :: Read a => Char -> a -> [String] -> a 
-optVal key def opts = case find (['-', key] `isPrefixOf`) opts of
-                        Nothing -> def
-                        Just ('-':_:s) -> safeRead s `orJust` def
 
 gnuplotMany :: [String] -> [(String, GnuplotBox)] -> IO ()
 gnuplotMany opts nmbxs = do
   nmcmds <- forM nmbxs $ \(nm, GnuplotBox x) -> do
                       cmd <- multiPlot unitRect x
+                      --print2 nm cmd
                       return (nm,cmd)
   let start = "set datafile missing \"NaN\"\n"
   let h = optVal 'h' 480 opts

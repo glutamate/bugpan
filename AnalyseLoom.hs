@@ -46,6 +46,7 @@ detectSpikes snm = inApproxSession snm $ do
                                        storeAsOvwrt "spikes" $ crossesDown thresh normV
                                        return ()
                  spikes <- events "spikes" ()
+
                  ask $ plotManyBy running $ normV :+: (-13) `tagd` spikes :+: thresh
 
 

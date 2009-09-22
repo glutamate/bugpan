@@ -20,6 +20,7 @@ import System.Cmd
 import Format2
 import Data.List
 import System.Time
+import System.Exit
 import Data.Maybe
 import System.Process
 import Data.Digest.Pure.SHA
@@ -68,10 +69,10 @@ mkQuery tps sessNm q resp = execWriter $ do
                                                        (typeToProxyName $ unWrapT ty), ";"
                                                       ]]
                           tell [ind++"qresval <- qResThroughSession ("++q++");"]
-                          tell [ind++resp++"(qresval) }"]
+                          tell [ind++resp++"(qresval) }"] 
 
 compileQuery opts sha q = do
-  putStrLn $ "compiling query "++q
+  --putStrLn $ "compiling query "++q
   sesns <- getSessionInRootDir root
   nmtys <- getNamesAndTypes sesns
   whenM (not `fmap` doesDirectoryExist "/var/bugpan/queryCache/") 
@@ -83,22 +84,33 @@ compileQuery opts sha q = do
                                                                     "PlotGnuplot"])
                    ++["default (Int, Double)"]
       
-  let mainFun = ["", 
+  let mainFun = ["querySha = \""++sha++"\"", 
+                 "",
                  "main = do",
                  "  allArgs <- getArgs",
                  "  let (opts, sess:_) = partition beginsWithHyphen allArgs",
                  "  qres <- q sess",
-                 "  qreply <- qReply qres opts",
-                 "  putStrLn qreply"]
+                 "  let resDir = take 10 querySha ++ take 10 sess",
+                 "  if not $ \"-filter\" `elem` opts",
+                 "     then (do qreply <- qReply qres $ (\"-d\"++resDir):opts",
+                 "              putStrLn qreply)",
+                 "     else (do pass <- return $ qFilterSuccess qres",
+                 "              putStrLn $ sess++\": \"++show pass)"]
   let qFun = spliceFirst "q sess = " $ mkQuery nmtys ("sess") q "return "
   let allmod = initModule ++ unlines qFun ++ unlines mainFun
-  putStrLn allmod
+  --putStrLn allmod
   writeFile (sha++".hs") $ allmod
-  if ("-p" `elem` opts)
-    then system $ "ghc --make -prof -auto-all "++sha
-    else system $ "ghc --make -O2 "++sha
+  let ghcout = " >ghcout 2>ghcout2"
 
-  return ()
+  sysres <- if ("-p" `elem` opts)
+               then system $ "ghc --make -prof -auto-all "++sha++ghcout
+               else system $ "ghc --make -O2 "++sha++ghcout
+  case sysres of 
+    ExitSuccess -> return ()
+    ExitFailure n -> do putStrLn allmod
+                        system $ "cat ghcout"
+                        system $ "cat ghcout2"
+                        fail $ "compile query fails ("++show n++")"
 
 getNamesAndTypes sesns = do 
   lallNmTps <- forM sesns $ \sNm -> do
@@ -295,7 +307,25 @@ dispatch _ ("filter":filtr:_) = do
     pass <- filFun sNm
     putStrLn $ sNm++": "++show pass
  
+dispatch opts ("filter1":queryStr':_) = do
+  sesns <- getSessionInRootDir root
+  setCurrentDirectory "/var/bugpan/"
+  queryStr <- if "-f" `elem` opts 
+                 then preprocessQuery `fmap` readFile queryStr'
+                 else return $ preprocessQuery queryStr'
+  when (not $ validateQuery queryStr) $
+       fail $ "cannot validate filter string"
+  let sha = take 50 . showDigest . sha512 . BS.pack $ map c2w queryStr
+  --putStrLn sha
+  whenM (not `fmap` doesFileExist ("/var/bugpan/queryCache/"++sha)) 
+        (compileQuery opts sha queryStr)
+  --longSessNm <- resolveApproxSession root sessNm
+  forM_ sesns $ \sNm -> do
+    longSessNm <- resolveApproxSession root sNm
+    system $ "/var/bugpan/queryCache/"++sha++" "++ longSessNm++" "++(intercalate " " (("-filter"):opts))
+  
 
+  return ()
 
 
 dispatch opts ("show":sessNm:_) = do
