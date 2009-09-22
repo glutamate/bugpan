@@ -102,9 +102,13 @@ instance QueryResult [GnuplotBox] where
     qFilterSuccess _ = True
     qReply gpbxs opts = do 
       let resdir = optStr 'd' "somewhere" opts
-      createDirectoryIfMissing False $ "/var/bugpan/www/"++resdir
+      unlessM (doesDirectoryExist $ "/var/bugpan/www/"++resdir) $ do
+                       createDirectoryIfMissing False $ "/var/bugpan/www/"++resdir
+                       system $ "chmod 777 /var/bugpan/www/"++resdir
+                       return ()
+      --createDirectoryIfMissing False $ "/var/bugpan/www/"++resdir
 --      setFileMode ("/var/bugpan/www/"++resdir) 777
-      system $ "chmod 777 /var/bugpan/www/"++resdir
+      --system $ "chmod 777 /var/bugpan/www/"++resdir
       --p <- getPermissions ("/var/bugpan/www/"++resdir) 
       --setPermissions ("/var/bugpan/www/"++resdir) $ p { writable = True }
       u <- (show. hashUnique) `fmap` newUnique
@@ -117,7 +121,7 @@ instance QueryResult [GnuplotBox] where
       hClose h
       --plotPlotCmd plot
       --system $ "gnome-open file://"++ htmlFile
-      system $ "chmod 777 /var/bugpan/www/"++resdir./"/*"
+      system $ "chmod 777 /var/bugpan/www/"++resdir./"/* 2>/dev/null"
 
       return $ "file://"++ htmlFile
 

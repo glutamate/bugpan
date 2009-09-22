@@ -220,13 +220,15 @@ webSpark opts so xs= do
   let (vls, _, _, _) = histList 50 $ map unsafeReify xs    
   u <- (show. hashUnique) `fmap` newUnique
   let resdir = optStr 'd' "somewhere" opts
-  createDirectoryIfMissing False $ "/var/bugpan/www/"++resdir
-  system $ "chmod 777 /var/bugpan/www/"++resdir
+  unlessM (doesDirectoryExist $ "/var/bugpan/www/"++resdir) $ do
+                       createDirectoryIfMissing False $ "/var/bugpan/www/"++resdir
+                       system $ "chmod 777 /var/bugpan/www/"++resdir
+                       return ()
   --p <- getPermissions 
   --setPermissions ("/var/bugpan/www/"++resdir) $ p { writable = True }
   let fnm = "/var/bugpan/www/"./resdir./"spark"++u++".png" 
   make so vls >>= savePngFile fnm
-  system $ "chmod 777 /var/bugpan/www/"++resdir./"/*"
+  system $ "chmod 777 /var/bugpan/www/"++resdir./"/* 2>/dev/null"
   return $ "<img src=\""++fnm++"\" />"
 
 class QueryResult a where
