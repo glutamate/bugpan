@@ -29,7 +29,10 @@ instance PlotWithGnuplot Histo where
     getGnuplotCmd (Histo n vls) = do
             fnm <- ("/tmp/gnuplothist"++) `fmap` uniqueIntStr
             writeHist fnm n $ map snd vls
-            return [PL (concat ["\"", fnm, "\" using 1:2"]) "" "boxes"]
+            return [PL (concat ["\"", fnm, "\" using 1:2"]) 
+                       "" 
+                       "boxes" 
+                       (removeFile fnm)]
         where writeHist fp n vls = do
                    let (counts, lo, hi, binSize) = histList n vls
                    --print n
@@ -89,7 +92,10 @@ instance PlotWithGnuplot [Signal Double] where
            fnm <- ("/tmp/gnuplotsig"++) `fmap` uniqueIntStr
            writeSig fnm s
            return $ PL (concat ["\"", fnm, "\" binary format=\"%float64\" using ($0*",
-                                    show dt, "+", show t1, "):1"]) "" "lines"
+                                    show dt, "+", show t1, "):1"]) 
+                       "" 
+                       "lines"
+                       (removeFile fnm)
           
 writeSig fp s@(Signal t1 t2 dt sf) = do
   h <- openBinaryFile fp WriteMode
@@ -101,7 +107,7 @@ instance PlotWithGnuplot [Event Double] where
     getGnuplotCmd es = 
         do fnm <- ("/tmp/gnuplotevs"++) `fmap` uniqueIntStr
            writeEvts fnm es
-           return [PL (concat ["\"", fnm, "\" using 1:2"]) "" "points"]
+           return [PL (concat ["\"", fnm, "\" using 1:2"]) "" "points" (removeFile fnm)]
         where writeEvts fp evs = do
                    h <- openFile fp WriteMode
                    forM_ evs $ \(t,v)-> hPutStrLn h $ show t++"\t"++show v
@@ -112,7 +118,7 @@ instance PlotWithGnuplot [Duration Double] where
     getGnuplotCmd es = 
         do fnm <- ("/tmp/gnuplotdurs"++) `fmap` uniqueIntStr
            writeEvts fnm es
-           return [PL (concat ["\"", fnm, "\" using 1:($2)"]) "" "lines"]
+           return [PL (concat ["\"", fnm, "\" using 1:($2)"]) "" "lines" (removeFile fnm)]
            where writeEvts fp durs = do
                    h <- openFile fp WriteMode
                    forM_ durs $ \((t1,t2),v)-> do 
@@ -129,7 +135,7 @@ instance PlotWithGnuplot Brenda where
            fnm <- ("/tmp/gnuplotsig"++) `fmap` uniqueIntStr
            writeSig fnm s
            return $ PL (concat ["\"", fnm, "\" binary format=\"%float64\" using ($0*",
-                                    show dt, "+", show t1, "):1"]) "" "lines"
+                                    show dt, "+", show t1, "):1"]) "" "lines" (removeFile fnm)
            where writeSigArea fp s1@(Signal t1 t2 dt sf) s2@(Signal t1' t2' dt' sf') = do
                    h <- openBinaryFile fp WriteMode
                    SV.hPut h $ SV.pack $ map  sf $ [0..(round $ (t2-t1)/dt)-1]

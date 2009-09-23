@@ -37,7 +37,11 @@ type GnuplotCmd = [PlotLine]
 
 data PlotLine = PL {plotData :: String,
                     plotTitle :: String,
-                    plotWith :: String } deriving Show
+                    plotWith :: String,
+                    cleanUp :: IO () } -- deriving Show
+
+cleanupCmds :: [GnuplotCmd] -> IO ()
+cleanupCmds cmds = forM_ cmds $ \plines -> sequence_ $ map cleanUp plines
 
 setWith :: String -> GnuplotCmd -> GnuplotCmd
 setWith sty = map (\pl-> pl {plotWith = sty })
@@ -45,7 +49,7 @@ setWith sty = map (\pl-> pl {plotWith = sty })
 showPlotCmd :: GnuplotCmd -> String
 showPlotCmd [] = ""
 showPlotCmd plines = "plot "++(intercalate ", " $ map s plines)++"\n"
-    where s (PL dat tit wth) = dat++title tit++" with "++wth
+    where s (PL dat tit wth _) = dat++title tit++" with "++wth
           title "" = " notitle"
           title tit = " title '"++tit++"'"
 
@@ -80,6 +84,8 @@ gnuplotOnScreen x = do
                        
   writeFile "/tmp/gnuplotCmds" cmdLines
   system "gnuplot -persist /tmp/gnuplotCmds"
+  removeFile "/tmp/gnuplotCmds"
+  cleanupCmds $ map snd plines
   return ()
 
 gnuplotToPNG :: PlotWithGnuplot a => String -> a -> IO ()
@@ -92,6 +98,8 @@ gnuplotToPNG fp x = do
                        
   writeFile "/tmp/gnuplotCmds" cmdLines
   system "gnuplot /tmp/gnuplotCmds"
+  removeFile "/tmp/gnuplotCmds"
+  cleanupCmds $ map snd plines
   return ()
 
 gnuplotToSparklinePNG :: PlotWithGnuplot a => String -> a -> IO ()
@@ -107,6 +115,8 @@ gnuplotToSparklinePNG fp x = do
                        
   writeFile "/tmp/gnuplotCmds" cmdLines
   system "gnuplot /tmp/gnuplotCmds 2>/dev/null"
+  removeFile "/tmp/gnuplotCmds"
+  cleanupCmds $ map snd plines
   return ()
 
 
@@ -120,6 +130,8 @@ gnuplotToPS fp x = do
                        
   writeFile "/tmp/gnuplotCmds" cmdLines
   system "gnuplot /tmp/gnuplotCmds"
+  removeFile "/tmp/gnuplotCmds"
+  cleanupCmds $ map snd plines
   return ()
 
 
@@ -136,6 +148,9 @@ gnuplotMany opts nmbxs = do
   let cmds = start++term ++concatMap plotOne nmcmds
   writeFile "/tmp/gnuplotCmds" cmds
   system "gnuplot /tmp/gnuplotCmds"
+  removeFile "/tmp/gnuplotCmds"
+  forM_ nmcmds $ \(_,cmd) -> cleanupCmds $ map snd cmd
+
   return ()
     where plotOne (fp, plines) = "set output '"++fp++"'\n"++
                                  (showMultiPlot plines)
@@ -213,7 +228,7 @@ instance PlotWithGnuplot a => PlotWithGnuplot (String, a) where
     multiPlot r (title, x) = do
       pls <- multiPlot r x
       return $ map (\(r', plines) -> (r' ,map (addTitle title) plines)) pls
-      where addTitle title (PL x _ y) = PL x title y
+      where addTitle title (PL x _ y clean) = PL x title y clean
 
 
 
