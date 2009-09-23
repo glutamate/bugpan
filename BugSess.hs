@@ -101,16 +101,17 @@ compileQuery opts sha q = do
   let allmod = initModule ++ unlines qFun ++ unlines mainFun
   --putStrLn allmod
   writeFile (sha++".hs") $ allmod
-  let ghcout = " >ghcout 2>ghcout2"
+  let ghcout = " >ghcout`whoami` 2>ghcout2`whoami`"
+  --let ghcout = " >ghcout 2>ghcout2"
 
   sysres <- if ("-p" `elem` opts)
-               then system $ "ghc --make -prof -auto-all "++sha++ghcout
-               else system $ "ghc --make -O2 "++sha++ghcout
+               then system $ "ghc --make -prof -auto-all "++sha ++ghcout
+               else system $ "ghc --make -O2 "++sha ++ghcout
   case sysres of 
     ExitSuccess -> return ()
     ExitFailure n -> do putStrLn allmod
-                        system $ "cat ghcout"
-                        system $ "cat ghcout2"
+                        system $ "cat ghcout`whoami`"
+                        system $ "cat ghcout2`whoami`"
                         fail $ "compile query fails ("++show n++")"
 
 getNamesAndTypes sesns = do 

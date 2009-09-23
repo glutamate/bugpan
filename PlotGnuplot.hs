@@ -39,6 +39,9 @@ data PlotLine = PL {plotData :: String,
                     plotTitle :: String,
                     plotWith :: String } deriving Show
 
+setWith :: String -> GnuplotCmd -> GnuplotCmd
+setWith sty = map (\pl-> pl {plotWith = sty })
+
 showPlotCmd :: GnuplotCmd -> String
 showPlotCmd [] = ""
 showPlotCmd plines = "plot "++(intercalate ", " $ map s plines)++"\n"
@@ -103,7 +106,7 @@ gnuplotToSparklinePNG fp x = do
                   (showMultiPlot plines)
                        
   writeFile "/tmp/gnuplotCmds" cmdLines
-  system "gnuplot /tmp/gnuplotCmds"
+  system "gnuplot /tmp/gnuplotCmds 2>/dev/null"
   return ()
 
 
@@ -156,6 +159,27 @@ data PcntDiv a = Pcnt Double a
 data WithColour a = WithColour String a
 
 x % a = Pcnt x a
+
+
+newtype Lines a = Lines {unLines :: a }
+newtype Boxes a = Boxes {unBoxes :: a }
+
+
+instance PlotWithGnuplot a => PlotWithGnuplot (Boxes a) where
+    multiPlot r (Boxes x) = do
+      px <- multiPlot r x
+      return $ map (\(r', pls) -> (r', setWith "boxes" pls)) px
+    getGnuplotCmd (Boxes x) = do
+      px <- getGnuplotCmd x
+      return $ setWith "boxes" px
+
+instance PlotWithGnuplot a => PlotWithGnuplot (Lines a) where
+    multiPlot r (Lines x) = do
+      px <- multiPlot r x
+      return $ map (\(r', pls) -> (r', setWith "lines" pls)) px
+    getGnuplotCmd (Lines x) = do
+      px <- getGnuplotCmd x
+      return $ setWith "lines" px
 
 
 instance (PlotWithGnuplot a, PlotWithGnuplot b) => PlotWithGnuplot (a :||: b) where

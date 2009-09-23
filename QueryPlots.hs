@@ -150,7 +150,7 @@ webSpark opts isHist xs= do
   let vls = if isHist 
                then let (vls', _, _, _) = histList 50 $ map unsafeReify xs in zip [(1::Double)..] vls' 
                else zip [(1::Double)..] (map (idDouble . unsafeReify) xs)
-  print vls
+  --print vls
   u <- (show. hashUnique) `fmap` newUnique
   let resdir = optStr 'd' "somewhere" opts
   unlessM (doesDirectoryExist $ "/var/bugpan/www/"++resdir) $ do
@@ -160,7 +160,9 @@ webSpark opts isHist xs= do
   --p <- getPermissions 
   --setPermissions ("/var/bugpan/www/"++resdir) $ p { writable = True }
   let fnm = "/var/bugpan/www/"./resdir./"spark"++u++".png" 
-  gnuplotToSparklinePNG fnm vls
+  if isHist 
+     then gnuplotToSparklinePNG fnm (Boxes vls)
+     else gnuplotToSparklinePNG fnm (Lines vls)
 --  make so vls >>= savePngFile fnm
   system $ "chmod 777 /var/bugpan/www/"++resdir./"/* 2>/dev/null"
   return $ "<img src=\""++fnm++"\" />"
