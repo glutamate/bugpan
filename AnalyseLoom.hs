@@ -23,6 +23,7 @@ import Math.Probably.FoldingStats
 --import Numbers
 import TNUtils
 import PlotGnuplot
+import QueryPlots
 
 main = detectSpikes "06ee"
 

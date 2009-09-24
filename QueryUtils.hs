@@ -275,6 +275,19 @@ groupStats gp stat = map runS gp
 tagTime :: Tagged t => [t a] -> [t Double]
 tagTime tgs = map (\tgd -> setTag tgd $ getTStart tgd) tgs
 
-
-
+labelMagically :: Double -> Int -> [Duration a] -> [Duration Int]
+labelMagically ivl n durs | length durs < n = []  
+                          | otherwise = 
+                              let initDurs = take n durs 
+                                  distPrev (t1:t2:rest) = 
+                                      (t2-t1):distPrev (t2:rest)
+                                  distPrev _ = []
+                                  tolerence = ivl/10
+                                  accept intvl = intvl >ivl-tolerence && 
+                                                 intvl<ivl+tolerence
+                                  dists = distPrev $ map (fst . fst) initDurs
+                                  labels = tagMany [1..n] initDurs
+                              in if all accept dists
+                                    then labels ++ (labelMagically ivl n $ drop n durs)
+                                    else labelMagically ivl n $ tail durs
 --chiSquare :: [[Duration a]] -> 

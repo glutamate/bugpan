@@ -251,7 +251,7 @@ dispatch _ ("compact_1":sessNm:_) = do
          
          let fileNoMax = foldl (max) 0 $ catMaybes $ map (safeRead . (drop 9)) $ filter ("compacted" `isPrefixOf`) allfnms
 --         print2 "filemaxno " fileNoMax
-         xs <- forM fnms $ \fn->loadBinary $ path++nm++"/"++fn                                    
+         xs <- forM fnms $ \fn->loadBinaryStrict $ path++nm++"/"++fn                                    
          let vs = sortVs $ idLstV $ concat xs
          saveBinary (path++nm++"/compacted"++show (fileNoMax + idInt 1)) vs
          --putStrLn $ nm ++ ": "++ppVal (ListV vs)
