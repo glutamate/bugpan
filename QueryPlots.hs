@@ -102,7 +102,7 @@ writeSig fp s@(Signal t1 t2 dt sf) = do
   SV.hPut h $ SV.pack $ map  sf $ [0..(round $ (t2-t1)/dt)-1]
   hClose h
 
-instance PlotWithGnuplot [Event Double] where
+instance Num a => PlotWithGnuplot [Event a] where
     getGnuplotCmd [] = return []
     getGnuplotCmd es = 
         do fnm <- ("/tmp/gnuplotevs"++) `fmap` uniqueIntStr
@@ -113,7 +113,7 @@ instance PlotWithGnuplot [Event Double] where
                    forM_ evs $ \(t,v)-> hPutStrLn h $ show t++"\t"++show v
                    hClose h
 
-instance PlotWithGnuplot [Duration Double] where
+instance Num a => PlotWithGnuplot [Duration a] where
     getGnuplotCmd [] = return []
     getGnuplotCmd es = 
         do fnm <- ("/tmp/gnuplotdurs"++) `fmap` uniqueIntStr

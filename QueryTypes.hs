@@ -74,9 +74,11 @@ foldSig :: (a->b->a) -> a -> Signal b -> a
 foldSig f init sig = foldl' f init $ sigToList sig
 
 
-during :: [Duration b] -> [Event a] -> [Event a]
-during durs evs = concatMap (during' evs) durs
-    where during' evs dur = filter (`evInDuration` dur) evs
+--during :: ChopByDur t => [Duration b] -> [t a] -> [t a]
+during durs evs = concat $ chopByDur durs evs
+
+--concatMap (during' evs) durs
+--    where during' evs dur = filter (`evInDuration` dur) evs
 
 
 section :: [Signal a] -> [Duration b] -> [Signal a]
@@ -234,7 +236,7 @@ instance ChopByDur [Signal a] where
     chopByDur durs sigs = map (\dur->section sigs [dur]) durs
 
 instance ChopByDur [Event a] where
-    chopByDur durs evs = map (\dur->during [dur] evs) durs
+    chopByDur durs evs = map (\((t1,t2),_)->filter ((\t->t>t1 && t<t2 ). fst) evs) durs
 
 instance ChopByDur [Duration a] where
     chopByDur chopDurs durs = map (\dur->sectionDur1 dur durs) chopDurs

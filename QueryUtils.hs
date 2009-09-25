@@ -275,6 +275,10 @@ groupStats gp stat = map runS gp
 tagTime :: Tagged t => [t a] -> [t Double]
 tagTime tgs = map (\tgd -> setTag tgd $ getTStart tgd) tgs
 
+dropSecs :: Double -> [Signal a] -> [Signal a]
+dropSecs s = map f
+    where f (Signal t1 t2 dt sf) = Signal (t1+s) t2 dt $ \p-> sf (p+(round $ s/dt))
+
 labelMagically :: Double -> Int -> [Duration a] -> [Duration Int]
 labelMagically ivl n durs | length durs < n = []  
                           | otherwise = 
