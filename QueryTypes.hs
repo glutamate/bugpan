@@ -62,7 +62,7 @@ data QState = QState { qsSess:: Session,
 
 getSession = qsSess `fmap` get
 
-
+openReplies = modify (\s-> s { shArgs = "-o" : shArgs s })
 
 zipWithTime :: Signal a -> Signal (a,Double)
 zipWithTime (Signal t1 t2 dt sf) = Signal t1 t2 dt $ \pt -> (sf pt, (realToFrac pt)*dt+t1)

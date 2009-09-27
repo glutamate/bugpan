@@ -24,13 +24,51 @@ import Math.Probably.FoldingStats
 import TNUtils
 import PlotGnuplot
 import QueryPlots
+import System.Environment
 
-main = calcNormV "6f"
+main = spikeDetectIO
 
 atMost x = min x
 atLeast x = max x
 
 --ask q = liftIO$ qReply q []
+
+
+spikeDetectIO = do
+  (snm:overDurNm:_) <-getArgs
+  inApproxSession snm $ do
+                  openReplies
+                  initUserInput
+                  overDur <- unitDurations overDurNm
+                  normV <- signalsDirect "normV"
+                  spikeDetect [overDur] normV
+
+
+spikeDetect overs normV = do
+  let over = head overs
+  io $ putStrLn $ "currently considering "++show (length over)++" durations"
+  userChoice [('s', "show normV", 
+                  do --normV <- signalsDirect "normV"
+                      ask $ plotManyBy over $ normV
+                      spikeDetect overs normV),
+              ('u', "undo restrict",
+                   case overs of 
+                     [o] -> spikeDetect overs normV
+                     o:os->spikeDetect os normV),
+              ('r', "restrict trials", 
+                   do ndrop <- userValue "number to drop"
+                      ntake <- userValue "number to take"
+                      spikeDetect ((take ntake $ drop ndrop over):overs) normV),
+              ('f' , "fixed threshold", 
+                   do thr <- userValue "threshold"
+                      let thresh = durd (thr)
+                      let spikes = crossesDown thresh normV
+                      ask $ plotManyBy over $ normV :+: thresh :+: thr `tagd` spikes
+                      whenM (userConfirm "store spikes")
+                            (do storeAsOvwrt "spikes" spikes
+                                return ())
+                      spikeDetect overs normV)]  
+                                           
 
 calcNormV snm =  inApproxSession snm $ do
                  running <- durations "Loom" ()
@@ -55,7 +93,7 @@ calcNormV snm =  inApproxSession snm $ do
                                        --return ()
                  spikes <- events "spikes" () 
 
-                 ask $ plotManyBy running $ normV :+: 
+                 ask $ plotManyBy rep $ normV :+: 
                                             (-13) `tagd` spikes :+: 
                                             thresh :+: rep
                  liftIO . mapM_ print $  groupBy rep (snd <$$> freqDuring rep spikes)  `groupStats` meanSDF

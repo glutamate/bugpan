@@ -67,10 +67,13 @@ instance QueryResult [GnuplotBox] where
       gnuplotMany opts $ zip fnms gpbxs
       hClose h
       --plotPlotCmd plot
-      --system $ "gnome-open file://"++ htmlFile
+      
       system $ "chmod 777 /var/bugpan/www/"++resdir./"/* 2>/dev/null"
-
+      when ("-o" `elem` opts) $ do 
+        system $ "gnome-open file://"++ htmlFile
+        return ()
       return $ "file://"++ htmlFile
+      
 
 plot :: PlotWithGnuplot a => a -> [GnuplotBox]
 plot x = [GnuplotBox x]
@@ -93,7 +96,7 @@ instance PlotWithGnuplot [Signal Double] where
            writeSig fnm s
            return $ PL (concat ["\"", fnm, "\" binary format=\"%float64\" using ($0*",
                                     show dt, "+", show t1, "):1"]) 
-                       "" 
+                       (show t1++"->"++show t2) 
                        "lines"
                        (removeFile fnm)
           

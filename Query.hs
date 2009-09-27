@@ -19,6 +19,7 @@ import Control.Monad.State.Lazy
 import System.Directory
 import System.Time
 import System.Random
+import Data.Char
 
 --import System.Info.MAC as MAC
 --import Data.Digest.Pure.SHA
@@ -43,7 +44,8 @@ import ValueIO
 import Data.Unique
 import qualified Data.Binary as B
 import System.Environment
-
+import System.Console.Readline
+import System.IO
  
 double :: Double
 double = undefined
@@ -98,6 +100,16 @@ durations nm _ = do
           eps <- forM fnms $ \fn-> liftIO $ loadVs $ bdir++"/durations/"++nm++"/"++fn
           return . catMaybes $ map reify $ concat eps)
       (return [])            
+
+unitDurations :: String -> StateT QState IO [Duration ()]
+unitDurations nm = do
+  Session bdir t0 <- getSession
+  ifM (liftIO (doesDirectoryExist (bdir++"/durations/"++nm)))
+      (do fnms <- getSortedDirContents $ bdir++"/durations/"++nm
+          eps <- forM fnms $ \fn-> liftIO $ loadVs $ bdir++"/durations/"++nm++"/"++fn
+          return $ map reifyIt $ concat eps)
+      (return [])            
+      where reifyIt (PairV (PairV t1 t2) v) = ((unsafeReify t1, unsafeReify t2), ())
 
 durationsDirect :: LoadDirectly [(Double,a)] => String -> a-> StateT QState IO [Event a]
 durationsDirect nm _ = do
@@ -221,6 +233,43 @@ tst1 = do
   print $ ppVal v
 
 io = liftIO 
+
+undefinedPerformQuery :: StateT QState IO a -> a
+undefinedPerformQuery = error $ "undefinedPerformQuery"
+
+initUserInput = liftIO $ do --hSetBuffering stdin NoBuffering 
+                            initialize
+
+userValue :: (Reify a, Read a) => String -> StateT QState IO a
+userValue q = res 
+    where tyNm = ppType $ typeOfReified $ undefinedPerformQuery res
+          res = do
+            maybeLine <- liftIO $ readline $ q++" ::"++tyNm++"> "            
+            case maybeLine of 
+              Nothing    -> fail "userValue: readline fail" --return () -- EOF / control-d
+              Just line ->  case safeRead line of
+                              Just n -> return $ n 
+                              Nothing -> do liftIO $putStrLn $ "not a "++tyNm
+                                            userValue q
+      
+readChar = do c <- getChar
+              if c== '\n' || c =='\r'
+                 then readChar
+                 else return c
+
+userChoice :: [(Char, String, StateT QState IO a)] ->  StateT QState IO a
+userChoice opts = do
+  forM_ opts $ \(c, s,_) -> liftIO $ putStrLn $ (c:": ")++s
+  choice <- liftIO $ readChar
+  case find (\(c, _,_) -> c==choice) opts of
+    Nothing -> do liftIO $ putStrLn $ "invalid choice: "++(choice:"")
+                  userChoice opts
+    Just (_,_,x) -> x
+
+userConfirm :: String -> StateT QState IO Bool
+userConfirm s = do liftIO $ putStr $ s++ " (y/N)? "
+                   choice <- liftIO $ readChar
+                   return $ toLower choice == 'y'
 
 
 {-plot :: [V] -> IO ()

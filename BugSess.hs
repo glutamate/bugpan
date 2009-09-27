@@ -144,6 +144,11 @@ dispatch opts ("ask1":sessNm:queryStr':_) = do
 
   return ()
 
+dispatch opts ("askall":q:_) = do
+  sesns <- getSessionInRootDir root
+  forM_ sesns $ \sNm -> do
+    system $ "bugsess ask1 "++sNm++" '"++q++"'"
+           
 
 dispatch opts ("ask":sessNm:queryStr':_) = do
   sess <- loadApproxSession root sessNm
