@@ -75,6 +75,13 @@ class PlotWithGnuplot a where
 
 data GnuplotBox = forall a. PlotWithGnuplot a => GnuplotBox a
 
+data Noplot = Noplot
+
+instance PlotWithGnuplot Noplot where
+    getGnuplotCmd _ = return []
+
+instance PlotWithGnuplot GnuplotBox where
+    getGnuplotCmd (GnuplotBox x) = getGnuplotCmd x
 
 gnuplotOnScreen :: PlotWithGnuplot a => a -> IO ()
 gnuplotOnScreen x = do
@@ -144,7 +151,7 @@ gnuplotMany opts nmbxs = do
   let start = "set datafile missing \"NaN\"\n"
   let h = optVal 'h' 480 opts
   let w = optVal 'w' 640 opts
-  let term = "set terminal png size "++ show w++","++show h++"\n"
+  let term = "set terminal png size "++ show w++","++show h++" crop\n"
   let cmds = start++term ++concatMap plotOne nmcmds
   writeFile "/tmp/gnuplotCmds" cmds
   system "gnuplot /tmp/gnuplotCmds"
@@ -177,8 +184,8 @@ x % a = Pcnt x a
 
 
 newtype Lines a = Lines {unLines :: a }
+newtype Dashed a = Dashed {unDashed :: a }
 newtype Boxes a = Boxes {unBoxes :: a }
-
 
 instance PlotWithGnuplot a => PlotWithGnuplot (Boxes a) where
     multiPlot r (Boxes x) = do
@@ -188,6 +195,14 @@ instance PlotWithGnuplot a => PlotWithGnuplot (Boxes a) where
       px <- getGnuplotCmd x
       return $ setWith "boxes" px
 
+instance PlotWithGnuplot a => PlotWithGnuplot (Dashed a) where
+    multiPlot r (Dashed x) = do
+      px <- multiPlot r x
+      return $ map (\(r', pls) -> (r', setWith "lines ls 0" pls)) px
+    getGnuplotCmd (Dashed x) = do
+      px <- getGnuplotCmd x
+      return $ setWith "lines" px
+
 instance PlotWithGnuplot a => PlotWithGnuplot (Lines a) where
     multiPlot r (Lines x) = do
       px <- multiPlot r x
@@ -195,6 +210,7 @@ instance PlotWithGnuplot a => PlotWithGnuplot (Lines a) where
     getGnuplotCmd (Lines x) = do
       px <- getGnuplotCmd x
       return $ setWith "lines" px
+
 
 
 instance (PlotWithGnuplot a, PlotWithGnuplot b) => PlotWithGnuplot (a :||: b) where

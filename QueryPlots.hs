@@ -190,6 +190,17 @@ instance (Ord a, Bounded a, Num a, Storable a, Reify a) => QueryResult [Signal a
     qFilterSuccess [] = False
     qFilterSuccess _ = True
 
+showPrec n x = show $ (realToFrac $ round (x*10**n))/(10**n)
+minWidth n s | length s < n = replicate (n-length s) ' ' ++ s
+             | otherwise = s
+                 
+instance QueryResult [(Int, (Double, Double))] where
+    qFilterSuccess = not . null
+    qReply xs opts = do
+      return $ unlines $ map printIt xs
+        where printIt (n, (mu, sd)) = (minWidth 2 $ show n)++", "++showPrec 2 mu++", "++showPrec 2 sd
+                                      
+
 instance (Show a, Reify a) => QueryResult [Event a] where
     qReply [xs] opts | grid opts = if Unit == (pack . snd $ xs)
                                       then return . show . fst  $ xs

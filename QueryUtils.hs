@@ -6,7 +6,7 @@ import EvalM hiding (ListT)
 import Eval
 import Expr
 import QueryTypes
-import Data.List
+import Data.List hiding (groupBy)
 import Data.Maybe
 import Database
 import Math.Probably.FoldingStats
@@ -295,3 +295,5 @@ labelMagically ivl n durs | length durs < n = []
                                     then labels ++ (labelMagically ivl n $ drop n durs)
                                     else labelMagically ivl n $ tail durs
 --chiSquare :: [[Duration a]] -> 
+
+habitAnal rep spikes = groupBy rep (snd <$$> freqDuring rep spikes)  `groupStats` meanSDF

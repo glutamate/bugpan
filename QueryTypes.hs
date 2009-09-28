@@ -63,6 +63,8 @@ data QState = QState { qsSess:: Session,
 getSession = qsSess `fmap` get
 
 openReplies = modify (\s-> s { shArgs = "-o" : shArgs s })
+plotSize w h = modify (\s-> s { shArgs = ("-h"++show h) : ("-w"++show w): shArgs s })
+
 
 zipWithTime :: Signal a -> Signal (a,Double)
 zipWithTime (Signal t1 t2 dt sf) = Signal t1 t2 dt $ \pt -> (sf pt, (realToFrac pt)*dt+t1)
@@ -89,7 +91,9 @@ section sigs (durs) = map (snd. snd) $ sectionGen sigs durs {-case find (sigOver
 
 sectionGen :: [Signal a] -> [Duration b] -> [Duration (b,Signal a)]
 sectionGen _ [] = []
-sectionGen sigs (dur@(ts,v):durs) = (map f $ filter (sigOverlapsDur dur) sigs) ++ sectionGen sigs durs
+sectionGen sigs (dur@(ts,v):durs) = (map f $ takeWhile (sigOverlapsDur dur) $
+                                         dropWhile (not . sigOverlapsDur dur) 
+                                         sigs) ++ sectionGen sigs durs
     where f sig = (ts, (v,section1 sig dur)) 
                            
 
@@ -195,7 +199,8 @@ eachOf xs = ListT . return $ xs
 ask :: QueryResult a => a -> StateT QState IO ()
 ask qx = do
   x <- qResThroughSession qx
-  str <- liftIO $ qReply x []
+  args <- shArgs `fmap` get
+  str <- liftIO $ qReply x args
   liftIO $ putStrLn str
 
 isSingle [x] = True
@@ -222,6 +227,10 @@ instance QueryResult Int where
     qReply x _ = return $  show x
     qFilterSuccess 0 = False
     qFilterSuccess _ = True
+
+instance QueryResult [Double] where
+    qReply xs _ = return $  unlines $ map show xs
+    qFilterSuccess = not . null
 
 instance QueryResult Double where
     qReply x _ = return $ show x

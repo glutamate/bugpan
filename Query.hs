@@ -152,6 +152,12 @@ storeAs' ovwrt nm vls = do
                  saveVs (oneTrailingSlash bdir++subDir++nm++"/stored"++suffix) vs)
   return vls
 
+deleteValue nm = do Session bdir t0 <- getSession
+                    forM_ ["signals", "", ""] $ \kind -> 
+                        whenM (liftIO $ doesDirectoryExist $ bdir ./ kind ./ nm)
+                                  (liftIO $ removeDirectoryRecursive $ bdir./kind./nm)
+
+
 exists :: String -> StateT QState IO Bool
 exists  nm =   do   Session bdir t0 <- getSession
                     or `fmap` sequence [liftIO $ doesDirectoryExist $ bdir ./ "signals" ./ nm,
@@ -180,6 +186,11 @@ inLastSession sma = do
 inSession :: Session -> StateT QState IO a -> IO a
 inSession s sma =  do args <- getArgs
                       fst `fmap`  (runStateT sma $ QState s 0 0 True args Nothing)
+
+inSessionFromArgs sma = do allargs <- getArgs
+                           let (opts, nm:args) = partition beginsWithHyphen allargs
+                           sess <- loadApproxSession "/var/bugpan/sessions/" nm
+                           fst `fmap`  (runStateT sma $ QState sess 0 0 True (opts++args) Nothing)
 
 
 inNewSession :: StateT QState IO a -> IO a
@@ -252,14 +263,20 @@ userValue q = res
                               Nothing -> do liftIO $putStrLn $ "not a "++tyNm
                                             userValue q
       
-readChar = do c <- getChar
+readChar = do {-c <- getChar
               if c== '\n' || c =='\r'
                  then readChar
-                 else return c
+                 else return c -}
+  mline <- liftIO $ readline ""
+  case mline of
+    Nothing -> fail "readChar"
+    Just [] -> readChar
+    Just (c:cs) -> return c
 
 userChoice :: [(Char, String, StateT QState IO a)] ->  StateT QState IO a
 userChoice opts = do
   forM_ opts $ \(c, s,_) -> liftIO $ putStrLn $ (c:": ")++s
+  liftIO $ hFlush stdout
   choice <- liftIO $ readChar
   case find (\(c, _,_) -> c==choice) opts of
     Nothing -> do liftIO $ putStrLn $ "invalid choice: "++(choice:"")
@@ -268,6 +285,7 @@ userChoice opts = do
 
 userConfirm :: String -> StateT QState IO Bool
 userConfirm s = do liftIO $ putStr $ s++ " (y/N)? "
+                   liftIO $ hFlush stdout
                    choice <- liftIO $ readChar
                    return $ toLower choice == 'y'
 
