@@ -29,6 +29,7 @@ import Data.Ord
 import System.Environment
 import Database
 import Numeric.FAD
+import Numeric.LinearAlgebra
 
 main = loomAnal
 
@@ -55,8 +56,8 @@ loomAnal = do ress <- inEverySession $ do
                                               ("downstairs", meanPlot down) :+: 
                                               ("all", meanPlot ress)
               --liftIO $ mapM_ fitexp ress
-    where plLin ((snm, loc), spks) =  (snm ++ " "++loc, Lines (zip wholeReals $ spks) :+: fitexp spks) 
-          plDash ((snm, loc), spks) =  (snm ++ " "++loc, Lines (zip wholeReals $ spks) :+: fitexp spks)
+    where plLin ((snm, loc), spks) =  (snm++" "++loc, Lines (zip wholeReals $ spks) :+: fitexp spks) 
+          plDash ((snm, loc), spks) = (snm++" "++loc, Lines (zip wholeReals $ spks) :+: fitexp spks)
           mean xss@(xs:_) = map (\i-> (sum $ map (!!i) xss)/ (realToFrac $length xss)) $ map fst $ zip [0..] xs
           meanPlot res = Lines $ zip wholeReals $  mean $ map snd res
           x .+. y = GnuplotBox $ (x) :+: (y)
@@ -84,3 +85,48 @@ expDecay t [a, tau, s0]  = a*exp(-(realToFrac t)/tau)+s0
 
 fitFun :: [a] -> (b -> [a] -> a) -> (b->a)
 fitFun pars f = \t->f t pars 
+
+type LinModel a = (Matrix a, Matrix a)
+
+paramCount :: Element a => LinModel a -> Int
+paramCount (x,_) = length . head $ toLists x
+
+observationCount (_,y) = length . head . toLists $ trans y
+
+--http://en.wikipedia.org/wiki/Akaike_information_criterion#AICc_and_AICu
+aicc model = let n = realToFrac $ observationCount model
+                 k = realToFrac $ paramCount model
+             in log (ss model/n) +(n+k)/(n-k-2)
+
+--http://en.wikipedia.org/wiki/Bayesian_information_criterion
+bic model =  let n = realToFrac $ observationCount model
+                 k = realToFrac $ paramCount model
+             in n*log (ss model/n) +k*log n
+
+
+lm :: (Matrix Double , Matrix Double) -> Matrix Double
+lm (x,y) = inv (trans x<>x) <> (trans x) <> y
+
+--ss :: LinModel Double -> Double
+ss (x,y) =  sum . map (\x->x*x) . head . toLists . trans $ y - x<>lm (x,y)
+
+oneMean :: [Double] -> LinModel Double
+oneMean xs = let xm = fromLists $ map (\x-> [1]) xs                 
+             in (fromBlocks [[xm]], trans . fromLists $ [xs])
+
+twoMeans :: [Double] -> [Double] -> LinModel Double
+twoMeans xs ys = let xm = fromLists $ map (\x-> [1, 0]) xs
+                     ym = fromLists $ map (\x-> [0, 1]) xs
+                 in (fromBlocks [[xm],
+                                 [ym]], trans . fromLists $ [xs++ys])
+
+regression :: [(Double, Double)] -> LinModel Double
+regression pairs = let n = length pairs
+                       xs = fromLists $ [map fst pairs]
+                       vecy = fromLists $ [map snd pairs]
+                       ones = fromLists $ [replicate n 1]
+                   in (trans . fromBlocks $ [[ones],
+                                             [xs]], trans vecy)
+
+tm = twoMeans [1,2, 3] [4,5,6]
+reg = regression [(1,1), (2,2), (3,3), (4,4)]
