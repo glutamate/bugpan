@@ -43,6 +43,13 @@ instance PlotWithGnuplot Histo where
                    hClose h
 
 
+data FunSeg = FunSeg Double Double (Double -> Double )
+
+instance PlotWithGnuplot FunSeg where
+    getGnuplotCmd (FunSeg t1 t2 f) = let dx = (t2-t1)/1000 
+                                         xs = map (\p-> p*dx+t1) [0..999] in 
+                                     getGnuplotCmd $ Dashed $ zip xs $ map f xs
+
 
 instance QueryResult [GnuplotBox] where
     qFilterSuccess [] = False

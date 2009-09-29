@@ -83,6 +83,7 @@ instance PlotWithGnuplot Noplot where
 instance PlotWithGnuplot GnuplotBox where
     getGnuplotCmd (GnuplotBox x) = getGnuplotCmd x
 
+
 gnuplotOnScreen :: PlotWithGnuplot a => a -> IO ()
 gnuplotOnScreen x = do
   plines <- multiPlot unitRect x

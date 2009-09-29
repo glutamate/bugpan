@@ -91,6 +91,13 @@ freqDuring durs evs = map (freqDuring' evs) durs
               ((t1, t2), (durtag, 
                         (realToFrac . length $ during [dur] evs)/(t2-t1)))
 
+countDuring :: [Duration a] -> [Event b] -> [Duration (a, RealNum)]
+countDuring durs evs = map (freqDuring' evs) durs
+    where freqDuring' evs dur@((t1, t2), durtag) = 
+              ((t1, t2), (durtag, 
+                        (realToFrac . length $ during [dur] evs)))
+
+
 around :: [Event b] -> [Signal a] -> [Signal a]
 around evs sigs = catMaybes $ map (around' sigs) evs
     where around' sigs ev@(t,_) = 
@@ -296,4 +303,7 @@ labelMagically ivl n durs | length durs < n = []
                                     else labelMagically ivl n $ tail durs
 --chiSquare :: [[Duration a]] -> 
 
-habitAnal rep spikes = groupBy rep (snd <$$> freqDuring rep spikes)  `groupStats` meanSDF
+habitAnal rep' spikes = let rep = filter (\d -> ( snd . snd . head $ countDuring [d] spikes) > 0.5) rep'
+                        in groupBy rep (snd <$$> countDuring rep spikes)  `groupStats` meanSDF
+
+restrictDur (t1r, t2r) = map $ \((t1, t2), v) -> ((t1+t1r, t1+t2r), v)
