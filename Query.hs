@@ -121,13 +121,17 @@ durationsDirect nm _ = do
           return $ concat sigs) 
       (return [])
 
+data StoreMode = OverWrite | NoOverWrite | Append
 
 storeAs :: Reify a => String -> [a] -> StateT QState IO [a]
-storeAs = storeAs' False
+storeAs = storeAs' NoOverWrite
 
 storeAsOvwrt :: Reify a => String -> [a] -> StateT QState IO [a]
-storeAsOvwrt = storeAs' True
+storeAsOvwrt = storeAs' OverWrite
 
+storeAsAppend = storeAs' Append
+
+storeAs' _ _ []  =return []
 storeAs' ovwrt nm vls = do 
   let vs = map pack vls
   let t = typeOfReified $ head vls
@@ -140,16 +144,19 @@ storeAs' ovwrt nm vls = do
                  PairT (PairT (NumT (Just RealT)) (NumT (Just RealT))) _ -> "durations/"
                  _ -> error $ "cannot store "++nm++": unknown type" 
   Session bdir t0 <- getSession
-  if ovwrt
-     then liftIO $ do
+  case ovwrt of
+     OverWrite -> liftIO $ do
        whenM (doesDirectoryExist $ bdir ./ subDir ./ nm)
              (removeDirectoryRecursive $ bdir ./ subDir ./ nm)
        createDirectory $ bdir ./ subDir ./ nm
        saveVs (oneTrailingSlash bdir++subDir++nm++"/stored"++suffix) vs
-     else liftIO $ do
+     NoOverWrite -> liftIO $ do
        whenM (not `fmap` (doesDirectoryExist $ bdir ./ subDir ./ nm))
              (do createDirectory $ bdir ./ subDir ./ nm
                  saveVs (oneTrailingSlash bdir++subDir++nm++"/stored"++suffix) vs)
+     Append -> liftIO $ do
+                 createDirectoryIfMissing False $ bdir ./ subDir ./ nm
+                 saveVs (oneTrailingSlash bdir++subDir++nm++"/stored"++suffix) vs
   return vls
 
 deleteValue nm = do Session bdir t0 <- getSession

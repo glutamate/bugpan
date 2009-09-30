@@ -127,6 +127,11 @@ gnuplotToSparklinePNG fp x = do
   cleanupCmds $ map snd plines
   return ()
 
+gnuplotToPDF:: PlotWithGnuplot a => String -> a -> IO ()
+gnuplotToPDF fp x = do
+  gnuplotToPS fp x
+  system $ "ps2pdf "++fp
+  return ()
 
 gnuplotToPS:: PlotWithGnuplot a => String -> a -> IO ()
 gnuplotToPS fp x = do

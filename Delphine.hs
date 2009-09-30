@@ -60,11 +60,11 @@ dispatch ("analyse":sess:_) = do
 
     --let ivls = map getTag $ intervalsOver scratch $ spikes
     --rHisto 100 $ crossCorrelateOver scratch ci1Spikes flexSpikes
-    io $ gnuplotToPS ("cc_ci_seti_"++sess++".ps") $ ("cc ci1Spikes seti "++sess, 
+    io $ gnuplotToPDF ("cc_ci_seti_"++sess++".ps") $ ("cc ci1Spikes seti "++sess, 
                               Histo 100 $  (>(-1)) // (<2) //  crossCorrelateOver scratch ci1Spikes seti)
     --io $ gnuplotToPS ("cc_flex_seti_"++sess++".ps") $ ("cc flexor seti", 
                               --Histo 200 $ (>(-1)) // (<1) // crossCorrelateOver scratch flexSpikes seti)
-    io $ gnuplotToPS ("cc_ci_feti_"++sess++".ps") $ ("cc ci1Spikes feti "++sess, 
+    io $ gnuplotToPDF ("cc_ci_feti_"++sess++".ps") $ ("cc ci1Spikes feti "++sess, 
                               Histo 100 $  (>(-1)) // (<2) //  crossCorrelateOver scratch ci1Spikes feti)
 {-    io $ gnuplotToPS "afterCI.ps" $ ("0-50 ms after ciSpike", 
                             averageSigs $ limitSigs' (-0.010) (0.010) $ around (during (fadeOut 0.05 ci1Spikes) flexSpikes) flexor1)-}
@@ -95,31 +95,31 @@ importAnimalIn dir = do
            let t0 = filesSecDiff finfo firstInfo
            let onedurD x = [((t0, t0+scratchLength),realToFrac x)]::[((Double,Double),Double)]
            let onedur x = [((t0, t0+scratchLength), x)]
-           storeAs "flexor1" [listToSig dt t0 $ ephys!!0]
-           storeAs "flexor2" [listToSig dt t0 $ ephys!!1]
-           storeAs "extensor" [listToSig dt t0 $ ephys!!2]
-           storeAs "n5a" [listToSig dt t0 $ ephys!!3]
-           storeAs "ci1" [listToSig dt t0 $ ephys!!4]
-           storeAs "cxTr" [listToSig dtAngles t0 $ angles!!0]
-           storeAs "feTi" [listToSig dtAngles t0 $ angles!!1]
-           storeAs "tiTa" [listToSig dtAngles t0 $ angles!!2]
-           storeAs "thCx" [listToSig dtAngles t0 $ angles!!3]
+           storeAsAppend "flexor1" [listToSig dt t0 $ ephys!!0]
+           storeAsAppend "flexor2" [listToSig dt t0 $ ephys!!1]
+           storeAsAppend "extensor" [listToSig dt t0 $ ephys!!2]
+           storeAsAppend "n5a" [listToSig dt t0 $ ephys!!3]
+           storeAsAppend "ci1" [listToSig dt t0 $ ephys!!4]
+           storeAsAppend "cxTr" [listToSig dtAngles t0 $ angles!!0]
+           storeAsAppend "feTi" [listToSig dtAngles t0 $ angles!!1]
+           storeAsAppend "tiTa" [listToSig dtAngles t0 $ angles!!2]
+           storeAsAppend "thCx" [listToSig dtAngles t0 $ angles!!3]
 
-           storeAs "flex1Spikes" $ spikesToEvents dt t0 1 $ spikes !!0
-           storeAs "flex2Spikes" $ spikesToEvents dt t0 1 $ spikes !!1
-           storeAs "setiSpikes" $ spikesToEvents dt t0 1 $ spikes !!2
-           storeAs "fetiSpikes" $ spikesToEvents dt t0 2 $ spikes !!2
-           --storeAs "n5aSpikes" $ spikesToEvents dt t0 1 $ spikes !!3
-           storeAs "ci1Spikes" $ spikesToEvents dt t0 1 $ spikes !!3
+           storeAsAppend "flex1Spikes" $ spikesToEvents dt t0 1 $ spikes !!0
+           storeAsAppend "flex2Spikes" $ spikesToEvents dt t0 1 $ spikes !!1
+           storeAsAppend "setiSpikes" $ spikesToEvents dt t0 1 $ spikes !!2
+           storeAsAppend "fetiSpikes" $ spikesToEvents dt t0 2 $ spikes !!2
+           --storeAsAppend "n5aSpikes" $ spikesToEvents dt t0 1 $ spikes !!3
+           storeAsAppend "ci1Spikes" $ spikesToEvents dt t0 1 $ spikes !!3
 
-           storeAs "scratch" $ onedur ()
-           storeAs "load" $ onedurD $ load finfo
-           storeAs "depol" $ onedurD $ depol finfo
-           storeAs "cycles" $ onedurD $ cycles finfo 
-           storeAs "isPosterior" $ onedur $ isPosterior finfo
-           storeAs "repNum" $ onedurD $ repnum finfo
-           storeAs "tStart" $ [(t0,())]
-           storeAs "tStop" $ [(t0+scratchLength,())]
+           storeAsAppend "scratch" $ onedur ()
+           storeAsAppend "load" $ onedurD $ load finfo
+           storeAsAppend "depol" $ onedurD $ depol finfo
+           storeAsAppend "cycles" $ onedurD $ cycles finfo 
+           storeAsAppend "isPosterior" $ onedur $ isPosterior finfo
+           storeAsAppend "repNum" $ onedurD $ repnum finfo
+           storeAsAppend "tStart" $ [(t0,())]
+           storeAsAppend "tStop" $ [(t0+scratchLength,())]
         
 
 

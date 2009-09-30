@@ -74,7 +74,7 @@ loomAnal = do ress <- inEverySession $ do
             FunSeg 0 30 $ fitFun pars expDecay
 wholeReals = [(0::Double)..]
 
-fit :: (Fractional a, Ord a, Floating a) => (forall tag. b -> [Dual tag a] -> Dual tag a) -> [(b,a)] -> [a] -> [[a]]
+fit :: (Ord a, Floating a) => (forall tag. b -> [Dual tag a] -> Dual tag a) -> [(b,a)] -> [a] -> [[a]]
 fit g pts p0 = let ss args = sum $ map (\(t,y)-> (g t args - lift y)**2) pts
                in argminNaiveGradient ss p0
 
@@ -95,7 +95,7 @@ paramCount (x,_) = length . head $ toLists x
 observationCount (_,y) = length . head . toLists $ trans y
 
 --http://en.wikipedia.org/wiki/Akaike_information_criterion#AICc_and_AICu
-aicc model = let n = realToFrac $ observationCount model
+aic  model = let n = realToFrac $ observationCount model
                  k = realToFrac $ paramCount model
              in log (ss model/n) +(n+k)/(n-k-2)
 
@@ -132,11 +132,23 @@ regression pairs = let n = length pairs
 tm = twoMeans [1,2, 3] [4,5,6]
 reg = regression [(1,1), (2,2), (3,3), (4,4)]
 
+instance Num Factor where
+    f1 + f2 = Plus f1 f2
+    f1 * f2 = Nest f1 f2
+    fromInteger x = ConstFactor $ realToFrac x
+    abs = undefined
+    signum = undefined
+
 data Factor = Categorical [Int]
             | Continuous [Double]
+            | ConstFactor Double
             | Mean Int
             | Nest Factor Factor
             | Plus Factor Factor
+            | Cut Factor Double
+             deriving (Show, Eq)
+
+xs .<. cut = Cut xs cut
 
 ys <~ facs = facModel (ys, facs)
 facModel :: ([Double], Factor) -> LinModel Double
@@ -172,4 +184,6 @@ validateModel f = True
 normalForm (Nest c@(Categorical is) (Plus f1 f2)) = Plus (Nest c (normalForm f1)) (Nest c (normalForm f2))
 normalForm (Nest f1 f2) = Nest (normalForm f1) (normalForm f2)
 normalForm (Plus f1 f2) = Plus (normalForm f1) (normalForm f2)
+normalForm (Cut (Continuous xs) cut) = Categorical $ map (\x-> if x < cut then 1 else 2) xs
 normalForm primFac = primFac
+
