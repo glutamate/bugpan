@@ -30,6 +30,7 @@ import System.Environment
 import Database
 import Numeric.FAD
 import Numeric.LinearAlgebra
+import Data.Maybe
 
 main = loomAnal
 
@@ -130,3 +131,45 @@ regression pairs = let n = length pairs
 
 tm = twoMeans [1,2, 3] [4,5,6]
 reg = regression [(1,1), (2,2), (3,3), (4,4)]
+
+data Factor = Categorical [Int]
+            | Continuous [Double]
+            | Mean Int
+            | Nest Factor Factor
+            | Plus Factor Factor
+
+ys <~ facs = facModel (ys, facs)
+facModel :: ([Double], Factor) -> LinModel Double
+facModel (ys, facs') = let facs = normalForm facs'
+                           dm = designMatrix facs
+                       in (dm, trans $ fromLists [ys])
+
+designMatrix :: Factor -> Matrix Double
+designMatrix (Mean n) = trans $ fromLists $ [replicate n 1]
+designMatrix (Continuous xs) = trans $ fromLists $ [xs]
+designMatrix (Categorical xs) = let levels = sort $ nub $ xs
+                                    nlevels = length levels
+                                    zeros = repeat 0
+                                    oneAt n = take n zeros ++ [1]++ take (nlevels-n-1) zeros
+                                    gen x =oneAt $ fromJust $ elemIndex x levels
+                                    lstMat = map gen xs
+                                in  fromLists lstMat
+designMatrix (Plus f1 f2) = fromBlocks [[designMatrix f1, designMatrix f2]]
+designMatrix (Nest (Categorical xs) f) = let levels = sort $ nub $ xs
+                                             nlevels = length levels
+                                             dmf = toLists $ designMatrix f
+                                             nfactors = length $ head dmf
+                                             zeros = replicate nfactors 0
+                                             lstMat = map (fromLists . gen) levels
+                                             gen lvl = map (\(x, i)-> if x ==lvl
+                                                                         then dmf!!i
+                                                                      else zeros) $ zip xs [0..]                      
+                                         in fromBlocks $ [lstMat]
+
+
+validateModel f = True
+
+normalForm (Nest c@(Categorical is) (Plus f1 f2)) = Plus (Nest c (normalForm f1)) (Nest c (normalForm f2))
+normalForm (Nest f1 f2) = Nest (normalForm f1) (normalForm f2)
+normalForm (Plus f1 f2) = Plus (normalForm f1) (normalForm f2)
+normalForm primFac = primFac

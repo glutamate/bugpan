@@ -26,6 +26,7 @@ data Histo where -- GADT bec i don't know syntax for double existential (no long
 
 
 instance PlotWithGnuplot Histo where
+    getGnuplotCmd (Histo _ []) = return []
     getGnuplotCmd (Histo n vls) = do
             fnm <- ("/tmp/gnuplothist"++) `fmap` uniqueIntStr
             writeHist fnm n $ map snd vls

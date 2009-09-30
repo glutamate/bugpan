@@ -32,6 +32,7 @@ import Control.Monad
 import Data.Unique
 import System.Cmd
 import PlotGnuplot
+import QueryPlots
 
 main = do
   args <- getArgs
@@ -39,7 +40,11 @@ main = do
 
 dispatch ("import":_) = do
   importAnimalIn "AM"
-  --importAnimalIn "AR"
+  importAnimalIn "AR"
+  importAnimalIn "BB"
+  importAnimalIn "AV"
+  importAnimalIn "BR"
+  importAnimalIn "BK"
   return ()
 
 dispatch ("analyse":sess:_) = do
@@ -55,16 +60,16 @@ dispatch ("analyse":sess:_) = do
 
     --let ivls = map getTag $ intervalsOver scratch $ spikes
     --rHisto 100 $ crossCorrelateOver scratch ci1Spikes flexSpikes
-    io $ gnuplotToPS "cc_ci_seti.ps" $ ("cc ci1Spikes seti", 
-                              Histo 100 $  (>(0)) // (<0.5) //  crossCorrelateOver scratch ci1Spikes seti)
-    io $ gnuplotToPS "cc_flex_seti.ps" $ ("cc flexor seti", 
-                              Histo 200 $ (>(-1)) // (<1) // crossCorrelateOver scratch flexSpikes seti)
-    io $ gnuplotToPS "cc_ci_feti.ps" $ ("cc ci1Spikes feti", 
+    io $ gnuplotToPS ("cc_ci_seti_"++sess++".ps") $ ("cc ci1Spikes seti "++sess, 
+                              Histo 100 $  (>(-1)) // (<2) //  crossCorrelateOver scratch ci1Spikes seti)
+    --io $ gnuplotToPS ("cc_flex_seti_"++sess++".ps") $ ("cc flexor seti", 
+                              --Histo 200 $ (>(-1)) // (<1) // crossCorrelateOver scratch flexSpikes seti)
+    io $ gnuplotToPS ("cc_ci_feti_"++sess++".ps") $ ("cc ci1Spikes feti "++sess, 
                               Histo 100 $  (>(-1)) // (<2) //  crossCorrelateOver scratch ci1Spikes feti)
 {-    io $ gnuplotToPS "afterCI.ps" $ ("0-50 ms after ciSpike", 
                             averageSigs $ limitSigs' (-0.010) (0.010) $ around (during (fadeOut 0.05 ci1Spikes) flexSpikes) flexor1)-}
-    io $ gnuplotOnScreen $ ("all CI spikes", 
-                            averageSigs $ limitSigs' (-0.010) (0.010) $ take 100 $ around (ci1Spikes) ci1)
+    --io $ gnuplotOnScreen $ ("all CI spikes", 
+                        --    averageSigs $ limitSigs' (-0.010) (0.010) $ take 100 $ around (ci1Spikes) ci1)
     
     return () 
 
