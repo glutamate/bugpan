@@ -24,10 +24,11 @@ appendIORef ref x = do xs <- readIORef ref
                                                else aux sm evvs
                                        else 0 -}
 
-convAux s@(Signal t1 t2 dt sf) tmax evvs = 
+{-convAux s@(Signal t1 t2 dt sf) tmax evvs = 
         let tms = map fst evvs
             s0 = Signal 0 tmax dt $ \_-> 0 in
         foldl (combineToLongestSig (+)) s0 $ map (\t-> shift t s) tms
+-} 
 
 enowAux t dt evs = let nstep t dt = round (t/dt)
                        dropF (te,_) = nstep te dt > nstep t dt
