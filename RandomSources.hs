@@ -2,6 +2,8 @@ module RandomSources where
 
 import System.Random
 import Control.Monad
+import TNUtils
+import Control.Arrow
 
 poissonKnuth :: Double -> IO Int
 poissonKnuth rate = pvAux 0 1
@@ -33,8 +35,13 @@ poisson1 :: Double -> Double -> Double -> IO Double
 poisson1 _ _ rate = do u <- randomRIO (0.0,1.0)
                        return $ -(log(1-u))/rate
 
+poisson1Pure ::  Double -> [Double] -> IO Double
+poisson1Pure rate rnds = do u <- randomRIO (0.0,1.0)
+                            return $ -(log(1-u))/rate
+
+
 poisson :: Double -> Double -> Double -> IO [(Double,())]
-poisson tmax dt rate = aux 0
+poisson tmax _ rate = aux 0
     where aux last = do next <- (+last) `fmap` poisson1 0 0 rate
                         if next > tmax
                            then return []
@@ -43,3 +50,11 @@ poisson tmax dt rate = aux 0
 regular :: Double -> Double -> Double -> IO [(Double,())]
 regular tmax dt rate = let n = tmax*rate
                        in return $ map (\i-> (i/rate , ())) [1..n]
+
+
+manyPoisson :: Int -> Double -> Double -> Double ->IO [(Double, ())]
+manyPoisson n tsep tmax rate = do 
+  levs <- replicateM n $ poisson tmax undefined rate
+  return $ concatMap (\(evs, i)->map (first (+(i*tsep))) evs) $ zip levs [0..]
+
+  

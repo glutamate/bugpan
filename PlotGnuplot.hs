@@ -23,12 +23,23 @@ histArr :: (Ix a, Num b) => (a,a) -> [a] -> Array a b
 histArr bnds is = accumArray (+) 0 bnds [(i, 1) | i<-is, inRange bnds i]
 
 histList :: (RealFrac a) => Int -> [a] -> ([a] , a, a, a)
+histList _ [] = ([], 0, 0, 1)
 histList nbins vls = let lo = foldl1 min vls
                          hi = foldl1 max vls
                          binSize = (hi-lo)/(realToFrac nbins+1)
                          ixs = map (\v-> floor $ (v-lo)/binSize ) vls
                          hArr = histArr (0,nbins-1) $ ixs
                      in (elems hArr, lo, hi, binSize)
+
+histListBZ :: (RealFrac a) => a -> [a] -> ([a] , a, a, a)
+histListBZ _ [] = ([], 0, 0, 1)
+histListBZ bz vls    = let lo = foldl1 min vls
+                           hi = foldl1 max vls
+                           binSize = bz
+                           nbins = round $ (hi-lo)/bz
+                           ixs = map (\v-> floor $ (v-lo)/binSize ) vls
+                           hArr = histArr (0,nbins-1) $ ixs
+                       in (elems hArr, lo, hi, binSize)
                    
 
 uniqueIntStr = (show. hashUnique) `fmap` newUnique

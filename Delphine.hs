@@ -33,10 +33,18 @@ import Data.Unique
 import System.Cmd
 import PlotGnuplot
 import QueryPlots
+import RandomSources
+import System.Random.Mersenne
+
 
 main = do
   args <- getArgs
   dispatch args
+
+manyDurs :: Int -> Double -> Double -> [Duration ()]
+manyDurs n tsep tmax= let durs = replicate n ((0,tmax),())
+                      in map (\(oneDur,i)->shift (i*tsep) oneDur)  $ zip durs [0..]
+ 
 
 dispatch ("import":_) = do
   importAnimalIn "AM"
@@ -57,20 +65,37 @@ dispatch ("analyse":sess:_) = do
     feti <- events "fetiSpikes" ()
     flexor1 <- signalsDirect "flexor1"
     ci1 <- signalsDirect "ci1"
-
+    --pois1 <- io $ manyPoisson 1000 10 1 20
+    --pois2 <- io $ manyPoisson 1000 10 1 20
+    rnds <- io $ randoms =<< getStdGen
+    --let poisDurs = manyDurs 1000 10 1
     --let ivls = map getTag $ intervalsOver scratch $ spikes
     --rHisto 100 $ crossCorrelateOver scratch ci1Spikes flexSpikes
-    io $ gnuplotToPDF ("cc_ci_seti_"++sess++".ps") $ ("cc ci1Spikes seti "++sess, 
-                              Histo 100 $  (>(-1)) // (<2) //  crossCorrelateOver scratch ci1Spikes seti)
+    let bz = 0.05
+    let cc evs = normSigToArea (histSigBZ bz (crossCorrelateOver scratch ci1Spikes evs)) - 
+                 (normSigToArea $ histSigBZ bz (crossCorrelateOverControl scratch ci1Spikes evs rnds ))
+    --io $ gnuplotToPDF ("cc_ci_seti_"++sess++".ps") $ ("cc ci1Spikes seti "++sess, 
+    --                          Histo 100 $  (>(-1)) // (<2) //  crossCorrelateOver scratch ci1Spikes seti)
+    --io $ gnuplotToPDF ("cc_ci_seti_"++sess++".ps") $ ("cc ci1Spikes seti "++sess,  [cc seti])
+    --io $ gnuplotToPDF ("cc_ci_feti_"++sess++".ps") $ ("cc ci1Spikes seti "++sess,  [cc feti])
     --io $ gnuplotToPS ("cc_flex_seti_"++sess++".ps") $ ("cc flexor seti", 
-                              --Histo 200 $ (>(-1)) // (<1) // crossCorrelateOver scratch flexSpikes seti)
-    io $ gnuplotToPDF ("cc_ci_feti_"++sess++".ps") $ ("cc ci1Spikes feti "++sess, 
-                              Histo 100 $  (>(-1)) // (<2) //  crossCorrelateOver scratch ci1Spikes feti)
+    --                         Histo 200 $ (>(-1)) // (<1) // crossCorrelateOver scratch flexSpikes seti)
+    --io $ gnuplotToPDF ("cc_ci_feti_"++sess++".ps") $ ("cc ci1Spikes feti "++sess, 
+     --                         Histo 100 $  (>(-1)) // (<2) //  crossCorrelateOver scratch ci1Spikes feti)
 {-    io $ gnuplotToPS "afterCI.ps" $ ("0-50 ms after ciSpike", 
                             averageSigs $ limitSigs' (-0.010) (0.010) $ around (during (fadeOut 0.05 ci1Spikes) flexSpikes) flexor1)-}
     --io $ gnuplotOnScreen $ ("all CI spikes", 
                         --    averageSigs $ limitSigs' (-0.010) (0.010) $ take 100 $ around (ci1Spikes) ci1)
+    openReplies
+    --ask $ plot $ Histo 100 $ intervalsOver poisDurs $ pois1
+    io $ print $ length feti
+    io $ print $ testSampler rnds
+    io $ print $ length $ crossCorrelateOverControl scratch ci1Spikes feti rnds
+    --io $ print $ for scratch $ \s-> (length $ during [s] feti, length $ during [s] seti)
     
+    ask $ plot $ [cc feti]
+    ask $ plot $ [normSigToArea $ histSigBZ bz $ crossCorrelateOverControl scratch ci1Spikes feti rnds]
+    ask $ plot $ [normSigToArea $ histSigBZ bz $ crossCorrelateOver scratch ci1Spikes feti]
     return () 
 
 --rHisto :: MonadIO m => [Double] -> m ()

@@ -14,6 +14,9 @@ import Control.Applicative hiding ((<**>))
 import Numbers
 import Data.Ord
 import TNUtils
+import Math.Probably.Sampler
+import Control.Monad
+import PlotGnuplot
 
 peak :: Ord a => [Signal a] ->[Event a]
 peak sigs =  map (\sig -> swap . foldSig cmp (sigInitialVal sig, 0) $ zipWithTime sig) sigs 
@@ -230,11 +233,38 @@ countWithin (dur:durs) evs = concatMap f durs
     where f dur = (realToFrac . length $ evs `during` [dur] ) `tag` [dur]
 -}
 
-crossCorrelateOver :: [Duration a] -> [Event a] -> [Event b] -> [Event Double]
+crossCorrelateOver :: [Duration a] -> [Event b] -> [Event c] -> [Event Double]
 crossCorrelateOver dur e1 e2 = concatMap f $ zip (chopByDur dur e1) (chopByDur dur e2)
     where f (evs1, evs2) = concatMap (g evs2) evs1
           g evs2 (t0,_) = map (\(t2,_)->(t2,t2-t0)) evs2
 
+crossCorrelateOverControl :: [Duration a] -> [Event b] -> [Event c] -> [Double] -> [Event Double]
+crossCorrelateOverControl dur e1 e2 rnds = 
+    let oneSim = do
+          durOver <- oneOf dur
+          let tStart = fst . fst $ durOver
+          let durLength = realToFrac $ (snd $ fst durOver) - (fst $ fst durOver)
+          let e1s = length $ during [durOver] e1
+          let e2s = length $ during [durOver] e2
+          if e1s == 0 || e2s == 0 
+             then return [] -- traceM "one has zero events!" >> return []
+             else do
+               --traceM "both has more than zero events!"
+               e1sim <- poissonMany (realToFrac e1s/durLength) durLength
+               e2sim <- poissonMany (realToFrac e2s/durLength) durLength          
+               return $ crossCorrelateOver [durOver] (shift tStart $ lstToEvs e1sim) (shift tStart $ lstToEvs e2sim)    
+    in concat $ take 1000 $ runSampler rnds oneSim
+
+testSampler rnds = concat $ take 10 $ runSampler rnds $ do 
+  u <- unitSample
+  if u >0.5
+     then return []
+     else return [()]
+
+lstToEvs :: [Double] -> [Event ()]
+lstToEvs occs = zip occs $ repeat ()
+
+      
 limitSigs :: Double -> Double -> [Signal a] -> [Signal a]
 limitSigs lo hi sigs = map (limitSig (min lo hi) (max lo hi)) sigs
 
@@ -307,3 +337,21 @@ habitAnal rep' spikes = let rep = filter (\d -> ( snd . snd . head $ countDuring
                         in groupBy rep (snd <$$> countDuring rep spikes)  `groupStats` meanSDF
 
 restrictDur (t1r, t2r) = map $ \((t1, t2), v) -> ((t1+t1r, t1+t2r), v)
+
+histSig nbins evs = let (hlist, lo, hi, bin)= histList nbins $ map (getTag) evs
+                        len = length hlist                        
+                    in Signal lo hi bin $ \p-> if p >= len then 0 else (hlist !! p)
+
+histSigBZ bz evs  = let (hlist, lo, hi, bin)= histListBZ bz $ map (getTag) evs
+                        len = length hlist                        
+                    in Signal lo hi bin $ \p-> if p >= len then 0 else (hlist !! p)
+
+
+integralOfSig s@(Signal t1 t2 dt df) =
+    let sm = sum $ sigToList s
+    in sm/realToFrac (t2-t1)
+
+normSigToArea s = let igrl = integralOfSig s in (/igrl) `fmap` s
+
+
+        
