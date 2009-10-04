@@ -54,6 +54,7 @@ data E =  If E E E
 	| SigVal E
 	| SigAt E E
         | SigDelay E E
+        | SolveOde E
         | Switch [(E,E)] E
         | Event E
         | Forget E E
@@ -62,6 +63,7 @@ data E =  If E E E
         | Translate E E
         | Colour E E
         | HasType T E
+        | SigFby E E
 	deriving (Show, Eq, Read, Data, Typeable)
 
 data Declare 

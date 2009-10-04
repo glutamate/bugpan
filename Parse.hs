@@ -98,8 +98,8 @@ cE (B.ECase e pats) =
 cE (B.Box e) = Box (cE e)
 cE (B.Translate e1 e2) = Translate (cE e1) (cE e2)
 cE (B.Colour e1 e2) = Colour (cE e1) (cE e2)
-
-cE e = error $"cE: "++show e
+cE (B.SigFby e1 e2) = SigFby (cE e1) (cE e2)
+cE e = error $"cE unknown expr: "++show e
 
 cCmpOp op = case op of
               B.Lt -> Lt
@@ -123,7 +123,7 @@ cPat (B.PLit con) = PatLit $ conToV con
 cPat (B.PPair p1 p2) = PatPair (cPat p1) (cPat p2)
 cPat B.PNil = PatNil
 cPat (B.PCons p1 p2) = PatCons (cPat p1) (cPat p2)
-
+cPat (B.PDeriv p) = PatDeriv (cPat p)
 
 cType (B.TUnit) = UnitT
 cType (B.TNum) = NumT Nothing

@@ -238,7 +238,7 @@ crossCorrelateOver dur e1 e2 = concatMap f $ zip (chopByDur dur e1) (chopByDur d
     where f (evs1, evs2) = concatMap (g evs2) evs1
           g evs2 (t0,_) = map (\(t2,_)->(t2,t2-t0)) evs2
 
-crossCorrelateOverControl :: [Duration a] -> [Event b] -> [Event c] -> [Double] -> [Event Double]
+{-crossCorrelateOverControl :: [Duration a] -> [Event b] -> [Event c] -> [Double] -> [Event Double]
 crossCorrelateOverControl dur e1 e2 rnds = 
     let oneSim = do
           durOver <- oneOf dur
@@ -260,7 +260,7 @@ testSampler rnds = concat $ take 10 $ runSampler rnds $ do
   if u >0.5
      then return []
      else return [()]
-
+-}
 lstToEvs :: [Double] -> [Event ()]
 lstToEvs occs = zip occs $ repeat ()
 

@@ -10,6 +10,7 @@ import Data.Maybe
 import PrettyPrint
 import TNUtils
 import EvalM (T)
+import Control.Monad.Error
 
 data TravS = TravS { counter :: Int,
                      decls :: [Declare],
@@ -21,7 +22,7 @@ data TravS = TravS { counter :: Int,
                      tyConstraints :: [(T,T)]
                    }
 
-type TravM = StateT TravS Identity
+type TravM a = StateT TravS (Either  String) a
 
 alterDefinition :: String -> (E->E) -> TravM ()
 alterDefinition nm f = do 
@@ -73,14 +74,21 @@ spliceAt :: Int -> [a]-> [a]->[a]
 spliceAt n ys xs = let (hd, tl) = splitAt n xs in
                    concat [hd, ys, tl]
 
+errorInfo :: String -> TravM a -> TravM a
+errorInfo msg ma = ma `catchError` (\s-> throwError $ s++"\n"++msg)
+
 runTravM :: [Declare] -> [(String, E)] -> TravM a -> (a, [Declare])
 runTravM decs env tx 
     = let initS = TravS 0 decs env [] 0 [] False []
-          (x, TravS _ decsFinal _ _ _ _ _ _) = runIdentity $ runStateT tx initS 
+          (x, TravS _ decsFinal _ _ _ _ _ _) = case  runStateT tx initS of
+                                                 Left s -> error $ "runTravM fail: "++s
+                                                 Right tup -> tup
                                                -- Just x -> x
                                                -- Nothing -> error "runTravM returns mzero"
                                              
       in (x, decsFinal)
+
+
 
 mapDE :: (E-> TravM E) -> TravM ()
 mapDE f =do ds <- decls `fmap` get
@@ -91,7 +99,7 @@ mapDE f =do ds <- decls `fmap` get
               --trace ("now doing line "++show ln) $ return ()
               case ln of 
                 Let n e -> do 
-                        e' <- f e
+                        e' <- errorInfo ("in line: "++ppDecl ln) $ f e
                         when (e' /= e) $ do markChange
                                             --trace (pp e++ " /= \n" ++ pp e') $ return ()
                                             lnum' <- lineNum `fmap` get -- f may insert lines above
@@ -111,7 +119,7 @@ mapD f = do ds <- decls `fmap` get
             setter $ \s-> s { lineNum = 0 }
             untilM (stopCond `fmap` get) $ do
               ln <- curLine
-              ln' <- f ln
+              ln' <- errorInfo ("in line: "++ppDecl ln) $ f ln
               when (ln /= ln') $ do markChange
                                     lnum' <- lineNum `fmap` get -- f may insert lines above
                                     setter $ \s-> s { decls = setIdx lnum' (ln') (decls s)}
@@ -254,7 +262,9 @@ queryM q e = queryM' e
           queryM' e@(Not e1) = concatM [q e, m e1]
           queryM' e@(Sig e1) = concatM [q e, m e1]
           queryM' e@(SigVal e1) = concatM [q e, m e1]
+          queryM' e@(SolveOde e1) = concatM [q e, m e1]
           queryM' e@(SigDelay e1 e2) = concatM [q e, m e1,  m e2]
+          queryM' e@(SigFby e1 e2) = concatM [q e, m e1,  m e2]
           queryM' e@(SigLimited e1 e2) = concatM [q e, m e1,  m e2]
           queryM' e@(Event e1) = concatM [q e, m e1]
           queryM' e@(Forget e1 e2) = concatM [q e, m e1, m e2]
@@ -283,7 +293,9 @@ mapEM f e = mapEM' e
           mapEM' (Var n) = f $ Var n
           mapEM' (Sig s) = (return Sig `ap` m s) >>= f
           mapEM' (SigVal s) = (return SigVal `ap` m s) >>= f
+          mapEM' (SolveOde s) = (return SolveOde `ap` m s) >>= f
           mapEM' (SigDelay s1 s2) = (return SigDelay `ap` m s1 `ap` m s2) >>= f
+          mapEM' (SigFby s1 s2) = (return SigFby `ap` m s1 `ap` m s2) >>= f
           mapEM' (SigLimited s1 s2) = (return SigLimited `ap` m s1 `ap` m s2) >>= f
           mapEM' (SigAt s1 s2) = (return SigAt `ap` m s1 `ap` m s2) >>= f
           mapEM' (M1 op s) = (return (M1 op) `ap` m s) >>= f

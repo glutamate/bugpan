@@ -33,14 +33,13 @@ compileDec (Let (PatVar nm _) (Switch ses ser)) =
     where noSig (e,s) = (e, unVal $ mapE unSig s)
           unSig (Sig se) = se 
           unSig e = e
-
 compileDec rs@(ReadSource nm ("adc", _)) = compileAdcSrc rs
 compileDec (ReadSource nm (srcNm, (Const arg))) = [ReadSrcAction nm $ genSrc srcNm arg]
 compileDec (Let (PatVar nm _) e) = [Env nm $ unVal e]
 compileDec (SinkConnect (Var nm) (snkNm,_)) = [SigSnkConn nm snkNm]
 compileDec (Stage _ _) = []
 compileDec (DeclareType _ _) = []
-compileDec s = error $ "unknown decl: "++show s
+compileDec s = error $ "compileDec: unknown decl "++show s
 
 unVal :: E -> E
 unVal = mapE f

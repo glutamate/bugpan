@@ -98,6 +98,7 @@ pp (SigLimited e lim) = "{: "++pp e++" :"++pp lim++"}"
 pp (SigVal s) = "<: "++pp s++" :>"
 pp (SigAt t s) = ppa s ++ "@" ++ ppa t
 pp (SigDelay s v) = "delay "++ppa s++" "++ppa v
+pp (SigFby v s) = ppa v++" fby "++ppa s
 pp (Switch swsgs sig1) = "switch {\n"++ ppa sig1 ++"; \n" ++ passocs ++ "}"
     where passocs = concatMap (\(e,slam)-> pp e ++ " ~> " ++ pp slam++";\n") swsgs
 pp (Event e) = "[: "++pp e++" :]"
@@ -128,4 +129,5 @@ ppPat (PatLit e) = show e
 ppPat (PatPair x y) = "("++ppPat x++","++ppPat y++")"
 ppPat (PatNil) = "[]"
 ppPat (PatCons x xs) = "("++ppPat x++":"++ppPat xs++")"
+ppPat (PatDeriv p) = "D "++ppPat p
 

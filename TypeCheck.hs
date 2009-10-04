@@ -68,31 +68,37 @@ tyCheckD d@(Let (PatVar nm tp) e) =
                          case lookup nm decTys of
                            Just t -> do tinf <- checkTy e
                                         addTyConstraint (t,tinf)
-                                        solveConstraints
-                                        {-if t == tinf
-                                           then return ()
-                                           else tyFail ["expected: ", ppType t, ", inferred: ", ppType tinf] -}
                            Nothing -> do e' <- mapEM lUT e
                                          t <- UnknownT `fmap` genSym nm
                                          insertBefore [DeclareType nm t]
-                                         --alterDefinition nm $ const e'
-                                         --when (nm=="vm") $ do traceTyConstraints
-                         --traceM "definition of fst:"
-                                         --                      traceDefn "fst"
                                          tcalc <- checkTy e'
                                          addTyConstraint (t,tcalc)
                                          addTyConstraint (t,tpn) -- ?
-                                         --traceM ""
-                                         --traceM2 "solving for " nm
-                                         --traceTyConstraints
                                          solveConstraints
                                          applySolution
                                          markChange
-                                         
-                                         --alterTypeDefinition nm 
                                          return ()
---tyCheckD d = return d
-                         
+
+--figure out how to do this correctly
+tyCheckD d@(Let (PatDeriv (PatVar nm tp)) (SigFby v0 e)) = 
+                      do decTys <- allDeclaredTypes
+                         tpn <-  if tp== UnspecifiedT
+                                    then (SignalT . UnknownT) `fmap` genSym nm
+                                    else return tp
+                         clearTyConstraints
+                         case lookup nm decTys of
+                           Just t -> do tinf <- checkTy e
+                                        addTyConstraint (t,tinf)
+                           Nothing -> do e' <- mapEM lUT e
+                                         t <- (SignalT . UnknownT) `fmap` genSym nm
+                                         insertBefore [DeclareType nm t]
+                                         tcalc <- checkTy e'
+                                         addTyConstraint (t,tcalc)
+                                         addTyConstraint (t,tpn) -- ?
+                                         solveConstraints
+                                         applySolution
+                                         markChange
+                                         return ()
 
 --shouldBeLabeled (UnknownT _) = True
 shouldBeLabeled UnspecifiedT = True
@@ -312,6 +318,16 @@ checkTy (SigDelay s v0) = do tyv0 <- checkTy v0
                                        addTyConstraint (tyv0, telem)
                                        return $ SignalT telem
 
+checkTy (SigFby v0 s) = do   tyv0 <- checkTy v0 
+                             tys <- checkTy s
+                             case tys of
+                               SignalT tval -> do addTyConstraint (tyv0, tval)
+                                                  return tys
+                               _ -> do telem <- UnknownT `fmap` (genSym "checkSigDelay")
+                                       addTyConstraint (tys, SignalT telem)
+                                       addTyConstraint (tyv0, telem)
+                                       return $ SignalT telem
+
 checkTy (Forget tm ev)  = do te <- checkTy ev
                              tmt <- checkTy tm
                              addTyConstraint (tmt, realT)
@@ -380,7 +396,11 @@ tyPat (PatCons p1 p2) = do t1 <- tyPat p1
                            t2 <- tyPat p2
                            let ty = ListT t1
                            addTyConstraint (t2,ty)
-                           return ty                   
+                           return ty         
+tyPat (PatDeriv p) = do tp <- tyPat p
+                        gt <- (SignalT . UnknownT) `fmap` (genSym "patDeriv")
+                        addTyConstraint (tp, gt)
+                        return gt
 
 --checkTy e = return t
 

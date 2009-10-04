@@ -277,6 +277,17 @@ evalSigLimits = mapD eSSA
             return (Let nm (Forget (Const clim) e))
           eSSA e = return e 
 
+removePatDerivs :: TravM ()
+removePatDerivs = mapD rPD
+    where rPD (Let p@(PatDeriv _) e) =
+                    let (nderivs, nm, tp) = procPat 0 p
+                    in return $ (Let (PatVar nm tp) $ wrapSolves nderivs e)
+          rPD e = return e
+          procPat n (PatDeriv p) = procPat (n+1) p
+          procPat n (PatVar nm tp) = (n, nm, tp)
+          wrapSolves 0 e = e
+          wrapSolves n e = wrapSolves (n-1) $ SolveOde e
+
 globalizeE :: String -> E -> TravM String
 globalizeE s e = do gs <- genSym s
                     insertBefore [Let (PatVar gs UnspecifiedT) e]
@@ -359,7 +370,9 @@ declInMainLoop  (Let _ (SigLimited _ _)) = True
 declInMainLoop  (Let _ (Event _)) = True
 declInMainLoop  (Let _ (Switch _ _)) = True
 declInMainLoop  (Let _ (SigDelay _ _)) = True
+declInMainLoop  (Let _ (SigFby _ _)) = True
 declInMainLoop  (Let _ (Forget _ _)) = True
+declInMainLoop  (Let _ (SolveOde _)) = True
 declInMainLoop  (SinkConnect _ _) = True
 declInMainLoop  (ReadSource _ _) = True
 declInMainLoop  _ = False
@@ -384,8 +397,10 @@ isSignalOrEvt (Var "dt") = return IsNeitherSigNorEvt
 isSignalOrEvt (Var nm) = ifM (isDefBySrc nm)
                              (do snm <- srcDefn nm
                                  return $ typeOfSrc' snm)
-                             (do def <- lookUp nm
-                                 isSignalOrEvt def)
+                             (ifM (isDefByDeriv nm) 
+                                  (return IsSig)
+                                  (do def <- lookUp nm
+                                      isSignalOrEvt def))
 isSignalOrEvt _ = return IsNeitherSigNorEvt
 
 typeOfSrc' "adc" = IsSig
@@ -426,12 +441,16 @@ hasSig e = {- trace (pp e ) $ -} or `fmap` queryM (hasSigAux []) e
                           else  {-trace (nm++": "++pp defn) $-}  queryM (hasSigAux $ nm:lu) defn
           hasSigAux _ (_) = return [False] 
 
-dontLookUp nm = do conds <- sequence [ (inBoundVars nm),
+dontLookUp nm = or `fmap` sequence [ (inBoundVars nm),
                                        (isDefBySrc nm),
+                                       (isDefByDeriv nm),
                                        (return ("#" `isPrefixOf` nm)),
                                        (return $ nm `elem` bivNms)
                                      ]
-                   return $ or conds
+
+isDefByDeriv nm = do 
+  ds <- decls `fmap` get
+  return $ nm `elem` [nm' | Let (PatDeriv (PatVar nm' _)) _ <- ds]
 
 --mor = liftM2 (||)
 
@@ -477,6 +496,7 @@ transforms =   [(typeCheck, "typeCheck")
                 ,(whileChanges betaRedMakesShape, "betaRedMakesShape")
                 ,(letFloating, "letFloating")
                 ,(sigFloating, "sigFloating")
+                ,(removePatDerivs, "removePatDerivs")
                 ,(forgetFloating, "sigFloating")
                 ,(floatSwitchEvents, "floatSwitchEvents")
                 ,(substHasSigs, "substHasSigs")
@@ -500,7 +520,7 @@ transforms =   [(typeCheck, "typeCheck")
                ]
 
 transform :: TravM ()
-transform = sequence_ $ map fst transforms
+transform = sequence_ $ map (\(tr, nm) -> errorInfo ("in transform: "++nm) tr) transforms
                 
 
 splitByStages :: [Declare] -> [[Declare]]
