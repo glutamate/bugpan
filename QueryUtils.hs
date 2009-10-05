@@ -356,5 +356,18 @@ integralOfSig s@(Signal t1 t2 dt df) =
 
 normSigToArea s = let igrl = integralOfSig s in (/igrl) `fmap` s
 
-
+dist x y = abs $ x - y
+closest x y z = if dist z x < dist x y
+                   then z
+                   else y
         
+--nearestTo :: Double -> [Double] -> Double
+nearestTo :: (Ord t, Num t) => t -> [t] -> t
+nearestTo x (y:(r@(z:xs))) | y<x &&z>=x = closest x y z
+                           | z>x && y>x = closest x y z
+                           | otherwise = nearestTo x r
+nearestTo x (y:[]) = y
+
+nearestToEach :: [Event a] -> [Event b] -> [Event Double]
+nearestToEach mainEv otherEv = map f mainEv
+    where f (t,_) = (t, nearestTo t $ map fst otherEv) 
