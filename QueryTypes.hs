@@ -40,6 +40,7 @@ import Data.Unique
 import TNUtils
 import Data.Typeable
 import Math.Probably.FoldingStats
+import Math.Probably.Sampler
 import System.IO
 import ValueIO
 import Array
@@ -57,9 +58,30 @@ data QState = QState { qsSess:: Session,
                        lastTStop :: Double,
                        realTime :: Bool,
                        shArgs :: [String],
-                       remoteCmdFile :: Maybe String
+                       remoteCmdFile :: Maybe String,
+                       rnds :: [Double]
                      } deriving Show
 
+type QueryM = StateT QState IO
+
+sampleN :: Int -> Sampler a -> QueryM [a]
+sampleN n sf = do
+  rans <- rnds `fmap` get
+  modify $ \s-> s {rnds = []}
+  let (vls, rans') = sam n rans sf []
+  modify $ \s-> s {rnds = rans'}
+  return vls
+    where sam 0 rs _ xs          = (xs, rs)
+          sam n rs s@(Sam sf) xs = let (x, rs') = sf rs 
+                                   in sam (n-1) rs' s (x:xs)
+
+sample :: Sampler a -> QueryM a
+sample (Sam sf) = do
+  rans <- rnds `fmap` get
+  let (x, rans') = sf rans
+  modify $ \s-> s {rnds = rans'}
+  return $ x
+ 
 getSession = qsSess `fmap` get
 
 openReplies = modify (\s-> s { shArgs = "-o" : shArgs s })

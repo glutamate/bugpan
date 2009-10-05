@@ -36,6 +36,9 @@ import QueryPlots
 import RandomSources
 import System.Random.Mersenne
 
+--1. AVERAGE WAVEFORMS CI1-SETI and CI1-FLEXOR
+--2. for every ci1 spike which is nearest : seti or flexor?
+
 
 main = do
   args <- getArgs
@@ -65,21 +68,34 @@ dispatch ("analyse":sess:_) = do
     feti <- events "fetiSpikes" ()
     flexor1 <- signalsDirect "flexor1"
     ci1 <- signalsDirect "ci1"
+    depol <- durations "depol" (1::Double)
+    cyc1 <- durations "firstCycle" ()
     --pois1 <- io $ manyPoisson 1000 10 1 20
     --pois2 <- io $ manyPoisson 1000 10 1 20
-    rnds <- io $ randoms =<< getStdGen
     --let poisDurs = manyDurs 1000 10 1
     --let ivls = map getTag $ intervalsOver scratch $ spikes
     --rHisto 100 $ crossCorrelateOver scratch ci1Spikes flexSpikes
-    let bz = 0.05
-    let cc evs = normSigToArea (histSigBZ bz (crossCorrelateOver scratch ci1Spikes evs)) - 
-                 (normSigToArea $ histSigBZ bz (crossCorrelateOverControl scratch ci1Spikes evs rnds ))
+    let bz = 0.01
+    let scratchd0 = during cyc1 $ during (isZero//depol) scratch
+    let cc evs evs2 = do ctrl <- crossCorrelateOverControl scratch evs2 evs
+                         let s1 = normSigToArea (histSigBZ bz (crossCorrelateOver scratch evs2 evs))
+                         let s2 = normSigToArea $ histSigBZ bz (ctrl)
+                         return [limitSig (-0.6) 0.6 $ s1-s2]
+    ccflex <- cc flexSpikes ci1Spikes
+    ccseti <- cc seti ci1Spikes
+    ccfeti <- cc feti ci1Spikes
+    ccflexseti <- cc flexSpikes seti
+    
+    
+    
     --io $ gnuplotToPDF ("cc_ci_seti_"++sess++".ps") $ ("cc ci1Spikes seti "++sess, 
     --                          Histo 100 $  (>(-1)) // (<2) //  crossCorrelateOver scratch ci1Spikes seti)
-    --io $ gnuplotToPDF ("cc_ci_seti_"++sess++".ps") $ ("cc ci1Spikes seti "++sess,  [cc seti])
-    --io $ gnuplotToPDF ("cc_ci_feti_"++sess++".ps") $ ("cc ci1Spikes seti "++sess,  [cc feti])
-    --io $ gnuplotToPS ("cc_flex_seti_"++sess++".ps") $ ("cc flexor seti", 
-    --                         Histo 200 $ (>(-1)) // (<1) // crossCorrelateOver scratch flexSpikes seti)
+    io $ gnuplotToPDF ("cc_"++sess++".ps") $ (("cyc1 d0 ci1 seti "++sess,  ccseti) :||: ("cyc1 d0 ci1 feti "++sess,  ccfeti))
+                                                :==:
+                                                (("cyc1 d0 ci1 flexor "++sess, ccflex) :||: ("cyc1 d0 seti flexor "++sess, ccflexseti))
+    --io $ gnuplotToPDF ("cc_ci_feti_"++sess++".ps") $ ("cc ci1 feti "++sess,  ccfeti)
+    --io $ gnuplotToPDF ("cc_ci_flex_"++sess++".ps") $ ("cc ci1 flexor "++sess, ccflex)
+    --io $ gnuplotToPDF ("cc_seti_flex"++sess++".ps") $ ("cc seti flexor "++sess, ccflexseti)
     --io $ gnuplotToPDF ("cc_ci_feti_"++sess++".ps") $ ("cc ci1Spikes feti "++sess, 
      --                         Histo 100 $  (>(-1)) // (<2) //  crossCorrelateOver scratch ci1Spikes feti)
 {-    io $ gnuplotToPS "afterCI.ps" $ ("0-50 ms after ciSpike", 
@@ -87,15 +103,12 @@ dispatch ("analyse":sess:_) = do
     --io $ gnuplotOnScreen $ ("all CI spikes", 
                         --    averageSigs $ limitSigs' (-0.010) (0.010) $ take 100 $ around (ci1Spikes) ci1)
     openReplies
+    --ask $ plot $ ccflexseti
     --ask $ plot $ Histo 100 $ intervalsOver poisDurs $ pois1
-    io $ print $ length feti
-    io $ print $ testSampler rnds
-    io $ print $ length $ crossCorrelateOverControl scratch ci1Spikes feti rnds
-    --io $ print $ for scratch $ \s-> (length $ during [s] feti, length $ during [s] seti)
-    
-    ask $ plot $ [cc feti]
-    ask $ plot $ [normSigToArea $ histSigBZ bz $ crossCorrelateOverControl scratch ci1Spikes feti rnds]
-    ask $ plot $ [normSigToArea $ histSigBZ bz $ crossCorrelateOver scratch ci1Spikes feti]
+    --ctrl <- crossCorrelateOverControl scratch ci1Spikes seti
+    --ask $ plot [normSigToArea $ histSigBZ bz ctrl]
+    --ask $ plot [normSigToArea (histSigBZ bz (crossCorrelateOver scratch ci1Spikes seti))]
+    --ask $ plot [normSigToArea (histSigBZ bz (crossCorrelateOver scratch ci1Spikes seti)) - (normSigToArea $ histSigBZ bz ctrl)]
     return () 
 
 --rHisto :: MonadIO m => [Double] -> m ()
@@ -103,6 +116,8 @@ dispatch ("analyse":sess:_) = do
 brenda :: [Signal Double] -> [GnuplotBox]
 brenda sigs = [GnuplotBox $ Brenda $ averageSigs sigs]
  
+
+isZero x = x>(-0.5) && x<0.5 
 
 importAnimalIn dir = do
   allfiles <- getDirContents dir
@@ -115,7 +130,7 @@ importAnimalIn dir = do
   mapM_ (putStrLn . fst) finfos
   inNewSessionWith sessNm (fileT0 firstInfo) $ do
        forM_ finfos $ \(fnm,finfo) -> do
-           (angles, spikes, ephys) <- io $ impLBR $ dir ./ fnm 
+           (angles, spikes, ephys, footfram, cycfram) <- io $ impLBR $ dir ./ fnm 
            let scratchLength = (realToFrac $ length $ head ephys)*dt
            let t0 = filesSecDiff finfo firstInfo
            let onedurD x = [((t0, t0+scratchLength),realToFrac x)]::[((Double,Double),Double)]
@@ -145,7 +160,8 @@ importAnimalIn dir = do
            storeAsAppend "repNum" $ onedurD $ repnum finfo
            storeAsAppend "tStart" $ [(t0,())]
            storeAsAppend "tStop" $ [(t0+scratchLength,())]
-        
+           storeAsAppend "firstCycle" $ [((t0+(realToFrac footfram)*dtAngles, 
+                                           t0+(realToFrac cycfram)*dtAngles),())]
 
 
 spikesToEvents :: Double -> Double -> Int -> [Int] -> [Event ()]
@@ -213,7 +229,7 @@ impLBR fnm = do
   --print $ parseFileName fnm
   
 
-  return (take nangles angles, take nspikes spikes, take nmyst myst)
+  return (take nangles angles, take nspikes spikes, take nmyst myst, n3, n4)
 
 listToSig dt t1 lst = let arr = SV.pack lst
                           t2 = (realToFrac $ length lst) *dt +t1

@@ -15,29 +15,30 @@ import qualified Data.StorableVector as SV
 import TNUtils
 import System.Directory
 import System.Posix.Files
-import Array
+import Data.Array.Unboxed
 
 
 
-histArr :: (Ix a, Num b) => (a,a) -> [a] -> Array a b
-histArr bnds is = accumArray (+) 0 bnds [(i, 1) | i<-is, inRange bnds i]
+--histArr :: (Int,Int) -> [Double] -> UArray Int Double
+histArr :: (Int, Int) -> [Int] -> UArray Int Double
+histArr bnds is = accumArray (+) 0 bnds [( i, 1) | i<-is, inRange bnds i]
 
-histList :: (RealFrac a) => Int -> [a] -> ([a] , a, a, a)
+histList :: Int -> [Double] -> ([Double] , Double, Double, Double)
 histList _ [] = ([], 0, 0, 1)
-histList nbins vls = let lo = foldl1 min vls
-                         hi = foldl1 max vls
+histList nbins vls = let lo = foldl1' min vls
+                         hi = foldl1' max vls
                          binSize = (hi-lo)/(realToFrac nbins+1)
-                         ixs = map (\v-> floor $ (v-lo)/binSize ) vls
+                         ixs = map (\v-> floor $! (v-lo)/binSize ) vls
                          hArr = histArr (0,nbins-1) $ ixs
                      in (elems hArr, lo, hi, binSize)
 
-histListBZ :: (RealFrac a) => a -> [a] -> ([a] , a, a, a)
+histListBZ :: Double -> [Double] -> ([Double] , Double, Double, Double)
 histListBZ _ [] = ([], 0, 0, 1)
-histListBZ bz vls    = let lo = foldl1 min vls
-                           hi = foldl1 max vls
+histListBZ bz vls    = let lo = foldl1' min vls
+                           hi = foldl1' max vls
                            binSize = bz
                            nbins = round $ (hi-lo)/bz
-                           ixs = map (\v-> floor $ (v-lo)/binSize ) vls
+                           ixs = map (\v-> floor $! (v-lo)/binSize ) vls
                            hArr = histArr (0,nbins-1) $ ixs
                        in (elems hArr, lo, hi, binSize)
                    

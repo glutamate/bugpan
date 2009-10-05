@@ -238,8 +238,10 @@ crossCorrelateOver dur e1 e2 = concatMap f $ zip (chopByDur dur e1) (chopByDur d
     where f (evs1, evs2) = concatMap (g evs2) evs1
           g evs2 (t0,_) = map (\(t2,_)->(t2,t2-t0)) evs2
 
-{-crossCorrelateOverControl :: [Duration a] -> [Event b] -> [Event c] -> [Double] -> [Event Double]
-crossCorrelateOverControl dur e1 e2 rnds = 
+
+
+crossCorrelateOverControl :: [Duration a] -> [Event b] -> [Event c] -> QueryM [Event Double]
+crossCorrelateOverControl dur e1 e2 = 
     let oneSim = do
           durOver <- oneOf dur
           let tStart = fst . fst $ durOver
@@ -253,14 +255,15 @@ crossCorrelateOverControl dur e1 e2 rnds =
                e1sim <- poissonMany (realToFrac e1s/durLength) durLength
                e2sim <- poissonMany (realToFrac e2s/durLength) durLength          
                return $ crossCorrelateOver [durOver] (shift tStart $ lstToEvs e1sim) (shift tStart $ lstToEvs e2sim)    
-    in concat $ take 1000 $ runSampler rnds oneSim
+    in do concat `fmap` (sampleN 1000  oneSim)               
+          
 
 testSampler rnds = concat $ take 10 $ runSampler rnds $ do 
   u <- unitSample
   if u >0.5
      then return []
      else return [()]
--}
+
 lstToEvs :: [Double] -> [Event ()]
 lstToEvs occs = zip occs $ repeat ()
 

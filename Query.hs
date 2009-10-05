@@ -18,7 +18,7 @@ import Control.Monad
 import Control.Monad.State.Lazy
 import System.Directory
 import System.Time
-import System.Random
+import System.Random.Mersenne
 import Data.Char
 
 --import System.Info.MAC as MAC
@@ -192,7 +192,9 @@ inLastSession sma = do
 
 inSession :: Session -> StateT QState IO a -> IO a
 inSession s sma =  do args <- getArgs
-                      fst `fmap`  (runStateT sma $ QState s 0 0 True args Nothing)
+                      gen <- getStdGen
+                      rnds <- randoms gen
+                      fst `fmap`  (runStateT sma $ QState s 0 0 True args Nothing rnds)
 
 inSessionFromArgs sma = do allargs <- getArgs
                            let (opts, nm:args) = partition beginsWithHyphen allargs
