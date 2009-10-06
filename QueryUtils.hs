@@ -100,6 +100,30 @@ countDuring durs evs = map (freqDuring' evs) durs
               ((t1, t2), (durtag, 
                         (realToFrac . length $ during [dur] evs)))
 
+centreOfMass :: [Signal Double] -> [Event ()]
+centreOfMass = map f 
+    where f s@(Signal t1 t2 dt _) = let vls = map square $ sigToList s
+                                        tms = sigTimePoints s
+                                    in ((sum $ zipWith (*) vls tms) / sum vls, ())
+
+--square x = x*x
+
+
+sigTimePoints (Signal t1 t2 dt _) = let n = (t2-t1)/dt
+                                    in map ((+t1) . (*dt)) [0..n-1]
+
+                                   
+upsample n = map (upsample' n)
+upsample' n s@(Signal t1 t2 dt sf) = let newdt = (dt/(realToFrac n))
+                                     in Signal t1 t2 newdt $ \p -> interp s ((realToFrac p)*newdt+t1) 
+
+
+roundToFrac dt t = (realToFrac $ round $ t/dt)*dt
+
+unjitter = map f
+    where f (Signal t1 t2 dt sf) =  let off = (roundToFrac dt t1) - t1
+                                    in Signal (t1+off) (t2+off) dt sf
+triSig = [listToSig 0.1 (0.01) [0..9]]
 
 around :: [Event b] -> [Signal a] -> [Signal a]
 around evs sigs = catMaybes $ map (around' sigs) evs
@@ -113,6 +137,10 @@ align evs sigs = map align' sigs
     where align' sig@(Signal t1 t2 dt sf) = let (ts,_) = minimumBy (comparing ((distFrom t1) . fst)) evs
                                             in shift (negate ts) sig
           distFrom x y = abs(x-y)
+
+alignBy :: ([Signal a] -> [Event b]) -> [Signal a] -> [Signal a]
+alignBy f = concatMap g
+    where g sig = align (f [sig]) [sig]
 
 inout :: [Event a] -> [Event b] -> [Duration (a,b)]
 inout [] _ = []
@@ -145,6 +173,9 @@ sigStat' (F op init c cmb) sig@(Signal t1 t2 dt sf) =
              go 0 x = x
              go !n !x = go (n-1) (x `op` sf (npts-n))
 
+
+catevents :: [Event a] -> [Event a] -> [Event a]
+catevents e1s = sortBy (comparing fst) . (e1s++)
        
 
 spreadOut :: (Ord a, Bounded a, Num a, Fractional a) => [Signal a] -> [Signal a]
@@ -361,6 +392,10 @@ closest x y z = if dist z x < dist x y
                    then z
                    else y
         
+isSorted (y:(r@(z:xs))) | y>z = False
+                        | otherwise = isSorted r
+isSorted (y:[]) = True
+
 --nearestTo :: Double -> [Double] -> Double
 nearestTo :: (Ord t, Num t) => t -> [t] -> t
 nearestTo x (y:(r@(z:xs))) | y<x &&z>=x = closest x y z
@@ -370,4 +405,4 @@ nearestTo x (y:[]) = y
 
 nearestToEach :: [Event a] -> [Event b] -> [Event Double]
 nearestToEach mainEv otherEv = map f mainEv
-    where f (t,_) = (t, nearestTo t $ map fst otherEv) 
+    where f (t,_) = (t, dist t $ nearestTo t $ map fst otherEv) 

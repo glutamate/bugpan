@@ -62,10 +62,10 @@ dispatch ("analyse":sess:_) = do
   inSessionNamed sess $ do
     scratch <- durations "scratch" ()
     --flexSpikes <- events "flex1Spikes" ()
-    flexSpikes <- events "flex1Spikes" ()
-    ci1Spikes <- events "ci1Spikes" ()
-    seti <- events "setiSpikes" ()
-    feti <- events "fetiSpikes" ()
+    flexSpikes <- sortBy (comparing fst) `fmap` events "flex1Spikes" ()
+    ci1Spikes <- sortBy (comparing fst) `fmap` events "ci1Spikes" ()
+    seti <- sortBy (comparing fst) `fmap` events "setiSpikes" ()
+    feti <- sortBy (comparing fst) `fmap` events "fetiSpikes" ()
     flexor1 <- signalsDirect "flexor1"
     ci1 <- signalsDirect "ci1"
     depol <- durations "depol" (1::Double)
@@ -90,9 +90,9 @@ dispatch ("analyse":sess:_) = do
     
     --io $ gnuplotToPDF ("cc_ci_seti_"++sess++".ps") $ ("cc ci1Spikes seti "++sess, 
     --                          Histo 100 $  (>(-1)) // (<2) //  crossCorrelateOver scratch ci1Spikes seti)
-    io $ gnuplotToPDF ("cc_"++sess++".ps") $ (("cyc1 d0 ci1 seti "++sess,  ccseti) :||: ("cyc1 d0 ci1 feti "++sess,  ccfeti))
+    {-io $ gnuplotToPDF ("cc_"++sess++".ps") $ (("ci1 seti "++sess,  ccseti) :||: ("ci1 feti "++sess,  ccfeti))
                                                 :==:
-                                                (("cyc1 d0 ci1 flexor "++sess, ccflex) :||: ("cyc1 d0 seti flexor "++sess, ccflexseti))
+                                                (("ci1 flexor "++sess, ccflex) :||: ("seti flexor "++sess, ccflexseti))-}
     --io $ gnuplotToPDF ("cc_ci_feti_"++sess++".ps") $ ("cc ci1 feti "++sess,  ccfeti)
     --io $ gnuplotToPDF ("cc_ci_flex_"++sess++".ps") $ ("cc ci1 flexor "++sess, ccflex)
     --io $ gnuplotToPDF ("cc_seti_flex"++sess++".ps") $ ("cc seti flexor "++sess, ccflexseti)
@@ -109,7 +109,23 @@ dispatch ("analyse":sess:_) = do
     --ask $ plot [normSigToArea $ histSigBZ bz ctrl]
     --ask $ plot [normSigToArea (histSigBZ bz (crossCorrelateOver scratch ci1Spikes seti))]
     --ask $ plot [normSigToArea (histSigBZ bz (crossCorrelateOver scratch ci1Spikes seti)) - (normSigToArea $ histSigBZ bz ctrl)]
+    --io $ print $ (isSorted ci1Spikes
+    --io $ print $ isSorted seti
+    --io $ print $ map (round . fst) ci1Spikes
+    let nearSeti = (<0.5)//(nearestToEach ci1Spikes seti)
+    let nearFlex = (<0.5)//(nearestToEach ci1Spikes flexSpikes)
+    let clos = map closestSpike $ zip (nearSeti) (nearFlex)
+
+    io $ putStrLn $ sess++" ci1-seti distances "++(show .headTag $ (meanSEMF `runStatsOn` nearSeti))
+    io $ putStrLn $ sess++" ci1-flexor distances "++(show .headTag $ (meanSEMF `runStatsOn` nearFlex))
+    io $ putStrLn $ sess++" 0: seti closest, 1: flex closest -> "++(show $ meanF `runStat` clos)
+    io $ putStrLn ""
+    --io $ gnuplotOnScreen $ [histSigBZ bz nearSeti] :+: [histSigBZ bz nearFlex]
     return () 
+
+headTag = snd . head
+
+closestSpike ((_,s0),(_,s1)) = if s0<s1 then 0 else 1
 
 --rHisto :: MonadIO m => [Double] -> m ()
  
@@ -230,10 +246,6 @@ impLBR fnm = do
   
 
   return (take nangles angles, take nspikes spikes, take nmyst myst, n3, n4)
-
-listToSig dt t1 lst = let arr = SV.pack lst
-                          t2 = (realToFrac $ length lst) *dt +t1
-                      in Signal t1 t2 dt $ \pt->arr `SV.index` pt
 
 readMatrix :: Read a => [String] -> ([[a]], Int, [String])
 readMatrix rest = 

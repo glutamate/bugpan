@@ -288,6 +288,15 @@ instance Show a =>  Show (Signal a) where
 readSig :: Signal a -> RealNum -> a
 (Signal t1 t2 dt sf) `readSig` t = sf . round $ (t-t1 )/dt
 
+--correct?
+interp :: Signal Double -> Double -> Double
+interp (Signal t1 t2 dt sf) t = let pdn = floor $ (t-t1 )/dt
+                                    pup = pdn +1
+                                    prop = (t-t1)/dt
+                                    slope = (sf pup  - sf pdn)
+                                in (sf pdn  + slope * prop)/2
+
+
 instance Reify a => Reify (Signal a) where
     reify (SigV t1 t2 dt sf) = Just $ Signal t1 t2 dt $ \ix-> unsafeReify (sf ix)
     pack (Signal t1 t2 dt sf) = SigV t1 t2 dt $ \ix->pack (sf ix)
@@ -320,6 +329,12 @@ combineToLongestSig op s1@(Signal t1 t2 dt sf)
     in Signal t1 t2 dt $ \p-> if p > p1 && p < p2 
                                  then op (sf p) (sf' $ p-shift1)
                                  else sf p
+
+listToSig dt t1 lst = let arr = SV.pack lst
+                          t2 = (realToFrac $ length lst) *dt +t1
+                      in Signal t1 t2 dt $ \pt->arr `SV.index` pt
+
+
 
 instance Functor Signal where
     fmap f (Signal t1 t2 dt sf) = 

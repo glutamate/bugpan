@@ -35,16 +35,28 @@ atLeast x = max x
 
 --ask q = liftIO$ qReply q []
 
+autoSpikes sigNm = do
+  sigs <- take 10 `fmap` signalsDirect sigNm 
+  let sd = stdDevF `sigStat` sigs
+  let putatives = crossesDown (((*5) . negate) <$$> sd) sigs `catevents` 
+                  crossesUp ((*5) <$$> sd) sigs
+  let waveforms = limitSigs' (-0.001) 0.001 $ around putatives sigs
+  let alignWaveforms = alignBy (centreOfMass . (limitSigs (-0.0005) 0.0005)) waveforms
+  let w1 = take 1 waveforms
+  ask $ plot $ take 10 alignWaveforms
+  ask $ plot $ take 10 $ upsample 10 $ alignWaveforms
+  return ()
 
-spikeDetectIO = do
+spikeDetectIO = do 
   (snm:overDurNm:_) <-getArgs
   inApproxSession snm $ do
                   openReplies
                   initUserInput
                   plotSize 490 329
                   overDur <- unitDurations overDurNm
-                  normV <- signalsDirect "normV"
-                  spikeDetect [overDur] normV []
+                  autoSpikes "normV"
+                  --normV <- signalsDirect "normV"
+                  --spikeDetect [overDur] normV []
 
 
 spikeDetect overs normV spks = do

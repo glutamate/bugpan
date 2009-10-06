@@ -104,7 +104,7 @@ instance PlotWithGnuplot [Signal Double] where
            writeSig fnm s
            return $ PL (concat ["\"", fnm, "\" binary format=\"%float64\" using ($0*",
                                     show dt, "+", show t1, "):1"]) 
-                       (show t1++"->"++show t2) 
+                       "" -- (show t1++"->"++show t2) 
                        "lines"
                        (removeFile fnm)
           
