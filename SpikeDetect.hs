@@ -38,13 +38,14 @@ atLeast x = max x
 autoSpikes sigNm = do
   sigs <- take 10 `fmap` signalsDirect sigNm 
   let sd = stdDevF `sigStat` sigs
-  let putatives = crossesDown (((*5) . negate) <$$> sd) sigs `catevents` 
-                  crossesUp ((*5) <$$> sd) sigs
-  let waveforms = limitSigs' (-0.001) 0.001 $ around putatives sigs
-  let alignWaveforms = alignBy (centreOfMass . (limitSigs (-0.0005) 0.0005)) waveforms
+  let sigu = upsample 5 sigs
+  let putatives = crossesDown (((*5) . negate) <$$> sd) sigu `catevents` 
+                  crossesUp ((*5) <$$> sd) sigu
+  let waveforms = limitSigs' (-0.001) 0.001 $ around putatives $ sigu
+  let alignWaveforms = alignBy (centreOfMass . (square <$$>) . (limitSigs (-0.0005) 0.0005)) waveforms
   let w1 = take 1 waveforms
-  ask $ plot $ take 10 alignWaveforms
-  ask $ plot $ take 10 $ upsample 10 $ alignWaveforms
+  ask $ plot $ take 1 $ limitSigs' 0 0.002 sigu
+  --ask $ plot $ take 10 alignWaveforms
   return ()
 
 spikeDetectIO = do 

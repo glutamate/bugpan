@@ -269,7 +269,7 @@ loadOneSigSV h = do
   t2 <- binGet h 8
   dt <- binGet h 8
   --print (t1,t2,dt)
-  arr <- SV.hGet h (round $ (t2-t1)/dt)
+  arr <- SV.hGet h (floor $ (t2-t1)/dt)
   return $ Signal t1 t2 dt $ \p-> arr `SV.index` p
 
 readN'TT h = do 

@@ -102,7 +102,7 @@ countDuring durs evs = map (freqDuring' evs) durs
 
 centreOfMass :: [Signal Double] -> [Event ()]
 centreOfMass = map f 
-    where f s@(Signal t1 t2 dt _) = let vls = map square $ sigToList s
+    where f s@(Signal t1 t2 dt _) = let vls =sigToList s
                                         tms = sigTimePoints s
                                     in ((sum $ zipWith (*) vls tms) / sum vls, ())
 
@@ -114,8 +114,9 @@ sigTimePoints (Signal t1 t2 dt _) = let n = (t2-t1)/dt
 
                                    
 upsample n = map (upsample' n)
-upsample' n s@(Signal t1 t2 dt sf) = let newdt = (dt/(realToFrac n))
-                                     in Signal t1 t2 newdt $ \p -> interp s ((realToFrac p)*newdt+t1) 
+upsample' n s@(Signal t1 t2 dt sf) = 
+    let newdt = (dt/(realToFrac n))
+    in Signal t1 t2 newdt $ \p -> interp s ((realToFrac p)*newdt+t1) 
 
 
 roundToFrac dt t = (realToFrac $ round $ t/dt)*dt
@@ -123,7 +124,8 @@ roundToFrac dt t = (realToFrac $ round $ t/dt)*dt
 unjitter = map f
     where f (Signal t1 t2 dt sf) =  let off = (roundToFrac dt t1) - t1
                                     in Signal (t1+off) (t2+off) dt sf
-triSig = [listToSig 0.1 (0.01) [0..9]]
+triSig = [listToSig 0.1 (0.0) [0..9]]
+htrisig = head triSig
 
 around :: [Event b] -> [Signal a] -> [Signal a]
 around evs sigs = catMaybes $ map (around' sigs) evs
@@ -134,8 +136,9 @@ around evs sigs = catMaybes $ map (around' sigs) evs
 
 align :: [Event b] -> [Signal a] -> [Signal a]
 align evs sigs = map align' sigs
-    where align' sig@(Signal t1 t2 dt sf) = let (ts,_) = minimumBy (comparing ((distFrom t1) . fst)) evs
-                                            in shift (negate ts) sig
+    where align' sig@(Signal t1 t2 dt sf) = 
+              let (ts,_) = minimumBy (comparing ((distFrom t1) . fst)) evs
+              in shift (negate ts) sig
           distFrom x y = abs(x-y)
 
 alignBy :: ([Signal a] -> [Event b]) -> [Signal a] -> [Signal a]

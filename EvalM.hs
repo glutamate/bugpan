@@ -288,13 +288,18 @@ instance Show a =>  Show (Signal a) where
 readSig :: Signal a -> RealNum -> a
 (Signal t1 t2 dt sf) `readSig` t = sf . round $ (t-t1 )/dt
 
+floorToFrac dt t = (realToFrac $ floor $ t/dt)*dt
+
+
 --correct?
 interp :: Signal Double -> Double -> Double
-interp (Signal t1 t2 dt sf) t = let pdn = floor $ (t-t1 )/dt
-                                    pup = pdn +1
-                                    prop = (t-t1)/dt
-                                    slope = (sf pup  - sf pdn)
-                                in (sf pdn  + slope * prop)/2
+interp (Signal t1 t2 dt sf) t | t<t2-dt = 
+                                  let pdn = floor $ (t-t1 )/dt
+                                      pup = pdn +1
+                                      prop = (t-floorToFrac dt t) ---(t-t1)/dt
+                                      slope = (sf pup  - sf pdn)/dt
+                                  in sf pdn  + slope * prop
+                                  | otherwise = sf $ (round $ (t2-t1 )/dt-1)
 
 
 instance Reify a => Reify (Signal a) where
