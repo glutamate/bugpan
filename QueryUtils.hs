@@ -118,6 +118,11 @@ upsample' n s@(Signal t1 t2 dt sf) =
     let newdt = (dt/(realToFrac n))
     in Signal t1 t2 newdt $ \p -> interp s ((realToFrac p)*newdt+t1) 
 
+downsample n = map (downsample' n)
+downsample' n s@(Signal t1 t2 dt sf) = 
+    let newdt = (dt*(realToFrac n))
+    in Signal t1 t2 newdt $ \p -> interp s ((realToFrac p)*newdt+t1) 
+
 
 roundToFrac dt t = (realToFrac $ round $ t/dt)*dt
 

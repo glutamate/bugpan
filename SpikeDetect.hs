@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE BangPatterns, ScopedTypeVariables #-}
 
 module Main where
 
@@ -28,6 +28,9 @@ import Data.List hiding (groupBy)
 import Data.Ord
 import System.Environment
 import EvalM
+import Numeric.LinearAlgebra
+import Foreign.Storable
+import Math.Probably.KMeans 
 
 main = spikeDetectIO
 
@@ -36,8 +39,34 @@ atLeast x = max x
 
 --ask q = liftIO$ qReply q []
 
-sinSig :: Signal Double
-sinSig = listToSig 0.1 0 $ map sin $ [0, 0.4..4]
+--sinSig :: Signal Double
+--sinSig = listToSig 0.1 0 $ map sin $ [0, 0.4..4]
+
+mean x = sumColumns x / fromIntegral (rows x)
+    where sumColumns m = constant 1 (rows m) <> m
+
+
+cov x = (trans xc <> xc) / fromIntegral (rows x -1)
+    where xc = center x
+          center m = m - constant 1 (rows m) `outer` mean m
+
+zipWithMap :: (a->b) -> [a] -> [(a,b)]
+zipWithMap f xs = map (\x->(x, f x)) xs
+
+  {-let (m1::Matrix Double) = (2><2) [ 1, 1,
+                                     -2,4]
+  io $ print $ eig m1-}
+
+vecSubMean vec = let lst = toList vec
+                     mean = runStat meanF lst
+                     submean x = x-mean
+                 in mapVector submean vec
+                 
+
+--runStatVec :: (Storable b) => Fold b c -> Vector b -> c
+--runStatVec (F f x c _) v = c . (foldVector f x)
+
+listToPoint (x:y:_) = (x,y)
 
 autoSpikes sigNm = do
   sigs <- take 10 `fmap` signalsDirect sigNm 
@@ -46,15 +75,29 @@ autoSpikes sigNm = do
   let putatives = crossesDown (((*5) . negate) <$$> sd) sigs `catevents` 
                   crossesUp ((*5) <$$> sd) sigs
   let waveforms = limitSigs' (-0.001) 0.001 $ around putatives $ sigs
-  let alignWaveforms = alignBy (centreOfMass . (square <$$>) . (limitSigs (-0.0005) 0.0005)) waveforms
-  let w1 = map (restrictSig 0 0.002) $ take 1 sigs
- -- ask $ plot $ take 1 $ limitSigs' 0 0.002 sigu
-  --ask $ plot $ take 10 $ upsample 5 alignWaveforms 
-  --ask $ plot $ take 10 alignWaveforms 
-  --ask $ plot $ [sinSig] :+: ("up", upsample 2 [sinSig])
-  ask $ plot $ w1 :+: ("interp", FunSeg 1242.254437 (1242.254437+0.002) (interp (head w1)))
-  ask w1
+  let alignWaveforms = downsample 10 $ unjitter $ upsample 10 $ alignBy (centreOfMass . (square <$$>) . (limitSigs (-0.0005) 0.0005)) waveforms 
+  --PCA
+  let dataMatrix = fromLists $ map sigToList $ take 1000 $ alignWaveforms
+  let datMatSubMeans = fromColumns $ map vecSubMean $ toColumns dataMatrix
+  let covDM = cov datMatSubMeans
+  let (eigvals, eigvecs) = eig covDM
+  let evs = take 3 $ map snd $ reverse $ sortBy (comparing fst) $ zip (fmap realPart $ toList eigvals) [0..]
+  let featureVector = fromColumns $ map (mapVector realPart . ((toColumns eigvecs)!!)) evs
+  let finalData = trans featureVector <> trans datMatSubMeans
+  let pts =  map toList $ toColumns $ finalData
+  let clustered = map (map (listToPoint . tail)) $ kmeansOn (tail) 4 $  zipWith (:) [0..] pts
+  ask $ plot $ map listToPoint pts
+  ask $ plot $ clustered!!0 :+: clustered!!1 :+: clustered!!2 :+: clustered!!3
+  ask $ plot $ take 1000 $ alignWaveforms
+  --io $ print $ (rows finalData, cols finalData)
+
+  --covariance matrix
+
+
+  --ask $ plot $ take 100 $ alignWaveforms 
+  --io $ print $ dataMatrix
   return ()
+
 
 spikeDetectIO = do 
   (snm:overDurNm:_) <-getArgs
