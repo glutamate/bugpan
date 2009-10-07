@@ -27,6 +27,7 @@ import QueryPlots
 import Data.List hiding (groupBy)
 import Data.Ord
 import System.Environment
+import EvalM
 
 main = spikeDetectIO
 
@@ -35,17 +36,24 @@ atLeast x = max x
 
 --ask q = liftIO$ qReply q []
 
+sinSig :: Signal Double
+sinSig = listToSig 0.1 0 $ map sin $ [0, 0.4..4]
+
 autoSpikes sigNm = do
   sigs <- take 10 `fmap` signalsDirect sigNm 
   let sd = stdDevF `sigStat` sigs
-  let sigu = upsample 5 sigs
-  let putatives = crossesDown (((*5) . negate) <$$> sd) sigu `catevents` 
-                  crossesUp ((*5) <$$> sd) sigu
-  let waveforms = limitSigs' (-0.001) 0.001 $ around putatives $ sigu
+  --let sigu = upsample 5 sigs
+  let putatives = crossesDown (((*5) . negate) <$$> sd) sigs `catevents` 
+                  crossesUp ((*5) <$$> sd) sigs
+  let waveforms = limitSigs' (-0.001) 0.001 $ around putatives $ sigs
   let alignWaveforms = alignBy (centreOfMass . (square <$$>) . (limitSigs (-0.0005) 0.0005)) waveforms
-  let w1 = take 1 waveforms
-  ask $ plot $ take 1 $ limitSigs' 0 0.002 sigu
-  --ask $ plot $ take 10 alignWaveforms
+  let w1 = map (restrictSig 0 0.002) $ take 1 sigs
+ -- ask $ plot $ take 1 $ limitSigs' 0 0.002 sigu
+  --ask $ plot $ take 10 $ upsample 5 alignWaveforms 
+  --ask $ plot $ take 10 alignWaveforms 
+  --ask $ plot $ [sinSig] :+: ("up", upsample 2 [sinSig])
+  ask $ plot $ w1 :+: ("interp", FunSeg 1242.254437 (1242.254437+0.002) (interp (head w1)))
+  ask w1
   return ()
 
 spikeDetectIO = do 

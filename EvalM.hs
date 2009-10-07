@@ -293,13 +293,13 @@ floorToFrac dt t = (realToFrac $ floor $ t/dt)*dt
 
 --correct?
 interp :: Signal Double -> Double -> Double
-interp (Signal t1 t2 dt sf) t | t<t2-dt = 
+interp (Signal t1 t2 dt sf) t | t<t2 = 
                                   let pdn = floor $ (t-t1 )/dt
                                       pup = pdn +1
-                                      prop = (t-floorToFrac dt t) ---(t-t1)/dt
+                                      prop = ((t-t1)-floorToFrac dt (t-t1)) ---(t-t1)/dt
                                       slope = (sf pup  - sf pdn)/dt
                                   in sf pdn  + slope * prop
-                                  | otherwise = sf $ (round $ (t2-t1 )/dt-1)
+                              | otherwise = sf $ (round $ (t2-t1 )/dt-1)
 
 
 instance Reify a => Reify (Signal a) where
@@ -313,6 +313,15 @@ limitSig lo hi (Signal t1 t2 dt sf) = let t1' = max t1 lo
                                           t2' = min hi t2
                                           pshift = round $ (t1' - t1)/dt
                                       in Signal t1' t2' dt $ \p-> sf $ p+pshift
+
+restrictSig lo hi (Signal t1 t2 dt sf) = let t1' = t1+lo
+                                             t2' = t1+hi
+                                             pshift = round $ (t1' - t1)/dt
+                                         in Signal t1' t2' dt $ \p-> sf $ p+pshift
+
+align0 (Signal t1 t2 dt sf) = Signal 0 (t2-t1) dt sf
+
+
 combineSigs op (Signal t1 t2 dt sf) (Signal t1' t2' dt' sf')  = -- | dt == dt'
     let t1f = max t1 t1'
         t2f = min t2 t2'
@@ -336,7 +345,7 @@ combineToLongestSig op s1@(Signal t1 t2 dt sf)
                                  else sf p
 
 listToSig dt t1 lst = let arr = SV.pack lst
-                          t2 = (realToFrac $ length lst) *dt +t1
+                          t2 = (realToFrac $ length lst-1) *dt +t1
                       in Signal t1 t2 dt $ \pt->arr `SV.index` pt
 
 
