@@ -52,7 +52,7 @@ double = undefined
 
 
 --change these to loadUntyped
-signals :: Reify a => String -> a-> StateT QState IO [Signal a]
+signals :: (MonadIO m, Reify a) => String -> a-> StateT QState m [Signal a]
 signals nm _ = do
   Session bdir t0 <- getSession
   --liftIO . print $ bdir++"/signals/"++nm
@@ -62,7 +62,7 @@ signals nm _ = do
           return . catMaybes $ map reify $ concat sigs) 
       (return [])
 
-signalsDirect :: String -> StateT QState IO [Signal Double]
+signalsDirect :: MonadIO m => String -> StateT QState m [Signal Double]
 signalsDirect nm = do
   Session bdir t0 <- getSession
   --liftIO . print $ bdir++"/signals/"++nm
@@ -73,7 +73,7 @@ signalsDirect nm = do
       (return [])
 
 
-events :: Reify (Event a) => String -> a-> StateT QState IO [Event a]
+events :: (MonadIO m, Reify (Event a)) => String -> a-> StateT QState m [Event a]
 events nm _ = do
   Session bdir t0 <- getSession
   ifM (liftIO (doesDirectoryExist (bdir++"/events/"++nm)))
@@ -82,7 +82,7 @@ events nm _ = do
           return . catMaybes $ map reify $ concat utevs) 
       (return [])
 
-eventsDirect :: LoadDirectly [(Double,a)] => String -> a-> StateT QState IO [Event a]
+eventsDirect :: (MonadIO m, LoadDirectly [(Double,a)]) => String -> a-> StateT QState m [Event a]
 eventsDirect nm _ = do
   Session bdir t0 <- getSession
   --liftIO . print $ bdir++"/signals/"++nm
@@ -92,7 +92,7 @@ eventsDirect nm _ = do
           return $ concat sigs) 
       (return [])
 
-durations :: Reify (Duration a) => String -> a-> StateT QState IO [Duration a]
+durations :: (MonadIO m, Reify (Duration a)) => String -> a-> StateT QState m [Duration a]
 durations nm _ = do
   Session bdir t0 <- getSession
   ifM (liftIO (doesDirectoryExist (bdir++"/durations/"++nm)))
@@ -101,7 +101,7 @@ durations nm _ = do
           return . catMaybes $ map reify $ concat eps)
       (return [])            
 
-unitDurations :: String -> StateT QState IO [Duration ()]
+unitDurations :: MonadIO m => String -> StateT QState m [Duration ()]
 unitDurations nm = do
   Session bdir t0 <- getSession
   ifM (liftIO (doesDirectoryExist (bdir++"/durations/"++nm)))
@@ -111,7 +111,7 @@ unitDurations nm = do
       (return [])            
       where reifyIt (PairV (PairV t1 t2) v) = ((unsafeReify t1, unsafeReify t2), ())
 
-durationsDirect :: LoadDirectly [(Double,a)] => String -> a-> StateT QState IO [Event a]
+durationsDirect :: (MonadIO m, LoadDirectly [(Double,a)]) => String -> a-> StateT QState m [Event a]
 durationsDirect nm _ = do
   Session bdir t0 <- getSession
   --liftIO . print $ bdir++"/signals/"++nm
@@ -123,10 +123,10 @@ durationsDirect nm _ = do
 
 data StoreMode = OverWrite | NoOverWrite | Append
 
-storeAs :: Reify a => String -> [a] -> StateT QState IO [a]
+storeAs :: MonadIO m => Reify a => String -> [a] -> StateT QState m [a]
 storeAs = storeAs' NoOverWrite
 
-storeAsOvwrt :: Reify a => String -> [a] -> StateT QState IO [a]
+storeAsOvwrt :: (MonadIO m, Reify a) => String -> [a] -> StateT QState m [a]
 storeAsOvwrt = storeAs' OverWrite
 
 storeAsAppend = storeAs' Append
@@ -165,7 +165,7 @@ deleteValue nm = do Session bdir t0 <- getSession
                                   (liftIO $ removeDirectoryRecursive $ bdir./kind./nm)
 
 
-exists :: String -> StateT QState IO Bool
+exists :: MonadIO m =>String -> StateT QState m Bool
 exists  nm =   do   Session bdir t0 <- getSession
                     or `fmap` sequence [liftIO $ doesDirectoryExist $ bdir ./ "signals" ./ nm,
                                         liftIO $ doesDirectoryExist $ bdir ./ "events" ./ nm,
@@ -184,54 +184,54 @@ x @= y = StoreAs x y False
 x @=! y = StoreAs x y True
 
 
-inLastSession :: StateT QState IO a -> IO a
+--inLastSession :: MonadIO m => StateT QState IO a -> IO a
 inLastSession sma = do
-  s <- lastSession "/var/bugpan/sessions/"
+  s <- liftIO $ lastSession "/var/bugpan/sessions/"
   inSession s sma
   --fst `fmap`  (runStateT sma $ QState s 0 0 True)
 
-inSession :: Session -> StateT QState IO a -> IO a
-inSession s sma =  do args <- getArgs
-                      gen <- getStdGen
-                      rnds <- randoms gen
+inSession :: (MonadIO m, Functor m) => Session -> StateT QState m a -> m a
+inSession s sma =  do args <- liftIO $ getArgs
+                      gen <- liftIO $ getStdGen
+                      rnds <- liftIO $ randoms gen
                       fst `fmap`  (runStateT sma $ QState s 0 0 True args Nothing rnds)
 
-inSessionFromArgs sma = do allargs <- getArgs
+inSessionFromArgs sma = do allargs <- liftIO $ getArgs
                            let (opts, nm:args) = partition beginsWithHyphen allargs
-                           sess <- loadApproxSession "/var/bugpan/sessions/" nm
+                           sess <- liftIO $ loadApproxSession "/var/bugpan/sessions/" nm
                            fst `fmap`  (runStateT sma $ QState sess 0 0 True (opts++args) Nothing)
 
 
-inNewSession :: StateT QState IO a -> IO a
-inNewSession sma = do sess <- newSession "/var/bugpan/sessions/"
+--inNewSession :: StateT QState IO a -> IO a
+inNewSession sma = do sess <- liftIO $ newSession "/var/bugpan/sessions/"
                       inSession sess sma
 
-inNewSessionWith :: String -> ClockTime -> StateT QState IO a -> IO a
-inNewSessionWith nm t0 sma = do sess <- createSession "/var/bugpan/sessions/" t0 nm
+--inNewSessionWith :: String -> ClockTime -> StateT QState IO a -> IO a
+inNewSessionWith nm t0 sma = do sess <- liftIO $ createSession "/var/bugpan/sessions/" t0 nm
                                 inSession sess sma
 
 
-inTemporarySession sma = do sess <- newSession "/var/bugpan/sessions/"
+inTemporarySession sma = do sess <- liftIO $ newSession "/var/bugpan/sessions/"
                             inSession sess sma
-                            deleteSession sess
+                            liftIO $ deleteSession sess
 
-inSessionNamed :: String -> StateT QState IO a -> IO a
-inSessionNamed nm sma = do sess <- loadExactSession $ "/var/bugpan/sessions/"++nm
+--inSessionNamed :: String -> StateT QState IO a -> IO a
+inSessionNamed nm sma = do sess <- liftIO $ loadExactSession $ "/var/bugpan/sessions/"++nm
                            inSession sess sma
 
 
-inApproxSession :: String -> StateT QState IO a -> IO a
-inApproxSession nm sma = do sess <- loadApproxSession "/var/bugpan/sessions/" nm
+--inApproxSession :: String -> StateT QState IO a -> IO a
+inApproxSession nm sma = do sess <- liftIO $ loadApproxSession "/var/bugpan/sessions/" nm
                             inSession sess sma
 
-inEverySession :: StateT QState IO a -> IO [a]
+--inEverySession :: StateT QState IO a -> IO [a]
 inEverySession sma = do
-  sessNms <- getSessionInRootDir "/var/bugpan/sessions/"
-  sessns <- mapM (loadExactSession . ("/var/bugpan/sessions/"++)) sessNms
+  sessNms <- liftIO $ getSessionInRootDir "/var/bugpan/sessions/"
+  sessns <- liftIO $ mapM (loadExactSession . ("/var/bugpan/sessions/"++)) sessNms
   forM sessns $ \s -> inSession s sma
 
 
-sessionTmax  ::  StateT QState IO RealNum
+--sessionTmax  ::  StateT QState IO RealNum
 sessionTmax  = do
   tstop <- events "tStop" double
   case tstop of
@@ -254,7 +254,7 @@ tst1 = do
 
 io = liftIO 
 
-undefinedPerformQuery :: StateT QState IO a -> a
+undefinedPerformQuery :: MonadIO m => StateT QState m a -> a
 undefinedPerformQuery = error $ "undefinedPerformQuery"
 
 initUserInput = liftIO $ do --hSetBuffering stdin NoBuffering 

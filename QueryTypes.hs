@@ -218,7 +218,7 @@ individually = runListT
 eachOf :: Monad m => [a] -> ListT m a
 eachOf xs = ListT . return $ xs
 
-ask :: QueryResult a => a -> StateT QState IO ()
+ask :: (QueryResult a, MonadIO m) => a -> StateT QState m ()
 ask qx = do
   x <- qResThroughSession qx
   args <- shArgs `fmap` get
@@ -235,7 +235,7 @@ data QueryResultBox = forall a. QueryResult a => QResBox a deriving Typeable
 
 class QueryResult a where
     qReply :: a -> [String] -> IO String
-    qResThroughSession :: a -> StateT QState IO a
+    qResThroughSession :: MonadIO m => a -> StateT QState m a
     qResThroughSession = return 
     qFilterSuccess :: a -> Bool
 

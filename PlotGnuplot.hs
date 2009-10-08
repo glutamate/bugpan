@@ -1,5 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, FlexibleInstances, ExistentialQuantification #-}
-{-# LANGUAGE TypeOperators, FlexibleContexts, GADTs #-}
+{-# LANGUAGE TypeOperators, FlexibleContexts, GADTs, ScopedTypeVariables #-}
 
 module PlotGnuplot where
 
@@ -94,6 +94,9 @@ instance PlotWithGnuplot Noplot where
 
 instance PlotWithGnuplot GnuplotBox where
     getGnuplotCmd (GnuplotBox x) = getGnuplotCmd x
+
+instance PlotWithGnuplot [GnuplotBox] where
+    getGnuplotCmd xs = concat `fmap` mapM getGnuplotCmd xs
 
 
 gnuplotOnScreen :: PlotWithGnuplot a => a -> IO ()
@@ -264,7 +267,15 @@ instance PlotWithGnuplot a => PlotWithGnuplot (String, a) where
       return $ map (\(r', plines) -> (r' ,map (addTitle title) plines)) pls
       where addTitle title (PL x _ y clean) = PL x title y clean
 
+newtype LabelConsecutively a = LabelConsecutively a
 
+instance PlotWithGnuplot a => PlotWithGnuplot (LabelConsecutively [a]) where
+    getGnuplotCmd (LabelConsecutively xs) = do
+      pls::[ GnuplotCmd] <- mapM (getGnuplotCmd) xs
+      return $ concatMap (\(rs,i)-> (addTitleMany (show i)) rs) $ zip pls [0..]
+      where addTitle title (PL x _ y clean) = PL x title y clean
+            addTitleMany :: String -> ( GnuplotCmd) -> ( GnuplotCmd)
+            addTitleMany title (cmd) = ( map (addTitle title) cmd)
 
 
 

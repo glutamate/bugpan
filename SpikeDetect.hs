@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns, ScopedTypeVariables #-}
+{-# LANGUAGE BangPatterns, ScopedTypeVariables, FlexibleContexts #-}
 
 module Main where
 
@@ -31,6 +31,7 @@ import EvalM
 import Numeric.LinearAlgebra
 import Foreign.Storable
 import Math.Probably.KMeans 
+import DeskWeb
 
 main = spikeDetectIO
 
@@ -42,13 +43,36 @@ atLeast x = max x
 --sinSig :: Signal Double
 --sinSig = listToSig 0.1 0 $ map sin $ [0, 0.4..4]
 
+--from hmatrix paper
+mean :: (Field t, Num (Vector t)) => Matrix t -> Vector t
 mean x = sumColumns x / fromIntegral (rows x)
     where sumColumns m = constant 1 (rows m) <> m
 
 
+cov :: (Field t, Num (Vector t)) => Matrix t -> Matrix t
 cov x = (trans xc <> xc) / fromIntegral (rows x -1)
     where xc = center x
           center m = m - constant 1 (rows m) `outer` mean m
+
+--bishop 2.43 (p 78)
+
+matToScalar :: Matrix Double -> Double
+matToScalar = head . head . toLists
+
+multiGauss :: (Vector Double, Matrix Double) -> Vector Double -> Double
+multiGauss (mu,sigma) x = let d = realToFrac $ length $ toList mu
+                              xMinusSigma = fromColumns [x-mu]
+                          in negate ((2*pi)**(d/2)) * negate (sqrt (det sigma)) * exp (negate . (/2) . matToScalar $ trans (xMinusSigma) <> inv sigma <> (xMinusSigma))
+
+calcMultiGauss :: [Vector Double] -> (Vector Double, Matrix Double)
+calcMultiGauss xs = (mean $ fromRows xs, cov $ fromRows xs)
+
+testObs :: [Vector Double]
+testObs = [fromList [1,20,30],                    
+           fromList [2,31,41],
+           fromList [3,32,45],
+           fromList [4,33,43]]
+
 
 zipWithMap :: (a->b) -> [a] -> [(a,b)]
 zipWithMap f xs = map (\x->(x, f x)) xs
@@ -71,6 +95,11 @@ listToPoint (x:y:_) = (x,y)
 indexMany :: [a] -> [Int] -> [a]
 indexMany = map . (!!) 
 
+minInterval :: Double -> [Event a] -> [Event a]
+minInterval t es@(e:[]) = es
+minInterval t ((t1,v1):res@((t2,v2):es)) | dist t1 t2 < t = minInterval t ((t1,v1):es)
+                                         | otherwise = (t1,v1) : minInterval t res
+
 autoSpikes sigNm = do
   sigs <- take 10 `fmap` signalsDirect sigNm 
   let sd = stdDevF `sigStat` sigs
@@ -79,7 +108,7 @@ autoSpikes sigNm = do
                   crossesUp ((*5) <$$> sd) sigs
   let waveforms = limitSigs' (-0.001) 0.001 $ around putatives $ sigs
   let alignWaveforms = take 1000 $ downsample 10 $ unjitter $ upsample 10 $ 
-                       alignBy (centreOfMass . (square <$$>) . (limitSigs (-0.0005) 0.0005)) $ 
+                       alignBy (centreOfMass . ((square . square) <$$>) . (limitSigs (-0.0005) 0.0005)) $ 
                        waveforms 
   --PCA
   let dataMatrix = fromLists $ map sigToList $ alignWaveforms
@@ -93,9 +122,11 @@ autoSpikes sigNm = do
   let clustered = kmeansOn (snd) 3 $  zip [0..] pts
   let clusteredvs = map (map (listToPoint . snd)) clustered
   let idxs = map (map fst) clustered
-  let sigsav = map (head . averageSigs . (alignWaveforms `indexMany`) . map round) idxs 
+  let sigsav = map (take 1 . averageSigs . (alignWaveforms `indexMany`)) idxs
+  let evss = map (minInterval 0.001 . (putatives `indexMany`)) idxs
+  --return (sigsav, evss)
   io $ print $ length sigsav
-  ask $ plot $ sigsav
+  ask $ plot $ LabelConsecutively sigsav
   --ask $ plot $ map listToPoint pts
   ask $ plot $ clusteredvs!!0 :+: clusteredvs!!1 :+: clusteredvs!!2 -- :+: clusteredvs!!3
   ask $ plot $ take 1000 $ alignWaveforms
@@ -110,8 +141,8 @@ autoSpikes sigNm = do
 
 
 spikeDetectIO = do 
-  (snm:overDurNm:_) <-getArgs
-  inApproxSession snm $ do
+  (snm:overDurNm:_) <-getArgs 
+  withDeskWeb 8001 $ inApproxSession snm $ do
                   openReplies
                   initUserInput
                   plotSize 490 329

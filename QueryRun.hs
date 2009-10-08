@@ -43,17 +43,17 @@ import Data.Monoid
 import Control.Applicative
 
 
-simulatedTime :: StateT QState IO ()
+simulatedTime :: MonadIO m => StateT QState m ()
 simulatedTime = do qs <- get
                    put $ qs { realTime = False }
 
-useRemoteDriver :: StateT QState IO ()
+useRemoteDriver :: MonadIO m => StateT QState m ()
 useRemoteDriver = do Session bdir _ <- getSession
                      qs <- get
                      put $ qs { remoteCmdFile = Just $ bdir ./ "program.bug", 
                                 realTime = True}
 
-isRemoteDriver :: StateT QState IO Bool
+isRemoteDriver :: MonadIO m => StateT QState m Bool
 isRemoteDriver = (isJust . remoteCmdFile) `fmap` get
 
 type CompiledToken = (String,Double,[(String, T)] )
@@ -61,7 +61,7 @@ type CompiledToken = (String,Double,[(String, T)] )
 compileFile fp params = do tok <- use fp
                            compile tok params
 
-compile :: [Declare] -> [(String, T)] -> StateT QState IO CompiledToken
+compile :: MonadIO m => [Declare] -> [(String, T)] -> StateT QState m CompiledToken
 compile ds params = do
   let trun = (lookupDefn "_tmax" ds >>= vToDbl) `orJust` 1
   let dt = (lookupDefn "_dt" ds >>= vToDbl) `orJust` 0.001
@@ -80,7 +80,7 @@ compile ds params = do
   --hash declares, look in cache
   return (sha, trun, params)
 
-invoke :: CompiledToken ->[(String,V)] -> StateT QState IO ()
+invoke :: MonadIO m => CompiledToken ->[(String,V)] -> StateT QState m ()
 invoke (sha, tmax,pars) vals= do
   s <- get
   t0 <- getTnow
@@ -94,17 +94,17 @@ invoke (sha, tmax,pars) vals= do
             lastTStop = t0 + tmax}
   return ()
 
-run :: [Declare] -> StateT QState IO ()
+run :: MonadIO m => [Declare] -> StateT QState m ()
 run ds = do
   t0 <- getTnow
   runFrom ds t0
 
-runFrom :: [Declare] -> Double -> StateT QState IO ()
+runFrom :: MonadIO m => [Declare] -> Double -> StateT QState m()
 runFrom ds t0 = ifM (isRemoteDriver)
                     (runFromRemotely ds t0)
                     (runFromLocally ds t0)
 
-runFromRemotely :: [Declare] -> Double -> StateT QState IO ()
+runFromRemotely :: MonadIO m => [Declare] -> Double -> StateT QState m ()
 runFromRemotely ds t0 = do 
   s <- get
   --liftIO $ print s
@@ -119,7 +119,7 @@ runFromRemotely ds t0 = do
   --TStop 
 
 
-runFromLocally :: [Declare] -> Double -> StateT QState IO ()
+runFromLocally :: MonadIO m => [Declare] -> Double -> StateT QState m ()
 runFromLocally ds t0 = do
   s <- get
   sess <- getSession
@@ -132,7 +132,7 @@ runFromLocally ds t0 = do
 
 data a := b = a := b
 
-inLast :: Reify a => (String := a) -> StateT QState IO ()
+inLast :: (MonadIO m , Reify a) => (String := a) -> StateT QState m ()
 inLast (nm := val) = do 
   Session bdir _ <- getSession
   running <- durations "running" ()
@@ -143,6 +143,7 @@ inLast (nm := val) = do
                                      saveVs fnm [pack ((t1,t2),val)]
                                      return ()
 
+getTnow :: MonadIO m  => StateT QState m Double
 getTnow = ifM (realTime `fmap` get)
               (do Session _ t0 <- getSession
                   tnow <- liftIO $ getClockTime
@@ -154,7 +155,7 @@ use fnm = liftIO $ fileDecls fnm []
 
 with = flip makeSubs
 
-pause :: Double -> StateT QState IO ()
+pause :: MonadIO m => Double -> StateT QState m ()
 pause secs= ifM (realTime `fmap` get)
                 (do s <- get
                     Session _ t0 <- getSession
@@ -190,7 +191,7 @@ pick f = do
 --determine :: String -> [(String, Range V)] -> Goal
 --determine = undefined
 
-determine :: CompiledToken -> [(String, Range V)] -> StateT QState IO ()
+determine :: MonadIO m => CompiledToken -> [(String, Range V)] -> StateT QState m ()
 determine tok@(sha, tmax,parlist) rngs = do
   vals <- forM rngs $ \(nm, rng) -> liftM ((,) nm) (liftIO $ pick rng)
   invoke tok vals

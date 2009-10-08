@@ -24,7 +24,6 @@ data Histo where -- GADT bec i don't know syntax for double existential (no long
     AsPdf :: String -> Histo -> Histo
 
 
-
 instance PlotWithGnuplot Histo where
     getGnuplotCmd (Histo _ []) = return []
     getGnuplotCmd (Histo n vls) = do
