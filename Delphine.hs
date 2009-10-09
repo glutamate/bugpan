@@ -48,6 +48,20 @@ manyDurs :: Int -> Double -> Double -> [Duration ()]
 manyDurs n tsep tmax= let durs = replicate n ((0,tmax),())
                       in map (\(oneDur,i)->shift (i*tsep) oneDur)  $ zip durs [0..]
  
+--extensor max 0.030 s
+--flexor max 0.025 s
+
+burst :: Double -> [Event a] -> [Duration ()]
+burst tmax es = burst' Nothing tmax es
+burst' :: Maybe Double -> Double -> [Event a] -> [Duration ()]
+burst' (Nothing) tmax es@(e:[]) = []
+burst' (Just tbstart) tmax ((t,v):[]) = [((tbstart, t), ())]
+burst' (Just tbstart) tmax ((t1,v1):res@((t2,v2):es)) 
+    | dist t1 t2 > tmax = ((tbstart, t1), ()) : burst' (Nothing) tmax res
+    | otherwise = burst' (Just tbstart) tmax res
+burst' (Nothing) tmax ((t1,v1):res@((t2,v2):es)) | dist t1 t2 < tmax = burst' (Just t1) tmax res
+                                                 | otherwise = burst' (Nothing) tmax res
+
 
 dispatch ("import":_) = do
   importAnimalIn "AM"
