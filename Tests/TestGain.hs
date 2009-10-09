@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -i.. #-}
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE BangPatterns, NoMonomorphismRestriction #-}
 
 module Main where
 

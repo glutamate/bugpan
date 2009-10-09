@@ -168,7 +168,17 @@ sigSegStat (F op init c _) (n1, n2) (Signal t1 t2 dt sf) = c $! go n1 init
     where go !n !x   | n>n2 = x
                      | otherwise = go (n+1) (x `op` (sf n))
 
+class HasTStart t where
+    gettStart :: t a -> Double
 
+instance HasTStart ((,) Double) where
+    gettStart = getTStart
+
+instance HasTStart ((,) (Double, Double)) where
+    gettStart = getTStart
+
+instance HasTStart Signal where
+    gettStart (Signal t1 _ _ _) = t1
 
 class Tagged t where
     getTag :: t a-> a
@@ -218,12 +228,30 @@ individually = runListT
 eachOf :: Monad m => [a] -> ListT m a
 eachOf xs = ListT . return $ xs
 
-ask :: (QueryResult a, MonadIO m) => a -> StateT QState m ()
+ask :: (QueryResult a, MonadIO m) => a -> StateT QState m String
 ask qx = do
   x <- qResThroughSession qx
   args <- shArgs `fmap` get
   str <- liftIO $ qReply x args
   liftIO $ putStrLn str
+  return str
+
+askPics :: (QueryResult a, MonadIO m) => a -> StateT QState m [String]
+askPics qx = do
+  x <- qResThroughSession qx
+  args <- shArgs `fmap` get
+  str <- liftIO $ qReply x args
+  --liftIO $ putStrLn str
+  conts <- liftIO $ readFile $ drop 7 str
+  return $ extractImages conts
+
+extractImages :: String -> [String]
+extractImages txt = catMaybes $ map f $ lines txt
+    where f s | "<img src=\"" `isPrefixOf` s = Just $ takeWhile (/='"') $ drop 10 s
+              | otherwise = Nothing
+
+
+
 
 isSingle [x] = True
 isSingle _ = False

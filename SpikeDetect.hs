@@ -32,6 +32,10 @@ import Numeric.LinearAlgebra
 import Foreign.Storable
 import Math.Probably.KMeans 
 import DeskWeb
+import Control.Monad
+import Debug.Trace
+import Text.XHtml hiding (rows)
+import Data.Maybe
 
 main = spikeDetectIO
 
@@ -56,17 +60,31 @@ cov x = (trans xc <> xc) / fromIntegral (rows x -1)
 
 --bishop 2.43 (p 78)
 
+unUnitList [x] = x
+
 matToScalar :: Matrix Double -> Double
-matToScalar = head . head . toLists
+matToScalar = unUnitList . unUnitList . toLists
 
 multiGauss :: (Vector Double, Matrix Double) -> Vector Double -> Double
-multiGauss (mu,sigma) x = let d = realToFrac $ length $ toList mu
-                              xMinusSigma = fromColumns [x-mu]
-                          in negate ((2*pi)**(d/2)) * negate (sqrt (det sigma)) * exp (negate . (/2) . matToScalar $ trans (xMinusSigma) <> inv sigma <> (xMinusSigma))
+multiGauss (mu,sigma) x = 
+    let d = realToFrac $ length $ toList mu
+        xMinusSigma = fromColumns [x-mu]
+        logLike =(log $ recip ((2*pi)**(d/2)) * recip (sqrt (det sigma))) + (negate . (/2) . matToScalar $ trans (xMinusSigma) <> inv sigma <> (xMinusSigma)) 
+    in logLike
 
-calcMultiGauss :: [Vector Double] -> (Vector Double, Matrix Double)
-calcMultiGauss xs = (mean $ fromRows xs, cov $ fromRows xs)
+fitMultiGauss :: [Vector Double] -> (Vector Double, Matrix Double)
+fitMultiGauss xs = (mean $ fromRows xs, cov $ fromRows xs)
 
+--multiGaussMixture :: [(Double,(Vector Double, Matrix Double))] -> Vector Double -> Double
+multiGaussMixture pimusigmas x =  sum $ map (\(pi,gauss)-> pi * (gauss `multiGauss` x)) pimusigmas
+
+
+testMeans = 2 |> [0,0]
+testSigma = (2><2) [2, -1,
+                    -1, 1]
+
+testval = multiGauss (testMeans, testSigma) $ 2 |> [1,1]
+                     
 testObs :: [Vector Double]
 testObs = [fromList [1,20,30],                    
            fromList [2,31,41],
@@ -95,10 +113,11 @@ listToPoint (x:y:_) = (x,y)
 indexMany :: [a] -> [Int] -> [a]
 indexMany = map . (!!) 
 
-minInterval :: Double -> [Event a] -> [Event a]
+
+minInterval :: HasTStart t => Double -> [t a] -> [t a]
 minInterval t es@(e:[]) = es
-minInterval t ((t1,v1):res@((t2,v2):es)) | dist t1 t2 < t = minInterval t ((t1,v1):es)
-                                         | otherwise = (t1,v1) : minInterval t res
+minInterval t (ts1:res@(ts2:es)) | dist (gettStart ts1) (gettStart ts1) < t = minInterval t (ts1:es)
+                                 | otherwise = ts1 : minInterval t res
 
 autoSpikes sigNm = do
   sigs <- take 10 `fmap` signalsDirect sigNm 
@@ -111,25 +130,52 @@ autoSpikes sigNm = do
                        alignBy (centreOfMass . ((square . square) <$$>) . (limitSigs (-0.0005) 0.0005)) $ 
                        waveforms 
   --PCA
+  let nclust = 4
+  let neigenVecs = 3
   let dataMatrix = fromLists $ map sigToList $ alignWaveforms
   let datMatSubMeans = fromColumns $ map vecSubMean $ toColumns dataMatrix
   let covDM = cov datMatSubMeans
   let (eigvals, eigvecs) = eig covDM
-  let evs = take 3 $ map snd $ reverse $ sortBy (comparing fst) $ zip (fmap realPart $ toList eigvals) [0..]
+  let evs = take neigenVecs $ map snd $ reverse $ sortBy (comparing fst) $ zip (fmap realPart $ toList eigvals) [0..]
   let featureVector = fromColumns $ map (mapVector realPart . ((toColumns eigvecs)!!)) evs
   let finalData = trans featureVector <> trans datMatSubMeans
   let pts =  map toList $ toColumns $ finalData
-  let clustered = kmeansOn (snd) 3 $  zip [0..] pts
+  let nobs = realToFrac $ length $ alignWaveforms
+  let likeBic nclusters = 
+          let clustered = kmeansOn (snd) nclusters $  zip [0..] pts
+              clusteredvs = map (map (listToPoint . snd)) clustered
+              gaussians = map (fitMultiGauss . map fromList) $ map (map snd) clustered
+              weights = map ((/nobs) . realToFrac . length . map snd) clustered
+              wgausses = zip weights gaussians
+              likelihood = sum $map (wgausses `multiGaussMixture`) $ map (fromList) pts
+              nparams = realToFrac $ nclusters*neigenVecs*(neigenVecs*neigenVecs) --means, covariance matrix          
+              bic = -2*likelihood +nparams*log nobs
+          in if (all (not . isNaN . det . snd) gaussians) 
+                 then Just (clustered, (likelihood, bic))
+                 else Nothing
+  let Just clustered = fst `fmap` likeBic nclust  
   let clusteredvs = map (map (listToPoint . snd)) clustered
   let idxs = map (map fst) clustered
   let sigsav = map (take 1 . averageSigs . (alignWaveforms `indexMany`)) idxs
   let evss = map (minInterval 0.001 . (putatives `indexMany`)) idxs
+  --calc likelihood
+  --calc BIC
+
   --return (sigsav, evss)
-  io $ print $ length sigsav
-  ask $ plot $ LabelConsecutively sigsav
+  --io $ print $ length sigsav
+  avspic <- askPics $ plot $ LabelConsecutively sigsav
+  cluspic <- askPics $ plot $ LabelConsecutively $ map (clusteredvs!!) [0..nclust-1]
+  let imgs = map imgToHtml $ (avspic++cluspic)
+  let ch n = n +++ checkbox ("ch"++n) ("ch"++n)
+  res <- jsToStrAssoc `fmap` (lift $ askDeskWeb $ form![method "post"] << [imgs, [paragraph noHtml], (map (ch . show) [0..nclust-1]), [textfield "evname", submit "storebtn" "Store"]])
+  let isIn = filter ((`elem` (map fst res)) . ("ch"++) . show) [0..nclust-1]
+  let finalEvs = concatMap (evss!!) isIn
+  let Just nm = lookup "evname" res
+  io $ print nm
+  lift $ askDeskWeb $ thediv << "hello world"
   --ask $ plot $ map listToPoint pts
-  ask $ plot $ clusteredvs!!0 :+: clusteredvs!!1 :+: clusteredvs!!2 -- :+: clusteredvs!!3
-  ask $ plot $ take 1000 $ alignWaveforms
+  --ask $ plot $ clusteredvs!!0 :+: clusteredvs!!1 :+: clusteredvs!!2 -- :+: clusteredvs!!3
+  --ask $ plot $ take 1000 $ alignWaveforms
   --io $ print $ (rows finalData, cols finalData)
 
   --covariance matrix
@@ -140,14 +186,19 @@ autoSpikes sigNm = do
   return ()
 
 
+imgToHtml s = 
+    let pth = "/files/"++(intercalate "/" $drop 3 $ splitBy '/' s)
+    in image![src pth]
+
 spikeDetectIO = do 
   (snm:overDurNm:_) <-getArgs 
-  withDeskWeb 8001 $ inApproxSession snm $ do
-                  openReplies
+  withDeskWeb 8001 "/var/bugpan/www" $ inApproxSession snm $ do 
+                  --openReplies
                   initUserInput
                   plotSize 490 329
                   overDur <- unitDurations overDurNm
                   autoSpikes "normV"
+                  return ()
                   --normV <- signalsDirect "normV"
                   --spikeDetect [overDur] normV []
 

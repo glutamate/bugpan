@@ -184,7 +184,7 @@ x @= y = StoreAs x y False
 x @=! y = StoreAs x y True
 
 
---inLastSession :: MonadIO m => StateT QState IO a -> IO a
+inLastSession :: (MonadIO m, Functor m) => StateT QState m a -> m a
 inLastSession sma = do
   s <- liftIO $ lastSession "/var/bugpan/sessions/"
   inSession s sma
@@ -196,35 +196,39 @@ inSession s sma =  do args <- liftIO $ getArgs
                       rnds <- liftIO $ randoms gen
                       fst `fmap`  (runStateT sma $ QState s 0 0 True args Nothing rnds)
 
+{-inSessionFromArgs :: (MonadIO m, Functor m) => Session -> StateT QState m a -> m a
 inSessionFromArgs sma = do allargs <- liftIO $ getArgs
                            let (opts, nm:args) = partition beginsWithHyphen allargs
                            sess <- liftIO $ loadApproxSession "/var/bugpan/sessions/" nm
-                           fst `fmap`  (runStateT sma $ QState sess 0 0 True (opts++args) Nothing)
+                           gen <- liftIO $ getStdGen
+                           rnds <- liftIO $ randoms gen
+                           fst `fmap`  (runStateT sma $ QState sess 0 0 True (opts++args) Nothing rnds)-}
 
 
---inNewSession :: StateT QState IO a -> IO a
+inNewSession :: (MonadIO m, Functor m) => StateT QState m a -> m a
 inNewSession sma = do sess <- liftIO $ newSession "/var/bugpan/sessions/"
                       inSession sess sma
 
---inNewSessionWith :: String -> ClockTime -> StateT QState IO a -> IO a
+inNewSessionWith :: (MonadIO m, Functor m) => String -> ClockTime -> StateT QState m a -> m a
 inNewSessionWith nm t0 sma = do sess <- liftIO $ createSession "/var/bugpan/sessions/" t0 nm
                                 inSession sess sma
 
-
+inTemporarySession :: (MonadIO m, Functor m) => StateT QState m a -> m a
 inTemporarySession sma = do sess <- liftIO $ newSession "/var/bugpan/sessions/"
-                            inSession sess sma
+                            res <- inSession sess sma
                             liftIO $ deleteSession sess
+                            return res
 
---inSessionNamed :: String -> StateT QState IO a -> IO a
+inSessionNamed :: (MonadIO m, Functor m) => String -> StateT QState m a -> m a
 inSessionNamed nm sma = do sess <- liftIO $ loadExactSession $ "/var/bugpan/sessions/"++nm
                            inSession sess sma
 
 
---inApproxSession :: String -> StateT QState IO a -> IO a
+inApproxSession :: (MonadIO m, Functor m) => String -> StateT QState m a -> m a
 inApproxSession nm sma = do sess <- liftIO $ loadApproxSession "/var/bugpan/sessions/" nm
                             inSession sess sma
 
---inEverySession :: StateT QState IO a -> IO [a]
+inEverySession :: (MonadIO m, Functor m) => StateT QState m a -> m [a]
 inEverySession sma = do
   sessNms <- liftIO $ getSessionInRootDir "/var/bugpan/sessions/"
   sessns <- liftIO $ mapM (loadExactSession . ("/var/bugpan/sessions/"++)) sessNms
