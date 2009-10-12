@@ -31,6 +31,9 @@ import Database
 import Numeric.FAD
 import Numeric.LinearAlgebra
 import Data.Maybe
+import Control.Monad
+import Control.Arrow
+import Control.Applicative
 
 main = loomAnal
 
@@ -108,7 +111,7 @@ bic model =  let n = realToFrac $ observationCount model
 lm :: (Matrix Double , Matrix Double) -> Matrix Double
 lm (x,y) = inv (trans x<>x) <> (trans x) <> y
 
---ss :: LinModel Double -> Double
+ss :: LinModel Double -> Double
 ss (x,y) =  sum . map (\x->x*x) . head . toLists . trans $ y - x<>lm (x,y)
 
 oneMean :: [Double] -> LinModel Double
@@ -147,6 +150,55 @@ data Factor = Categorical [Int]
             | Plus Factor Factor
             | Cut Factor Double
              deriving (Show, Eq)
+
+newtype Parser t a = Parser { unParser :: [t] -> [(a,[t])] }
+
+instance Functor (Parser t) where
+    fmap f (Parser df) = Parser $ \dbls -> map (\(x,unconsumed) -> (f x, unconsumed)) $ df dbls
+
+instance Applicative (Parser t) where
+    pure x = Parser $ \dbls -> [(x,dbls)]
+    (Parser df1) <*> (Parser df2) = 
+        Parser $ \dbls -> concatMap (\(f,uncons) -> map (first f) $ df2 uncons ) $ df1 dbls  
+
+instance Monad (Parser t) where
+    return  = pure 
+    (Parser df) >>= f = 
+        Parser $ \dbls-> concatMap (\(x,uncons) -> unParser (f x) uncons ) $ df dbls  
+    fail s = Parser $ \_ -> []
+
+instance MonadPlus (Parser t) where
+    mzero = Parser $ \_ -> []
+    mplus (Parser df1) (Parser df2) = 
+        Parser $ \strs -> case df1 strs of
+                            [] -> df2 strs
+                            xs -> xs
+
+oneP = Parser $ \(x:xs) -> [(x,xs)]
+manyP n = Parser $ \(xs) -> [splitAt n xs]
+
+
+parsepars (Mean _) = show `fmap` oneP
+parsepars (Continuous _) = do x<- oneP
+                              return $ show x ++ "*x"
+parsepars (Categorical ns) = do xs<- manyP $ length ns
+                                return $ intercalate " + " $ map (\(x,n)-> show n++":"++show x) $ zip xs ns
+
+parsepars (Plus f1 f2) = do x1 <- parsepars f1
+                            x2 <- parsepars f2
+                            return $ x1 ++ " + "++x2
+
+runParser :: Parser t a -> [t] -> a
+runParser (Parser f) s = fst . head $ f s
+
+parseParams :: [Double] -> Factor -> String
+parseParams pars facs = runParser (parsepars facs) pars
+
+
+prettyResult :: Matrix Double -> Factor -> String
+prettyResult lmres facts = 
+    let params = toList $ head $ toRows lmres
+    in show params
 
 xs .<. cut = Cut xs cut
 

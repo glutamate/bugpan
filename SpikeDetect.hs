@@ -148,7 +148,7 @@ autoSpikes sigNm = do
               weights = map ((/nobs) . realToFrac . length . map snd) clustered
               wgausses = zip weights gaussians
               likelihood = sum $map (wgausses `multiGaussMixture`) $ map (fromList) pts
-              nparams = realToFrac $ nclusters*neigenVecs*(neigenVecs*neigenVecs) --means, covariance matrix          
+              nparams = (realToFrac $ nclusters*neigenVecs*(neigenVecs*(neigenVecs-1)))/2 --means, covariance matrix          
               bic = -2*likelihood +nparams*log nobs
           in if (all (not . isNaN . det . snd) gaussians) 
                  then Just (clustered, (likelihood, bic))
