@@ -3,8 +3,8 @@
 module QueryUtils where
 
 import EvalM hiding (ListT)
-import Eval
-import Expr
+--import Eval
+--import Expr
 import QueryTypes
 import Data.List hiding (groupBy)
 import Data.Maybe
@@ -15,6 +15,7 @@ import Numbers
 import Data.Ord
 import TNUtils
 import Math.Probably.Sampler
+import Math.Probably.GlobalRandoms
 import Control.Monad
 import PlotGnuplot
 
@@ -88,17 +89,15 @@ tagd :: Tagged t =>  Double -> [t a] -> [t Double]
 tagd = tag
 
 
-freqDuring :: [Duration a] -> [Event b] -> [Duration (a, RealNum)]
+freqDuring :: [Duration a] -> [Event b] -> [Duration Double]
 freqDuring durs evs = map (freqDuring' evs) durs
     where freqDuring' evs dur@((t1, t2), durtag) = 
-              ((t1, t2), (durtag, 
-                        (realToFrac . length $ during [dur] evs)/(t2-t1)))
+              ((t1, t2), (realToFrac . length $ during [dur] evs)/(t2-t1))
 
-countDuring :: [Duration a] -> [Event b] -> [Duration (a, RealNum)]
+countDuring :: [Duration a] -> [Event b] -> [Duration Int]
 countDuring durs evs = map (freqDuring' evs) durs
     where freqDuring' evs dur@((t1, t2), durtag) = 
-              ((t1, t2), (durtag, 
-                        (realToFrac . length $ during [dur] evs)))
+              ((t1, t2), (length $ during [dur] evs))
 
 centreOfMass :: [Signal Double] -> [Event ()]
 centreOfMass = map f 
@@ -279,7 +278,7 @@ crossCorrelateOver dur e1 e2 = concatMap f $ zip (chopByDur dur e1) (chopByDur d
 
 
 
-crossCorrelateOverControl :: [Duration a] -> [Event b] -> [Event c] -> QueryM [Event Double]
+crossCorrelateOverControl :: [Duration a] -> [Event b] -> [Event c] -> [Event Double]
 crossCorrelateOverControl dur e1 e2 = 
     let oneSim = do
           durOver <- oneOf dur
@@ -293,8 +292,8 @@ crossCorrelateOverControl dur e1 e2 =
                --traceM "both has more than zero events!"
                e1sim <- poissonMany (realToFrac e1s/durLength) durLength
                e2sim <- poissonMany (realToFrac e2s/durLength) durLength          
-               return $ crossCorrelateOver [durOver] (shift tStart $ lstToEvs e1sim) (shift tStart $ lstToEvs e2sim)    
-    in do concat `fmap` (sampleN 1000  oneSim)               
+               return $ crossCorrelateOver [durOver] (shift tStart $ lstToEvs e1sim) (shift tStart $ lstToEvs e2sim)  
+    in concat (sampleN 1000  oneSim)               
           
 
 testSampler rnds = concat $ take 10 $ runSampler rnds $ do 
@@ -375,8 +374,8 @@ labelMagically ivl n durs | length durs < n = []
                                     else labelMagically ivl n $ tail durs
 --chiSquare :: [[Duration a]] -> 
 
-habitAnal rep' spikes = let rep = filter (\d -> ( snd . snd . head $ countDuring [d] spikes) > 0.5) rep'
-                        in groupBy rep (snd <$$> countDuring rep spikes)  `groupStats` meanSDF
+habitAnal rep' spikes = let rep = filter (\d -> ( realToFrac . snd  . head $ countDuring [d] spikes) > 0.5) rep'
+                        in (groupBy rep $ realToFrac <$$> countDuring rep spikes)  `groupStats` meanSDF
 
 restrictDur (t1r, t2r) = map $ \((t1, t2), v) -> ((t1+t1r, t1+t2r), v)
 

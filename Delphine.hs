@@ -7,15 +7,15 @@ import Data.List
 import qualified Data.StorableVector as SV
 import System.Time
 import Database
-import Parse
+--import Parse
 import EvalM hiding (ListT)
-import Eval
-import Expr
+--import Eval
+--import Expr
 --import Stages
 import Query
 import QueryTypes
 --import Control.Monad.State.Lazy
-import HaskSyntaxUntyped
+--import HaskSyntaxUntyped
 --import QueryUnsafe
 --import Data.IORef
 import QueryUtils
@@ -25,7 +25,6 @@ import Math.Probably.FoldingStats
 import ValueIO
 import Numbers
 --import Tests.Asserts
-import PlotGnuplot
 import System.Environment
 import Data.Ord
 import Control.Monad 
@@ -33,7 +32,7 @@ import Data.Unique
 import System.Cmd
 import PlotGnuplot
 import QueryPlots
-import RandomSources
+--import RandomSources
 import System.Random.Mersenne
 
 --1. AVERAGE WAVEFORMS CI1-SETI and CI1-FLEXOR
@@ -61,6 +60,9 @@ burst' (Just tbstart) tmax ((t1,v1):res@((t2,v2):es))
     | otherwise = burst' (Just tbstart) tmax res
 burst' (Nothing) tmax ((t1,v1):res@((t2,v2):es)) | dist t1 t2 < tmax = burst' (Just t1) tmax res
                                                  | otherwise = burst' (Nothing) tmax res
+
+totalDuration :: [Duration a] -> Double
+totalDuration = sum . map ((uncurry $flip (-)) . fst)
 
 
 dispatch ("import":_) = do
@@ -91,14 +93,14 @@ dispatch ("analyse":sess:_) = do
     --rHisto 100 $ crossCorrelateOver scratch ci1Spikes flexSpikes
     let bz = 0.01
     let scratchd0 = during cyc1 $ during (isZero//depol) scratch
-    let cc evs evs2 = do ctrl <- crossCorrelateOverControl scratch evs2 evs
-                         let s1 = normSigToArea (histSigBZ bz (crossCorrelateOver scratch evs2 evs))
-                         let s2 = normSigToArea $ histSigBZ bz (ctrl)
-                         return [limitSig (-0.6) 0.6 $ s1-s2]
-    ccflex <- cc flexSpikes ci1Spikes
-    ccseti <- cc seti ci1Spikes
-    ccfeti <- cc feti ci1Spikes
-    ccflexseti <- cc flexSpikes seti
+    let cc evs evs2 =   let ctrl =crossCorrelateOverControl scratch evs2 evs
+                            s1 = normSigToArea (histSigBZ bz (crossCorrelateOver scratch evs2 evs))
+                            s2 = normSigToArea $ histSigBZ bz (ctrl)
+                        in [limitSig (-0.6) 0.6 $ s1-s2]
+    let ccflex =  cc flexSpikes ci1Spikes
+    let ccseti = cc seti ci1Spikes
+    let ccfeti = cc feti ci1Spikes
+    let ccflexseti = cc flexSpikes seti
     
     
     
@@ -129,11 +131,19 @@ dispatch ("analyse":sess:_) = do
     let nearSeti = (<0.5)//(nearestToEach ci1Spikes seti)
     let nearFlex = (<0.5)//(nearestToEach ci1Spikes flexSpikes)
     let clos = map closestSpike $ zip (nearSeti) (nearFlex)
+    let burstSeti = burst 0.03 seti
+    let burstFlex = burst 0.025 flexSpikes
 
-    io $ putStrLn $ sess++" ci1-seti distances "++(show .headTag $ (meanSEMF `runStatsOn` nearSeti))
-    io $ putStrLn $ sess++" ci1-flexor distances "++(show .headTag $ (meanSEMF `runStatsOn` nearFlex))
-    io $ putStrLn $ sess++" 0: seti closest, 1: flex closest -> "++(show $ meanF `runStat` clos)
-    io $ putStrLn ""
+    let duringSeti = (realToFrac . sumTags $ countDuring burstSeti ci1Spikes )  / (totalDuration burstSeti)
+    let duringFlex = (realToFrac . sumTags $ countDuring burstFlex ci1Spikes )  / (totalDuration burstFlex)
+
+
+    --io $ putStrLn $ sess++" ci1-seti distances "++(show .headTag $ (meanSEMF `runStatsOn` nearSeti))
+    --io $ putStrLn $ sess++" ci1-flexor distances "++(show .headTag $ (meanSEMF `runStatsOn` nearFlex))
+    io $ putStrLn $ sess++"\t"++(show duringSeti)++"\t"++(show duringFlex)
+    --io $ putStrLn $ sess++" ci1-flexor freq "++(show duringFlex)
+    --io $ putStrLn $ sess++" 0: seti closest, 1: flex closest -> "++(show $ meanF `runStat` clos)
+    --io $ putStrLn ""
     --io $ gnuplotOnScreen $ [histSigBZ bz nearSeti] :+: [histSigBZ bz nearFlex]
     return () 
 
@@ -146,6 +156,7 @@ closestSpike ((_,s0),(_,s1)) = if s0<s1 then 0 else 1
 brenda :: [Signal Double] -> [GnuplotBox]
 brenda sigs = [GnuplotBox $ Brenda $ averageSigs sigs]
  
+--foo = during
 
 isZero x = x>(-0.5) && x<0.5 
 

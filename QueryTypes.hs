@@ -3,8 +3,8 @@
 module QueryTypes where
 
 import EvalM hiding (ListT)
-import Eval
-import Expr
+--import Eval
+--import Expr
 import Data.Maybe
 import Data.List
 import Numbers
@@ -26,8 +26,8 @@ import qualified Data.ByteString.Lazy as L
 --import Data.ByteString.Internal
 import qualified Data.Binary as B
 import Numeric
-import Traverse
-import Transform
+--import Traverse
+--import Transform
 --import Stages
 import Data.Ord
 --import Charts
@@ -43,7 +43,7 @@ import Math.Probably.FoldingStats
 import Math.Probably.Sampler
 import System.IO
 import ValueIO
-import Array
+--import Array
 import qualified Data.StorableVector as SV
 import Foreign.Storable
 import System.Posix.Files
@@ -64,7 +64,7 @@ data QState = QState { qsSess:: Session,
 
 type QueryM = StateT QState IO
 
-sampleN :: Int -> Sampler a -> QueryM [a]
+{-sampleN :: Int -> Sampler a -> QueryM [a]
 sampleN n sf = do
   rans <- rnds `fmap` get
   modify $ \s-> s {rnds = []}
@@ -80,7 +80,7 @@ sample (Sam sf) = do
   rans <- rnds `fmap` get
   let (x, rans') = sf rans
   modify $ \s-> s {rnds = rans'}
-  return $ x
+  return $ x -}
  
 getSession = qsSess `fmap` get
 
@@ -98,7 +98,7 @@ foldSig :: (a->b->a) -> a -> Signal b -> a
 foldSig f init sig = foldl' f init $ sigToList sig
 
 
---during :: ChopByDur t => [Duration b] -> [t a] -> [t a]
+during :: ChopByDur [t] => [Duration b] -> [t] -> [t]
 during durs evs = concat $ chopByDur durs evs
 
 --concatMap (during' evs) durs
@@ -200,6 +200,8 @@ instance Tagged ((,) (Double, Double)) where
 
 foldTagged ::  Tagged t => (a -> b -> a) -> a -> [t b] -> a
 foldTagged f init col = foldl' f init $ map getTag col
+
+sumTags = sum . map getTag
 
 
 --instance Functor ((,) Double) where
