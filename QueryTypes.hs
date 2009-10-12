@@ -47,6 +47,7 @@ import ValueIO
 import qualified Data.StorableVector as SV
 import Foreign.Storable
 import System.Posix.Files
+import PlotGnuplot
 
 --import Graphics.Rendering.HSparklines
 
@@ -234,24 +235,10 @@ ask :: (QueryResult a, MonadIO m) => a -> StateT QState m String
 ask qx = do
   x <- qResThroughSession qx
   args <- shArgs `fmap` get
-  str <- liftIO $ qReply x args
-  liftIO $ putStrLn str
-  return str
-
-askPics :: (QueryResult a, MonadIO m) => a -> StateT QState m [String]
-askPics qx = do
-  x <- qResThroughSession qx
-  args <- shArgs `fmap` get
-  str <- liftIO $ qReply x args
-  --liftIO $ putStrLn str
-  conts <- liftIO $ readFile $ drop 7 str
-  return $ extractImages conts
-
-extractImages :: String -> [String]
-extractImages txt = catMaybes $ map f $ lines txt
-    where f s | "<img src=\"" `isPrefixOf` s = Just $ takeWhile (/='"') $ drop 10 s
-              | otherwise = Nothing
-
+  qos <- liftIO $ qReply x args
+  --let str = unlines $ [s | QString s <- qos ]
+  liftIO $ putStrLn $ qos
+  return qos
 
 
 
@@ -262,30 +249,32 @@ grid opts = "-g" `elem` opts
 
 data QueryResultBox = forall a. QueryResult a => QResBox a deriving Typeable
 
+data QOutcome = QString String | QPlot GnuplotBox
 
 class QueryResult a where
-    qReply :: a -> [String] -> IO String
+    qReply :: a -> [String] -> IO String -- [QOutcome]
     qResThroughSession :: MonadIO m => a -> StateT QState m a
     qResThroughSession = return 
     qFilterSuccess :: a -> Bool
 
+qs1 s = s -- [QString s]
 
 instance QueryResult [Char] where
-    qReply s _ = return s 
+    qReply s _ = return $ qs1 s
     qFilterSuccess [] = False
     qFilterSuccess _ = True
 
 instance QueryResult Int where
-    qReply x _ = return $  show x
+    qReply x _ = return .qs1$ show x
     qFilterSuccess 0 = False
     qFilterSuccess _ = True
 
 instance QueryResult [Double] where
-    qReply xs _ = return $  unlines $ map show xs
+    qReply xs _ = return .qs1 $ show xs
     qFilterSuccess = not . null
 
 instance QueryResult Double where
-    qReply x _ = return $ show x
+    qReply x _ = return .qs1 $ show x
     qFilterSuccess 0 = False
     qFilterSuccess _ = True
 

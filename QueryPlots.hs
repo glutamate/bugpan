@@ -13,11 +13,13 @@ import Data.Unique
 import Data.List
 import Control.Monad.Trans
 import qualified Data.StorableVector as SV
+import Control.Monad.State.Lazy
 import TNUtils
 import System.Directory
 import System.Posix.Files
 import PlotGnuplot
 import Foreign.Storable
+import Data.Maybe
 
 data Histo where -- GADT bec i don't know syntax for double existential (no longer needed)
     Histo :: Int -> [(a,Double)] -> Histo 
@@ -242,3 +244,22 @@ instance (Show a, Reify a) => QueryResult [Duration a] where
         plotHisto $ map getTag tgs
 
 -}
+
+
+--SPikeDetector ONLY
+askPics :: (QueryResult a, MonadIO m) => a -> StateT QState m [String]
+askPics qx = do
+  x <- qResThroughSession qx
+  args <- shArgs `fmap` get
+  qos <- liftIO $ qReply x args
+  --liftIO $ putStrLn str
+  --let str = concat [s | QString s <- qos ]
+  conts <- liftIO $ readFile $ drop 7 qos
+  return $ extractImages conts
+
+extractImages :: String -> [String]
+extractImages txt = catMaybes $ map f $ lines txt
+    where f s | "<img src=\"" `isPrefixOf` s = Just $ takeWhile (/='"') $ drop 10 s
+              | otherwise = Nothing
+
+
