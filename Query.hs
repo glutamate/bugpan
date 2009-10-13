@@ -196,13 +196,13 @@ inSession s sma =  do args <- liftIO $ getArgs
                       rnds <- liftIO $ randoms gen
                       fst `fmap`  (runStateT sma $ QState s 0 0 True args Nothing rnds)
 
-{-inSessionFromArgs :: (MonadIO m, Functor m) => Session -> StateT QState m a -> m a
+inSessionFromArgs :: (MonadIO m, Functor m) => StateT QState m a -> m a
 inSessionFromArgs sma = do allargs <- liftIO $ getArgs
                            let (opts, nm:args) = partition beginsWithHyphen allargs
                            sess <- liftIO $ loadApproxSession "/var/bugpan/sessions/" nm
                            gen <- liftIO $ getStdGen
                            rnds <- liftIO $ randoms gen
-                           fst `fmap`  (runStateT sma $ QState sess 0 0 True (opts++args) Nothing rnds)-}
+                           fst `fmap`  (runStateT sma $ QState sess 0 0 True (opts++args) Nothing rnds)
 
 
 inNewSession :: (MonadIO m, Functor m) => StateT QState m a -> m a
@@ -234,6 +234,14 @@ inEverySession sma = do
   sessns <- liftIO $ mapM (loadExactSession . ("/var/bugpan/sessions/"++)) sessNms
   forM sessns $ \s -> inSession s sma
 
+inEverySessionWhere :: (MonadIO m, Functor m) => StateT QState m Bool -> StateT QState m a -> m [a]
+inEverySessionWhere mfilt sma = do
+  sessNms <- liftIO $ getSessionInRootDir "/var/bugpan/sessions/"
+  sessns <- liftIO $ mapM (loadExactSession . ("/var/bugpan/sessions/"++)) sessNms
+  res <- forM sessns $ \s -> inSession s $ do
+                                  b<- mfilt 
+                                  if b then Just `fmap` sma else return Nothing
+  return $ catMaybes res
 
 --sessionTmax  ::  StateT QState IO RealNum
 sessionTmax  = do
