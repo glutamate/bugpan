@@ -36,8 +36,9 @@ import Control.Monad
 import Debug.Trace
 import Text.XHtml hiding (rows)
 import Data.Maybe
---import Graphics.UI.Gtk
---import Graphics.UI.Gtk.Display.Image
+import Graphics.UI.Gtk
+import Graphics.UI.Gtk.Display.Image
+import Data.IORef
 
 main = spikeDetectIO
 
@@ -123,6 +124,20 @@ minInterval t (ts1:res@(ts2:es)) | dist (gettStart ts1) (gettStart ts1) < t = mi
 
 autoSpikes sigNm = do
   sigs <- take 10 `fmap` signalsDirect sigNm 
+  io $ initGUI
+  window <- io $ windowNew
+  buttonGo <- io $ buttonNew
+  avsIm <- io $ imageNew
+  clusIm <- io $ imageNew
+  nclustsRef <- io $ newIORef 4
+  hbox1 <- io $ hBoxNew True 10
+  hbox2 <- io $ hBoxNew True 10
+  hbox3 <- io $ hBoxNew True 10
+  vbox <- io $ vBoxNew True 10
+  cbs <- io $ forM [0..10] $ \i -> do 
+                     cb <- checkButtonNewWithLabel (show i)
+                     io $ boxPackStart hbox2 cb PackGrow 0                    
+                     return cb
   let sd = stdDevF `sigStat` sigs
   --let sigu = upsample 5 sigs
   let putatives = crossesDown (((*5) . negate) <$$> sd) sigs `catevents` 
@@ -165,11 +180,17 @@ autoSpikes sigNm = do
           in do if isNothing mclustered
                    then displayData (nclusters-1)
                    else do
+                     io $ writeIORef nclustsRef nclusters
                      avspic <- askPics $ plot $ LabelConsecutively sigsav
                      cluspic <- askPics $ plot $ LabelConsecutively $ map (clusteredvs!!) [0..nclusters-1]
-                     let imgs = map imgToHtml $ (avspic++cluspic)
+                     io $ imageSetFromFile avsIm $ head avspic
+                     io $ imageSetFromFile clusIm $ head cluspic
+                     --forM_ [0..nclusters-1] $ \i -> io $ widgetShow (cbs!!i)
+                     --forM_ [nclusters..10] $ \i -> io $ widgetHideAll (cbs!!i)
+                     return ()
+                     {-let imgs = map imgToHtml $ (avspic++cluspic)
                      let ch n = n +++ checkbox ("ch"++n) ("ch"++n)
-                     res <- jsToStrAssoc `fmap` (lift $ askDeskWeb $ form![method "post"] << 
+                     res <- undefined {-jsToStrAssoc `fmap` (lift $ askDeskWeb $ form![method "post"] << 
                                                        (imgs+++
                                                        paragraph noHtml+++ 
                                                        (map (ch . show) [0..nclusters-1])+++
@@ -177,13 +198,27 @@ autoSpikes sigNm = do
                                                        textfield "evname"+++ 
                                                        " or change number of clusters " +++
                                                        textfield "numclusters" +++
-                                                       submit "storebtn" "Store"))
+                                                       submit "storebtn" "Store")) -}
                      io $print res
                      case lookup "numclusters" res of
                        Just n -> displayData $ read n
                        Nothing -> return (res, evss, nclusters)
-                 
-
+                 -}
+  displayData 4
+  io $ set window [ containerBorderWidth := 10,
+                    containerChild := vbox ]
+  io $ boxPackStart vbox hbox1 PackGrow 0
+  io $ boxPackStart vbox hbox2 PackGrow 0
+--  io $ boxPackStart vbox hbox3 PackGrow 0
+  io $ boxPackStart hbox1 avsIm PackGrow 0
+  io $ boxPackStart hbox1 clusIm PackGrow 0
+  io $ boxPackStart hbox2 buttonGo PackGrow 0
+  io $ set buttonGo [ buttonLabel := "Save" ]
+  io $ onClicked buttonGo (putStrLn "Hello World")
+  io $ onDestroy window mainQuit
+  io $ widgetShowAll window
+  io $ mainGUI
+{-
   --calc likelihood
   --calc BIC
 
@@ -194,7 +229,7 @@ autoSpikes sigNm = do
   let finalEvs = concatMap (evss!!) isIn
   let Just nm = lookup "evname" res
   io $ print nm
-  lift $ askDeskWeb $ thediv << "hello world"
+  --lift $ --askDeskWeb $ thediv << "hello world"
   --ask $ plot $ map listToPoint pts
   --ask $ plot $ clusteredvs!!0 :+: clusteredvs!!1 :+: clusteredvs!!2 -- :+: clusteredvs!!3
   --ask $ plot $ take 1000 $ alignWaveforms
@@ -202,6 +237,7 @@ autoSpikes sigNm = do
 
   --covariance matrix
 
+-}
 
   --ask $ plot $ take 100 $ alignWaveforms 
   --io $ print $ dataMatrix
@@ -214,7 +250,7 @@ imgToHtml s =
 
 spikeDetectIO = do 
   (snm:overDurNm:_) <-getArgs 
-  withDeskWeb 8001 "/var/bugpan/www" $ inApproxSession snm $ do 
+  inApproxSession snm $ do 
                   --openReplies
                   initUserInput
                   plotSize 490 329
