@@ -36,6 +36,8 @@ import Control.Monad
 import Debug.Trace
 import Text.XHtml hiding (rows)
 import Data.Maybe
+--import Graphics.UI.Gtk
+--import Graphics.UI.Gtk.Display.Image
 
 main = spikeDetectIO
 
@@ -154,17 +156,21 @@ autoSpikes sigNm = do
                  then Just (clustered, (likelihood, bic))
                  else Nothing
   let displayData nclusters =
-          let Just clustered = fst `fmap` likeBic nclusters
+          let mclustered = fst `fmap` likeBic nclusters
+              Just clustered = mclustered
               clusteredvs = map (map (listToPoint . snd)) clustered
               idxs = map (map fst) clustered
               sigsav = map (take 1 . averageSigs . (alignWaveforms `indexMany`)) idxs
               evss = map (minInterval 0.001 . (putatives `indexMany`)) idxs
-          in do  avspic <- askPics $ plot $ LabelConsecutively sigsav
-                 cluspic <- askPics $ plot $ LabelConsecutively $ map (clusteredvs!!) [0..nclusters-1]
-                 let imgs = map imgToHtml $ (avspic++cluspic)
-                 let ch n = n +++ checkbox ("ch"++n) ("ch"++n)
-                 res <- jsToStrAssoc `fmap` (lift $ askDeskWeb $ form![method "post"] << 
-                                                      (imgs+++
+          in do if isNothing mclustered
+                   then displayData (nclusters-1)
+                   else do
+                     avspic <- askPics $ plot $ LabelConsecutively sigsav
+                     cluspic <- askPics $ plot $ LabelConsecutively $ map (clusteredvs!!) [0..nclusters-1]
+                     let imgs = map imgToHtml $ (avspic++cluspic)
+                     let ch n = n +++ checkbox ("ch"++n) ("ch"++n)
+                     res <- jsToStrAssoc `fmap` (lift $ askDeskWeb $ form![method "post"] << 
+                                                       (imgs+++
                                                        paragraph noHtml+++ 
                                                        (map (ch . show) [0..nclusters-1])+++
                                                        "store as event"+++ 
@@ -172,10 +178,10 @@ autoSpikes sigNm = do
                                                        " or change number of clusters " +++
                                                        textfield "numclusters" +++
                                                        submit "storebtn" "Store"))
-                 io $print res
-                 case lookup "numclusters" res of
-                   Just n -> displayData $ read n
-                   Nothing -> return (res, evss, nclusters)
+                     io $print res
+                     case lookup "numclusters" res of
+                       Just n -> displayData $ read n
+                       Nothing -> return (res, evss, nclusters)
                  
 
   --calc likelihood
