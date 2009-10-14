@@ -130,7 +130,7 @@ autoSpikes sigNm = do
                        alignBy (centreOfMass . ((square . square) <$$>) . (limitSigs (-0.0005) 0.0005)) $ 
                        waveforms 
   --PCA
-  let nclust = 4
+  --let nclust = 4
   let neigenVecs = 3
   let dataMatrix = fromLists $ map sigToList $ alignWaveforms
   let datMatSubMeans = fromColumns $ map vecSubMean $ toColumns dataMatrix
@@ -153,21 +153,37 @@ autoSpikes sigNm = do
           in if (all (not . isNaN . det . snd) gaussians) 
                  then Just (clustered, (likelihood, bic))
                  else Nothing
-  let Just clustered = fst `fmap` likeBic nclust  
-  let clusteredvs = map (map (listToPoint . snd)) clustered
-  let idxs = map (map fst) clustered
-  let sigsav = map (take 1 . averageSigs . (alignWaveforms `indexMany`)) idxs
-  let evss = map (minInterval 0.001 . (putatives `indexMany`)) idxs
+  let displayData nclusters =
+          let Just clustered = fst `fmap` likeBic nclusters
+              clusteredvs = map (map (listToPoint . snd)) clustered
+              idxs = map (map fst) clustered
+              sigsav = map (take 1 . averageSigs . (alignWaveforms `indexMany`)) idxs
+              evss = map (minInterval 0.001 . (putatives `indexMany`)) idxs
+          in do  avspic <- askPics $ plot $ LabelConsecutively sigsav
+                 cluspic <- askPics $ plot $ LabelConsecutively $ map (clusteredvs!!) [0..nclusters-1]
+                 let imgs = map imgToHtml $ (avspic++cluspic)
+                 let ch n = n +++ checkbox ("ch"++n) ("ch"++n)
+                 res <- jsToStrAssoc `fmap` (lift $ askDeskWeb $ form![method "post"] << 
+                                                      (imgs+++
+                                                       paragraph noHtml+++ 
+                                                       (map (ch . show) [0..nclusters-1])+++
+                                                       "store as event"+++ 
+                                                       textfield "evname"+++ 
+                                                       " or change number of clusters " +++
+                                                       textfield "numclusters" +++
+                                                       submit "storebtn" "Store"))
+                 io $print res
+                 case lookup "numclusters" res of
+                   Just n -> displayData $ read n
+                   Nothing -> return (res, evss, nclusters)
+                 
+
   --calc likelihood
   --calc BIC
 
   --return (sigsav, evss)
   --io $ print $ length sigsav
-  avspic <- askPics $ plot $ LabelConsecutively sigsav
-  cluspic <- askPics $ plot $ LabelConsecutively $ map (clusteredvs!!) [0..nclust-1]
-  let imgs = map imgToHtml $ (avspic++cluspic)
-  let ch n = n +++ checkbox ("ch"++n) ("ch"++n)
-  res <- jsToStrAssoc `fmap` (lift $ askDeskWeb $ form![method "post"] << [imgs, [paragraph noHtml], (map (ch . show) [0..nclust-1]), [textfield "evname", submit "storebtn" "Store"]])
+  (res, evss, nclust) <- displayData 4
   let isIn = filter ((`elem` (map fst res)) . ("ch"++) . show) [0..nclust-1]
   let finalEvs = concatMap (evss!!) isIn
   let Just nm = lookup "evname" res
