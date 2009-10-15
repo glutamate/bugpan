@@ -39,6 +39,8 @@ import System.Random.Mersenne
 --2. for every ci1 spike which is nearest : seti or flexor?
 
 
+--D0
+
 main = do
   args <- getArgs
   dispatch args
@@ -92,9 +94,9 @@ dispatch ("analyse":sess:_) = do
     --let ivls = map getTag $ intervalsOver scratch $ spikes
     --rHisto 100 $ crossCorrelateOver scratch ci1Spikes flexSpikes
     let bz = 0.01
-    let scratchd0 = during cyc1 $ during (isZero//depol) scratch
-    let cc evs evs2 =   let ctrl =crossCorrelateOverControl scratch evs2 evs
-                            s1 = normSigToArea (histSigBZ bz (crossCorrelateOver scratch evs2 evs))
+    let scratchd0 = during (isZero//depol) scratch
+    let cc evs evs2 =   let ctrl =crossCorrelateOverControl scratchd0 evs2 evs
+                            s1 = normSigToArea (histSigBZ bz (crossCorrelateOver scratchd0 evs2 evs))
                             s2 = normSigToArea $ histSigBZ bz (ctrl)
                         in [limitSig (-0.6) 0.6 $ s1-s2]
     let ccflex =  cc flexSpikes ci1Spikes
@@ -131,8 +133,8 @@ dispatch ("analyse":sess:_) = do
     let nearSeti = (<0.5)//(nearestToEach ci1Spikes seti)
     let nearFlex = (<0.5)//(nearestToEach ci1Spikes flexSpikes)
     let clos = map closestSpike $ zip (nearSeti) (nearFlex)
-    let burstSeti = burst 0.03 seti
-    let burstFlex = burst 0.025 flexSpikes
+    let burstSeti = burst 0.03 $ during scratchd0 seti
+    let burstFlex = burst 0.025 $ during scratchd0 flexSpikes
 
     let duringSeti = (realToFrac . sumTags $ countDuring burstSeti ci1Spikes )  / (totalDuration burstSeti)
     let duringFlex = (realToFrac . sumTags $ countDuring burstFlex ci1Spikes )  / (totalDuration burstFlex)

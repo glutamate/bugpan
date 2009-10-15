@@ -34,13 +34,13 @@ import Math.Probably.KMeans
 import DeskWeb
 import Control.Monad
 import Debug.Trace
-import Text.XHtml hiding (rows)
 import Data.Maybe
-import Graphics.UI.Gtk
+import Graphics.UI.Gtk hiding (Signal) 
 import Graphics.UI.Gtk.Display.Image
 import Data.IORef
+import Database
 
-main = spikeDetectIO
+main = allSpikes -- spikeDetectIO
 
 atMost x = min x
 atLeast x = max x
@@ -119,31 +119,96 @@ indexMany = map . (!!)
 
 minInterval :: HasTStart t => Double -> [t a] -> [t a]
 minInterval t es@(e:[]) = es
-minInterval t (ts1:res@(ts2:es)) | dist (gettStart ts1) (gettStart ts1) < t = minInterval t (ts1:es)
+minInterval t (ts1:res@(ts2:es)) | dist (gettStart ts1) (gettStart ts2) < t = minInterval t (ts1:es)
                                  | otherwise = ts1 : minInterval t res
 
+eventDetect :: Int -> [Signal Double] -> [Event Int]
+eventDetect nclusters sigs = 
+    let sd = stdDevF `sigStat` sigs
+        putatives = crossesDown (((*6) . negate) <$$> sd) sigs `catevents`
+                    crossesUp ((*6) <$$> sd) sigs
+        waveforms = limitSigs' (-0.001) 0.001 $ around putatives $ sigs
+        alignWaveforms = downsample 10 $ unjitter $ upsample 10 $ 
+                         alignBy (centreOfMass . ((square . square) <$$>) . (limitSigs (-0.0005) 0.0005)) $ 
+                         waveforms 
+        neigenVecs = 3
+        dataMatrix = fromLists $ map sigToList $ alignWaveforms
+        datMatSubMeans = fromColumns $ map vecSubMean $ toColumns dataMatrix
+        covDM = cov datMatSubMeans
+        (eigvals, eigvecs) = eig covDM
+        evs = take neigenVecs $ map snd $ reverse $ 
+              sortBy (comparing fst) $ 
+              zip (fmap realPart $ toList eigvals) [0..]
+        featureVector = fromColumns $ map (mapVector realPart . ((toColumns eigvecs)!!)) evs
+        finalData = trans featureVector <> trans datMatSubMeans
+        pts =  map toList $ toColumns $ finalData
+        nobs = realToFrac $ length $ alignWaveforms
+        clustered = kmeansOn (snd) nclusters $  zip [0..] pts
+        clusteredvs = map (map (listToPoint . snd)) clustered
+        --gaussians = map (fitMultiGauss . map fromList) $ map (map snd) clustered
+        --weights = map ((/nobs) . realToFrac . length . map snd) clustered
+        --wgausses = zip weights gaussians
+        --likelihood = sum $map (wgausses `multiGaussMixture`) $ map (fromList) pts
+        --nparams = (realToFrac $ nclusters*neigenVecs*(neigenVecs*(neigenVecs-1)))/2 --means, covariance matrix          
+        --bic = -2*likelihood +nparams*log nobs
+        idxs = map (map fst) clustered
+        sigsav = map (take 1 . averageSigs . (alignWaveforms `indexMany`)) idxs
+        evss = sortBy (comparing fst) $ concatMap (\(es,i)-> i `tag` es ) $ zip (map (minInterval 0.001 . (putatives `indexMany`)) idxs) [0..]
+        realnclust = length clusteredvs
+
+    in evss
+
+allSpikes = do
+  inEverySession $ do
+              Session bdir _ <- getSession
+              io$ print bdir
+              sigs <- signalsDirect "ecVoltage"
+              let normV = subMeanNormSD sigs
+              storeAsOvwrt "normV" normV
+              let spks = eventDetect 15 normV
+              storeAsOvwrt "spikeClusters" spks
+              return ()
+
+
+
 autoSpikes sigNm = do
-  sigs <- take 10 `fmap` signalsDirect sigNm 
+  sigs <- signalsDirect sigNm 
   io $ initGUI
+  Session bdir _ <- getSession
+  let sessNm = last $ splitBy '/' bdir
   window <- io $ windowNew
   buttonGo <- io $ buttonNew
   avsIm <- io $ imageNew
   clusIm <- io $ imageNew
+  indivIms <- forM [0..11] $ \i-> io $ imageNew
   nclustsRef <- io $ newIORef 4
   hbox1 <- io $ hBoxNew True 10
   hbox2 <- io $ hBoxNew True 10
   hbox3 <- io $ hBoxNew True 10
-  vbox <- io $ vBoxNew True 10
-  cbs <- io $ forM [0..10] $ \i -> do 
+  vbox <- io $ vBoxNew False 10
+  cbs <- io $ forM [0..11] $ \i -> do 
                      cb <- checkButtonNewWithLabel (show i)
                      io $ boxPackStart hbox2 cb PackGrow 0                    
                      return cb
+  io $ forM_ [0..3] $ \h-> do
+                     hb <- vBoxNew True 5
+                     forM [0..2] $ \v-> do
+                              vb <- hBoxNew True 5
+                              -- but <- buttonNew
+                              --print (v, h, (v*4+h))
+                              boxPackStart vb (indivIms!!(v*4+h)) PackGrow 0
+                              boxPackStart hb vb PackGrow 0
+                     boxPackStart hbox3 hb PackGrow 0
+     
+                              
+                          
+
   let sd = stdDevF `sigStat` sigs
   --let sigu = upsample 5 sigs
-  let putatives = crossesDown (((*5) . negate) <$$> sd) sigs `catevents` 
-                  crossesUp ((*5) <$$> sd) sigs
+  let putatives = crossesDown (((*6) . negate) <$$> sd) sigs `catevents`
+                  crossesUp ((*6) <$$> sd) sigs
   let waveforms = limitSigs' (-0.001) 0.001 $ around putatives $ sigs
-  let alignWaveforms = take 1000 $ downsample 10 $ unjitter $ upsample 10 $ 
+  let alignWaveforms = downsample 10 $ unjitter $ upsample 10 $ 
                        alignBy (centreOfMass . ((square . square) <$$>) . (limitSigs (-0.0005) 0.0005)) $ 
                        waveforms 
   --PCA
@@ -160,33 +225,59 @@ autoSpikes sigNm = do
   let nobs = realToFrac $ length $ alignWaveforms
   let likeBic nclusters = 
           let clustered = kmeansOn (snd) nclusters $  zip [0..] pts
-              clusteredvs = map (map (listToPoint . snd)) clustered
+              --clusteredvs = map (map (listToPoint . snd)) clustered
               gaussians = map (fitMultiGauss . map fromList) $ map (map snd) clustered
               weights = map ((/nobs) . realToFrac . length . map snd) clustered
               wgausses = zip weights gaussians
               likelihood = sum $map (wgausses `multiGaussMixture`) $ map (fromList) pts
               nparams = (realToFrac $ nclusters*neigenVecs*(neigenVecs*(neigenVecs-1)))/2 --means, covariance matrix          
               bic = -2*likelihood +nparams*log nobs
-          in if (all (not . isNaN . det . snd) gaussians) 
+          in (clustered, undefined) {-if (all (not . isNaN . det . snd) gaussians) 
                  then Just (clustered, (likelihood, bic))
-                 else Nothing
+                 else Nothing -}
   let displayData nclusters =
-          let mclustered = fst `fmap` likeBic nclusters
-              Just clustered = mclustered
+          let clustered = fst $ likeBic nclusters
               clusteredvs = map (map (listToPoint . snd)) clustered
               idxs = map (map fst) clustered
               sigsav = map (take 1 . averageSigs . (alignWaveforms `indexMany`)) idxs
               evss = map (minInterval 0.001 . (putatives `indexMany`)) idxs
-          in do if isNothing mclustered
-                   then displayData (nclusters-1)
-                   else do
-                     io $ writeIORef nclustsRef nclusters
-                     avspic <- askPics $ plot $ LabelConsecutively sigsav
-                     cluspic <- askPics $ plot $ LabelConsecutively $ map (clusteredvs!!) [0..nclusters-1]
+              realnclust = length clusteredvs
+          in do                     
+                     io $ putStr "pca..."
+                     io $ putStrLn $ " done for "++show (length pts)++" events"
+                     io $ putStrLn "clustering..."
+                     io $ writeIORef nclustsRef realnclust
+                     io $ putStr "making sig avgs... "         
+                     plotSize 500 500            
+                     avspic <- askPics $ plot $ LabelConsecutively sigsav                     
+                     io $ putStr "done\nmaking clusters... "
+                     cluspic <- askPics $ plot $ LabelConsecutively $ map (clusteredvs!!) [0..realnclust-1]
+                     plotSize 300 200
+                     forM_ (zip [0..] $ map (alignWaveforms `indexMany`) idxs) $ 
+                               \(i,sigs)-> do
+                                             pic <- askPics $ plot sigs
+                                             io $ imageSetFromFile (indivIms!!i) $ head pic
+                     io $ putStrLn "done"
+                     --fail "foo"
                      io $ imageSetFromFile avsIm $ head avspic
                      io $ imageSetFromFile clusIm $ head cluspic
-                     --forM_ [0..nclusters-1] $ \i -> io $ widgetShow (cbs!!i)
-                     --forM_ [nclusters..10] $ \i -> io $ widgetHideAll (cbs!!i)
+                     forM_ [0..realnclust-1] $ \i -> io $ widgetShow (cbs!!i)
+                     forM_ [realnclust..11] $ \i -> io $ widgetHide (cbs!!i)
+                     forM_ [realnclust..11] $ \i -> io $ imageClear (indivIms!!i) --hide images
+                     let saveAction = do
+                             checked <- forM [0..11] $ \i -> ifM (toggleButtonGetActive (cbs!!i))
+                                                                 (return $ Just i)
+                                                                 (return Nothing)
+                             print $ catMaybes checked
+                             let finalEvs = concatMap (evss!!) $ catMaybes checked
+                             inApproxSession sessNm $ do
+                                        storeAsOvwrt "spikes" finalEvs
+                             putStrLn $ "saved "++show (length finalEvs)++" spikes..."
+                             --print finalEvs
+                             return ()
+                     io $ onClicked buttonGo saveAction -- (putStrLn "Hello World")
+
+
                      return ()
                      {-let imgs = map imgToHtml $ (avspic++cluspic)
                      let ch n = n +++ checkbox ("ch"++n) ("ch"++n)
@@ -204,19 +295,20 @@ autoSpikes sigNm = do
                        Just n -> displayData $ read n
                        Nothing -> return (res, evss, nclusters)
                  -}
-  displayData 4
   io $ set window [ containerBorderWidth := 10,
                     containerChild := vbox ]
   io $ boxPackStart vbox hbox1 PackGrow 0
+  io $ boxPackStart vbox hbox3 PackGrow 0
   io $ boxPackStart vbox hbox2 PackGrow 0
 --  io $ boxPackStart vbox hbox3 PackGrow 0
   io $ boxPackStart hbox1 avsIm PackGrow 0
   io $ boxPackStart hbox1 clusIm PackGrow 0
   io $ boxPackStart hbox2 buttonGo PackGrow 0
   io $ set buttonGo [ buttonLabel := "Save" ]
-  io $ onClicked buttonGo (putStrLn "Hello World")
+  --io $ onClicked buttonGo (putStrLn "Hello World")
   io $ onDestroy window mainQuit
   io $ widgetShowAll window
+  displayData 10
   io $ mainGUI
 {-
   --calc likelihood
@@ -242,11 +334,6 @@ autoSpikes sigNm = do
   --ask $ plot $ take 100 $ alignWaveforms 
   --io $ print $ dataMatrix
   return ()
-
-
-imgToHtml s = 
-    let pth = "/files/"++(intercalate "/" $drop 3 $ splitBy '/' s)
-    in image![src pth]
 
 spikeDetectIO = do 
   (snm:overDurNm:_) <-getArgs 

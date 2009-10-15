@@ -283,6 +283,20 @@ dispatch opts ("show":sessNm:_) = do
               pTy (PairT (NumT (Just RealT)) t) = "Event "++ppType t
               pTy t = ppType t
 
+dispatch opts ("mvevs":sessNm:oldNm:newNm:_) = do
+  longSessNm <- resolveApproxSession root sessNm
+  renameDirectory ("/var/bugpan/sessions/" ./ longSessNm ./ "events" ./ oldNm) 
+                  ("/var/bugpan/sessions/" ./ longSessNm ./ "events" ./ newNm)
+  return ()
+
+dispatch opts ("lnsess":newDir:_) = do
+  ifM (doesDirectoryExist $ "/var/bugpan/"++newDir)
+      (do system "rm /var/bugpan/sessions"
+          system $ "ln -s /var/bugpan/"++newDir++" /var/bugpan/sessions"
+          return ())
+      (putStrLn $ "directory does not exist: /var/bugpan/"++newDir)
+
+
 dispatch opts ("plotsigs":sessNm:sigNm:_) = do
   qres <- inApproxSession sessNm $ do
             sig <- signalsDirect sigNm
