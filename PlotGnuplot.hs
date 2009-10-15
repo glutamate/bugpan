@@ -197,6 +197,9 @@ data a :|: b = PcntDiv a :|: PcntDiv b
 data a :--: b = PcntDiv a :--: PcntDiv b
 data a :==: b =  a :==: b
 
+data Hplots a = Hplots [a]
+data Vplots a = Vplots [a]
+
 data PcntDiv a = Pcnt Double a
 
 data WithColour a = WithColour String a
@@ -261,6 +264,23 @@ instance (PlotWithGnuplot a, PlotWithGnuplot b) => PlotWithGnuplot (a :+: b) whe
       py <- getGnuplotCmd ys                          
       return $ [(r,px++py)]
 
+instance (PlotWithGnuplot a) => PlotWithGnuplot (Hplots a) where
+    multiPlot (Rect (x0, y0) (x1,y1)) (Hplots ps) = do
+      let n = realToFrac $ length ps
+      let xeach = (x1-x0)/n
+      pls <- forM (zip ps [0..]) $ \(p,i) -> 
+               multiPlot ( Rect (x0+(i*xeach),y0) (x0+((i+1)*xeach), y1) ) p
+      return $ concat pls
+
+instance (PlotWithGnuplot a) => PlotWithGnuplot (Vplots a) where
+    multiPlot (Rect (x0, y0) (x1,y1)) (Vplots ps) = do
+      let n = realToFrac $ length ps
+      let yeach = (y1-y0)/n
+      pls <- forM (zip ps [0..]) $ \(p,i) -> 
+               multiPlot ( Rect (x0,y0+(i*yeach)) (x0, y1+((i+1)*yeach)) ) p
+      return $ concat pls
+
+
 instance PlotWithGnuplot a => PlotWithGnuplot (String, a) where
     multiPlot r (title, x) = do
       pls <- multiPlot r x
@@ -277,7 +297,11 @@ instance PlotWithGnuplot a => PlotWithGnuplot (LabelConsecutively [a]) where
             addTitleMany :: String -> ( GnuplotCmd) -> ( GnuplotCmd)
             addTitleMany title (cmd) = ( map (addTitle title) cmd)
 
-
+tilePlots ::  PlotWithGnuplot a => Int -> [a] -> Vplots (Hplots a)
+tilePlots n ps = Vplots $ map Hplots $ groupsOf n ps
+    where groupsOf n [] = []
+          groupsOf n xs = let (mine, rest) = splitAt n xs
+                          in mine: groupsOf n rest
 
 {-instance Num a => PlotWithR (Hist a) where
     getRPlotCmd (Histogram tgs) = 

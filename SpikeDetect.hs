@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns, ScopedTypeVariables, FlexibleContexts #-}
+{-# LANGUAGE BangPatterns, ScopedTypeVariables, FlexibleContexts, NoMonomorphismRestriction #-}
 
 module Main where
 
@@ -157,6 +157,29 @@ eventDetect nclusters sigs =
         realnclust = length clusteredvs
 
     in evss
+
+tagElem :: (Eq a, Tagged t) => [a] -> [t a] -> [t a]
+tagElem acceptTags tagged = (`elem` acceptTags)//tagged
+
+plotClusterMeans :: [Event Int] -> [Signal Double] -> [Signal Double]
+plotClusterMeans evs sigs = let idxs = nubTags evs 
+                                avg i = head $ averageSigs $ 
+                                        downsample 10 $ unjitter $ upsample 10 $ 
+                                        limitSigs' (-0.001) 0.001 $ 
+                                        around ((==i)//evs) $ sigs
+                            in map avg idxs
+
+
+plotClusters :: [Event Int] -> [Signal Double] -> Vplots (Hplots [Signal Double])
+plotClusters evs sigs = let idxs = nubTags evs 
+                            allSigs i = limitSigs' (-0.001) 0.001 $ 
+                                    around ((==i)//evs) $ sigs
+                        in tilePlots 3 $ map allSigs idxs
+
+--plotClusters
+nubTags = nub . map getTag
+--tilePlots
+--hplots, vplots
 
 allSpikes = do
   inEverySession $ do
