@@ -46,7 +46,7 @@ execCodeWriterT modNm cw = do
 mkAnal :: [String] -> CodeWriterT IO ()
 mkAnal [] = return ()
 mkAnal (('>':q):ss) = do
-  procQ' q
+  procQ' $ chomp q
   mkAnal ss
 mkAnal ss = do
   let (para, rest) = span justText ss

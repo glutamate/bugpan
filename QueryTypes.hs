@@ -252,12 +252,12 @@ askForLiterate qx = do
   --liftIO $ putStrLn $ qos
   cond [(str =~ "file://(.+)\\.html", liftIO $ do
                   let [[_, s]] = str =~ "file://(.+)\\.html"
-                  lns <- readFile $ s++".html"
-                  putStr $ lns),
+                  lns <- lines `fmap` (readFile $ s++".html")
+                  putStr $ unlines $ map (substitute "style=\"float: left\"" "") lns),
         (str =~ "file://(.+)\\.png", liftIO $ do
                   let [[_, s]] = str =~ "file://(.+)\\.png"
                   putStr $ "<img src=\""++ s++".png\" />")
-       ] $ (liftIO $ putStrLn $ "=> "++str)
+       ] $ (liftIO $ putStrLn $ "<pre>=> "++str++"</pre>")
   return ()
 
 

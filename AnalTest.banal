@@ -5,7 +5,7 @@ how are you
 > x = take 1 ecVoltage
 > plot x
 > close
-> openSession 4095
+> openSession b20
 foobar
-> take 1 tStart
+> take 2 tStart
 > close
