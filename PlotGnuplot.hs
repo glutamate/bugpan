@@ -119,6 +119,7 @@ gnuplotToPNG fp x = do
                  "set output '"++fp++"'\n"++
                   (showMultiPlot plines)
                        
+  --putStrLn cmdLines
   writeFile "/tmp/gnuplotCmds" cmdLines
   system "gnuplot /tmp/gnuplotCmds"
   removeFile "/tmp/gnuplotCmds"
@@ -174,6 +175,7 @@ gnuplotMany opts nmbxs = do
   let w = optVal 'w' 640 opts
   let term = "set terminal png size "++ show w++","++show h++" crop\n"
   let cmds = start++term ++concatMap plotOne nmcmds
+  --putStrLn cmds
   writeFile "/tmp/gnuplotCmds" cmds
   system "gnuplot /tmp/gnuplotCmds"
   removeFile "/tmp/gnuplotCmds"
@@ -277,7 +279,7 @@ instance (PlotWithGnuplot a) => PlotWithGnuplot (Vplots a) where
       let n = realToFrac $ length ps
       let yeach = (y1-y0)/n
       pls <- forM (zip ps [0..]) $ \(p,i) -> 
-               multiPlot ( Rect (x0,y0+(i*yeach)) (x0, y1+((i+1)*yeach)) ) p
+               multiPlot ( Rect (x0,y0+(i*yeach)) (x1, y0+((i+1)*yeach)) ) p
       return $ concat pls
 
 

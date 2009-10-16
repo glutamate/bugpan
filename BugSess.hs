@@ -320,9 +320,10 @@ dispatch opts ("mkndur":sessNm:durnm:val:_) = do
   return ()
 
     
-dispatch _ _ = putStrLn $ unlines [
+dispatch os ss = putStrLn $ unlines ["",
+              "Unknown command: bugsess "++intercalate " " os++" "++intercalate " " ss,
               "",
-              "Manage bugpan sessions",
+              "Bugsess: Manage bugpan sessions",
               "",
               "\tbugsess ask {session} {query}",
               "\tbugsess show {session}",

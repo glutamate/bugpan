@@ -19,6 +19,7 @@ import Math.Probably.GlobalRandoms
 import Control.Monad
 import PlotGnuplot
 
+
 peak :: Ord a => [Signal a] ->[Event a]
 peak sigs =  map (\sig -> swap . foldSig cmp (sigInitialVal sig, 0) $ zipWithTime sig) sigs 
     where cmp (curMax, tmax) (v, t) = if v>curMax 
@@ -413,3 +414,4 @@ nearestTo x (y:[]) = y
 nearestToEach :: [Event a] -> [Event b] -> [Event Double]
 nearestToEach mainEv otherEv = map f mainEv
     where f (t,_) = (t, dist t $ nearestTo t $ map fst otherEv) 
+

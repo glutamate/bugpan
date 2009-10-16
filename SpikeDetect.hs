@@ -122,6 +122,14 @@ minInterval t es@(e:[]) = es
 minInterval t (ts1:res@(ts2:es)) | dist (gettStart ts1) (gettStart ts2) < t = minInterval t (ts1:es)
                                  | otherwise = ts1 : minInterval t res
 
+sigStarts :: [Signal a] -> [Event ()]
+sigStarts = map (\(Signal t1 _ _ _) -> (t1,()))
+
+shiftEach :: [Double] -> [Event a] -> [Event a]
+shiftEach [] _ = []
+shiftEach _ [] = []
+shiftEach (s:ss) ((t,v):evs) = (t+s, v): shiftEach ss evs
+
 eventDetect :: Int -> [Signal Double] -> [Event Int]
 eventDetect nclusters sigs = 
     let sd = stdDevF `sigStat` sigs
@@ -131,6 +139,7 @@ eventDetect nclusters sigs =
         alignWaveforms = downsample 10 $ unjitter $ upsample 10 $ 
                          alignBy (centreOfMass . ((square . square) <$$>) . (limitSigs (-0.0005) 0.0005)) $ 
                          waveforms 
+        alignedEvents = shiftEach (map (negate . (+0.001). fst) $ sigStarts alignWaveforms) putatives
         neigenVecs = 3
         dataMatrix = fromLists $ map sigToList $ alignWaveforms
         datMatSubMeans = fromColumns $ map vecSubMean $ toColumns dataMatrix
@@ -153,41 +162,27 @@ eventDetect nclusters sigs =
         --bic = -2*likelihood +nparams*log nobs
         idxs = map (map fst) clustered
         sigsav = map (take 1 . averageSigs . (alignWaveforms `indexMany`)) idxs
-        evss = sortBy (comparing fst) $ concatMap (\(es,i)-> i `tag` es ) $ zip (map (minInterval 0.001 . (putatives `indexMany`)) idxs) [0..]
+        evss = sortBy (comparing fst) $ concatMap (\(es,i)-> i `tag` es ) $ zip (map (minInterval 0.001 . (alignedEvents `indexMany`)) idxs) [0..]
         realnclust = length clusteredvs
 
     in evss
 
-tagElem :: (Eq a, Tagged t) => [a] -> [t a] -> [t a]
-tagElem acceptTags tagged = (`elem` acceptTags)//tagged
 
-plotClusterMeans :: [Event Int] -> [Signal Double] -> [Signal Double]
-plotClusterMeans evs sigs = let idxs = nubTags evs 
-                                avg i = head $ averageSigs $ 
-                                        downsample 10 $ unjitter $ upsample 10 $ 
-                                        limitSigs' (-0.001) 0.001 $ 
-                                        around ((==i)//evs) $ sigs
-                            in map avg idxs
-
-
-plotClusters :: [Event Int] -> [Signal Double] -> Vplots (Hplots [Signal Double])
-plotClusters evs sigs = let idxs = nubTags evs 
-                            allSigs i = limitSigs' (-0.001) 0.001 $ 
-                                    around ((==i)//evs) $ sigs
-                        in tilePlots 3 $ map allSigs idxs
-
---plotClusters
-nubTags = nub . map getTag
 --tilePlots
 --hplots, vplots
 
 allSpikes = do
+  {-inApproxSession "6f" $ do
+              sigs <- take 20 `fmap` signalsDirect "normV"
+              let spks = eventDetect 15 sigs
+              storeAsOvwrt "spikeClusters2" spks
+              return () -}
   inEverySession $ do
               Session bdir _ <- getSession
               io$ print bdir
-              sigs <- signalsDirect "ecVoltage"
-              let normV = subMeanNormSD sigs
-              storeAsOvwrt "normV" normV
+              normV <- signalsDirect "normV"
+              --let normV = subMeanNormSD sigs
+              --storeAsOvwrt "normV" normV
               let spks = eventDetect 15 normV
               storeAsOvwrt "spikeClusters" spks
               return ()

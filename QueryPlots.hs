@@ -20,6 +20,7 @@ import System.Posix.Files
 import PlotGnuplot
 import Foreign.Storable
 import Data.Maybe
+import QueryUtils
 
 data Histo where -- GADT bec i don't know syntax for double existential (no longer needed)
     Histo :: Int -> [(a,Double)] -> Histo 
@@ -257,9 +258,33 @@ askPics qx = do
   conts <- liftIO $ readFile $ drop 7 qos
   return $ extractImages conts
 
+unitList x = [x]
+
 extractImages :: String -> [String]
 extractImages txt = catMaybes $ map f $ lines txt
     where f s | "<img src=\"" `isPrefixOf` s = Just $ takeWhile (/='"') $ drop 10 s
               | otherwise = Nothing
 
+plotClusterMeans :: [Event Int] -> [Signal Double] -> LabelConsecutively [[Signal Double]]
+plotClusterMeans evs sigs = let idxs = sort $ nubTags evs 
+                                avg i = head $ averageSigs $ 
+                                        downsample 10 $ unjitter $ upsample 10 $ 
+                                        limitSigs' (-0.001) 0.001 $ 
+                                        around ((==i)//evs) $ sigs
+                            in LabelConsecutively $ map (unitList . avg) idxs
 
+
+plotClusters :: [Event Int] -> [Signal Double] -> Vplots (Hplots [Signal Double])
+plotClusters evs sigs = let idxs = sort $ nubTags evs 
+                            allSigs i = limitSigs' (-0.001) 0.001 $ 
+                                    around ((==i)//evs) $ sigs
+                        in tilePlots 3 $ map allSigs idxs
+
+tagElem :: (Eq a, Tagged t) => [a] -> [t a] -> [t a]
+tagElem acceptTags tagged = (`elem` acceptTags)//tagged
+
+
+
+nubTags = nub . map getTag 
+
+--file:///var/bugpan/www/01a11b43ac06eef1e89e/plots1.html
