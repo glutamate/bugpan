@@ -48,6 +48,7 @@ import qualified Data.StorableVector as SV
 import Foreign.Storable
 import System.Posix.Files
 import PlotGnuplot
+import Text.Regex.Posix
 
 --import Graphics.Rendering.HSparklines
 
@@ -84,6 +85,8 @@ sample (Sam sf) = do
   return $ x -}
  
 getSession = qsSess `fmap` get
+getSessionName = do Session bdir _ <- getSession
+                    return $ last $ splitBy '/' bdir
 
 openReplies = modify (\s-> s { shArgs = "-o" : shArgs s })
 plotSize w h = modify (\s-> s { shArgs = ("-h"++show h) : ("-w"++show w): shArgs s })
@@ -240,6 +243,22 @@ ask qx = do
   liftIO $ putStrLn $ qos
   return qos
 
+askForLiterate :: (QueryResult a, MonadIO m) => a -> StateT QState m ()
+askForLiterate qx = do
+  x <- qResThroughSession qx
+  args <- shArgs `fmap` get
+  str <- liftIO $ qReply x args
+  --let str = unlines $ [s | QString s <- qos ]
+  --liftIO $ putStrLn $ qos
+  cond [(str =~ "file://(.+)\\.html", liftIO $ do
+                  let [[_, s]] = str =~ "file://(.+)\\.html"
+                  lns <- readFile $ s++".html"
+                  putStr $ lns),
+        (str =~ "file://(.+)\\.png", liftIO $ do
+                  let [[_, s]] = str =~ "file://(.+)\\.png"
+                  putStr $ "<img src=\""++ s++".png\" />")
+       ] $ (liftIO $ putStrLn $ "=> "++str)
+  return ()
 
 
 isSingle [x] = True

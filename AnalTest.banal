@@ -1,0 +1,11 @@
+hello world
+> openSession
+> take 1 tStop
+how are you
+> x = take 1 ecVoltage
+> plot x
+> close
+> openSession 4095
+foobar
+> take 1 tStart
+> close

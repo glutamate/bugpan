@@ -174,7 +174,7 @@ eventDetect nclusters sigs =
 allSpikes = do
   {-inApproxSession "6f" $ do
               sigs <- take 20 `fmap` signalsDirect "normV"
-              let spks = eventDetect 15 sigs
+              let spks = eventDetect 12 sigs
               storeAsOvwrt "spikeClusters2" spks
               return () -}
   inEverySession $ do
@@ -183,7 +183,7 @@ allSpikes = do
               normV <- signalsDirect "normV"
               --let normV = subMeanNormSD sigs
               --storeAsOvwrt "normV" normV
-              let spks = eventDetect 15 normV
+              let spks = eventDetect 12 normV
               storeAsOvwrt "spikeClusters" spks
               return ()
 
