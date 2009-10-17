@@ -31,6 +31,10 @@ tellPrint s = tell $ "io $ putStrLn $ "++show s
 
 tellPrintCode s = tell $ "io $ putStrLn $ \"<pre>\\n\"++"++show s++"++\"</pre>\""
 
+tellPrintSessionName = do
+    tell "sessionIdentifier <- getSessionName"
+    tell "io $ putStrLn $ \"<pre>\\n\"++\"> openSession \"++sessionIdentifier++\"</pre>\""
+
 modimport :: Monad m => String -> CodeWriterT m ()
 modimport s = lift $ W.tell ["import "++s]
 
@@ -45,9 +49,17 @@ execCodeWriterT modNm cw = do
 
 mkAnal :: [String] -> CodeWriterT IO ()
 mkAnal [] = return ()
-mkAnal (('>':q):ss) = do
-  procQ' $ chomp q
-  mkAnal ss
+mkAnal (('>':q):ss) 
+    | "table" `isPrefixOf` (chomp q) = 
+        do let ind = indentOf q 
+           let (tablines, rest) = partition (\ln-> not (justText ln) && 
+                                                   indentMoreThan ind (tail ln)) ss
+           procTable q tablines
+           mkAnal rest
+    | otherwise = 
+        do procQ' $ chomp q
+           mkAnal ss
+
 mkAnal ss = do
   let (para, rest) = span justText ss
   tellPrint "<p>"
@@ -59,6 +71,9 @@ mkAnal ss = do
 justText ('>':s) = False
 justText s = True
 
+indentOf = length . takeWhile (==' ')
+
+indentMoreThan n = (>n) . indentOf
 
 --todo:
 -- running it
@@ -68,10 +83,8 @@ justText s = True
 
 --later:
 -- filter
--- allSessions
--- what about text in many-sessions?
 -- tables for many-sessions
--- > to not include query in output
+-- >> to not include query in output
 -- running goals ?
 
 --root = "/var/bugpan/sessions/"
@@ -91,7 +104,30 @@ tellNmsTys = do
                                                        (typeToProxyName $ unWrapT ty), ";"
                                                       ]
 
-               
+procTable q tablines = do
+  tellPrint "<table><thead><tr>"
+  tellPrint "<td>session</td>"
+  tellPrint $ map (\l-> "<td>"++l++"</td>") tablines
+  tellPrint "</tr></thead><tbody>"
+  tell "tab <- inEverySession $ do"
+  indent 10
+  tellNmsTys
+  tellPrint "<tr>"
+  tell "sessionIdentifier <- getSessionName"
+  tell "io $ putStrLn $ \"<td>\"++sessionIdentifier++\"</td>\""
+
+  forM_ (tablines ) $ \ln -> do
+                         tellPrint "<td>"
+                         tell $ "askForLiterate $ "++ln
+                         tellPrint "</td>"
+  tellPrint "</tr>"
+  -- tell $ "io $ putStrLn $ "
+  indent $ -10
+  tellPrint "</tbody></table>"
+
+  return ()
+
+
 
 procQ' s 
     | s =~ "^\\s*(\\w+)\\s*@=\\s*(.+)" = 
@@ -107,8 +143,12 @@ procQ' s
            do tell "inSessionFromArgs $ do"
               indent 3
               tellNmsTys
-              tell "sessionIdentifier <- getSessionName"
-              tell "io $ putStrLn $ \"<pre>\\n\"++\"> openSession \"++sessionIdentifier++\"</pre>\""
+              tellPrintSessionName
+    | s =~ "^\\s*inEverySession\\s*$" = 
+           do tell "inEverySession $ do"
+              indent 3
+              tellNmsTys
+              tellPrintSessionName
     | s =~ "^\\s*openSession\\s*(.+)" = 
            let [[all, sessnm]] = (s =~ "^\\s*openSession\\s*(.+)")::[[String]]
            in do tell $ "inApproxSession "++show sessnm++" $ do"
@@ -117,10 +157,23 @@ procQ' s
                  tellPrintCode $ "> openSession "++sessnm
     | s =~ "^\\s*close\\s*" = do tell "return ()"
                                  indent $ -3
+    | s =~ "^\\s*break\\s*" = tellPrint "<div style=\"page-break-bfore: always\" />"
+                                
     | otherwise = do tellPrintCode $ "> "++s
                      tell $ "askForLiterate $ "++s
                      tellPrint "<p />"
 
+
+initHtml = 
+    unlines ["<html>",
+            "<head>",
+             "<style>",
+             "</style>",
+            "</head><body>"]
+
+
+endHtml = 
+    unlines ["</body></html>"]
 
 
 
