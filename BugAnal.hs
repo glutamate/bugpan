@@ -18,13 +18,13 @@ import System.Exit
 
 import Data.List
 
-type CodeWriterT m a= StateT Int (WriterT [String] m) a
+type CodeWriterT m a= StateT (Int, [String]) (WriterT [String] m) a
 
 indent n = do 
-  modify $ \ind->ind+n
+  modify $ \(ind,ss)->(ind+n,ss)
   
 tell :: Monad m => String -> CodeWriterT m ()
-tell s = do n <- get
+tell s = do n <- fst `fmap` get
             lift $ W.tell [(replicate n ' ')++s]
 
 tellPrint s = tell $ "io $ putStrLn $ "++show s
@@ -35,6 +35,10 @@ tellPrintSessionName = do
     tell "sessionIdentifier <- getSessionName"
     tell "io $ putStrLn $ \"<pre>\\n\"++\"> openSession \"++sessionIdentifier++\"</pre>\""
 
+tellEverywheres = do
+  dfns <- snd `fmap` get
+  mapM_ (tellPrint . ("let "++)) $ reverse dfns 
+
 modimport :: Monad m => String -> CodeWriterT m ()
 modimport s = lift $ W.tell ["import "++s]
 
@@ -43,7 +47,7 @@ chomp s = dropWhile (==' ') s
 
 execCodeWriterT :: Monad m => String -> CodeWriterT m () -> m String
 execCodeWriterT modNm cw = do
-  ss <- execWriterT $ execStateT cw 0
+  ss <- execWriterT $ execStateT cw (0,[])
   let (imps, rest) = partition ("import " `isPrefixOf`) ss
   return $ unlines (("module "++modNm++" where"):imps++rest)
 
@@ -75,7 +79,7 @@ indentOf = length . takeWhile (==' ')
 indentMoreThan n = (>n) . indentOf
 
 --todo:
--
+-- stats?
 --later:
 -- filter
 -- >> to not include query in output
@@ -97,6 +101,7 @@ tellNmsTys = do
                                                        " \""++ nm++"\" ",
                                                        (typeToProxyName $ unWrapT ty), ";"
                                                       ]
+  tellEverywheres
 
 procTable q tablines = do
   tellPrint "<table cellspacing = \"0\"><thead><tr>"
@@ -153,6 +158,10 @@ procQ' s
                                  indent $ -3
     | s =~ "^\\s*break\\s*" = tellPrint "<div style=\"page-break-before: always\" />"
                                 
+    | s =~ "^\\s*everywhere\\s*(.+)" = 
+           let [[_, defn]] = s =~ "^\\s*everywhere\\s*(.+)"
+           in do modify $ \(i, ss) -> (i, defn:ss)
+                 tellPrintCode $ "> everywhere"++defn
     | otherwise = do tellPrintCode $ "> "++s
                      tell $ "askForLiterate $ "++s
                      tellPrint "<p />"

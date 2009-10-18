@@ -1,0 +1,15 @@
+Hello!
+
+> everywhere binSize = 0.01
+> everywhere isZero x = x>(-0.5) && x<0.5 
+> everywhere scratchd0 = during (isZero//depol) scratch
+> everywhere cc = crossCorrelateControlled scratch binSize 
+
+> table 
+>   frequency ci1Spikes burstSeti
+>   frequency ci1Spikes burstFlex
+
+> inEverySession 
+> plot ((("ci1 seti",  cc seti ci1) :||: ("ci1 feti ",  cc feti ci1 ))
+>      :==:
+>      (("ci1 flexor , cc flexSpikes ci1 ) :||: ("seti flexor ", cc flexSpikes seti)))

@@ -95,6 +95,16 @@ freqDuring durs evs = map (freqDuring' evs) durs
     where freqDuring' evs dur@((t1, t2), durtag) = 
               ((t1, t2), (realToFrac . length $ during [dur] evs)/(t2-t1))
 
+totalDuration :: [Duration a] -> Double
+totalDuration = sum . map ((uncurry $flip (-)) . fst)
+
+dursToOne :: [Duration a] -> [Duration ()]
+dursToOne durs = [((foldl1 min (map (fst. fst) durs),foldl1 max (map (snd. fst) durs)),()) ]
+
+frequency :: [Event b] -> [Duration a] -> [Duration Double]
+frequency evs durs =
+    tagd ((realToFrac . sumTags $ countDuring durs evs )  / (totalDuration durs)) $ dursToOne durs
+
 countDuring :: [Duration a] -> [Event b] -> [Duration Int]
 countDuring durs evs = map (freqDuring' evs) durs
     where freqDuring' evs dur@((t1, t2), durtag) = 
@@ -296,6 +306,13 @@ crossCorrelateOverControl dur e1 e2 =
                return $ crossCorrelateOver [durOver] (shift tStart $ lstToEvs e1sim) (shift tStart $ lstToEvs e2sim)  
     in concat (sampleN 1000  oneSim)               
           
+crossCorrelateControlled ::  [Duration a] -> Double -> [Event b] -> [Event c] -> [Signal Double]
+crossCorrelateControlled dur bz e1 e2 = 
+    let ctrl =crossCorrelateOverControl dur e1 e2
+        s1 = normSigToArea (histSigBZ bz (crossCorrelateOver dur e1 e2))
+        s2 = normSigToArea $ histSigBZ bz (ctrl)
+    in [s1-s2]
+
 
 testSampler rnds = concat $ take 10 $ runSampler rnds $ do 
   u <- unitSample
@@ -415,3 +432,13 @@ nearestToEach :: [Event a] -> [Event b] -> [Event Double]
 nearestToEach mainEv otherEv = map f mainEv
     where f (t,_) = (t, dist t $ nearestTo t $ map fst otherEv) 
 
+burst :: Double -> [Event a] -> [Duration ()]
+burst tmax es = burst' Nothing tmax es
+burst' :: Maybe Double -> Double -> [Event a] -> [Duration ()]
+burst' (Nothing) tmax es@(e:[]) = []
+burst' (Just tbstart) tmax ((t,v):[]) = [((tbstart, t), ())]
+burst' (Just tbstart) tmax ((t1,v1):res@((t2,v2):es)) 
+    | dist t1 t2 > tmax = ((tbstart, t1), ()) : burst' (Nothing) tmax res
+    | otherwise = burst' (Just tbstart) tmax res
+burst' (Nothing) tmax ((t1,v1):res@((t2,v2):es)) | dist t1 t2 < tmax = burst' (Just t1) tmax res
+                                                 | otherwise = burst' (Nothing) tmax res

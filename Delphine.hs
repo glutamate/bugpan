@@ -52,19 +52,7 @@ manyDurs n tsep tmax= let durs = replicate n ((0,tmax),())
 --extensor max 0.030 s
 --flexor max 0.025 s
 
-burst :: Double -> [Event a] -> [Duration ()]
-burst tmax es = burst' Nothing tmax es
-burst' :: Maybe Double -> Double -> [Event a] -> [Duration ()]
-burst' (Nothing) tmax es@(e:[]) = []
-burst' (Just tbstart) tmax ((t,v):[]) = [((tbstart, t), ())]
-burst' (Just tbstart) tmax ((t1,v1):res@((t2,v2):es)) 
-    | dist t1 t2 > tmax = ((tbstart, t1), ()) : burst' (Nothing) tmax res
-    | otherwise = burst' (Just tbstart) tmax res
-burst' (Nothing) tmax ((t1,v1):res@((t2,v2):es)) | dist t1 t2 < tmax = burst' (Just t1) tmax res
-                                                 | otherwise = burst' (Nothing) tmax res
 
-totalDuration :: [Duration a] -> Double
-totalDuration = sum . map ((uncurry $flip (-)) . fst)
 
 
 dispatch ("import":_) = do
@@ -130,7 +118,7 @@ dispatch ("analyse":sess:_) = do
     --io $ print $ (isSorted ci1Spikes
     --io $ print $ isSorted seti
     --io $ print $ map (round . fst) ci1Spikes
-    let nearSeti = (<0.5)//(nearestToEach ci1Spikes seti)
+    let nearSeti = (<0.5)//(nearestToEach ci1Spikes seti) 
     let nearFlex = (<0.5)//(nearestToEach ci1Spikes flexSpikes)
     let clos = map closestSpike $ zip (nearSeti) (nearFlex)
     let burstSeti = burst 0.03 $ during scratchd0 seti
