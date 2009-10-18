@@ -260,6 +260,25 @@ askForLiterate qx = do
        ] $ (liftIO $ putStrLn $ "<pre>=> "++str++"</pre>")
   return ()
 
+askForLiterateTable :: (QueryResult a, MonadIO m) => a -> StateT QState m ()
+askForLiterateTable qx = do
+  modify (\s-> s { shArgs = "-g" : shArgs s })
+  x <- qResThroughSession qx
+  args <- shArgs `fmap` get
+  str <- liftIO $ qReply x args
+  --let str = unlines $ [s | QString s <- qos ]
+  --liftIO $ putStrLn $ qos
+  cond [(str =~ "file://(.+)\\.html", liftIO $ do
+                  let [[_, s]] = str =~ "file://(.+)\\.html"
+                  lns <- lines `fmap` (readFile $ s++".html")
+                  putStr $ unlines $ map (substitute "style=\"float: left\"" "") lns),
+        (str =~ "file://(.+)\\.png", liftIO $ do
+                  let [[_, s]] = str =~ "file://(.+)\\.png"
+                  putStr $ "<img src=\""++ s++".png\" />")
+       ] $ (liftIO $ putStrLn $ str)
+  modify (\s-> s { shArgs = tail $ shArgs s })
+  return ()
+
 
 isSingle [x] = True
 isSingle _ = False

@@ -49,16 +49,15 @@ execCodeWriterT modNm cw = do
 
 mkAnal :: [String] -> CodeWriterT IO ()
 mkAnal [] = return ()
-mkAnal (('>':q):ss) 
-    | "table" `isPrefixOf` (chomp q) = 
-        do let ind = indentOf q 
-           let (tablines, rest) = partition (\ln-> not (justText ln) && 
+mkAnal (('>':q):ss) = 
+    let ind = indentOf q 
+        (tablines, rest) = span (\ln-> not (justText ln) && 
                                                    indentMoreThan ind (tail ln)) ss
-           procTable q tablines
-           mkAnal rest
-    | otherwise = 
-        do procQ' $ chomp q
-           mkAnal ss
+    in do if "table" `isPrefixOf` (chomp q)
+             then do procTable q tablines
+                     mkAnal rest
+             else do procQ' $ concat $ chomp q : map (chomp . tail) tablines
+                     mkAnal rest
 
 mkAnal ss = do
   let (para, rest) = span justText ss
@@ -76,14 +75,9 @@ indentOf = length . takeWhile (==' ')
 indentMoreThan n = (>n) . indentOf
 
 --todo:
--- running it
--- include all variables when opening session
--- query results
--- plots!
-
+-
 --later:
 -- filter
--- tables for many-sessions
 -- >> to not include query in output
 -- running goals ?
 
@@ -105,20 +99,20 @@ tellNmsTys = do
                                                       ]
 
 procTable q tablines = do
-  tellPrint "<table><thead><tr>"
-  tellPrint "<td>session</td>"
-  tellPrint $ map (\l-> "<td>"++l++"</td>") tablines
+  tellPrint "<table cellspacing = \"0\"><thead><tr>"
+  tellPrint "<th>session</th>"
+  tellPrint $ concatMap (\l-> "<th>"++tail (chomp l)++"</th>") tablines
   tellPrint "</tr></thead><tbody>"
   tell "tab <- inEverySession $ do"
   indent 10
   tellNmsTys
   tellPrint "<tr>"
   tell "sessionIdentifier <- getSessionName"
-  tell "io $ putStrLn $ \"<td>\"++sessionIdentifier++\"</td>\""
+  tell "io $ putStrLn $ \"<td>\"++take 6 sessionIdentifier++\"</td>\""
 
   forM_ (tablines ) $ \ln -> do
                          tellPrint "<td>"
-                         tell $ "askForLiterate $ "++ln
+                         tell $ "askForLiterateTable $ "++chomp (tail ln)
                          tellPrint "</td>"
   tellPrint "</tr>"
   -- tell $ "io $ putStrLn $ "
@@ -157,7 +151,7 @@ procQ' s
                  tellPrintCode $ "> openSession "++sessnm
     | s =~ "^\\s*close\\s*" = do tell "return ()"
                                  indent $ -3
-    | s =~ "^\\s*break\\s*" = tellPrint "<div style=\"page-break-bfore: always\" />"
+    | s =~ "^\\s*break\\s*" = tellPrint "<div style=\"page-break-before: always\" />"
                                 
     | otherwise = do tellPrintCode $ "> "++s
                      tell $ "askForLiterate $ "++s
@@ -165,15 +159,18 @@ procQ' s
 
 
 initHtml = 
-    unlines ["<html>",
+           ["<html>",
             "<head>",
              "<style>",
+             "thead th { border-bottom: 1px solid black; }",
+             --"tbody  tr { border-top: 1px solid black; }",
+             "table td, thead th { padding: 5px; }",
              "</style>",
             "</head><body>"]
 
 
 endHtml = 
-    unlines ["</body></html>"]
+      ["</body></html>"]
 
 
 
@@ -188,7 +185,9 @@ writer s = do
   modimport "TNUtils"
   tell "main = do"
   indent 3
+  mapM tellPrint initHtml
   mkAnal s
+  mapM tellPrint endHtml
   tell "return ()"
 main = do 
   (fileNm:rest) <- getArgs

@@ -1,11 +1,23 @@
 hello world
 > openSession
-> take 1 tStop
+> take 1 approachLoV
 how are you
 > x = take 1 ecVoltage
-> plot x
+> plot $ x
+>        :||: x
 > close
+
+> break
+
 > openSession b20
 foobar
-> take 2 tStart
+> take 2 displacedAngle
 > close
+
+let's try a table.
+
+> table
+>   take 1 tStart
+>   take 1 tStop
+
+That's all folks
