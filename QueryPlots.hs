@@ -21,6 +21,7 @@ import PlotGnuplot
 import Foreign.Storable
 import Data.Maybe
 import QueryUtils
+import Text.Printf
 
 data Histo where -- GADT bec i don't know syntax for double existential (no longer needed)
     Histo :: Int -> [(a,Double)] -> Histo 
@@ -204,6 +205,24 @@ showPrec n x = show $ (realToFrac $ round (x*10**n))/(10**n)
 minWidth n s | length s < n = replicate (n-length s) ' ' ++ s
              | otherwise = s
                  
+
+class Show a => AccuShow a where
+    accushow :: a -> String
+    accushow = show
+
+instance AccuShow Int
+instance AccuShow Integer
+instance AccuShow [Char]
+instance AccuShow Bool
+instance AccuShow ()
+
+instance AccuShow Float where
+    accushow = printf "%.3g"
+
+instance AccuShow Double where
+    accushow = printf "%.3g"
+
+
 instance QueryResult [(Int, (Double, Double))] where
     qFilterSuccess = not . null
     qReply xs opts = do
@@ -211,10 +230,10 @@ instance QueryResult [(Int, (Double, Double))] where
         where printIt (n, (mu, sd)) = (minWidth 2 $ show n)++", "++showPrec 2 mu++", "++showPrec 2 sd
                                       
 
-instance (Show a, Reify a) => QueryResult [Event a] where
+instance (Show a, Reify a, AccuShow a) => QueryResult [Event a] where
     qReply [xs] opts | grid opts = if Unit == (pack . snd $ xs)
-                                      then return . show . fst  $ xs
-                                      else return . show . snd  $ xs
+                                      then return . accushow . fst  $ xs
+                                      else return . accushow . snd  $ xs
                      | otherwise = return $ show xs
     qReply [] opts = return "[]"
     qReply xs opts | grid opts = case (pack . snd . head $ xs) of
@@ -225,10 +244,10 @@ instance (Show a, Reify a) => QueryResult [Event a] where
     qFilterSuccess [] = False
     qFilterSuccess _ = True
 
-instance (Show a, Reify a) => QueryResult [Duration a] where
+instance (Show a, Reify a,AccuShow a) => QueryResult [Duration a] where
     qReply [xs] opts | grid opts = if Unit == (pack . snd $ xs)
-                                      then return . (\(t1,t2)->show t1++" -> "++show t2) . fst  $ xs
-                                      else return . show . snd  $ xs
+                                      then return . (\(t1,t2)->accushow t1++" -> "++accushow t2) . fst  $ xs
+                                      else return . accushow . snd  $ xs
                      | otherwise = return $ show xs
     qReply [] opts = return "[]"
     qReply xs opts | grid opts = case (pack . snd . head $ xs) of --instead: line for each, height extent?

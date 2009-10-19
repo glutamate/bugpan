@@ -46,6 +46,9 @@ import qualified Data.Binary as B
 import System.Environment
 import System.Console.Readline
 import System.IO
+import Math.Probably.Student
+import Math.Probably.FoldingStats
+import Text.Printf
  
 double :: Double
 double = undefined
@@ -183,6 +186,11 @@ data StoreAs a = StoreAs String [a] Bool
 x @= y = StoreAs x y False
 x @=! y = StoreAs x y True
 
+ 
+ttest :: (MonadIO m, Functor m) => StateT QState m (Double, Double) -> m String
+ttest getvls = do
+  vls <- inEverySession getvls
+  return $ printf "%.3g" $ (1-) $  studentIntegral (runStat pairedSampleT vls) (realToFrac $ length vls - 1)
 
 inLastSession :: (MonadIO m, Functor m) => StateT QState m a -> m a
 inLastSession sma = do
@@ -233,6 +241,13 @@ inEverySession sma = do
   sessNms <- liftIO $ getSessionInRootDir "/var/bugpan/sessions/"
   sessns <- liftIO $ mapM (loadExactSession . ("/var/bugpan/sessions/"++)) sessNms
   forM sessns $ \s -> inSession s sma
+
+inEverySession_ :: (MonadIO m, Functor m) => StateT QState m a -> m ()
+inEverySession_ sma = do
+  sessNms <- liftIO $ getSessionInRootDir "/var/bugpan/sessions/"
+  sessns <- liftIO $ mapM (loadExactSession . ("/var/bugpan/sessions/"++)) sessNms
+  forM_ sessns $ \s -> inSession s sma
+
 
 inEverySessionWhere :: (MonadIO m, Functor m) => StateT QState m Bool -> StateT QState m a -> m [a]
 inEverySessionWhere mfilt sma = do

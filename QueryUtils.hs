@@ -134,7 +134,6 @@ downsample' n s@(Signal t1 t2 dt sf) =
     in Signal t1 t2 newdt $ \p -> interp s ((realToFrac p)*newdt+t1) 
 
 
-roundToFrac dt t = (realToFrac $ round $ t/dt)*dt
 
 unjitter = map f
     where f (Signal t1 t2 dt sf) =  let off = (roundToFrac dt t1) - t1

@@ -49,6 +49,7 @@ import Foreign.Storable
 import System.Posix.Files
 import PlotGnuplot
 import Text.Regex.Posix
+import Text.Printf
 
 --import Graphics.Rendering.HSparklines
 
@@ -303,7 +304,7 @@ instance QueryResult [Char] where
     qFilterSuccess _ = True
 
 instance QueryResult Int where
-    qReply x _ = return .qs1$ show x
+    qReply x _ = return .qs1$ printf "%.3g" x
     qFilterSuccess 0 = False
     qFilterSuccess _ = True
 
@@ -312,7 +313,7 @@ instance QueryResult [Double] where
     qFilterSuccess = not . null
 
 instance QueryResult Double where
-    qReply x _ = return .qs1 $ show x
+    qReply x _ = return . qs1 $ show x
     qFilterSuccess 0 = False
     qFilterSuccess _ = True
 

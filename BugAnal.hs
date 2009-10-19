@@ -28,6 +28,7 @@ tell s = do n <- fst `fmap` get
             lift $ W.tell [(replicate n ' ')++s]
 
 tellPrint s = tell $ "io $ putStrLn $ "++show s
+tellPrintNoLn s = tell $ "io $ putStr $ "++show s
 
 tellPrintCode s = tell $ "io $ putStrLn $ \"<pre>\\n\"++"++show s++"++\"</pre>\""
 
@@ -37,7 +38,8 @@ tellPrintSessionName = do
 
 tellEverywheres = do
   dfns <- snd `fmap` get
-  mapM_ (tellPrint . ("let "++)) $ reverse dfns 
+  --io $ print dfns
+  mapM_ (tell . ("let "++)) $ reverse dfns 
 
 modimport :: Monad m => String -> CodeWriterT m ()
 modimport s = lift $ W.tell ["import "++s]
@@ -53,25 +55,33 @@ execCodeWriterT modNm cw = do
 
 mkAnal :: [String] -> CodeWriterT IO ()
 mkAnal [] = return ()
+mkAnal ((">"):ss) = mkAnal ss
 mkAnal (('>':q):ss) = 
-    let ind = indentOf q 
+    let writeQ = head q /= '>'
+        q1 = if writeQ then q else tail q
+        ind = indentOf q1
         (tablines, rest) = span (\ln-> not (justText ln) && 
                                                    indentMoreThan ind (tail ln)) ss
-    in do if "table" `isPrefixOf` (chomp q)
-             then do procTable q tablines
-                     mkAnal rest
-             else do procQ' $ concat $ chomp q : map (chomp . tail) tablines
+    in cond [("table" `isPrefixOf` (chomp q1), do
+                procTable q1 tablines
+                mkAnal rest), 
+             ("t-test" `isPrefixOf` (chomp q1), do
+                procTtest q1 tablines
+                mkAnal rest)] $  do 
+                     procQ writeQ $ unlines $ chomp q1 : map (tail) tablines
                      mkAnal rest
 
+mkAnal ("":ss) = mkAnal ss
 mkAnal ss = do
-  let (para, rest) = span justText ss
+  let (para, rest) = span (\ln -> justText ln && (not $ null $ ln)) ss
   tellPrint "<p>"
   mapM tellPrint para
   tellPrint "</p>"
-  mkAnal rest
+  mkAnal rest 
   
 
 justText ('>':s) = False
+--justText ("") = False
 justText s = True
 
 indentOf = length . takeWhile (==' ')
@@ -103,32 +113,47 @@ tellNmsTys = do
                                                       ]
   tellEverywheres
 
+procTtest q testlines = do
+  tell "tres <- ttest $ do"
+  let q1= (chomp $ tail $ testlines!!0)
+  let q2= (chomp $ tail $ testlines!!1)
+  indent 3
+  tellNmsTys
+  tell $ "return (snd $ head $"++q1++", snd $ head $ "++q2++")"
+  indent $ -3
+  tellPrint "<pre>"
+  tellPrintNoLn $ "> t-test '"++q1++"', '"++q2++"'\n  p < "
+  tell $ "io $ putStrLn $ tres"
+  tellPrint "</pre>"
+
+  return ()
+
 procTable q tablines = do
-  tellPrint "<table cellspacing = \"0\"><thead><tr>"
+  tellPrint "<table cellspacing = \"5\"><thead><tr>"
   tellPrint "<th>session</th>"
   tellPrint $ concatMap (\l-> "<th>"++tail (chomp l)++"</th>") tablines
   tellPrint "</tr></thead><tbody>"
-  tell "tab <- inEverySession $ do"
-  indent 10
+  tell "inEverySession_ $ do"
+  indent 3
   tellNmsTys
   tellPrint "<tr>"
   tell "sessionIdentifier <- getSessionName"
-  tell "io $ putStrLn $ \"<td>\"++take 6 sessionIdentifier++\"</td>\""
+  tell "io $ putStrLn $ \"<td align=center>\"++take 6 sessionIdentifier++\"</td>\""
 
   forM_ (tablines ) $ \ln -> do
-                         tellPrint "<td>"
+                         tellPrint "<td align=center>"
                          tell $ "askForLiterateTable $ "++chomp (tail ln)
                          tellPrint "</td>"
   tellPrint "</tr>"
   -- tell $ "io $ putStrLn $ "
-  indent $ -10
+  indent $ -3
   tellPrint "</tbody></table>"
 
   return ()
 
 
 
-procQ' s 
+procQ writeQ s 
     | s =~ "^\\s*(\\w+)\\s*@=\\s*(.+)" = 
            let [[all, lhs, rhs]] = (s =~ "^\\s*(\\w+)\\s*@=\\s*(.+)")::[[String]]     
            in do tell $ "let "++lhs ++" = "++rhs
@@ -144,7 +169,7 @@ procQ' s
               tellNmsTys
               tellPrintSessionName
     | s =~ "^\\s*inEverySession\\s*$" = 
-           do tell "inEverySession $ do"
+           do tell "inEverySession_ $ do"
               indent 3
               tellNmsTys
               tellPrintSessionName
@@ -160,10 +185,12 @@ procQ' s
                                 
     | s =~ "^\\s*everywhere\\s*(.+)" = 
            let [[_, defn]] = s =~ "^\\s*everywhere\\s*(.+)"
-           in do modify $ \(i, ss) -> (i, defn:ss)
-                 tellPrintCode $ "> everywhere"++defn
-    | otherwise = do tellPrintCode $ "> "++s
-                     tell $ "askForLiterate $ "++s
+           in do --io $ print s
+                 modify $ \(i, ss) -> (i, defn:ss)
+                 --io $ putStrLn $ "remembering "++defn
+                 when writeQ $tellPrintCode $ "> everywhere "++defn
+    | otherwise = do when writeQ $ tellPrintCode $ unlines $ map ("> "++) (lines s)
+                     tell $ "askForLiterate $ "++(concat $ map chomp $ lines s)
                      tellPrint "<p />"
 
 
@@ -171,9 +198,11 @@ initHtml =
            ["<html>",
             "<head>",
              "<style>",
+             "table { border-top: 1px solid black; ",
+             "        border-bottom: 1px solid black;  }",
              "thead th { border-bottom: 1px solid black; }",
              --"tbody  tr { border-top: 1px solid black; }",
-             "table td, thead th { padding: 5px; }",
+             --"table td, thead th { cell-spacing: 5px; }",
              "</style>",
             "</head><body>"]
 

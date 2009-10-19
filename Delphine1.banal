@@ -1,0 +1,46 @@
+Hello!
+
+We have our duration "scratch" that defines a scratch. Sometimes we
+might be interested in only those scratches in which no current was
+injected. Let's call it "scratchd0". It's defined as the scratches
+during which the depolarisation is zero.
+
+>> everywhere isZero x = x>(-0.5) && x<0.5 
+> everywhere scratchd0 = during (isZero//depol) scratch
+
+We are interested in bursts of the SETi and Flexor, with minimum
+initerspike intervals for a burst of 30 ms for SETi and 25 ms for the
+Flexor.
+
+> everywhere burstSeti = burst 0.03 $ during scratch setiSpikes
+> everywhere burstFlex = burst 0.025 $ during scratch flex1Spikes
+
+Let's look at the overall frequency of CI-1 spikes in those two bursts
+
+> table 
+>   frequency ci1Spikes burstSeti
+>   frequency ci1Spikes burstFlex
+
+we can also look at just the bursts in D0
+
+> table 
+>   frequency ci1Spikes (during scratchd0 burstSeti)
+>   frequency ci1Spikes (during scratchd0 burstFlex)
+
+Are those different?
+
+> t-test
+>   frequency ci1Spikes burstSeti
+>   frequency ci1Spikes burstFlex
+
+
+> break
+
+> everywhere binSize = 0.01
+> everywhere cc x y = limitSigs (-0.6) 0.6 $ crossCorrelateControlled scratch binSize x y
+
+--> inEverySession 
+--> plot ((("ci1 seti",  cc setiSpikes ci1Spikes) :||: ("ci1 feti ",  cc fetiSpikes ci1Spikes ))
+-->      :==:
+-->      (("ci1 flexor" , cc flex1Spikes ci1Spikes ) :||: ("seti flexor ", cc flex1Spikes setiSpikes)))
+--> break
