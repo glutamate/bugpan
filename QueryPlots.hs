@@ -293,7 +293,7 @@ plotClusterMeans evs sigs = let idxs = sort $ nubTags evs
                             in LabelConsecutively $ map (unitList . avg) idxs
 
 
-plotClusters :: [Event Int] -> [Signal Double] -> Vplots (Hplots [Signal Double])
+plotClusters :: [Event Int] -> [Signal Double] -> Vplots (Hplots (SubLabel [Signal Double])) 
 plotClusters evs sigs = let idxs = sort $ nubTags evs 
                             allSigs i = limitSigs' (-0.001) 0.001 $ 
                                     around ((==i)//evs) $ sigs

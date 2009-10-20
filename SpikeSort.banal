@@ -1,0 +1,10 @@
+> importHs SpikeDetect
+
+> inEverySession
+> spikeClusters @= eventDetect 9 normV
+
+> plot $ plotClusterMeans spikeClusters normV
+> plot $ plotClusters spikeClusters normV
+> break
+
+> close

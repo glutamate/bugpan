@@ -2,18 +2,18 @@ Hello!
 
 We have our duration "scratch" that defines a scratch. Sometimes we
 might be interested in only those scratches in which no current was
-injected. Let's call it "scratchd0". It's defined as the scratches
+injected. Let's call it "scratchD0". It's defined as the scratches
 during which the depolarisation is zero.
 
 >> everywhere isZero x = x>(-0.5) && x<0.5 
-> everywhere scratchd0 = during (isZero//depol) scratch
+> everywhere scratchD0 = during (isZero//depol) scratch
 
 We are interested in bursts of the SETi and Flexor, with minimum
 initerspike intervals for a burst of 30 ms for SETi and 25 ms for the
 Flexor.
 
-> everywhere burstSeti = burst 0.03 $ during scratch setiSpikes
-> everywhere burstFlex = burst 0.025 $ during scratch flex1Spikes
+> everywhere burstSeti = burst 0.03 (during scratch setiSpikes)
+> everywhere burstFlex = burst 0.025 (during scratch flex1Spikes)
 
 Let's look at the overall frequency of CI-1 spikes in those two bursts
 
@@ -21,11 +21,7 @@ Let's look at the overall frequency of CI-1 spikes in those two bursts
 >   frequency ci1Spikes burstSeti
 >   frequency ci1Spikes burstFlex
 
-we can also look at just the bursts in D0
-
-> table 
->   frequency ci1Spikes (during scratchd0 burstSeti)
->   frequency ci1Spikes (during scratchd0 burstFlex)
+'Session' just means 'animal,' as you probably figured out.
 
 Are those different?
 
@@ -34,13 +30,27 @@ Are those different?
 >   frequency ci1Spikes burstFlex
 
 
-> break
+we can also look at just the bursts in D0:
+
+> table 
+>   frequency ci1Spikes (during scratchD0 burstSeti)
+>   frequency ci1Spikes (during scratchD0 burstFlex)
+
+> t-test
+>   frequency ci1Spikes (during scratchD0 burstSeti)
+>   frequency ci1Spikes (during scratchD0 burstFlex)
+
+Let's define some more things we need for the cross-correlations (one plot for ever animal)
 
 > everywhere binSize = 0.01
 > everywhere cc x y = limitSigs (-0.6) 0.6 $ crossCorrelateControlled scratch binSize x y
 
---> inEverySession 
---> plot ((("ci1 seti",  cc setiSpikes ci1Spikes) :||: ("ci1 feti ",  cc fetiSpikes ci1Spikes ))
--->      :==:
--->      (("ci1 flexor" , cc flex1Spikes ci1Spikes ) :||: ("seti flexor ", cc flex1Spikes setiSpikes)))
---> break
+The plots are on the following pages!
+
+> break
+
+> inEverySession 
+> plot ((("ci1 seti",  cc setiSpikes ci1Spikes) :||: ("ci1 feti ",  cc fetiSpikes ci1Spikes ))
+>      :==:
+>      (("ci1 flexor" , cc flex1Spikes ci1Spikes ) :||: ("seti flexor ", cc flex1Spikes setiSpikes)))
+> break

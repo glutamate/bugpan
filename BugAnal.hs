@@ -30,11 +30,11 @@ tell s = do n <- fst `fmap` get
 tellPrint s = tell $ "io $ putStrLn $ "++show s
 tellPrintNoLn s = tell $ "io $ putStr $ "++show s
 
-tellPrintCode s = tell $ "io $ putStrLn $ \"<pre>\\n\"++"++show s++"++\"</pre>\""
+tellPrintCode s = tell $ "io $ putStrLn $ \"<pre>\"++"++show s++"++\"</pre>\""
 
 tellPrintSessionName = do
     tell "sessionIdentifier <- getSessionName"
-    tell "io $ putStrLn $ \"<pre>\\n\"++\"> openSession \"++sessionIdentifier++\"</pre>\""
+    tell "io $ putStrLn $ \"<pre>\"++\"> openSession \"++sessionIdentifier++\"</pre>\""
 
 tellEverywheres = do
   dfns <- snd `fmap` get
@@ -121,8 +121,8 @@ procTtest q testlines = do
   tellNmsTys
   tell $ "return (snd $ head $"++q1++", snd $ head $ "++q2++")"
   indent $ -3
-  tellPrint "<pre>"
-  tellPrintNoLn $ "> t-test '"++q1++"', '"++q2++"'\n  p < "
+  --tellPrint "<pre>"
+  tellPrintNoLn $ "<pre>> t-test '"++q1++"', '"++q2++"'\n   p < "
   tell $ "io $ putStrLn $ tres"
   tellPrint "</pre>"
 
@@ -157,7 +157,7 @@ procQ writeQ s
     | s =~ "^\\s*(\\w+)\\s*@=\\s*(.+)" = 
            let [[all, lhs, rhs]] = (s =~ "^\\s*(\\w+)\\s*@=\\s*(.+)")::[[String]]     
            in do tell $ "let "++lhs ++" = "++rhs
-                 tell $ "storeAs "++show lhs ++" "++lhs
+                 tell $ "storeAsOvwrt "++show lhs ++" "++lhs
                  tellPrintCode $ "> "++lhs ++ " = " ++ rhs
     | s =~ "^\\s*(\\w+)\\s*=\\s*(.+)" = 
            let [[all, lhs, rhs]] = (s =~ "^\\s*(\\w+)\\s*=\\s*(.+)")::[[String]]     
@@ -179,6 +179,9 @@ procQ writeQ s
                  indent 3
                  tellNmsTys              
                  tellPrintCode $ "> openSession "++sessnm
+    | s =~ "^\\s*importHs\\s*(.+)" = 
+           let [[all, modnm]] = (s =~ "^\\s*importHs\\s*(.+)")::[[String]]
+           in modimport modnm
     | s =~ "^\\s*close\\s*" = do tell "return ()"
                                  indent $ -3
     | s =~ "^\\s*break\\s*" = tellPrint "<div style=\"page-break-before: always\" />"

@@ -1,6 +1,6 @@
 {-# LANGUAGE BangPatterns, ScopedTypeVariables, FlexibleContexts, NoMonomorphismRestriction #-}
 
-module Main where
+module SpikeDetect where
 
 --import System.Time
 --import Database
@@ -40,7 +40,7 @@ import Graphics.UI.Gtk.Display.Image
 import Data.IORef
 import Database
 
-main = allSpikes -- spikeDetectIO
+--main = allSpikes -- spikeDetectIO
 
 atMost x = min x
 atLeast x = max x

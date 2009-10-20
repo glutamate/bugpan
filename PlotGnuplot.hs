@@ -1,22 +1,20 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, FlexibleInstances, ExistentialQuantification #-}
-{-# LANGUAGE TypeOperators, FlexibleContexts, GADTs, ScopedTypeVariables #-}
+{-# LANGUAGE TypeOperators, FlexibleContexts, GADTs, ScopedTypeVariables, DeriveDataTypeable #-}
 
 module PlotGnuplot where
 
 --import EvalM
 import System.IO
 import System.Cmd
-import Math.Probably.FoldingStats
+import Math.Probably.FoldingStats hiding (F)
 import Control.Monad
 import Data.Unique
 import Data.List
 import Control.Monad.Trans
-import qualified Data.StorableVector as SV
 import TNUtils
 import System.Directory
 import System.Posix.Files
 import Data.Array.Unboxed
-
 
 
 --histArr :: (Int,Int) -> [Double] -> UArray Int Double
@@ -50,20 +48,27 @@ type GnuplotCmd = [PlotLine]
 data PlotLine = PL {plotData :: String,
                     plotTitle :: String,
                     plotWith :: String,
-                    cleanUp :: IO () } -- deriving Show
+                    cleanUp :: IO () }
+              | TopLevelGnuplotCmd String
+
+plOnly pls = [pl | pl@(PL _ _ _ _) <- pls]
+tlOnly pls = [s | pl@(TopLevelGnuplotCmd s) <- pls]
 
 cleanupCmds :: [GnuplotCmd] -> IO ()
-cleanupCmds cmds = forM_ cmds $ \plines -> sequence_ $ map cleanUp plines
+cleanupCmds cmds = forM_ cmds $ \plines -> sequence_ $ map cleanUp $ plOnly plines
 
 setWith :: String -> GnuplotCmd -> GnuplotCmd
-setWith sty = map (\pl-> pl {plotWith = sty })
+setWith sty = map f
+    where f pl@(PL _ _ _ _) = pl {plotWith = sty }
+          f tlcmd = tlcmd
 
 showPlotCmd :: GnuplotCmd -> String
 showPlotCmd [] = ""
-showPlotCmd plines = "plot "++(intercalate ", " $ map s plines)++"\n"
+showPlotCmd plines = tls++"\nplot "++(intercalate ", " $ map s $ plOnly $ plines)++"\n"
     where s (PL dat tit wth _) = dat++title tit++" with "++wth
           title "" = " notitle"
           title tit = " title '"++tit++"'"
+          tls = unlines $ tlOnly plines
 
 showMultiPlot :: [(Rectangle, GnuplotCmd)] -> String
 showMultiPlot rpls = "set multiplot\n" ++ concatMap pl rpls ++"unset multiplot\n"
@@ -77,6 +82,8 @@ showMultiPlot rpls = "set multiplot\n" ++ concatMap pl rpls ++"unset multiplot\n
 
 data Rectangle = Rect (Double, Double) (Double,Double) deriving Show
 unitRect = Rect (0,0) (1,1)
+
+rectTopLeft (Rect (x1,y1) (x2,y2)) = (x1+0.01,y2-0.01) 
 
 class PlotWithGnuplot a where
     getGnuplotCmd :: a -> IO GnuplotCmd
@@ -208,6 +215,33 @@ data WithColour a = WithColour String a
 
 x % a = Pcnt x a
 
+data SubLabel a = 
+    A a | Ai a | Aii a | Aiii a
+  | B a | Bi a | Bii a | Biii a
+  | C a | Ci a | Cii a | Ciii a
+  | D a | Di a | Dii a | Diii a
+  | E a | Ei a | Eii a 
+  | SubNum Int a
+
+subLabSplit :: SubLabel a -> (String, a)
+subLabSplit (A x) = ("A",x)
+subLabSplit (Ai x) = ("Ai",x)
+subLabSplit (Aii x) = ("Aii",x)
+subLabSplit (Aiii x) = ("Aiii",x)
+subLabSplit (B x) = ("B",x)
+subLabSplit (Bi x) = ("Bi",x)
+subLabSplit (Bii x) = ("Bii",x)
+subLabSplit (Biii x) = ("Biii",x)
+subLabSplit (C x) = ("C",x)
+subLabSplit (Ci x) = ("Ci",x)
+subLabSplit (Cii x) = ("Cii",x)
+subLabSplit (Ciii x) = ("Ciii",x)
+subLabSplit (D x) = ("D",x)
+subLabSplit (Di x) = ("Di",x)
+subLabSplit (Dii x) = ("Dii",x)
+subLabSplit (Diii x) = ("Diii",x)
+subLabSplit (E x) = ("E",x)
+subLabSplit (SubNum n x) = (show n, x)
 
 newtype Lines a = Lines {unLines :: a }
 newtype Dashed a = Dashed {unDashed :: a }
@@ -237,6 +271,13 @@ instance PlotWithGnuplot a => PlotWithGnuplot (Lines a) where
       px <- getGnuplotCmd x
       return $ setWith "lines" px
 
+instance PlotWithGnuplot a => PlotWithGnuplot (SubLabel a) where
+    multiPlot r sl = do
+      let (lab, x ) = subLabSplit sl
+          (xpos, ypos) = rectTopLeft r
+      let mklab = TopLevelGnuplotCmd $ "set label "++show lab++" at screen "++show xpos++","++show ypos++" front"
+      px <- multiPlot r x
+      return $ map (\(r', pls) -> (r', mklab:pls)) px
 
 
 instance (PlotWithGnuplot a, PlotWithGnuplot b) => PlotWithGnuplot (a :||: b) where
@@ -299,8 +340,9 @@ instance PlotWithGnuplot a => PlotWithGnuplot (LabelConsecutively [a]) where
             addTitleMany :: String -> ( GnuplotCmd) -> ( GnuplotCmd)
             addTitleMany title (cmd) = ( map (addTitle title) cmd)
 
-tilePlots ::  PlotWithGnuplot a => Int -> [a] -> Vplots (Hplots a)
-tilePlots n ps = Vplots $ map Hplots $ groupsOf n ps
+--tilePlots ::  PlotWithGnuplot a => Int -> [a] -> Vplots (Hplots a)
+tilePlots :: Int -> [t] -> Vplots (Hplots (SubLabel t))
+tilePlots n ps = Vplots $ map Hplots $ map (map (\(p,i) -> SubNum i p)) $ groupsOf n (zip ps [0..])
     where groupsOf n [] = []
           groupsOf n xs = let (mine, rest) = splitAt n xs
                           in mine: groupsOf n rest
