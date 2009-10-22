@@ -235,7 +235,8 @@ writer s = do
   mapM tellPrint endHtml
   tell "return ()"
 main = do 
-  (fileNm:rest) <- getArgs
+  allArgs <- getArgs -- (fileNm:rest)
+  let (opts, fileNm:rest) = partition beginsWithHyphen allArgs
   file <- lines `fmap` readFile fileNm
   let fileProper = head $ splitBy '.' fileNm
   let hsFile = fileProper++".hs"
@@ -245,5 +246,14 @@ main = do
   ghcres <- system $ "ghc -O2 --make "++hsFile
   case ghcres of
     ExitFailure _ -> fail $ "ghc fail: "++show ghcres
-    ExitSuccess -> system $ "./"++fileProper++" "++intercalate " " rest ++" >"++htmlFile
+    ExitSuccess -> if "-a" `elem` opts 
+                      then do
+                        sessNms <-  getSessionInRootDir "/var/bugpan/sessions/"
+                        forM_ sessNms $ \sess -> do
+                             let cmd = "./"++fileProper++" "++sess++" >"++fileProper++take 6 sess++".html"
+                             putStrLn cmd
+                             system cmd
+                      else do 
+                        system $ "./"++fileProper++" "++intercalate " " (opts++rest) ++" >"++htmlFile
+                        return ()
   return ()
