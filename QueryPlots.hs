@@ -23,6 +23,7 @@ import Data.Maybe
 import QueryUtils
 import Text.Printf
 import Database
+import NewSignal
 
 data Histo where -- GADT bec i don't know syntax for double existential (no longer needed)
     Histo :: Int -> [(a,Double)] -> Histo 
@@ -103,18 +104,19 @@ scatter = map getTag -- uses Event PLotWithGnuplot instance :-)
   
 instance PlotWithGnuplot [Signal Double] where
     getGnuplotCmd [] = return []
-    getGnuplotCmd ss = forM (downSample 1000 ss) $ \s@(Signal t1 t2 dt sf) -> do
+    getGnuplotCmd ss = forM (downSample 1000 ss) $ \s@(Signal t1 t2 dt sf _) -> do
            fnm <- ("/tmp/gnuplotsig"++) `fmap` uniqueIntStr
-           writeSig fnm s
+           writeSig fnm $ forceSigEq s
            return $ PL (concat ["\"", fnm, "\" binary format=\"%float64\" using ($0*",
                                     show dt, "+", show t1, "):1"]) 
                        "" -- (show t1++"->"++show t2) 
                        "lines"
                        (removeFile fnm)
           
-writeSig fp s@(Signal t1 t2 dt sf) = do
+writeSig :: String -> Signal Double -> IO ()
+writeSig fp s@(Signal t1 t2 dt sf Eq) = do
   h <- openBinaryFile fp WriteMode
-  SV.hPut h $ SV.pack $ map  sf $ [0..(round $ (t2-t1)/dt)-1]
+  SV.hPut h sf
   hClose h
 
 instance Num a => PlotWithGnuplot [Event a] where
@@ -146,14 +148,15 @@ data Brenda = Brenda [Signal Double]
 
 instance PlotWithGnuplot Brenda where
     getGnuplotCmd (Brenda l@(avg:plusSEM:minusSEM:[])) = 
-        forM (downSample 1000 l) $ \s@(Signal t1 t2 dt sf) -> do
+        forM (downSample 1000 l) $ \s@(Signal t1 t2 dt sf _) -> do
            fnm <- ("/tmp/gnuplotsig"++) `fmap` uniqueIntStr
            writeSig fnm s
            return $ PL (concat ["\"", fnm, "\" binary format=\"%float64\" using ($0*",
                                     show dt, "+", show t1, "):1"]) "" "lines" (removeFile fnm)
-           where writeSigArea fp s1@(Signal t1 t2 dt sf) s2@(Signal t1' t2' dt' sf') = do
+           where writeSigArea fp s1@(Signal t1 t2 dt sf _) s2@(Signal t1' t2' dt' sf' _) = do
                    h <- openBinaryFile fp WriteMode
-                   SV.hPut h $ SV.pack $ map  sf $ [0..(round $ (t2-t1)/dt)-1]
+                   fail "not implemented: plot brenda"
+                   --SV.hPut h $ SV.pack $ map  sf $ [0..(round $ (t2-t1)/dt)-1]
                    hClose h
 
 

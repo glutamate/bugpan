@@ -2,7 +2,7 @@
 module HaskShapes where
 
 import Data.IORef
-import EvalM
+import NewSignal
 import Data.Array
 import Database
 
@@ -45,4 +45,4 @@ selSwitch' (((tev,x):_, f):es) def t | tev > t = selSwitch' es (f tev x) tev
 
 
 sigTmax :: Signal a -> Double
-sigTmax (Signal t1 t2 dt sf) = t2
+sigTmax (Signal t1 t2 _ _ _) = t2

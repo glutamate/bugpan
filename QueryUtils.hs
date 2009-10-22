@@ -18,15 +18,18 @@ import Math.Probably.Sampler
 import Math.Probably.GlobalRandoms
 import Control.Monad
 import PlotGnuplot
+import NewSignal
+import Foreign.Storable
+import qualified Data.StorableVector as SV
 
 
-peak :: Ord a => [Signal a] ->[Event a]
+peak :: (Storable a, Ord a) => [Signal a] ->[Event a]
 peak sigs =  map (\sig -> swap . foldSig cmp (sigInitialVal sig, 0) $ zipWithTime sig) sigs 
     where cmp (curMax, tmax) (v, t) = if v>curMax 
                                          then (v, t)
                                          else (curMax, tmax)
           swap (x,y) = (y,x)
-
+ 
 
 
 applyOverWith :: (a->b->c) -> [Signal a] -> [Duration b] -> [Signal c]
@@ -77,7 +80,7 @@ area :: Fractional a => [Signal a] -> [Duration a]
 area sigs = map area1 sigs
 
 area1 :: Fractional a => Signal a -> Duration a
-area1 sig@(Signal t1 t2 dt sf) = ((t1, t2), foldSig sumf 0 sig)
+area1 sig@(Signal t1 t2 dt _ _) = ((t1, t2), foldSig sumf 0 sig)
     where sumf prev next = prev+next*(realToFrac dt)
 
 (<$$>) :: (Functor f1, Functor f2) => (a->b) -> f1 (f2 a) -> f1 (f2 b)
@@ -112,32 +115,32 @@ countDuring durs evs = map (freqDuring' evs) durs
 
 centreOfMass :: [Signal Double] -> [Event ()]
 centreOfMass = map f 
-    where f s@(Signal t1 t2 dt _) = let vls =sigToList s
-                                        tms = sigTimePoints s
-                                    in ((sum $ zipWith (*) vls tms) / sum vls, ())
+    where f s@(Signal t1 t2 dt _ _) = let vls =sigToList s
+                                          tms = sigTimePoints s
+                                      in ((sum $ zipWith (*) vls tms) / sum vls, ())
 
 --square x = x*x
 
 
-sigTimePoints (Signal t1 t2 dt _) = let n = (t2-t1)/dt
-                                    in map ((+t1) . (*dt)) [0..n-1]
 
                                    
 upsample n = map (upsample' n)
-upsample' n s@(Signal t1 t2 dt sf) = 
-    let newdt = (dt/(realToFrac n))
-    in Signal t1 t2 newdt $ \p -> interp s ((realToFrac p)*newdt+t1) 
+upsample' :: Int -> Signal Double -> Signal Double
+upsample' n s@(Signal t1 t2 dt arr Eq) = Signal t1 t2 dt (svInterpCos n arr) Eq
+upsample' n s = upsample' n $ forceSigEq s
+--    let newdt = (dt/(realToFrac n))
+--    in Signal t1 t2 newdt $ \p -> interp s ((realToFrac p)*newdt+t1) 
 
-downsample n = map (downsample' n)
+{-downsample n = map (downsample' n)
 downsample' n s@(Signal t1 t2 dt sf) = 
     let newdt = (dt*(realToFrac n))
     in Signal t1 t2 newdt $ \p -> interp s ((realToFrac p)*newdt+t1) 
-
+-}
 
 
 unjitter = map f
-    where f (Signal t1 t2 dt sf) =  let off = (roundToFrac dt t1) - t1
-                                    in Signal (t1+off) (t2+off) dt sf
+    where f (Signal t1 t2 dt arr e) =  let off = (roundToFrac dt t1) - t1
+                                       in Signal (t1+off) (t2+off) dt arr e
 triSig = [listToSig 0.1 (0.0) [0..9]]
 htrisig = head triSig
 
@@ -150,7 +153,7 @@ around evs sigs = catMaybes $ map (around' sigs) evs
 
 align :: [Event b] -> [Signal a] -> [Signal a]
 align evs sigs = map align' sigs
-    where align' sig@(Signal t1 t2 dt sf) = 
+    where align' sig@(Signal t1 t2 dt sf _) = 
               let (ts,_) = minimumBy (comparing ((distFrom t1) . fst)) evs
               in shift (negate ts) sig
           distFrom x y = abs(x-y)
@@ -179,16 +182,14 @@ sigStat :: Fold a b -> [Signal a] -> [Duration b]
 sigStat f sigs = map (sigStat' f) sigs
  
 sigStat' :: Fold a b -> Signal a -> Duration b
-sigStat' (F op init c cmb) sig@(Signal t1 t2 dt sf) = 
+sigStat' (F op init c cmb) sig@(Signal t1 t2 dt sf _) = 
     let --v = c . foldl' op init $ sigToList sig
         
         --go 0 x = c x
         --go n x = go (n-1) (x `op` sf n)
-        v = c $! go npts init
+        v = c $! foldSig op init sig 
     in ((t1,t2),v)
-       where npts = round $ (t2-t1)/dt
-             go 0 x = x
-             go !n !x = go (n-1) (x `op` sf (npts-n))
+
 
 
 catevents :: [Event a] -> [Event a] -> [Event a]
@@ -240,37 +241,43 @@ subMeanNormSD sigs = (f <$$> sigStat stat sigs ) <**> sigs
           f (mean,sd) = \x-> (x-mean)/sd
 
 crossesUp :: [Duration Double] -> [Signal Double] -> [Event ()]
-crossesUp thresDurs sigs = concatMap f $ sectionGen sigs thresDurs
-    where f (_,(thresh,Signal t1 t2 dt sf)) = let npts = round $ (t2-t1)/dt
-                                                  pts = [0..npts-1]
-                                                  go n last hits | n >= npts = hits
-                                                                 | otherwise = let this = sf n
-                                                                               in if this >thresh && last < thresh
-                                                                                  then go (n+1) this (n:hits)
-                                                                                  else go (n+1) this (hits)
-                                              in map ((\t->(t,())) .  (+t1) . (*dt) . (realToFrac)) $ reverse $ go 0 (thresh+1) []
+crossesUp thresDurs sigs = concatMap f $ sectionGen (map forceSigEq sigs) thresDurs
+    where f (_,(thresh,s@(Signal t1 t2 dt _ _))) = 
+              let npts = round $ (t2-t1)/dt
+                  pts = [0..npts-1]
+                  vls = sigToList s
+                  go [] _ _ hits = hits
+                  go (this:xs) n last hits  = if this >thresh && last < thresh
+                                               then go xs (n+1) this (n:hits)
+                                               else go xs (n+1) this (hits)
+              in map ((\t->(t,())) .  (+t1) . (*dt) ) $ reverse $ go vls 0 (thresh+1) []
 
 crossesDown th sigs = crossesUp (negate <$$> th) (negate <$$> sigs)
 
+gaussianf :: Double -> Double -> Double ->  Double
 gaussianf mean sd x = let factor = (recip $ sd*sqrt (2*pi))
                       in factor * (exp . negate $ (((x-mean)**2)/(2*sd**2)))
+gaussian :: Double -> Double -> Double -> Signal Double
 gaussian dt mean sd = let t1 =(-5*sd) 
-                      in Signal t1 (5*sd) dt $ \p-> gaussianf mean sd ((realToFrac p)*dt+t1)
+                          sig = Signal t1 (5*sd) dt arr Eq
+                          arr = SV.pack $ map (gaussianf mean sd) (sigTimePoints sig)
+                      in sig 
 
-convolveWithin :: Num a => [Duration b] -> Signal a -> [Event a] -> [Signal a]
+{-convolveWithin :: Num a => [Duration b] -> Signal a -> [Event a] -> [Signal a]
 convolveWithin [] _ _ = []
-convolveWithin (dur@((td1, td2), v):durs) irf@(Signal t1 t2 dt sf) evs' =
+convolveWithin (dur@((td1, td2), v):durs) irf@(Signal t1 t2 dt sf _) evs' =
    let evs = during [dur] evs' 
        sigs = map f evs
        f (t,x) =(*x) `fmap` shift t irf
-       nullSig = Signal td1 td2 dt $ const 0
-       addSigs (Signal ts1 ts2 _ ssf) (Signal ts1' ts2' _ ssf') = Signal ts1 ts2 dt $ \p->
+       nullSig = Signal td1 td2 dt (SV.replicate (sigPnts nullSig) 0) Eq
+       addSigs (Signal ts1 ts2 _ ssf) (Signal ts1' ts2' _ ssf') = 
+           Signal ts1 ts2 dt $ \p->
                                                                   let t = (realToFrac p)*dt+ts1
                                                                   in ssf p + (if t>ts1' && t<ts2' 
                                                                                  then ssf' . round $ (t-ts1')/dt
                                                                                  else 0)
        sig = foldl' addSigs nullSig sigs
-   in sig : convolveWithin (durs) irf evs'
+   in sig : convolveWithin (durs) irf evs' -}
 
 --[Duration a] -> [Duration b] -> [Duration (a,b)]
 zipD :: (Functor f, ChopByDur [f b]) => [Duration a] -> [f b] -> [f (a, b)]
@@ -329,14 +336,13 @@ limitSigs lo hi sigs = map (limitSig (min lo hi) (max lo hi)) sigs
 limitSigs' :: Double -> Double -> [Signal a] -> [Signal a]
 limitSigs' lo hi sigs = catMaybes $ map (limitSig' (min lo hi) (max lo hi)) sigs
 
-limitSig' lo hi (Signal t1 t2 dt sf) | t1 > lo || t2< hi = Nothing
-                                     | otherwise = let t1' = max t1 lo
-                                                       t2' = min hi t2
-                                                       pshift = round $ (t1' - t1)/dt
-                                                   in Just $ Signal t1' t2' dt $ \p-> sf $ p+pshift
+limitSig' lo hi (Signal t1 t2 dt arr eq) | t1 > lo || t2< hi = Nothing
+                                         | otherwise = let t1' = max t1 lo
+                                                           t2' = min hi t2
+                                                           pshift = round $ (t1' - t1)/dt
+                                                       in Just $ Signal t1' t2' dt (SV.drop pshift arr) eq
 
-
-averageSigs :: Floating a => [Signal a] -> [Signal a]
+averageSigs :: (Floating a, Storable a) => [Signal a] -> [Signal a]
 averageSigs sigs = let (mu, sem) = runStat meanSEMF sigs
                    in [mu,mu+sem, mu-sem]
 
@@ -372,7 +378,7 @@ tagTime tgs = map (\tgd -> setTag tgd $ getTStart tgd) tgs
 
 dropSecs :: Double -> [Signal a] -> [Signal a]
 dropSecs s = map f
-    where f (Signal t1 t2 dt sf) = Signal (t1+s) t2 dt $ \p-> sf (p+(round $ s/dt))
+    where f (Signal t1 t2 dt sf eq) = Signal (t1+s) t2 dt (SV.drop (round $ s/dt) sf) eq -- $ \p-> sf (p+(round $ s/dt))
 
 labelMagically :: Double -> Int -> [Duration a] -> [Duration Int]
 labelMagically ivl n durs | length durs < n = []  
@@ -398,14 +404,14 @@ restrictDur (t1r, t2r) = map $ \((t1, t2), v) -> ((t1+t1r, t1+t2r), v)
 
 histSig nbins evs = let (hlist, lo, hi, bin)= histList nbins $ map (getTag) evs
                         len = length hlist                        
-                    in Signal lo hi bin $ \p-> if p >= len then 0 else (hlist !! p)
+                    in Signal lo hi bin (SV.pack hlist) Eq
 
 histSigBZ bz evs  = let (hlist, lo, hi, bin)= histListBZ bz $ map (getTag) evs
                         len = length hlist                        
-                    in Signal lo hi bin $ \p-> if p >= len then 0 else (hlist !! p)
+                    in Signal lo hi bin (SV.pack hlist) Eq
 
 
-integralOfSig s@(Signal t1 t2 dt df) =
+integralOfSig s@(Signal t1 t2 dt _ _) =
     let sm = sum $ sigToList s
     in sm/realToFrac (t2-t1)
 

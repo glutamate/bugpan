@@ -49,13 +49,14 @@ import System.IO
 import Math.Probably.Student
 import Math.Probably.FoldingStats
 import Text.Printf
+import NewSignal
  
 double :: Double
 double = undefined
 
-
+ 
 --change these to loadUntyped
-signals :: (MonadIO m, Reify a) => String -> a-> StateT QState m [Signal a]
+signals :: (MonadIO m, Reify (Signal a)) => String -> a-> StateT QState m [Signal a]
 signals nm _ = do
   Session bdir t0 <- getSession
   --liftIO . print $ bdir++"/signals/"++nm

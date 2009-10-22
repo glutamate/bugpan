@@ -5,6 +5,8 @@ module NewSignal where
 --import 
 import qualified Data.StorableVector as SV
 import Foreign.Storable
+import EvalM
+import Foreign.Storable.Tuple
 
 data EqOrK a b where
     Eq :: EqOrK a a
@@ -18,7 +20,13 @@ data Signal a where
     Signal :: Storable a => Double -> Double -> Double -> SV.Vector a -> EqOrK a b -> Signal b
     ConstSig :: a -> Signal a
 
-sigArr (Signal t1 t2 dt arr eqOrK ) = SV.map (eqOrKToF eqOrK) arr
+sigArr :: (Storable a) => Signal a -> SV.Vector a
+sigArr (Signal t1 t2 dt arr (Kont f)) = SV.map (f) arr
+sigArr (Signal t1 t2 dt arr Eq) = arr
+
+sigT1 (Signal t1 t2 dt arr eqOrK ) = t1
+sigT2 (Signal t1 t2 dt arr eqOrK ) = t2
+sigDT (Signal t1 t2 dt arr eqOrK ) = dt
 
 forceSigEq :: (Storable a) => Signal a -> Signal a 
 forceSigEq s@(ConstSig x) = s
@@ -33,10 +41,32 @@ instance Functor Signal where
 
 sigPnts :: Signal a -> Int
 sigPnts (Signal t1 t2 dt sf _ ) = round $ (t2-t1)/dt
+sigVPnts (SigV t1 t2 dt sf ) = round $ (t2-t1)/dt
+
+sigTimePoints (Signal t1 t2 dt _ _) = let n = (t2-t1)/dt
+                                      in map ((+t1) . (*dt)) [0..n-1]
+
+sigVTimePoints (SigV t1 t2 dt _) = let n = (t2-t1)/dt
+                                   in map ((+t1) . (*dt)) [0..n-1]
+
 
 sigToList :: Signal a -> [a]
 sigToList sig@(Signal t1 t2 dt arr Eq) = map (arr `SV.index`) [0..sigPnts sig-1]
 sigToList sig@(Signal t1 t2 dt arr (Kont f)) = map (f . (arr `SV.index`)) [0..sigPnts sig-1]
+
+sigInitialVal s  = head $ sigToList s
+
+sscan :: (Storable a, Storable b) => (a->b->a) -> a -> Signal b -> Signal a
+sscan f init s =
+    Signal (sigT1 s) (sigT2 s) (sigDT s) (SV.scanl f init $ sigArr s) Eq
+                             
+
+zipWithTime :: Storable a => Signal a -> Signal (a,Double)
+zipWithTime s@(Signal t1 t2 dt arr Eq) = 
+    let zarr = SV.pack $ zip (SV.unpack arr) (sigTimePoints s)
+    in Signal t1 t2 dt zarr Eq 
+zipWithTime sig = zipWithTime $ forceSigEq sig
+           
 
 instance Show a =>  Show (Signal a) where
     show sig@(Signal t1 t2 dt arr _) = 
@@ -102,6 +132,17 @@ instance (Storable a, Floating a) => Floating (Signal a) where
     cosh = fmap cosh
     sinh = fmap sinh
     sqrt = fmap sqrt
+
+instance (Storable a, Reify a) => Reify (Signal a) where
+    reify s@(SigV t1 t2 dt sf) = let arr = SV.pack $ map (unsafeReify . sf) [0..sigVPnts s-1]
+                                 in Just $ Signal t1 t2 dt arr Eq -- $ \ix-> unsafeReify (sf ix)
+    pack sig = pack' $ forceSigEq sig 
+        where pack' :: (Storable a, Reify a) =>  Signal a -> V
+              pack' (Signal t1 t2 dt sf Eq) = SigV t1 t2 dt $ \ix->pack (sf `SV.index` ix)
+    typeOfReified s = SignalT (typeOfReified (unSig s))
+        where unSig :: Signal a -> a
+              unSig = undefined
+
        
 svInterpCos :: Int -> SV.Vector Double -> SV.Vector Double
 svInterpCos n arr = let dstep = 1/(realToFrac n)
@@ -110,6 +151,12 @@ svInterpCos n arr = let dstep = 1/(realToFrac n)
                                     in  map (\mu2-> (y1*(1-mu2)+y2*mu2)) mu2s
                     in SV.pack $ concatMap f $ SV.zip arr $ SV.tail arr
  
+
+
+listToSig dt t1 lst = let arr = SV.pack lst
+                          t2 = (realToFrac $ length lst-1) *dt +t1
+                      in Signal t1 t2 dt arr Eq
+
 
 --http://local.wasp.uwa.edu.au/~pbourke/miscellaneous/interpolation/
 --mu2 = (1-cos(mu*PI))/2;

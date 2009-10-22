@@ -26,6 +26,7 @@ import Numeric
 import PrettyPrint
 import System.Cmd
 import System.IO.Unsafe
+import NewSignal
 
 loadVs :: String -> IO [V]
 loadVs fp = loadBinary fp
@@ -61,19 +62,19 @@ hWriteSigV h s@ (SigV t1 t2 dt sf) = do
 
 
 hWriteSigReal :: Handle -> Signal Double -> IO ()
-hWriteSigReal h s@(Signal t1 t2 dt sf) = do
+hWriteSigReal h s@(Signal t1 t2 dt arr Eq) = do
   binPut h $ ([8,3]::[Word8])
   binPut h t1
   binPut h t2
   binPut h dt
 --  L.hPut h (runPut $ putWord32le ((round $ (t2-t1)/dt)::Word32))
-  SV.hPut h $ SV.pack $ map  sf $ [0..(round $ (t2-t1)/dt)-1]
+  SV.hPut h arr -- $ SV.pack $ map  sf $ [0..(round $ (t2-t1)/dt)-1]
 
 writeSigReal :: String -> Signal Double -> IO ()
 writeSigReal fnm sig = do
    h <- openBinaryFile fnm WriteMode
    L.hPut h $ encode (length [sig])
-   hWriteSigReal h sig
+   hWriteSigReal h $ forceSigEq sig
    hClose h 
  
 typeTag1 :: T -> [Word8]
@@ -109,8 +110,8 @@ parseTT1 wds = error $ "parseTT1: unknonw type tag "++show wds
 putTT1 :: V -> Put 
 putTT1 v = put . typeTag1 . typeOfVal $ v
 
-aSig = SigV 0 1 0.1 $ \p -> NumV ((realToFrac p) / 100)
-aSigT = Signal 0 1 0.1 $ \p -> ((realToFrac p) / 100)
+--aSig = SigV 0 1 0.1 $ \p -> NumV ((realToFrac p) / 100)
+--aSigT = Signal 0 1 0.1 $ \p -> ((realToFrac p) / 100)
 
 instance Binary V where
     put v = putTT1 v >> putRaw v
@@ -232,12 +233,13 @@ instance Binary (Signal Double) where
              n <- fmap (fromInteger . toInteger) getWord32le
              vls <- myGetMany n
              let arr = SV.pack vls
-             return . Signal t1 t2 dt $ \pt->arr `SV.index` pt
-    put (Signal t1 t2 dt sf)= do putD t1 
-                                 putD t2
-                                 putD dt
-                                 --putWord32le ((round $ (t2-t1)/dt)::Word32)
-                                 mapM_ (\t->putD $ sf t) [0..round $ (t2-t1)/dt]
+             return $ Signal t1 t2 dt arr Eq
+    put (Signal t1 t2 dt sf Eq)= do putD t1 
+                                    putD t2
+                                    putD dt
+                                    --putWord32le ((round $ (t2-t1)/dt)::Word32)
+                                    mapM_ (\t->putD t) $ SV.unpack sf -- [0..round $ (t2-t1)/dt]
+    put s = put $ forceSigEq s
 
 instance MyBinary (Signal Double)
 instance MyBinary Bool
@@ -270,7 +272,7 @@ loadOneSigSV h = do
   dt <- binGet h 8
   --print (t1,t2,dt)
   arr <- SV.hGet h (floor $ (t2-t1)/dt)
-  return $ Signal t1 t2 dt $ \p-> arr `SV.index` p
+  return $ Signal t1 t2 dt arr Eq
 
 readN'TT h = do 
       n <- idInt `fmap` binGet h 8
@@ -327,14 +329,14 @@ listToListOfPairs _ = []
 
 --getArr h n= SV.hGet h n
 
-testLSU = do
+{-testLSU = do
   saveVs "aSig" [aSig, aSig]
   sigs <- loadSignalsU "aSig"
   print2 "#sigs " $ length sigs
   print2 "head sigs " $ head sigs
   print2 "2nd sig " $ sigs!!1
   
-  return ()
+  return () -}
 
 
 loadReifiedBinary :: (Reify a,MyBinary a, Show a) => String -> IO [a]

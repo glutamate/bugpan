@@ -269,6 +269,7 @@ unsafeReify v = case reify v of
                   Just x -> x
                   Nothing -> error $ "unsafeReify: cannot reify "++show v
 
+{-
 --(Signal t1 t2 dt sf)
 data Signal a = Signal RealNum RealNum RealNum (Int -> a)
               | SigArray Double Double Double (SV.Vector a)
@@ -386,3 +387,4 @@ instance Floating a => Floating (Signal a) where
     cosh = fmap cosh
     sinh = fmap sinh
     sqrt = fmap sqrt
+-}

@@ -50,7 +50,7 @@ import System.Posix.Files
 import PlotGnuplot
 import Text.Regex.Posix
 import Text.Printf
-
+import NewSignal
 --import Graphics.Rendering.HSparklines
 
 type Duration a = ((Double,Double),a)
@@ -93,11 +93,9 @@ openReplies = modify (\s-> s { shArgs = "-o" : shArgs s })
 plotSize w h = modify (\s-> s { shArgs = ("-h"++show h) : ("-w"++show w): shArgs s })
 
 
-zipWithTime :: Signal a -> Signal (a,Double)
-zipWithTime (Signal t1 t2 dt sf) = Signal t1 t2 dt $ \pt -> (sf pt, (realToFrac pt)*dt+t1)
+--zipWithTime :: Signal a -> Signal (a,Double)
+--zipWithTime (Signal t1 t2 dt sf) = Signal t1 t2 dt $ \pt -> (sf pt, (realToFrac pt)*dt+t1)
 
-
-sigInitialVal (Signal t1 t2 dt sf) = sf 0
 
 foldSig :: (a->b->a) -> a -> Signal b -> a
 foldSig f init sig = foldl' f init $ sigToList sig
@@ -132,15 +130,13 @@ sectionDur1 ((lo,hi),_) durs = concatMap f durs
 
 
 section1 :: Signal a -> ((Double, Double), t) -> Signal a
-section1 (Signal ts1 ts2 dt sf) ((td1,td2),vd) = let (t1, t2)= (max ts1 td1, min ts2 td2)
-                                                     dropPnts = round $ (t1 - ts1)/dt
-                                                 in Signal t1 t2 dt $ \pt->(sf $ pt + dropPnts)
+section1 sig ((td1,td2),vd) = limitSig td1 td2 sig
 
 sigContainsDur :: Duration b -> Signal a -> Bool
-sigContainsDur ((td1,td2),vd) (Signal ts1 ts2 dt sf) = ts1 < td1 && ts2 > td2
+sigContainsDur ((td1,td2),vd) (Signal ts1 ts2 dt sf _) = ts1 < td1 && ts2 > td2
 
 sigOverlapsDur :: Duration b -> Signal a -> Bool
-sigOverlapsDur ((td1,td2),vd) (Signal ts1 ts2 dt sf) = td2 > ts1 && td1<ts2 -- || td1 < ts2 && td2 >ts1
+sigOverlapsDur ((td1,td2),vd) (Signal ts1 ts2 dt sf _) = td2 > ts1 && td1<ts2 -- || td1 < ts2 && td2 >ts1
 
 durOverlapsDur :: Duration b -> Duration a -> Bool
 durOverlapsDur ((td1,td2),vd) ((ts1,ts2),vd1) = td2 > ts1 && td1<ts2 -- || td1 < ts2 && td2 >ts1
@@ -160,18 +156,15 @@ showDur ((t1,t2),v) = show t1 ++ ".."++show t2++": "++show v
 showEvt (t,v) = "@"++show t++": "++show v
 
 sigDur :: Signal a -> Duration ()
-sigDur (Signal t1 t2 _ _) = ((t1,t2), ())
-
-sscan :: (a->b->a) -> a -> Signal b -> Signal a
-sscan f init sig@(Signal t1 t2 dt sf) = let arr2 = scanl f init $ sigToList sig
-                                        in Signal t1 t2 dt $ \pt->arr2!!pt
+sigDur (Signal t1 t2 _ _ _) = ((t1,t2), ())
 
 
 
-sigSegStat :: Fold a b -> (Int, Int) -> Signal a -> b
-sigSegStat (F op init c _) (n1, n2) (Signal t1 t2 dt sf) = c $! go n1 init
-    where go !n !x   | n>n2 = x
-                     | otherwise = go (n+1) (x `op` (sf n))
+sigSegStat :: (Storable a) => Fold a b -> (Int, Int) -> Signal a -> b
+sigSegStat (F op init c _) (n1, n2) sig = 
+    let arr = SV.take (n2-n1) $ SV.drop n1 $ sigArr sig
+    in c $! SV.foldl' op init arr
+
 
 class HasTStart t where
     gettStart :: t a -> Double
@@ -183,7 +176,7 @@ instance HasTStart ((,) (Double, Double)) where
     gettStart = getTStart
 
 instance HasTStart Signal where
-    gettStart (Signal t1 _ _ _) = t1
+    gettStart (Signal t1 _ _ _ _) = t1
 
 class Tagged t where
     getTag :: t a-> a
@@ -224,8 +217,8 @@ instance Shiftable ((Double,Double),a) where
     rebaseTime tr ((t1,t2),v) = ((t1*tr, t2*tr), v) 
 
 instance Shiftable (Signal a) where
-    shift ts (Signal t1 t2 dt sf) = Signal (t1+ts) (t2+ts) dt sf 
-    rebaseTime tr (Signal t1 t2 dt sf) = Signal (t1*tr) (t2*tr) (dt*tr) sf
+    shift ts (Signal t1 t2 dt sf eok) = Signal (t1+ts) (t2+ts) dt sf eok
+    rebaseTime tr (Signal t1 t2 dt sf eok) = Signal (t1*tr) (t2*tr) (dt*tr) sf eok
  
 instance Shiftable a => Shiftable [a] where
     shift ts vls = map (shift ts) vls
@@ -336,7 +329,7 @@ downSample n = map (downSample' (n `div` 2))
 
 downSample' :: (Ord a, Bounded a, Num a, Storable a) => Int -> Signal a -> Signal a
 --downSample' :: Int -> Signal Double -> Signal Double
-downSample' n sig@(Signal t1 t2 dt sf) =
+downSample' n sig@(Signal t1 t2 dt _ _) =
     let x ./. y = realToFrac x / realToFrac y
         npw = round $ (t2-t1)/dt
         chunkSize = floor (npw./. n)
@@ -348,5 +341,23 @@ downSample' n sig@(Signal t1 t2 dt sf) =
                       (x,y) = sigSegStat (both maxF minF) (n1,n2) sig
                       in [x,y]
      in if npw>n 
-           then (Signal t1 t2 ((t2-t1)./.(nChunks*2)) $ \p-> narr `SV.index` p)
+           then (Signal t1 t2 ((t2-t1)./.(nChunks*2))  narr Eq)
+           else sig
+
+downsample n = map (downsample' n)
+downsample' :: (Bounded a, Num a, Storable a, Fractional a) => Int -> Signal a -> Signal a
+--downSample' :: Int -> Signal Double -> Signal Double
+downsample' n sig@(Signal t1 t2 dt _ _) =
+    let x ./. y = realToFrac x / realToFrac y
+        npw = round $ (t2-t1)/dt
+        chunkSize = floor (npw./. n)
+        nChunks =  ceiling (npw ./. chunkSize)
+        newDt = (t2-t1)/realToFrac (nChunks)
+        narr = SV.pack $map chunk [0..(nChunks-1)]
+        chunk i = let n1 = i*chunkSize
+                      n2 = n1 + (min chunkSize (npw - i*chunkSize -1))
+                      (x) = sigSegStat (meanF) (n1,n2) sig
+                      in x
+     in if npw>n 
+           then (Signal t1 t2 ((t2-t1)./.(nChunks))  narr Eq)
            else sig
