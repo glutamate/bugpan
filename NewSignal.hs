@@ -102,4 +102,15 @@ instance (Storable a, Floating a) => Floating (Signal a) where
     cosh = fmap cosh
     sinh = fmap sinh
     sqrt = fmap sqrt
-                                                   
+       
+svInterpCos :: Int -> SV.Vector Double -> SV.Vector Double
+svInterpCos n arr = let dstep = 1/(realToFrac n)
+                        steps = map ((*dstep) . realToFrac) [0..n]
+                        f (y1,y2) = let mu2s = map (\mu->(1-cos(mu*pi))/2) steps 
+                                    in  map (\mu2-> (y1*(1-mu2)+y2*mu2)) mu2s
+                    in SV.pack $ concatMap f $ SV.zip arr $ SV.tail arr
+ 
+
+--http://local.wasp.uwa.edu.au/~pbourke/miscellaneous/interpolation/
+--mu2 = (1-cos(mu*PI))/2;
+--return(y1*(1-mu2)+y2*mu2);

@@ -135,11 +135,12 @@ takeEvery n (x:xs) = x : takeEvery n (drop (n-1) xs)
 
 
 
-eventDetect :: Int -> [Signal Double] -> [Event Int]
-eventDetect nclusters sigs = 
+eventDetect :: Int -> Double -> [Signal Double] -> [Event Int]
+eventDetect nclusters thresh sigs = 
     let sd = stdDevF `sigStat` sigs
-        putatives = crossesDown (((*6) . negate) <$$> sd) sigs `catevents`
-                    crossesUp ((*6) <$$> sd) sigs
+        putatives = if thresh <0  
+                        then crossesDown (((*thresh) . negate) <$$> sd) sigs 
+                        else crossesUp ((*thresh) <$$> sd) sigs
         waveforms = limitSigs' (-0.0005) 0.0005 $ around putatives $ sigs
         alignWaveforms = --limitSigs' (-0.0006) 0.0006 $ 
                          downsample 10 $ unjitter $ upsample 10 $ 
@@ -175,9 +176,6 @@ eventDetect nclusters sigs =
     in evss
 
 
---tilePlots
---hplots, vplots
-
 allSpikes = do
   {-inApproxSession "6f" $ do
               sigs <- take 20 `fmap` signalsDirect "normV"
@@ -190,7 +188,7 @@ allSpikes = do
               normV <- signalsDirect "normV"
               --let normV = subMeanNormSD sigs
               --storeAsOvwrt "normV" normV
-              let spks = eventDetect 12 normV
+              let spks = eventDetect 12 (-9) normV
               storeAsOvwrt "spikeClusters" spks
               return ()
 

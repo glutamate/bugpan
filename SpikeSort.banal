@@ -4,7 +4,7 @@
 
 %> plot $ sigStat minF normV
 
-> spikeClusters @= eventDetect 15  normV
+> spikeClusters @= eventDetect 15 (-9) normV
  
 > plot $ plotClusterMeans spikeClusters normV
 > plotSize 1000x1000
