@@ -159,11 +159,11 @@ procQ writeQ s
            let [[all, lhs, rhs]] = (s =~ "^\\s*(\\w+)\\s*@=\\s*(.+)")::[[String]]     
            in do tell $ "let "++lhs ++" = "++rhs
                  tell $ "storeAsOvwrt "++show lhs ++" "++lhs
-                 tellPrintCode $ "> "++lhs ++ " = " ++ rhs
+                 when writeQ $ tellPrintCode $ "> "++lhs ++ " = " ++ rhs
     | s =~ "^\\s*(\\w+)\\s*=\\s*(.+)" = 
            let [[all, lhs, rhs]] = (s =~ "^\\s*(\\w+)\\s*=\\s*(.+)")::[[String]]     
            in do tell $ "let "++lhs ++" = "++rhs
-                 tellPrintCode $ "> "++lhs ++ " = " ++ rhs
+                 when writeQ $ tellPrintCode $ "> "++lhs ++ " = " ++ rhs
     | s =~ "^\\s*openSession\\s*$" = 
            do tell "inSessionFromArgs $ do"
               indent 3
