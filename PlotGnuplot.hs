@@ -307,6 +307,12 @@ instance (PlotWithGnuplot a, PlotWithGnuplot b) => PlotWithGnuplot (a :+: b) whe
       py <- getGnuplotCmd ys                          
       return $ [(r,px++py)]
 
+instance (PlotWithGnuplot a, PlotWithGnuplot b) => PlotWithGnuplot (Either a b) where
+    multiPlot r (Left xs) = multiPlot r xs
+    multiPlot r (Right xs) = multiPlot r xs
+
+
+
 instance (PlotWithGnuplot a) => PlotWithGnuplot (Hplots a) where
     multiPlot (Rect (x0, y0) (x1,y1)) (Hplots ps) = do
       let n = realToFrac $ length ps
@@ -341,11 +347,20 @@ instance PlotWithGnuplot a => PlotWithGnuplot (LabelConsecutively [a]) where
             addTitleMany title (cmd) = ( map (addTitle title) cmd)
 
 --tilePlots ::  PlotWithGnuplot a => Int -> [a] -> Vplots (Hplots a)
-tilePlots :: Int -> [t] -> Vplots (Hplots (SubLabel t))
-tilePlots n ps = Vplots $ map Hplots $ map (map (\(p,i) -> SubNum i p)) $ groupsOf n (zip ps [0..])
-    where groupsOf n [] = []
-          groupsOf n xs = let (mine, rest) = splitAt n xs
-                          in mine: groupsOf n rest
+tilePlots :: Int -> [t] -> Vplots (Hplots (SubLabel (Either t Noplot)))
+tilePlots n ps = let nps = (length ps) 
+                     nfinal = if nps `mod` n == 0
+                                 then nps
+                                 else ((nps `div` n)+1)*n
+                     allps = ensureLength (nfinal) Noplot ps
+                 in Vplots $ map Hplots $ map (map (\(p,i) -> SubNum i p)) $ groupsOf n (zip allps [0..])
+
+
+groupsOf n [] = []
+groupsOf n xs = let (mine, rest) = splitAt n xs
+                in mine: groupsOf n rest
+
+ensureLength n filler xs = map Left xs++replicate (n - length xs) (Right filler)
 
 {-instance Num a => PlotWithR (Hist a) where
     getRPlotCmd (Histogram tgs) = 

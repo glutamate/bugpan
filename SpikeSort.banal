@@ -1,9 +1,13 @@
 > importHs SpikeDetect
-
+> importHs Math.Probably.FoldingStats
 > inEverySession
-> spikeClusters @= eventDetect 9 normV
 
+%> plot $ sigStat minF normV
+
+> spikeClusters @= eventDetect 15  normV
+ 
 > plot $ plotClusterMeans spikeClusters normV
+> plotSize 1000x1000
 > plot $ plotClusters spikeClusters normV
 > break
 

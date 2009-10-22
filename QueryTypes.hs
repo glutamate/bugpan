@@ -218,16 +218,18 @@ sumTags = sum . map getTag
 
 instance Shiftable (Double,a) where
     shift ts (t,v) = (t+ts, v)
-
+    rebaseTime tr (t,v) = (t*tr, v) 
 instance Shiftable ((Double,Double),a) where
     shift ts ((t1,t2),v) = ((t1+ts,t2+ts),v)
+    rebaseTime tr ((t1,t2),v) = ((t1*tr, t2*tr), v) 
 
 instance Shiftable (Signal a) where
     shift ts (Signal t1 t2 dt sf) = Signal (t1+ts) (t2+ts) dt sf 
-
+    rebaseTime tr (Signal t1 t2 dt sf) = Signal (t1*tr) (t2*tr) (dt*tr) sf
+ 
 instance Shiftable a => Shiftable [a] where
     shift ts vls = map (shift ts) vls
-
+    rebaseTime t = map (rebaseTime t)
 
 individually :: ListT m a -> m [a]
 individually = runListT

@@ -55,6 +55,7 @@ execCodeWriterT modNm cw = do
 
 mkAnal :: [String] -> CodeWriterT IO ()
 mkAnal [] = return ()
+mkAnal (('%':_):ss) = mkAnal ss
 mkAnal ((">"):ss) = mkAnal ss
 mkAnal (('>':q):ss) = 
     let writeQ = head q /= '>'
@@ -182,6 +183,9 @@ procQ writeQ s
     | s =~ "^\\s*importHs\\s*(.+)" = 
            let [[all, modnm]] = (s =~ "^\\s*importHs\\s*(.+)")::[[String]]
            in modimport modnm
+    | s =~ "^\\s*plotSize\\s*(.+)x(.+)" = 
+           let [[all, h, w]] = (s =~ "^\\s*plotSize\\s*(.+)x(.+)")::[[String]]
+           in tell $ "plotSize "++h++" "++w
     | s =~ "^\\s*close\\s*" = do tell "return ()"
                                  indent $ -3
     | s =~ "^\\s*break\\s*" = tellPrint "<div style=\"page-break-before: always\" />"
@@ -240,6 +244,6 @@ main = do
   writeFile hsFile code
   ghcres <- system $ "ghc -O2 --make "++hsFile
   case ghcres of
-    ExitFailure _ -> return ghcres
+    ExitFailure _ -> fail $ "ghc fail: "++show ghcres
     ExitSuccess -> system $ "./"++fileProper++" "++intercalate " " rest ++" >"++htmlFile
   return ()

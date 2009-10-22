@@ -130,18 +130,25 @@ shiftEach [] _ = []
 shiftEach _ [] = []
 shiftEach (s:ss) ((t,v):evs) = (t+s, v): shiftEach ss evs
 
+takeEvery n [] = []
+takeEvery n (x:xs) = x : takeEvery n (drop (n-1) xs)
+
+
+
 eventDetect :: Int -> [Signal Double] -> [Event Int]
 eventDetect nclusters sigs = 
     let sd = stdDevF `sigStat` sigs
         putatives = crossesDown (((*6) . negate) <$$> sd) sigs `catevents`
                     crossesUp ((*6) <$$> sd) sigs
-        waveforms = limitSigs' (-0.001) 0.001 $ around putatives $ sigs
-        alignWaveforms = downsample 10 $ unjitter $ upsample 10 $ 
-                         alignBy (centreOfMass . ((square . square) <$$>) . (limitSigs (-0.0005) 0.0005)) $ 
+        waveforms = limitSigs' (-0.0005) 0.0005 $ around putatives $ sigs
+        alignWaveforms = --limitSigs' (-0.0006) 0.0006 $ 
+                         downsample 10 $ unjitter $ upsample 10 $ 
+                         alignBy (centreOfMass . ((square . square) <$$>) ) $ 
                          waveforms 
-        alignedEvents = shiftEach (map (negate . (+0.001). fst) $ sigStarts alignWaveforms) putatives
+        alignedEvents = shiftEach (map (negate . (+0.0005). fst) $ sigStarts alignWaveforms) putatives
+        realignedWaveforms = limitSigs' (-0.0005) 0.0005 $ around alignedEvents sigs
         neigenVecs = 3
-        dataMatrix = fromLists $ map sigToList $ alignWaveforms
+        dataMatrix = fromLists $ map sigToList $  realignedWaveforms
         datMatSubMeans = fromColumns $ map vecSubMean $ toColumns dataMatrix
         covDM = cov datMatSubMeans
         (eigvals, eigvecs) = eig covDM

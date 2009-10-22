@@ -22,6 +22,7 @@ import Foreign.Storable
 import Data.Maybe
 import QueryUtils
 import Text.Printf
+import Database
 
 data Histo where -- GADT bec i don't know syntax for double existential (no longer needed)
     Histo :: Int -> [(a,Double)] -> Histo 
@@ -286,23 +287,24 @@ extractImages txt = catMaybes $ map f $ lines txt
 
 plotClusterMeans :: [Event Int] -> [Signal Double] -> LabelConsecutively [[Signal Double]]
 plotClusterMeans evs sigs = let idxs = sort $ nubTags evs 
-                                avg i = head $ averageSigs $ 
+                                avg i = milliSecs $ head $ averageSigs $ 
                                         downsample 10 $ unjitter $ upsample 10 $ 
                                         limitSigs' (-0.001) 0.001 $ 
                                         around ((==i)//evs) $ sigs
                             in LabelConsecutively $ map (unitList . avg) idxs
 
 
-plotClusters :: [Event Int] -> [Signal Double] -> Vplots (Hplots (SubLabel [Signal Double])) 
+plotClusters :: [Event Int] -> [Signal Double] -> Vplots (Hplots (SubLabel (Either [Signal Double] Noplot))) 
 plotClusters evs sigs = let idxs = sort $ nubTags evs 
-                            allSigs i = limitSigs' (-0.001) 0.001 $ 
+                            allSigs i = milliSecs $ limitSigs' (-0.001) 0.001 $ 
                                     around ((==i)//evs) $ sigs
                         in tilePlots 3 $ map allSigs idxs
 
 tagElem :: (Eq a, Tagged t) => [a] -> [t a] -> [t a]
 tagElem acceptTags tagged = (`elem` acceptTags)//tagged
 
-
+milliSecs :: Shiftable t => t -> t
+milliSecs = rebaseTime 1000
 
 nubTags = nub . map getTag 
 

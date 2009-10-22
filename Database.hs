@@ -291,13 +291,18 @@ guardBy (Just x) p | p x = Just x
                      else Nothing -}
 
 class Shiftable s where
-    shift :: RealNum -> s -> s
+    shift :: Double -> s -> s
+    rebaseTime :: Double -> s -> s
 
 instance Shiftable V where
     shift ts (SigV t1 t2 dt sf) = SigV (t1+ts) (t2+ts) dt $ sf
     shift ts (PairV (NumV t) v) = (PairV (NumV $ t+(NReal ts)) v)
     shift ts (PairV (PairV (NumV t1) ((NumV t2))) v) = 
         (PairV (PairV (NumV $ t1 +(NReal ts)) ((NumV $ t2 + (NReal ts)))) v)
+    rebaseTime t (SigV t1 t2 dt sf) = SigV (t1*t) (t2*t) (dt*t) $ sf
+    rebaseTime ts (PairV (NumV t) v) = (PairV (NumV $ t*(NReal ts)) v)
+    rebaseTime ts (PairV (PairV (NumV t1) ((NumV t2))) v) = 
+        (PairV (PairV (NumV $ t1 *(NReal ts)) ((NumV $ t2 * (NReal ts)))) v)
 
 mkList :: V -> [V]
 mkList (ListV vs) = vs
