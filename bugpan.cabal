@@ -30,7 +30,7 @@ Executable bugdriver
 --   extra-lib-dirs:     /usr/lib
    Build-depends:      array, tnutils, probably, haskell98, process, directory, regex-posix, 
                        utility-ht, random, base, bytestring, binary, old-time, storablevector, 
-                       mtl, data-binary-ieee754, uuid, GLFW, unix, stm, OpenGL, storable-tuple
+                       mtl, data-binary-ieee754, uuid, GLFW>0.3, unix, stm, OpenGL<2.4, storable-tuple
    c-sources:          Comedi/comedi_hs_helper.c
 --   ghc-options:      -O2 -threaded -lcomedi Comedi/comedi_hs_helper.o
 --   Includes:           comedilib.h, comedi.h
@@ -46,7 +46,7 @@ Executable runbugpan
 
    Build-depends:    array, tnutils, probably, haskell98, process, directory, regex-posix, 
                      utility-ht, random, base, bytestring, binary, old-time, storablevector, 
-                     mtl, data-binary-ieee754, uuid, GLFW, unix, stm, OpenGL, readline,
+                     mtl, data-binary-ieee754, uuid, GLFW>0.3, unix, stm, OpenGL<2.4, readline,
                      storable-tuple
 --
    c-sources:        Comedi/comedi_hs_helper.c

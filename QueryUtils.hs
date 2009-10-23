@@ -126,7 +126,8 @@ centreOfMass = map f
                                    
 upsample n = map (upsample' n)
 upsample' :: Int -> Signal Double -> Signal Double
-upsample' n s@(Signal t1 t2 dt arr Eq) = Signal t1 t2 dt (svInterpCos n arr) Eq
+upsample' n s@(Signal t1 t2 dt arr Eq) = let narr = svInterpLin n arr
+                                         in Signal (t1) (t2) (dt/(realToFrac n)) (narr) Eq
 upsample' n s = upsample' n $ forceSigEq s
 --    let newdt = (dt/(realToFrac n))
 --    in Signal t1 t2 newdt $ \p -> interp s ((realToFrac p)*newdt+t1) 
@@ -138,10 +139,10 @@ downsample' n s@(Signal t1 t2 dt sf) =
 -}
 
 
-unjitter = map f
-    where f (Signal t1 t2 dt arr e) =  let off = (roundToFrac dt t1) - t1
-                                       in Signal (t1+off) (t2+off) dt arr e
+unjitter = map unjitterSig
+
 triSig = [listToSig 0.1 (0.0) [0..9]]
+
 htrisig = head triSig
 
 around :: [Event b] -> [Signal a] -> [Signal a]
@@ -241,16 +242,16 @@ subMeanNormSD sigs = (f <$$> sigStat stat sigs ) <**> sigs
           f (mean,sd) = \x-> (x-mean)/sd
 
 crossesUp :: [Duration Double] -> [Signal Double] -> [Event ()]
-crossesUp thresDurs sigs = concatMap f $ sectionGen (map forceSigEq sigs) thresDurs
+crossesUp thresDurs sigs = concatMap f $ sectionGen sigs thresDurs
     where f (_,(thresh,s@(Signal t1 t2 dt _ _))) = 
-              let npts = round $ (t2-t1)/dt
-                  pts = [0..npts-1]
-                  vls = sigToList s
-                  go [] _ _ hits = hits
-                  go (this:xs) n last hits  = if this >thresh && last < thresh
-                                               then go xs (n+1) this (n:hits)
-                                               else go xs (n+1) this (hits)
-              in map ((\t->(t,())) .  (+t1) . (*dt) ) $ reverse $ go vls 0 (thresh+1) []
+              let npts = sigPnts s
+                  --pts = [0..npts-1]                
+                  go n last hits | n <npts -1 = let this = readSigPt s n
+                                                 in if this >thresh && last < thresh
+                                                      then go (n+1) this (n:hits)
+                                                      else go (n+1) this (hits)
+                                 | otherwise = hits
+              in map ((\t->(t,())) .  (+t1) . (*dt) . realToFrac) $ reverse $ go  0 (thresh+1) []
 
 crossesDown th sigs = crossesUp (negate <$$> th) (negate <$$> sigs)
 
@@ -336,11 +337,6 @@ limitSigs lo hi sigs = map (limitSig (min lo hi) (max lo hi)) sigs
 limitSigs' :: Double -> Double -> [Signal a] -> [Signal a]
 limitSigs' lo hi sigs = catMaybes $ map (limitSig' (min lo hi) (max lo hi)) sigs
 
-limitSig' lo hi (Signal t1 t2 dt arr eq) | t1 > lo || t2< hi = Nothing
-                                         | otherwise = let t1' = max t1 lo
-                                                           t2' = min hi t2
-                                                           pshift = round $ (t1' - t1)/dt
-                                                       in Just $ Signal t1' t2' dt (SV.drop pshift arr) eq
 
 averageSigs :: (Floating a, Storable a) => [Signal a] -> [Signal a]
 averageSigs sigs = let (mu, sem) = runStat meanSEMF sigs

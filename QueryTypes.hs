@@ -97,9 +97,6 @@ plotSize w h = modify (\s-> s { shArgs = ("-h"++show h) : ("-w"++show w): shArgs
 --zipWithTime (Signal t1 t2 dt sf) = Signal t1 t2 dt $ \pt -> (sf pt, (realToFrac pt)*dt+t1)
 
 
-foldSig :: (a->b->a) -> a -> Signal b -> a
-foldSig f init sig = foldl' f init $ sigToList sig
-
 
 during :: ChopByDur [t] => [Duration b] -> [t] -> [t]
 during durs evs = concat $ chopByDur durs evs

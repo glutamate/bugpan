@@ -291,7 +291,7 @@ extractImages txt = catMaybes $ map f $ lines txt
 plotClusterMeans :: [Event Int] -> [Signal Double] -> LabelConsecutively [[Signal Double]]
 plotClusterMeans evs sigs = let idxs = sort $ nubTags evs 
                                 avg i = milliSecs $ head $ averageSigs $ 
-                                        downsample 10 $ unjitter $ upsample 10 $ 
+                                        unjitter $ 
                                         limitSigs' (-0.001) 0.001 $ 
                                         around ((==i)//evs) $ sigs
                             in LabelConsecutively $ map (unitList . avg) idxs
@@ -305,6 +305,12 @@ plotClusters evs sigs = let idxs = sort $ nubTags evs
 
 tagElem :: (Eq a, Tagged t) => [a] -> [t a] -> [t a]
 tagElem acceptTags tagged = (`elem` acceptTags)//tagged
+
+mkIntListDur:: [Int] -> [Duration [Int]]
+mkIntListDur xs = [((minBound,maxBound),xs)]
+
+acceptSpikes :: [Duration [Int]] -> [Event Int] -> [Event ()]
+acceptSpikes ((_,okTags):_) clusts = tag () $ tagElem okTags clusts
 
 milliSecs :: Shiftable t => t -> t
 milliSecs = rebaseTime 1000

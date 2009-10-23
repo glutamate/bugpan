@@ -196,6 +196,7 @@ procQ writeQ s
                  modify $ \(i, ss) -> (i, defn:ss)
                  --io $ putStrLn $ "remembering "++defn
                  when writeQ $tellPrintCode $ "> everywhere "++defn
+    | chomp s == "" = return ()
     | otherwise = do when writeQ $ tellPrintCode $ unlines $ map ("> "++) (lines s)
                      tell $ "askForLiterate $ "++(concat $ map chomp $ lines s)
                      tellPrint "<p />"
@@ -243,17 +244,26 @@ main = do
   let htmlFile = fileProper++".html"
   code <- execCodeWriterT "Main" (writer file) 
   writeFile hsFile code
-  ghcres <- system $ "ghc -O2 --make "++hsFile
+  ghcres <- if ("-p" `elem` opts)
+               then system $ "ghc -O2 -prof -auto-all --make "++hsFile
+               else system $ "ghc -O2 --make "++hsFile
   case ghcres of
     ExitFailure _ -> fail $ "ghc fail: "++show ghcres
     ExitSuccess -> if "-a" `elem` opts 
                       then do
                         sessNms <-  getSessionInRootDir "/var/bugpan/sessions/"
                         forM_ sessNms $ \sess -> do
-                             let cmd = "./"++fileProper++" "++sess++" >"++fileProper++take 6 sess++".html"
+                             let cmd = if ("-p" `elem` opts) 
+                                          then "./"++fileProper++" "++sess++" >"++fileProper++take 6 sess++".html +RTS -p"
+                                          else "./"++fileProper++" "++sess++" >"++fileProper++take 6 sess++".html"
                              putStrLn cmd
                              system cmd
                       else do 
-                        system $ "./"++fileProper++" "++intercalate " " (opts++rest) ++" >"++htmlFile
+                        if ("-p" `elem` opts)
+                           then system $ "./"++fileProper++" "++intercalate " " ((opts\\["-o", "-a"])++rest) ++" >"++htmlFile++ " +RTS -p"
+                           else system $ "./"++fileProper++" "++intercalate " " ((opts\\["-o", "-a"])++rest) ++" >"++htmlFile
+                        when ("-o" `elem` opts) $ do
+                             system $"gnome-open "++htmlFile
+                             return ()
                         return ()
   return ()

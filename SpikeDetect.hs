@@ -31,14 +31,12 @@ import EvalM
 import Numeric.LinearAlgebra
 import Foreign.Storable
 import Math.Probably.KMeans 
-import DeskWeb
 import Control.Monad
 import Debug.Trace
 import Data.Maybe
-import Graphics.UI.Gtk hiding (Signal) 
-import Graphics.UI.Gtk.Display.Image
 import Data.IORef
 import Database
+import NewSignal
 
 --main = allSpikes -- spikeDetectIO
 
@@ -123,7 +121,7 @@ minInterval t (ts1:res@(ts2:es)) | dist (gettStart ts1) (gettStart ts2) < t = mi
                                  | otherwise = ts1 : minInterval t res
 
 sigStarts :: [Signal a] -> [Event ()]
-sigStarts = map (\(Signal t1 _ _ _) -> (t1,()))
+sigStarts = map (\(Signal t1 _ _ _ _) -> (t1,()))
 
 shiftEach :: [Double] -> [Event a] -> [Event a]
 shiftEach [] _ = []
@@ -135,20 +133,20 @@ takeEvery n (x:xs) = x : takeEvery n (drop (n-1) xs)
 
 
 
-eventDetect :: Int -> Double -> [Signal Double] -> [Event Int]
-eventDetect nclusters thresh sigs = 
+eventDetect :: Int -> [Duration Double] -> [Signal Double] -> [Event Int]
+eventDetect nclusters ((_,thresh):_) sigs = 
     let sd = stdDevF `sigStat` sigs
         putatives = if thresh <0  
                         then crossesDown (((*thresh) . negate) <$$> sd) sigs 
                         else crossesUp ((*thresh) <$$> sd) sigs
-        waveforms = limitSigs' (-0.0005) 0.0005 $ around putatives $ sigs
+        waveforms =  limitSigs' (-0.0005) 0.0005 $ around putatives $ sigs
         alignWaveforms = --limitSigs' (-0.0006) 0.0006 $ 
-                         downsample 10 $ unjitter $ upsample 10 $ 
+                         unjitter $ 
                          alignBy (centreOfMass . ((square . square) <$$>) ) $ 
                          waveforms 
         alignedEvents = shiftEach (map (negate . (+0.0005). fst) $ sigStarts alignWaveforms) putatives
         realignedWaveforms = limitSigs' (-0.0005) 0.0005 $ around alignedEvents sigs
-        neigenVecs = 3
+        neigenVecs = 5
         dataMatrix = fromLists $ map sigToList $  realignedWaveforms
         datMatSubMeans = fromColumns $ map vecSubMean $ toColumns dataMatrix
         covDM = cov datMatSubMeans
@@ -188,13 +186,13 @@ allSpikes = do
               normV <- signalsDirect "normV"
               --let normV = subMeanNormSD sigs
               --storeAsOvwrt "normV" normV
-              let spks = eventDetect 12 (-9) normV
+              let spks = eventDetect 12 (durd $ -9) normV
               storeAsOvwrt "spikeClusters" spks
               return ()
 
 
 
-autoSpikes sigNm = do
+{-autoSpikes sigNm = do
   sigs <- signalsDirect sigNm 
   io $ initGUI
   Session bdir _ <- getSession
@@ -353,7 +351,7 @@ autoSpikes sigNm = do
   --covariance matrix
 
 -}
-
+-}
   --ask $ plot $ take 100 $ alignWaveforms 
   --io $ print $ dataMatrix
   return ()
@@ -365,7 +363,7 @@ spikeDetectIO = do
                   initUserInput
                   plotSize 490 329
                   overDur <- unitDurations overDurNm
-                  autoSpikes "normV"
+                  --autoSpikes "normV"
                   return ()
                   --normV <- signalsDirect "normV"
                   --spikeDetect [overDur] normV []
