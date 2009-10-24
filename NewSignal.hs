@@ -56,8 +56,8 @@ sigVTimePoints (SigV t1 t2 dt _) = let n = (t2-t1)/dt
 
 
 sigToList :: Signal a -> [a]
-sigToList sig@(Signal t1 t2 dt arr Eq) = map (arr `SV.index`) [0..sigPnts sig-1]
-sigToList sig@(Signal t1 t2 dt arr (Kont f)) = map (f . (arr `SV.index`)) [0..sigPnts sig-1]
+sigToList sig@(Signal t1 t2 dt arr Eq) = SV.unpack arr 
+sigToList sig@(Signal t1 t2 dt arr (Kont f)) = map f $ SV.unpack arr
 
 sigInitialVal s  = head $ sigToList s
 
@@ -68,7 +68,7 @@ sscan f init s =
 
 zipWithTime :: Storable a => Signal a -> Signal (a,Double)
 zipWithTime s@(Signal t1 t2 dt arr Eq) = 
-    let zarr = SV.pack $ zip (SV.unpack arr) (sigTimePoints s)
+    let zarr = SV.zipWith (,) ( arr) $ SV.pack (sigTimePoints s)
     in Signal t1 t2 dt zarr Eq 
 zipWithTime sig = zipWithTime $ forceSigEq sig
            
@@ -112,9 +112,19 @@ limitSig' lo hi (Signal t1 t2 dt arr eq)
 copySig :: Signal a -> Signal a
 copySig (Signal t1 t2 dt arr eq) = (Signal t1 t2 dt (SV.copy arr) eq)
 
-crossSigUp :: Double -> Signal Double -> SV.Vector Bool
-crossSigUp thr (Signal t1 t2 dt arr Eq) = SV.zipWith (f) arr (SV.tail arr)
-    where f y1 y2 = y2 > thr && y1 < thr
+
+--can't use eqToK here
+crossSigUp :: Ord a => a -> Signal a -> [Double]
+crossSigUp thr s@(Signal t1 t2 dt arr Eq) = 
+    idxsToTimes s $ SV.findIndices id $ SV.zipWith (f) arr (SV.tail arr)
+        where f y1 y2 = y2 > thr && y1 < thr
+crossSigUp thr s@(Signal t1 t2 dt arr (Kont k)) = 
+    idxsToTimes s $ SV.findIndices id $ SV.zipWith (f) arr (SV.tail arr)
+        where f y1 y2 = (k y2) > thr && (k y1) < thr
+
+
+idxsToTimes :: Signal a -> [Int] -> [Double]
+idxsToTimes (Signal t1 t2 dt _ _) = map $ (+t1) . (*dt) . realToFrac
                     
 
 combineSigs op s1@(Signal t1 t2 dt _ eok) s2@(Signal t1' t2' dt' _ eok')  = -- | dt == dt'

@@ -241,10 +241,10 @@ subMeanNormSD sigs = (f <$$> sigStat stat sigs ) <**> sigs
     where stat = meanSDF
           f (mean,sd) = \x-> (x-mean)/sd
 
-crossesUp :: [Duration Double] -> [Signal Double] -> [Event ()]
+crossesUp :: Ord a => [Duration a] -> [Signal a] -> [Event ()]
 crossesUp thresDurs sigs = concatMap f $ sectionGen sigs thresDurs
-    where f (_,(thresh,s@(Signal t1 t2 dt _ _))) = 
-              let npts = sigPnts s
+    where f (_,(thresh,s@(Signal t1 t2 dt _ _))) = map (flip (,) ()) $ crossSigUp thresh s
+{-              let npts = sigPnts s
                   --pts = [0..npts-1]                
                   go n last hits | n <npts -1 = let this = readSigPt s n
                                                  in if this >thresh && last < thresh
@@ -252,6 +252,7 @@ crossesUp thresDurs sigs = concatMap f $ sectionGen sigs thresDurs
                                                       else go (n+1) this (hits)
                                  | otherwise = hits
               in map ((\t->(t,())) .  (+t1) . (*dt) . realToFrac) $ reverse $ go  0 (thresh+1) []
+-}
 
 crossesDown th sigs = crossesUp (negate <$$> th) (negate <$$> sigs)
 
