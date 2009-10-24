@@ -54,6 +54,7 @@ toHask dt tmax ds params
                     "import System.Time",
                     "import Array",
                     "import TNUtils",
+                    "import NewSignal",
                     "import Database",
                     "import Control.Monad",
                     "import System.IO.Unsafe",
@@ -105,10 +106,12 @@ mainFun ds exps =
 
 writeBufToSig = ["", 
                  "bufToSig tmax buf = ",
-                 "   let np = idInt . round $ tmax/dt",
-                 "       arr = array (0,np) $ zip [0..np] $ reverse buf",
-                 "       sf p = if p>np-1 then arr!(np-1) else if p<0 then arr!0 else arr!p",
-                 "   in Signal 0 tmax dt sf", ""]
+--                 "   let np = idInt . round $ tmax/dt",
+--                 "       arr = array (0,np) $ zip [0..np] $ reverse buf",
+--                 "       sf p = if p>np-1 then arr!(np-1) else if p<0 then arr!0 else arr!p",
+                 " sigRevArr $ listToSig dt 0 buf"]
+
+--Signal 0 tmax dt sf Eq", ""]
 
 
 writeSelSwitch = ["selSwitch :: [([(Double, a)], Double -> a -> b)] -> b -> b",
@@ -155,8 +158,8 @@ compStageP ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++
           dsSrcs =  [(varNm, fromJust $ lookupSrc srcNm,param) | ReadSource varNm (srcNm, param) <- ds]
           atOnceSrcs = [(varNm, srcf, param) | (varNm, Src _ _ _ _ (SrcOnce srcf), param)<- dsSrcs ]
           rtSrcs = [(varNm, srcf, param) | (varNm, Src _ _ _ _ (SrcRealTimeSig srcf), param)<- dsSrcs ]
-          sigs = ("seconds", (App (Var "realToFrac") (Var "npnts"-Var"n"))/Var "dt"):[ (nm,e) | Let (PatVar nm _) (Sig e) <- ds ]
-          evs = [ nm | Let nm (Event e) <- ds ]
+          --sigs = ("seconds", (App (Var "realToFrac") (Var "npnts"-Var"n"))/Var "dt"):[ (nm,e) | Let (PatVar nm _) (Sig e) <- ds ]
+          --evs = [ nm | Let nm (Event e) <- ds ]
           lns = newTmax++runAtOnceSrcs++ defineStep++runLine++retLine
           newTmax = let tm = localTmax tmax ds' in
                     [ind++"let tmax = "++(show $ tm),
@@ -172,6 +175,7 @@ compStageP ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++
           arg (Let (PatVar nm _) (SigDelay (Var snm) v0)) = Just nm
           arg (Let (PatVar nm _) (Switch eslams s0)) = Just nm
           arg (Let (PatVar nm _) (Forget tm se)) = Just nm
+          arg (Let (PatVar nm _) (SolveOde (SigFby v e))) = Just $ nm
           arg s = Nothing
           bufArgs = map (++"Buf") exps
           args = ["seconds"]++catMaybes (map arg ds)++bufArgs
@@ -181,6 +185,7 @@ compStageP ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++
           initV (Let nm (Forget tm e)) = Just $ pp e
           initV (Let nm (SigDelay (Var snm) v0)) = Just $ pp v0
           initV (Let nm (Switch eslams s0)) = Just "undefined"
+          initV (Let nm (SolveOde (SigFby v e))) = Just $ pp v
           initV s = Nothing
           bufInits = map (\_->"[]") exps
           initVls =["0"]++catMaybes (map initV ds)++bufInits
@@ -206,6 +211,7 @@ compStageP ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++
           lets (Let (PatVar nm _) (Switch ses s0)) = 
                                   Just (nm++"NxtV",  "selSwitch ["++(intercalate "," $ map (switchLine nm) ses)++
                                                      "] ("++(pp . unSig $ (tweakExprP (nmOrd nm) ds) s0)++")")
+          lets (Let (PatVar nm _) (SolveOde (SigFby v e))) = Just (nm++"NxtV",nm++"+ dt*("++(pp . (tweakExprP (nmOrd nm) ds) $ e)++")")
           lets e = Nothing
 
           letss = ("secondsNxtV", "realToFrac (npnts- n)*dt"):catMaybes (map lets ds)
@@ -256,7 +262,7 @@ inPar s = "("++s++")"
 
 
 
-compStage ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++" = do "):lns
+{-compStage ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++" = do "):lns
     where ind = "   "
           loopInd = "       "
           ds = snd $ runTravM ds' [] removeSigLimits
@@ -317,6 +323,8 @@ compStage ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++"
           evQ nm | nm `elem` evs = ind++nm++"QVal <- readIORef "++nm++"Queue"
                  | otherwise = ind++"let "++nm++"QVal = "++nm
           returnLine = [ind++"return "++(inTuple $ map (\nm-> "bufToSig tmax "++nm++"BufVal") exps ++ map (++"QVal") evExps)]
+-}
+
 
 tweakExpr e = mapE (changeRead . unSharp . unVal) e 
     where unVal (SigVal (Var nm)) = Var (nm++"Val")
@@ -381,6 +389,7 @@ reactive e = {- trace (pp e ) $ -} or `fmap` queryM (hasSigAux []) e
           hasSigAux _ (Sig _) = return [True]
           hasSigAux _ (Event _) = return [True]
           hasSigAux _ (SigDelay _ _) = return [True]
+          hasSigAux _ (SolveOde _) = return [True]
           hasSigAux _ (SigVal _) = return [True]
           hasSigAux _ (SigAt _ _) = return [True]
           hasSigAux lu v@(Var nm) = 

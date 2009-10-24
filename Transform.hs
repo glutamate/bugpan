@@ -392,6 +392,7 @@ isSignalOrEvt (Sig _) = return IsSig
 isSignalOrEvt (SigDelay _ _) = return IsSig
 isSignalOrEvt (Event _) = return IsEvt
 isSignalOrEvt (Switch _ _) = return IsSig
+isSignalOrEvt (SolveOde _) = return IsSig
 isSignalOrEvt (Var "seconds") = return IsSig
 isSignalOrEvt (Var "dt") = return IsNeitherSigNorEvt
 isSignalOrEvt (Var nm) = ifM (isDefBySrc nm)

@@ -176,10 +176,11 @@ instance (Storable a, Floating a) => Floating (Signal a) where
     sinh = fmap sinh
     sqrt = fmap sqrt
 
-instance (Storable a, Reify a) => Reify (Signal a) where
+instance (Storable a, Reify a, Show a) => Reify (Signal a) where
     reify s@(SigV t1 t2 dt sf) = let arr = SV.pack $ map (unsafeReify . sf) [0..sigVPnts s-1]
                                  in Just $ Signal t1 t2 dt arr Eq -- $ \ix-> unsafeReify (sf ix)
     pack sig@(Signal t1 t2 dt sf eok) = SigV t1 t2 dt $ \ix -> pack (readSigPt sig ix) 
+    pack s = error $ show s
     typeOfReified s = SignalT (typeOfReified (unSig s))
         where unSig :: Signal a -> a
               unSig = undefined
@@ -245,11 +246,12 @@ svInterpCubic n arr = let dstep = 1/(realToFrac n)
 
 
 listToSig dt t1 lst = let arr = SV.pack lst
-                          t2 = (realToFrac $ length lst-1) *dt +t1
+                          t2 = (realToFrac $ SV.length arr-1) *dt +t1
                       in Signal t1 t2 dt arr Eq
 
 sineSig = Signal 0 3 (0.1) (SV.pack $ map sin (sigTimePoints sineSig)) Eq
 
+sigRevArr (Signal t1 t2 dt arr eq) = (Signal t1 t2 dt (SV.reverse arr) eq)
 
 --http://local.wasp.uwa.edu.au/~pbourke/miscellaneous/interpolation/
 --mu2 = (1-cos(mu*PI))/2;

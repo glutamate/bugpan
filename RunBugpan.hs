@@ -16,6 +16,8 @@ import Control.Monad
 import TNUtils
 import PrettyPrint
 import HaskellBackend
+import System.Exit
+import System.Cmd
 
 {-chainM :: Monad m => (s -> [a] -> m s)  -> [a] -> s -> m (s, [a])
 chainM f [] s = return (s, [])
@@ -94,7 +96,25 @@ go rs@(RS ds (Just sess) mdt mtmax Nothing) = do
   print "done running"
   return ()
 
-go rs@(RS ds msess mdt mtmax (Just outNm)) = do
+go rs@(RS ds (Just sess) mdt mtmax (Just outNm)) = do
+  let prg = getPrg rs
+  let (tmax, dt) = (getTmax rs, getDt rs)
+  tnow <- getClockTime
+  let t0 = diffInS tnow $ tSessionStart sess
+  let sessNm = last $ splitBy '/' $ baseDir sess
+  compileToHask outNm dt tmax prg []
+  ghcres<- system $ "ghc --make -O2 "++outNm
+  let cmdNm = if '.' `elem` outNm 
+                then head $ splitBy '.' outNm
+                else outNm
+  case ghcres of
+    ExitFailure e -> putStrLn $ "ghc fail: "++show e
+    ExitSuccess -> do
+                system $ "./"++(cmdNm)++" "++sessNm++ " "++show t0
+                return ()
+  return ()
+
+go rs@(RS ds Nothing mdt mtmax (Just outNm)) = do
   let prg = getPrg rs
   let (tmax, dt) = (getTmax rs, getDt rs)
   compileToHask outNm dt tmax prg []

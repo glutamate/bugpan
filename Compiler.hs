@@ -10,6 +10,7 @@ import Control.Concurrent
 import Statement
 import BuiltIn
 import PrettyPrint
+import RandomSources
 
 compile :: [Declare] -> [Stmt]
 compile ds = let c = concatMap compileDec (filter noDtSeconds (bivDecls++ds)) in 
@@ -82,6 +83,11 @@ genSrc "bernoulli" rateS t dt =
 genSrc "uniform" (PairV lo hi) t dt = 
     do rnd <- randomRIO ( unsafeReify lo, unsafeReify hi)
        return . NumV . NReal  $ rnd
+--nSrc "poisson" (rate) t dt = 
+--    do evsT <- poisson  
+       return . NumV . NReal  $ rnd
+
+
 genSrc nms _ _ _ = error $ "unknown source: "++show nms
 
 {- note: Now, 

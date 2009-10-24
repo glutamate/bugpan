@@ -80,8 +80,9 @@ tyCheckD d@(Let (PatVar nm tp) e) =
                                          return ()
 
 --figure out how to do this correctly
-tyCheckD d@(Let (PatDeriv (PatVar nm tp)) (SigFby v0 e)) = 
-                      do decTys <- allDeclaredTypes
+tyCheckD d@(Let (PatDeriv p) (SigFby v0 e)) = 
+                tyCheckD $ Let p (SolveOde (SigFby v0 e))
+{-                      do decTys <- allDeclaredTypes
                          tpn <-  if tp== UnspecifiedT
                                     then (SignalT . UnknownT) `fmap` genSym nm
                                     else return tp
@@ -98,7 +99,7 @@ tyCheckD d@(Let (PatDeriv (PatVar nm tp)) (SigFby v0 e)) =
                                          solveConstraints
                                          applySolution
                                          markChange
-                                         return ()
+                                         return () -}
 
 --shouldBeLabeled (UnknownT _) = True
 shouldBeLabeled UnspecifiedT = True
@@ -323,9 +324,15 @@ checkTy (SigFby v0 s) = do   tyv0 <- checkTy v0
                              case tys of
                                SignalT tval -> do addTyConstraint (tyv0, tval)
                                                   return tys
-                               _ -> do telem <- UnknownT `fmap` (genSym "checkSigDelay")
+                               _ -> do telem <- UnknownT `fmap` (genSym "checkSigFby")
                                        addTyConstraint (tys, SignalT telem)
                                        addTyConstraint (tyv0, telem)
+                                       return $ SignalT telem
+checkTy (SolveOde s) =  do   tys <- checkTy s
+                             case tys of
+                               SignalT tval -> return tys
+                               _ -> do telem <- UnknownT `fmap` (genSym "checkSolveOde")
+                                       addTyConstraint (tys, SignalT telem)
                                        return $ SignalT telem
 
 checkTy (Forget tm ev)  = do te <- checkTy ev
