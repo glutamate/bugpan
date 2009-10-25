@@ -211,7 +211,7 @@ compStageP ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++
           lets (Let (PatVar nm _) (Switch ses s0)) = 
                                   Just (nm++"NxtV",  "selSwitch ["++(intercalate "," $ map (switchLine nm) ses)++
                                                      "] ("++(pp . unSig $ (tweakExprP (nmOrd nm) ds) s0)++")")
-          lets (Let (PatVar nm _) (SolveOde (SigFby v e))) = Just (nm++"NxtV",nm++"+ dt*("++(pp . (tweakExprP (nmOrd nm) ds) $ e)++")")
+          lets (Let (PatVar nm _) (SolveOde (SigFby v e))) = Just (nm++"NxtV",nm++"+ dt*("++(pp . unSig . (tweakExprP (nmOrd nm) ds) $ e)++")")
           lets e = Nothing
 
           letss = ("secondsNxtV", "realToFrac (npnts- n)*dt"):catMaybes (map lets ds)
@@ -255,6 +255,7 @@ tweakExprP n ds e = mapE (changeRead . unSharp . unVal) e
 tweakEslamP n ds = tweakEslamP' . tweakExprP n ds
 
 tweakEslamP' (Lam t tt (Lam v vt (Sig s))) = (Lam t tt (Lam v vt s))
+--tweakEslamP' (Lam t tt (Lam v vt (SolveOde s))) = (Lam t tt (Lam v vt ()))
 --tweakEslamP' (Lam t tt (Lam v vt (Var nm))) = (Lam t tt (Lam v vt (Var $ nm++"Val")))
 tweakEslamP' e = e
 

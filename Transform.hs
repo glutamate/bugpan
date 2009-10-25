@@ -199,11 +199,12 @@ sigFloating = mapDE sigFl
           sigFl e = mapEM sigFloat e
           sigFloat (Sig se) = do
             inSw <- insideSwitch
+            inOde <- insideSolveOde
             hasBV <-  hasBoundVars se
             ep <- exprPath `fmap` get
             -- trace (concat ["considring sigfloat on ", pp se, ": ", show hasBV, show inSw, "\n"]) return ()
             -- trace (concat ["exprPath: ", intercalate ", " $ map pp ep, "\n"]) return ()
-            if  hasBV || inSw
+            if  hasBV || inSw || inOde
                then return (Sig se) {-do ln <- curLine
                        error $ "not sure what to do with bound var in sig floating in line \n"++ppDecl ln -}
                else {-if inSw

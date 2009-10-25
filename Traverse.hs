@@ -186,6 +186,13 @@ insideSwitch  = (isSwitch . head . exprPath) `fmap` get
     where isSwitch (Switch _ _) = True
           isSwitch _ = False
 
+insideSolveOde :: TravM Bool
+insideSolveOde  = (isOde . head . exprPath) `fmap` get
+    where isOde (SigFby _ _) = True
+          isOde (SolveOde _) = True
+          isOde _ = False
+
+
 lookUp :: String -> TravM (E)
 lookUp nm = do env <- env `fmap` get
                case L.lookup nm env of
