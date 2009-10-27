@@ -227,6 +227,7 @@ saveInSession sess@(Session basedir _) nm t0 dt sig@(SigV t1 t2 sigdt sf) = do
   createDirectoryIfMissing False dir
   let ntics = round $ t0/dt
   saveVs (dir./  showHex ntics "") $ [shift t0 sig]
+saveInSession sess@(Session basedir sesst0) nm t0 dt lst@(ListV []) = return ()
 saveInSession sess@(Session basedir sesst0) nm t0 dt lst@(ListV evs) | isEvents lst = do
   let dir = basedir ./ "events/"++nm
   createDirectoryIfMissing False dir

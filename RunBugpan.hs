@@ -63,6 +63,12 @@ dispatch rst ("-t":dts:args) = dispatch (rst {rstTmax = Just $ read dts}) args
 
 dispatch rst ("-o":fnm:args) = dispatch (rst {rstCompile = Just fnm}) args
 
+dispatch rst ("-r":fnm:args) = do 
+  ds <- fileDecls fnm []
+--  print ds
+  dispatch (rst {rstCompile = Just ((head$ splitBy '.' $ fnm)++".hs"),
+                 rstDecls = rstDecls rst ++ ds}) args
+
 
 dispatch rst ("-p":file:_) | head file /= '-' = do
   --print file
