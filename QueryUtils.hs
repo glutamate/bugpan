@@ -191,7 +191,7 @@ sigStat' (F op init c cmb) sig@(Signal t1 t2 dt sf _) =
         v = c $! foldSig op init sig 
     in ((t1,t2),v)
 
-
+x === ys = (x `isPrefixOf`)//ys
 
 catevents :: [Event a] -> [Event a] -> [Event a]
 catevents e1s = sortBy (comparing fst) . (e1s++)

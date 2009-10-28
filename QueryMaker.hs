@@ -26,6 +26,7 @@ mkQuery tps sessNm q resp = execWriter $ do
                                                        " \""++ nm++"\" ",
                                                        (typeToProxyName $ unWrapT ty), ";"
                                                       ]]
+                          tell [ind++"sessionName <- dur `fmap` getSessionName;"]
                           tell [ind++"qresval <- qResThroughSession ("++q++");"]
                           tell [ind++resp++"(qresval) }"] 
 

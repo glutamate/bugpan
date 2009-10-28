@@ -296,7 +296,7 @@ instance QueryResult [Char] where
     qFilterSuccess _ = True
 
 instance QueryResult Int where
-    qReply x _ = return .qs1$ printf "%.3g" x
+    qReply x _ = return .qs1$ printf "%.3d" x
     qFilterSuccess 0 = False
     qFilterSuccess _ = True
 

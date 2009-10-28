@@ -24,6 +24,7 @@ import QueryUtils
 import Text.Printf
 import Database
 import NewSignal
+import PrettyPrint
 
 data Histo where -- GADT bec i don't know syntax for double existential (no longer needed)
     Histo :: Int -> [(a,Double)] -> Histo 
@@ -234,17 +235,23 @@ instance QueryResult [(Int, (Double, Double))] where
         where printIt (n, (mu, sd)) = (minWidth 2 $ show n)++", "++showPrec 2 mu++", "++showPrec 2 sd
                                       
 
+replyTagged :: (Show (t a), Reify a, Tagged t) => [t a] -> String -> IO String 
+replyTagged xs nm = do
+  let ty = "type = "++nm++" "++(ppType $ typeOfReified $ getTag $ head xs)
+  return $ unlines $ ty:map show xs
+
+
 instance (Show a, Reify a, AccuShow a) => QueryResult [Event a] where
     qReply [xs] opts | grid opts = if Unit == (pack . snd $ xs)
                                       then return . accushow . fst  $ xs
                                       else return . accushow . snd  $ xs
-                     | otherwise = return $ show xs
+                     | otherwise = replyTagged [xs] "Events"
     qReply [] opts = return "[]"
     qReply xs opts | grid opts = case (pack . snd . head $ xs) of
                                    Unit   -> webSpark opts True $ map (pack . fst) xs -- histo of intervals. instead: dot for occ?
                                    NumV _ -> webSpark opts True $ map (pack . snd) xs
                                    _ -> return $ show xs
-                   | otherwise = return $ show xs
+                   | otherwise = replyTagged xs "Events"
     qFilterSuccess [] = False
     qFilterSuccess _ = True
 
@@ -252,13 +259,13 @@ instance (Show a, Reify a,AccuShow a) => QueryResult [Duration a] where
     qReply [xs] opts | grid opts = if Unit == (pack . snd $ xs)
                                       then return . (\(t1,t2)->accushow t1++" -> "++accushow t2) . fst  $ xs
                                       else return . accushow . snd  $ xs
-                     | otherwise = return $ show xs
+                     | otherwise = replyTagged [xs] "Durations"
     qReply [] opts = return "[]"
     qReply xs opts | grid opts = case (pack . snd . head $ xs) of --instead: line for each, height extent?
                                    Unit   -> webSpark opts True $ map (pack . uncurry (-) . fst) xs --histo of time extents.
                                    NumV _ -> webSpark opts True $ map (pack . snd) xs    
                                    _ -> return $ unlines $ map show xs
-                   | otherwise = return $ unlines $ map show xs
+                   | otherwise = replyTagged xs "Durations"
     --qReply xs opts = return $ unlines $ map show xs
     qFilterSuccess [] = False
     qFilterSuccess _ = True
