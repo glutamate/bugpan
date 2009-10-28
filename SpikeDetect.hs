@@ -28,7 +28,7 @@ import Data.List hiding (groupBy)
 import Data.Ord
 import System.Environment
 import EvalM
-import Numeric.LinearAlgebra
+import Numeric.LinearAlgebra hiding (flatten)
 import Foreign.Storable
 import Math.Probably.KMeans 
 import Control.Monad
@@ -134,13 +134,39 @@ takeEvery n (x:xs) = x : takeEvery n (drop (n-1) xs)
 
 listToTips = map $ \x-> Node x Leaf Leaf
 
-data Tree a = Leaf | Node a (Tree a) (Tree a)
+flatten :: Tree a -> [a]
+flatten (Leaf x) = [x]
+flatten (Node tl tr) = flatten tl ++flatten tl
 
-heirarchicalCluster :: (a -> a -> Double) -> [a] -> Tree a
-heirarchicalCluster dist xs = h $ listToTips xs
+data Tree a = Leaf a | Node (Tree a) (Tree a)
+
+zipWithNats :: [a] -> [(a,Int)]
+zipWithNats xs = zip xs [0..]
+
+zipWithNatGrid :: [[a]] -> [[(a,(Int,Int))]]
+zipWithNatGrid  xss = map f $ zipWithNats xss
+    where f (xs,rowN) = map (g rowN) $ zipWithNats xs
+          g rowN (x,colN)= (x, (rowN, colN))
+
+flattenGrid :: [[a]] -> [a]
+flattenGrid = concat
+
+nukeDiag :: Ord a => [[(a,(Int,Int))]] -> [[(a,(Int,Int))]]
+nukeDiag xss = let high =  (maximumBy $ comparing fst) $ map (maximumBy $ comparing fst) xss
+                   f (x, (r,c)) | r==c = (high, (r,c))
+                                | otherwise = (x, (r,c))
+               in map (map f) xss
+
+hierarchicalCluster :: ([a] -> [a] -> Double) -> [a] -> Tree a
+hierarchicalCluster dist xs = h $ listToTips xs
     where h [tree] = tree
-          h ts = undefined
+          h ts = let dists = nukeDiag $ zipWithNatGrid $ interaction dist $ map flatten ts
+                     (minr,minc) = snd $ minimumBy (comparing fst) $ flattenGrid dists
+                     ([x,y], ts') = partition (\(tree, idx)->idx == minr || idx == minc) $ zipWithNats ts
+                 in Node (Leaf x) (Leaf y) : ts' 
 
+interaction :: (a->a->b) -> [a] -> [[b]]
+interaction dist xs = map  (\x-> map (dist x) xs) xs
 
 eventDetect :: Int -> [Duration Double] -> [Signal Double] -> [Event Int]
 eventDetect nclusters ((_,thresh):_) sigs = 
