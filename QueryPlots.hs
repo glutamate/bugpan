@@ -25,16 +25,25 @@ import Text.Printf
 import Database
 import NewSignal
 import PrettyPrint
+import System.Environment
 
 data Histo where -- GADT bec i don't know syntax for double existential (no longer needed)
     Histo :: Int -> [(a,Double)] -> Histo 
     AsPdf :: String -> Histo -> Histo
 
 
+getQueryIdentifier = do 
+  --args <- getArgs          
+  allArgs <- getArgs -- (fileNm:rest)
+  let (opts, _) = partition beginsWithHyphen allArgs
+  return $ optStr 'd' "somewhere" opts
+
+
 instance PlotWithGnuplot Histo where
     getGnuplotCmd (Histo _ []) = return []
     getGnuplotCmd (Histo n vls) = do
-            fnm <- ("/tmp/gnuplothist"++) `fmap` uniqueIntStr
+            q<- getQueryIdentifier
+            fnm <- (("/tmp/gnuplothist"++q)++) `fmap` uniqueIntStr
             writeHist fnm n $ map snd vls
             return [PL (concat ["\"", fnm, "\" using 1:2"]) 
                        "" 
@@ -102,11 +111,12 @@ scatter :: Tagged t => [t (a,b)] -> [(a,b)]
 scatter = map getTag -- uses Event PLotWithGnuplot instance :-)
     
 
-  
 instance PlotWithGnuplot [Signal Double] where
     getGnuplotCmd [] = return []
-    getGnuplotCmd ss = forM (downSample 1000 ss) $ \s@(Signal t1 t2 dt sf _) -> do
-           fnm <- ("/tmp/gnuplotsig"++) `fmap` uniqueIntStr
+    getGnuplotCmd ss = do
+      q<- getQueryIdentifier
+      forM (downSample 1000 ss) $ \s@(Signal t1 t2 dt sf _) -> do
+           fnm <- (("/tmp/gnuplotsig"++q)++) `fmap` uniqueIntStr
            writeSig fnm $ forceSigEq s
            return $ PL (concat ["\"", fnm, "\" binary format=\"%float64\" using ($0*",
                                     show dt, "+", show t1, "):1"]) 
@@ -123,7 +133,8 @@ writeSig fp s@(Signal t1 t2 dt sf Eq) = do
 instance Num a => PlotWithGnuplot [Event a] where
     getGnuplotCmd [] = return []
     getGnuplotCmd es = 
-        do fnm <- ("/tmp/gnuplotevs"++) `fmap` uniqueIntStr
+        do q<- getQueryIdentifier
+           fnm <- (("/tmp/gnuplotevs"++q)++) `fmap` uniqueIntStr
            writeEvts fnm es
            return [PL (concat ["\"", fnm, "\" using 1:2"]) "" "points" (removeFile fnm)]
         where writeEvts fp evs = do
@@ -134,7 +145,8 @@ instance Num a => PlotWithGnuplot [Event a] where
 instance Num a => PlotWithGnuplot [Duration a] where
     getGnuplotCmd [] = return []
     getGnuplotCmd es = 
-        do fnm <- ("/tmp/gnuplotdurs"++) `fmap` uniqueIntStr
+        do q<- getQueryIdentifier
+           fnm <- (("/tmp/gnuplotdurs"++q)++) `fmap` uniqueIntStr
            writeEvts fnm es
            return [PL (concat ["\"", fnm, "\" using 1:($2)"]) "" "lines" (removeFile fnm)]
            where writeEvts fp durs = do
@@ -148,9 +160,10 @@ instance Num a => PlotWithGnuplot [Duration a] where
 data Brenda = Brenda [Signal Double]
 
 instance PlotWithGnuplot Brenda where
-    getGnuplotCmd (Brenda l@(avg:plusSEM:minusSEM:[])) = 
+    getGnuplotCmd (Brenda l@(avg:plusSEM:minusSEM:[])) = do
+        q<- getQueryIdentifier        
         forM (downSample 1000 l) $ \s@(Signal t1 t2 dt sf _) -> do
-           fnm <- ("/tmp/gnuplotsig"++) `fmap` uniqueIntStr
+           fnm <- (("/tmp/gnuplotsig"++q)++) `fmap` uniqueIntStr
            writeSig fnm s
            return $ PL (concat ["\"", fnm, "\" binary format=\"%float64\" using ($0*",
                                     show dt, "+", show t1, "):1"]) "" "lines" (removeFile fnm)

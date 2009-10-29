@@ -6,6 +6,7 @@ module PlotGnuplot where
 --import EvalM
 import System.IO
 import System.Cmd
+import System.Exit
 import Math.Probably.FoldingStats hiding (F)
 import Control.Monad
 import Data.Unique
@@ -16,6 +17,36 @@ import System.Directory
 import System.Posix.Files
 import Data.Array.Unboxed
 
+{- stolen from gnuplot-0.3.3 (Henning Thieleman) -}
+
+import qualified System.Process as Proc
+
+
+execGP ::
+      String {-^ The lines of the gnuplot script to be piped into gnuplot -}
+   -> IO ExitCode
+execGP program =
+   do --putStrLn program
+      (inp,_out,_err,pid) <-
+         Proc.runInteractiveProcess "gnuplot" [""] Nothing Nothing
+      hPutStr inp program
+      --print pid
+      Proc.waitForProcess pid
+
+simple ::
+      [String] {-^ The lines of the gnuplot script to be piped into gnuplot -}
+   -> [String] {-^ Options for gnuplot -}
+   -> IO ExitCode
+simple program options =
+   let cmd =
+          "sh -c 'echo " ++ quote (semiColonConcat program) ++
+                 " | gnuplot " ++ unwords options ++ "'"
+   in  do --putStrLn cmd
+          system cmd
+
+--quote s = 
+
+{- end of theft -}
 
 --histArr :: (Int,Int) -> [Double] -> UArray Int Double
 histArr :: (Int, Int) -> [Int] -> UArray Int Double
@@ -127,9 +158,10 @@ gnuplotToPNG fp x = do
                   (showMultiPlot plines)
                        
   --putStrLn cmdLines
-  writeFile "/tmp/gnuplotCmds" cmdLines
+  execGP cmdLines
+  {- writeFile "/tmp/gnuplotCmds" cmdLines
   system "gnuplot /tmp/gnuplotCmds"
-  removeFile "/tmp/gnuplotCmds"
+  removeFile "/tmp/gnuplotCmds" -}
   cleanupCmds $ map snd plines
   return ()
 
@@ -143,10 +175,11 @@ gnuplotToSparklinePNG fp x = do
                  "set border 0\n"++
                  "set output '"++fp++"'\n"++
                   (showMultiPlot plines)
-                       
-  writeFile "/tmp/gnuplotCmds" cmdLines
+
+  execGP cmdLines                       
+  {-writeFile "/tmp/gnuplotCmds" cmdLines
   system "gnuplot /tmp/gnuplotCmds 2>/dev/null"
-  removeFile "/tmp/gnuplotCmds"
+  removeFile "/tmp/gnuplotCmds"-}
   cleanupCmds $ map snd plines
   return ()
 
@@ -164,9 +197,10 @@ gnuplotToPS fp x = do
                  "set output '"++fp++"'\n"++
                   (showMultiPlot plines)
                        
-  writeFile "/tmp/gnuplotCmds" cmdLines
+  execGP cmdLines
+{-  writeFile "/tmp/gnuplotCmds" cmdLines
   system "gnuplot /tmp/gnuplotCmds"
-  removeFile "/tmp/gnuplotCmds"
+  removeFile "/tmp/gnuplotCmds"-}
   cleanupCmds $ map snd plines
   return ()
 
@@ -183,9 +217,11 @@ gnuplotMany opts nmbxs = do
   let term = "set terminal png size "++ show w++","++show h++" crop\n"
   let cmds = start++term ++concatMap plotOne nmcmds
   --putStrLn cmds
-  writeFile "/tmp/gnuplotCmds" cmds
+  execGP cmds
+
+  {-writeFile "/tmp/gnuplotCmds" cmds
   system "gnuplot /tmp/gnuplotCmds"
-  removeFile "/tmp/gnuplotCmds"
+  removeFile "/tmp/gnuplotCmds"-}
   forM_ nmcmds $ \(_,cmd) -> cleanupCmds $ map snd cmd
 
   return ()
