@@ -132,7 +132,7 @@ takeEvery n [] = []
 takeEvery n (x:xs) = x : takeEvery n (drop (n-1) xs)
 
 
-listToTips = map $ \x-> Node x Leaf Leaf
+listToTips = map Leaf
 
 flatten :: Tree a -> [a]
 flatten (Leaf x) = [x]
@@ -151,9 +151,9 @@ zipWithNatGrid  xss = map f $ zipWithNats xss
 flattenGrid :: [[a]] -> [a]
 flattenGrid = concat
 
-nukeDiag :: Ord a => [[(a,(Int,Int))]] -> [[(a,(Int,Int))]]
-nukeDiag xss = let high =  (maximumBy $ comparing fst) $ map (maximumBy $ comparing fst) xss
-                   f (x, (r,c)) | r==c = (high, (r,c))
+nukeDiag :: (Num a, Ord a) => [[(a,(Int,Int))]] -> [[(a,(Int,Int))]]
+nukeDiag xss = let high = fst $ (maximumBy $ comparing fst) $ map (maximumBy $ comparing fst) xss
+                   f (x, (r,c)) | r==c = (high+1, (r,c))
                                 | otherwise = (x, (r,c))
                in map (map f) xss
 
@@ -163,10 +163,18 @@ hierarchicalCluster dist xs = h $ listToTips xs
           h ts = let dists = nukeDiag $ zipWithNatGrid $ interaction dist $ map flatten ts
                      (minr,minc) = snd $ minimumBy (comparing fst) $ flattenGrid dists
                      ([x,y], ts') = partition (\(tree, idx)->idx == minr || idx == minc) $ zipWithNats ts
-                 in Node (Leaf x) (Leaf y) : ts' 
+                 in h $ Node (fst x) (fst y) : map fst ts' 
 
 interaction :: (a->a->b) -> [a] -> [[b]]
 interaction dist xs = map  (\x-> map (dist x) xs) xs
+
+euclidianOn f v1 v2 = sqrt $ sum $ toList $ mapVector (\x->x*x) (f v1 - f v2)
+
+meanDists :: (a->a->Double) -> ([a] -> [a] -> Double)
+meanDists f xs ys = let nxy = realToFrac $ length xs * length ys
+                        sm = sum $ map sum $ map g xs
+                        g x = map (f x) ys
+                    in sm/nxy
 
 eventDetect :: Int -> [Duration Double] -> [Signal Double] -> [Event Int]
 eventDetect nclusters ((_,thresh):_) sigs = 
@@ -209,7 +217,7 @@ eventDetect nclusters ((_,thresh):_) sigs =
     in evss
 
 
-allSpikes = do
+{-allSpikes = do
   {-inApproxSession "6f" $ do
               sigs <- take 20 `fmap` signalsDirect "normV"
               let spks = eventDetect 12 sigs
@@ -226,8 +234,8 @@ allSpikes = do
               return ()
 
 
-
-spikeDetectIO = do 
+-}
+{-spikeDetectIO = do 
   (snm:overDurNm:_) <-getArgs 
   inApproxSession snm $ do 
                   --openReplies
@@ -238,7 +246,6 @@ spikeDetectIO = do
                   return ()
                   --normV <- signalsDirect "normV"
                   --spikeDetect [overDur] normV []
-
 
 spikeDetect overs normV spks = do
   let over = head overs
@@ -275,5 +282,5 @@ spikeDetect overs normV spks = do
                       ifM (userConfirm "accept spikes")
                           (spikeDetect overs normV (spks++spikes))
                           (spikeDetect overs normV spks))]  
-                                           
+                                         -}  
 

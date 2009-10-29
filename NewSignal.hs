@@ -226,7 +226,7 @@ svInterpLinST n arr = let dstep = 1/(realToFrac n)
 unjitterSig :: Signal Double -> Signal Double
 unjitterSig (Signal t1 t2 dt arr Eq) =  let off = (roundToFrac dt t1) - t1
                                             narr = svInterpLinOffset (off/dt) arr
-                                        in Signal (t1+off) (t2+off) dt narr Eq
+                                        in Signal (t1+off) (t2+off-dt) dt narr Eq
 unjitterSig s = unjitterSig $ forceSigEq s
 
  
