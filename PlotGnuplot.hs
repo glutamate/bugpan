@@ -16,16 +16,17 @@ import TNUtils
 import System.Directory
 import System.Posix.Files
 import Data.Array.Unboxed
+import System.Random
 
 {- stolen from gnuplot-0.3.3 (Henning Thieleman) -}
 
 import qualified System.Process as Proc
 
 
-execGP ::
+execGPPipe ::
       String {-^ The lines of the gnuplot script to be piped into gnuplot -}
    -> IO ExitCode
-execGP program =
+execGPPipe program =
    do --putStrLn program
       (inp,_out,_err,pid) <-
          Proc.runInteractiveProcess "gnuplot" [""] Nothing Nothing
@@ -33,16 +34,34 @@ execGP program =
       --print pid
       Proc.waitForProcess pid
 
-simple ::
-      [String] {-^ The lines of the gnuplot script to be piped into gnuplot -}
-   -> [String] {-^ Options for gnuplot -}
+execGPSh ::
+      String {-^ The lines of the gnuplot script to be piped into gnuplot -}
+--   -> [String] {-^ Options for gnuplot -}
    -> IO ExitCode
-simple program options =
+execGPSh program  =
    let cmd =
-          "sh -c 'echo " ++ quote (semiColonConcat program) ++
-                 " | gnuplot " ++ unwords options ++ "'"
-   in  do --putStrLn cmd
+          "sh -c 'echo " ++ quote ( program) ++
+                 " | gnuplot '"
+   in  do putStrLn cmd
           system cmd
+
+
+execGPTmp cmds = do
+  x <- randomRIO (0,99999999::Int)
+  let fnm = "/tmp/gnuplotCmds"++show x
+  writeFile fnm cmds
+  system $ "gnuplot "++fnm
+  removeFile $ fnm
+
+
+execGP = execGPTmp
+
+
+semiColonConcat = concat . intersperse "; "
+
+
+quote :: String -> String
+quote = show
 
 --quote s = 
 
