@@ -111,11 +111,13 @@ scatter :: Tagged t => [t (a,b)] -> [(a,b)]
 scatter = map getTag -- uses Event PLotWithGnuplot instance :-)
     
 
-instance PlotWithGnuplot [Signal Double] where
-    getGnuplotCmd [] = return []
-    getGnuplotCmd ss = do
+data DownSamplePts = DownTo Int [Signal Double]
+
+instance PlotWithGnuplot (DownSamplePts) where
+    getGnuplotCmd (DownTo _ []) = return []
+    getGnuplotCmd (DownTo downs ss) = do
       q<- getQueryIdentifier
-      forM (downSample 1000 ss) $ \s@(Signal t1 t2 dt sf _) -> do
+      forM (downSample downs ss) $ \s@(Signal t1 t2 dt sf _) -> do
            fnm <- (("/tmp/gnuplotsig"++q)++) `fmap` uniqueIntStr
            writeSig fnm $ forceSigEq s
            return $ PL (concat ["\"", fnm, "\" binary format=\"%float64\" using ($0*",
@@ -123,6 +125,9 @@ instance PlotWithGnuplot [Signal Double] where
                        "" -- (show t1++"->"++show t2) 
                        "lines"
                        (removeFile fnm)
+
+instance PlotWithGnuplot [Signal Double] where
+    getGnuplotCmd ss = getGnuplotCmd $ DownTo 1000 ss
           
 writeSig :: String -> Signal Double -> IO ()
 writeSig fp s@(Signal t1 t2 dt sf Eq) = do
@@ -182,6 +187,10 @@ instance (ChopByDur a, ChopByDur b) =>  ChopByDur (a :+: b) where
 
 instance ChopByDur a =>  ChopByDur (String,a) where
     chopByDur durs (nm, x) = map ((,) nm) (chopByDur durs x) 
+
+instance ChopByDur DownSamplePts where
+    chopByDur durs (DownTo n sigs) = map (DownTo n) $ chopByDur durs sigs 
+
 
 webSpark :: [String] -> Bool -> [V] -> IO String
 webSpark opts isHist xs= do 
