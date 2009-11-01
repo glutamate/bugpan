@@ -39,6 +39,7 @@ import Database
 import NewSignal
 import Graphics.UI.Gtk hiding (Signal)
 import SpikeDetect
+import Graphics.UI.Gtk.Gdk.Events
 
 main = spikeDetectIO
 
@@ -111,6 +112,9 @@ autoSpikes sigNm = do
 
                                 
         return ()
+
+  let dispatchKey 
+
   io $ onClicked buttonNext saveAction -- (putStrLn "Hello World")
   io $ onClicked buttonUp $ do
                      io $ modifyIORef currentThreshold (+1)
@@ -128,17 +132,23 @@ autoSpikes sigNm = do
                                     Just x ->  do writeIORef currentThreshold x
                                                   inApproxSession sessNm $ do
                                                       displayData
-
+  io $ widgetAddEvents window [KeyPressMask]
+  --io $ vbox `on` keyPressEvent $ print "hello"
+  io $ onKeyPress window $ \evt -> case evt of
+                                     Key { eventKeyName = s } -> do
+                                              inApproxSession sessNm (dispatchKey s)
+                                              return False
+                                     _ -> return False
   io $ set window [ containerBorderWidth := 10,
                     containerChild := vbox ]
   io $ boxPackStart vbox hbox1 PackGrow 0
   --io $ boxPackStart vbox hbox3 PackGrow 0
   io $ boxPackStart vbox hbox2 PackGrow 0
 --  io $ boxPackStart vbox hbox3 PackGrow 0
-  io $ boxPackStart hbox1 entry PackGrow 0
-  io $ boxPackStart hbox1 buttonNext PackGrow 0
-  io $ boxPackStart hbox1 buttonUp PackGrow 0
-  io $ boxPackStart hbox1 buttonDown PackGrow 0
+  --io $ boxPackStart hbox1 entry PackGrow 0
+  --io $ boxPackStart hbox1 buttonNext PackGrow 0
+  --io $ boxPackStart hbox1 buttonUp PackGrow 0
+  --io $ boxPackStart hbox1 buttonDown PackGrow 0
   --io $ boxPackStart hbox1 clusIm PackGrow 0
   --io $ boxPackStart hbox2 buttonGo PackGrow 0
   io $ set buttonNext [ buttonLabel := "Next" ]
