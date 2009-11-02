@@ -47,6 +47,8 @@ autoSpikes sigNm = do
   sigs <- signalsDirect sigNm 
   running <- durations "running" ()
   io $ initGUI
+  let nsigs = length sigs
+
   Session bdir _ <- getSession
   let sessNm = last $ splitBy '/' bdir
   window <- io $ windowNew
@@ -61,10 +63,17 @@ autoSpikes sigNm = do
   vbox <- io $ vBoxNew False 10
   entry <- io $ entryNew
 
+  labelProg <- io $ labelNew $ Nothing
+
   currentThreshold <- io $ newIORef 0
   currentStart <- io $ newIORef 0
-  currentNumberPerView <- io $ newIORef 16
-  io $ entrySetText entry "0"
+  currentNumberPerView <- io $ newIORef 8
+
+  let updateProg = do st <- readIORef currentStart
+                      num <- readIORef currentNumberPerView
+                      labelSetText labelProg  $ show st++"-"++show (st+num) ++"/"++show nsigs
+  io $ updateProg
+
   io $ forM_ [0..3] $ \h-> do
                      hb <- vBoxNew True 5
                      forM [0..3] $ \v-> do
@@ -102,10 +111,14 @@ autoSpikes sigNm = do
         let cursigs = take num $ drop start sigs
         threshval <- io $ readIORef currentThreshold
                            
-        let spikes = crossesUp (threshval `tag` (map sigDur cursigs)) cursigs
+        let spikes = if threshval >0
+                       then crossesUp (threshval `tag` (map sigDur cursigs)) cursigs
+                       else crossesDown (threshval `tag` (map sigDur cursigs)) cursigs
+
         writeIORef currentStart (start+num)
+        io $ updateProg
         inApproxSession sessNm $ do
-                     storeAsAppend "spikes" spikes
+                     storeAsAppend "spikesManual" spikes
                      displayData
                                 --putStrLn $ "saved "++show (length finalEvs)++" spikes..."
                                 --print finalEvs
@@ -113,7 +126,12 @@ autoSpikes sigNm = do
                                 
         return ()
 
-  let dispatchKey 
+  let dispatchKey "j" = do io $ modifyIORef currentThreshold (\x->x-1)
+                           displayData
+      dispatchKey "k" = do io $ modifyIORef currentThreshold (\x->x+1)
+                           displayData
+      dispatchKey "space" = do io $ saveAction 
+      dispatchKey s = do io $ putStrLn $ "hit unknown key: "++show s
 
   io $ onClicked buttonNext saveAction -- (putStrLn "Hello World")
   io $ onClicked buttonUp $ do
@@ -145,7 +163,7 @@ autoSpikes sigNm = do
   --io $ boxPackStart vbox hbox3 PackGrow 0
   io $ boxPackStart vbox hbox2 PackGrow 0
 --  io $ boxPackStart vbox hbox3 PackGrow 0
-  --io $ boxPackStart hbox1 entry PackGrow 0
+  io $ boxPackStart hbox1 labelProg PackGrow 0
   --io $ boxPackStart hbox1 buttonNext PackGrow 0
   --io $ boxPackStart hbox1 buttonUp PackGrow 0
   --io $ boxPackStart hbox1 buttonDown PackGrow 0
