@@ -87,6 +87,9 @@ expDecay1 [t, a, tau, s0]  = a*exp(-t*tau)+s0
 expDecay :: (Floating b, Real a) => a -> [b] -> b
 expDecay t [a, tau, s0]  = a*exp(-(realToFrac t)/tau)+s0
 
+gaussFun x [mean, sd] = let factor = (recip $ sd*sqrt (2*pi))
+                        in factor * (exp . negate $ (((x-mean)**2)/(2*sd**2)))
+
 fitFun :: [a] -> (b -> [a] -> a) -> (b->a)
 fitFun pars f = \t->f t pars 
 

@@ -131,6 +131,15 @@ autoSpikes sigNm = do
       dispatchKey "k" = do io $ modifyIORef currentThreshold (\x->x+1)
                            displayData
       dispatchKey "space" = do io $ saveAction 
+      dispatchKey "BackSpace" = do curnum<- io $ readIORef currentNumberPerView 
+                                   io $ widgetHide $ indivIms!!(curnum-1)
+                                   io $ writeIORef currentNumberPerView (curnum-1)
+                                   displayData
+      dispatchKey "Insert"    = do curnum<- io $ readIORef currentNumberPerView 
+                                   io $ widgetShow $ indivIms!!(curnum)
+                                   io $ writeIORef currentNumberPerView (curnum+1)
+                                   displayData
+
       dispatchKey s = do io $ putStrLn $ "hit unknown key: "++show s
 
   io $ onClicked buttonNext saveAction -- (putStrLn "Hello World")

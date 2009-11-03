@@ -23,6 +23,7 @@ import Foreign.Storable
 import qualified Data.StorableVector as SV
 
 
+
 peak :: (Storable a, Ord a) => [Signal a] ->[Event a]
 peak sigs =  map (\sig -> swap . foldSig cmp (sigInitialVal sig, 0) $ zipWithTime sig) sigs 
     where cmp (curMax, tmax) (v, t) = if v>curMax 
@@ -113,11 +114,20 @@ countDuring durs evs = map (freqDuring' evs) durs
     where freqDuring' evs dur@((t1, t2), durtag) = 
               ((t1, t2), (length $ during [dur] evs))
 
+realcountDuring :: [Duration a] -> [Event b] -> [Duration Double]
+realcountDuring x y = realToFrac <$$> countDuring x y
+
 centreOfMass :: [Signal Double] -> [Event ()]
 centreOfMass = map f 
     where f s@(Signal t1 t2 dt _ _) = let vls =sigToList s
                                           tms = sigTimePoints s
                                       in ((sum $ zipWith (*) vls tms) / sum vls, ())
+
+centreOfMassScatter :: [(Double, Double)] -> Double
+centreOfMassScatter pts = let vls =map snd pts
+                              tms = map fst pts
+                              denom = (sum $ zipWith (*) vls tms) 
+                          in (denom / sum vls)
 
 --square x = x*x
 
@@ -444,3 +454,6 @@ burst' (Just tbstart) tmax ((t1,v1):res@((t2,v2):es))
     | otherwise = burst' (Just tbstart) tmax res
 burst' (Nothing) tmax ((t1,v1):res@((t2,v2):es)) | dist t1 t2 < tmax = burst' (Just t1) tmax res
                                                  | otherwise = burst' (Nothing) tmax res
+
+
+nearly epsilon x y = x - y < epsilon 

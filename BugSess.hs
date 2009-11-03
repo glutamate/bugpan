@@ -325,14 +325,19 @@ dispatch os ss = putStrLn $ unlines ["",
               "",
               "Bugsess: Manage bugpan sessions",
               "",
-              "\tbugsess ask {session} {query}",
+              "\tbugsess ask1 {session} {query}",
               "\tbugsess show {session}",
               "\tbugsess list",
-              "\tbugsess filter {query}",
+              "\tbugsess filter1 {query}",
               "\tbugsess compact {session}",
               "\tbugsess convert2 {session}",
-              "\tbugsess convert1 {session}"
-
+              "\tbugsess convert1 {session}",
+              "\tbugsess lnsess {sessionDir}",
+              "\tbugsess mvevs {session} {oldName} {newName}",
+              "\tbugsess mkndur {session} {durationName} {value}",
+              "\tbugsess mksdur {session} {durationName} {value}",
+              "\tbugsess plotsigs {session} {signalName}",
+              "\tbugsess askall {query}"
  ]
 
 -- find . -name "compacted" -exec rm -rf {} \;
