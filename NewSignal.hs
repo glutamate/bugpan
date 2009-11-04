@@ -140,6 +140,16 @@ combineSigs op s1@(Signal t1 t2 dt sf _) s2@(ConstSig x) = combineSigs (flip op)
 combineSigs op (ConstSig x) (ConstSig y) = ConstSig $ op x y
 
 
+onlyPos x | x > 0 = x
+          | otherwise = 0
+
+{-addLondAndShortSig :: (Storable a, Num a) => Signal a -> Signal a -> Signal a
+addLondAndShortSig long@(Signal t1 t2 dt arr Eq) short@(Signal t1' t2' arr' Eq) =
+    let beforeN = onlyPos $ (t1' - t1)/dt 
+        afterN = onlyPos $ (t2 - t2')/dt 
+        middleN = (max t1 t1' - min t2 t2')/dt
+        ndropShort = -}
+
 instance (Storable a, Eq a) => Eq (Signal a) where
     (Signal t1 t2 dt arr Eq) == (Signal t1' t2' dt' arr' Eq) = 
         t1 == t1' && t2 == t2' && dt == dt' && arr==arr'

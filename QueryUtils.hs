@@ -275,21 +275,27 @@ gaussian dt mean sd = let t1 =(-5*sd)
                           arr = SV.pack $ map (gaussianf mean sd) (sigTimePoints sig)
                       in sig 
 
-{-convolveWithin :: Num a => [Duration b] -> Signal a -> [Event a] -> [Signal a]
+convolveWithin :: (Storable a, Num a) => [Duration b] -> Signal a -> [Event a] -> [Signal a]
 convolveWithin [] _ _ = []
-convolveWithin (dur@((td1, td2), v):durs) irf@(Signal t1 t2 dt sf _) evs' =
+convolveWithin (dur@((td1, td2), v):durs) irf@(Signal t1 t2 dt sf Eq) evs' =
    let evs = during [dur] evs' 
+{-       arr = sample $ \p -> 
+             let tp = p*dt+td1
+                 pevs = filter ((\t->fst) -}
+
        sigs = map f evs
        f (t,x) =(*x) `fmap` shift t irf
        nullSig = Signal td1 td2 dt (SV.replicate (sigPnts nullSig) 0) Eq
-       addSigs (Signal ts1 ts2 _ ssf) (Signal ts1' ts2' _ ssf') = 
-           Signal ts1 ts2 dt $ \p->
-                                                                  let t = (realToFrac p)*dt+ts1
-                                                                  in ssf p + (if t>ts1' && t<ts2' 
-                                                                                 then ssf' . round $ (t-ts1')/dt
-                                                                                 else 0)
+       addSigs :: (Storable a, Num a) => Signal a -> Signal a -> Signal a
+       addSigs s@(Signal ts1 ts2 _ ssf Eq) (Signal ts1' ts2' _ ssf' Eq) =            
+           Signal ts1 ts2 dt (SV.sample (sigPnts s) $ \p->
+                     let t = (realToFrac p)*dt+ts1
+                     in ssf `SV.index` p + (if t>ts1' && t<ts2' 
+                                               then ssf' `SV.index` (round $ (t-ts1')/dt)
+                                               else 0)) Eq
        sig = foldl' addSigs nullSig sigs
-   in sig : convolveWithin (durs) irf evs' -}
+   in sig : convolveWithin (durs) irf evs' 
+convolveWithin durs irf evs' = convolveWithin durs (forceSigEq irf) evs'
 
 --[Duration a] -> [Duration b] -> [Duration (a,b)]
 zipD :: (Functor f, ChopByDur [f b]) => [Duration a] -> [f b] -> [f (a, b)]

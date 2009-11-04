@@ -114,16 +114,30 @@ tellNmsTys = do
                                                       ]
   tellEverywheres
 
-procTtest q testlines = do
+procTtest q [tl1, tl2] = do
   tell "tres <- ttest $ do"
-  let q1= (chomp $ tail $ testlines!!0)
-  let q2= (chomp $ tail $ testlines!!1)
+  let q1= (chomp $ tail $ tl1)
+  let q2= (chomp $ tail $ tl2)
   indent 3
   tellNmsTys
   tell $ "return (snd $ head $"++q1++", snd $ head $ "++q2++")"
   indent $ -3
   --tellPrint "<pre>"
   tellPrintNoLn $ "<pre>> t-test '"++q1++"', '"++q2++"'\n   p < "
+  tell $ "io $ putStrLn $ tres"
+  tellPrint "</pre>"
+
+  return ()
+
+procTtest q [tl] = do
+  tell "tres <- ttest1 $ do"
+  let q1= (chomp $ tail $ tl)
+  indent 3
+  tellNmsTys
+  tell $ "return (snd $ head $"++q1++")"
+  indent $ -3
+  --tellPrint "<pre>"
+  tellPrintNoLn $ "<pre>> t-test '"++q1++"'\n   p < "
   tell $ "io $ putStrLn $ tres"
   tellPrint "</pre>"
 

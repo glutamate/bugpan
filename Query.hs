@@ -193,6 +193,11 @@ ttest getvls = do
   vls <- inEverySession getvls
   return $ printf "%.3g" $ (1-) $  studentIntegral (runStat pairedSampleT vls) (realToFrac $ length vls - 1)
 
+ttest1 :: (MonadIO m, Functor m) => StateT QState m Double -> m String
+ttest1 getvls = do
+  vls <- inEverySession getvls
+  return $ printf "%.3g" $ (1-) $  studentIntegral (runStat (oneSampleT 0) vls) (realToFrac $ length vls - 1)
+
 inLastSession :: (MonadIO m, Functor m) => StateT QState m a -> m a
 inLastSession sma = do
   s <- liftIO $ lastSession "/var/bugpan/sessions/"
