@@ -278,12 +278,17 @@ gaussian dt mean sd = let t1 =(-5*sd)
 convolveWithin :: (Storable a, Num a) => [Duration b] -> Signal a -> [Event a] -> [Signal a]
 convolveWithin [] _ _ = []
 convolveWithin (dur@((td1, td2), v):durs) irf@(Signal t1 t2 dt sf Eq) evs' =
-   let evs = during [dur] evs' 
-{-       arr = sample $ \p -> 
-             let tp = p*dt+td1
-                 pevs = filter ((\t->fst) -}
-
-       sigs = map f evs
+   let evs = sortBy (comparing fst) $ during [dur] evs' 
+       npts = round $ (td2-td1)/dt
+       g (pt, currentEs, unconsummedEs) = 
+           let t = pt*dt+td1
+               (newEs, notyetEs) = span ((<(t-t1)) . fst) unconsummedEs --t1 negative
+               es = (dropWhile (((<(t+t2)) . fst)) currentEs)++newEs
+               amp (tev,_) = readSig irf (t-tev)
+            in Just (sum $ map amp es, (pt+1, es, notyetEs))
+       arr = fst $ SV.unfoldrN npts g (0, [], evs)
+   in Signal td1 td2 dt arr Eq : convolveWithin (durs) irf evs' 
+{-       sigs = map f evs
        f (t,x) =(*x) `fmap` shift t irf
        nullSig = Signal td1 td2 dt (SV.replicate (sigPnts nullSig) 0) Eq
        addSigs :: (Storable a, Num a) => Signal a -> Signal a -> Signal a
@@ -294,7 +299,7 @@ convolveWithin (dur@((td1, td2), v):durs) irf@(Signal t1 t2 dt sf Eq) evs' =
                                                then ssf' `SV.index` (round $ (t-ts1')/dt)
                                                else 0)) Eq
        sig = foldl' addSigs nullSig sigs
-   in sig : convolveWithin (durs) irf evs' 
+   in sig : convolveWithin (durs) irf evs' -}
 convolveWithin durs irf evs' = convolveWithin durs (forceSigEq irf) evs'
 
 --[Duration a] -> [Duration b] -> [Duration (a,b)]
@@ -463,3 +468,5 @@ burst' (Nothing) tmax ((t1,v1):res@((t2,v2):es)) | dist t1 t2 < tmax = burst' (J
 
 
 nearly epsilon x y = x - y < epsilon 
+
+between x1 x2 x = x<max x1 x2 && x> min x1 x2
