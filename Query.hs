@@ -191,12 +191,19 @@ x @=! y = StoreAs x y True
 ttest :: (MonadIO m, Functor m) => StateT QState m (Double, Double) -> m String
 ttest getvls = do
   vls <- inEverySession getvls
-  return $ printf "%.3g" $ (1-) $  studentIntegral (runStat pairedSampleT vls) (realToFrac $ length vls - 1)
+  let tval = runStat pairedSampleT vls
+  let df =  length vls - 1
+  let pval =  (1-) $ studentIntegral (tval) (realToFrac df)
+  return $ printf "paired t(%d)=%.3g, p=%.3g" df tval pval 
 
 ttest1 :: (MonadIO m, Functor m) => StateT QState m Double -> m String
 ttest1 getvls = do
   vls <- inEverySession getvls
-  return $ printf "%.3g" $ (1-) $  studentIntegral (runStat (oneSampleT 0) vls) (realToFrac $ length vls - 1)
+  let tval = runStat (oneSampleT 0) vls
+  let df =  length vls - 1
+  let pval =  (1-) $ studentIntegral (tval) (realToFrac df)
+  return $ printf "one-sample t(%d)=%.3g, p=%.3g" df tval pval 
+
 
 inLastSession :: (MonadIO m, Functor m) => StateT QState m a -> m a
 inLastSession sma = do
