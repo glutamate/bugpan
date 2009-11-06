@@ -34,8 +34,13 @@ import QueryMaker
 
 main = do
   allArgs <- getArgs
-  let (opts, args) = partition beginsWithHyphen allArgs
+  let (opts, args) = partition (beginsWithHyphen .&. notHyphenDigit) allArgs
   dispatch opts args
+
+p .&. q = \x-> p x && q x
+
+notHyphenDigit ('-':c:_) = not $ isDigit c
+notHyphenDigit _ = True
 
 preprocessQuery qs | "@=" `isInfixOf` qs = let (lhs, rhs) = span (/='@') $ qs
                                            in "\""++(filter (/=' ') lhs)++"\" "++rhs
