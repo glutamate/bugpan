@@ -319,6 +319,17 @@ dispatch opts ("mkndur":sessNm:durnm:val:_) = do
               Nothing -> return ()
   return ()
 
+
+dispatch opts ("addnev":sessNm:evNm:val:_) = do
+  qres <- inApproxSession sessNm $ do
+            sess <- getSession
+            tnow <- io $ getClockTime
+            let t0 = diffInS tnow $ tSessionStart sess
+            case safeRead val of
+              Just x -> storeAsAppend evNm [(t0::Double,x::Double)] >> return ()
+              Nothing -> return ()
+  return ()
+
     
 dispatch os ss = putStrLn $ unlines ["",
               "Unknown command: bugsess "++intercalate " " os++" "++intercalate " " ss,
@@ -335,6 +346,7 @@ dispatch os ss = putStrLn $ unlines ["",
               "\tbugsess lnsess {sessionDir}",
               "\tbugsess mvevs {session} {oldName} {newName}",
               "\tbugsess mkndur {session} {durationName} {value}",
+              "\tbugsess addnev {session} {eventName} {value}",
               "\tbugsess mksdur {session} {durationName} {value}",
               "\tbugsess plotsigs {session} {signalName}",
               "\tbugsess askall {query}"
