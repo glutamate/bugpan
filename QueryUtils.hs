@@ -62,6 +62,11 @@ fadeIn :: RealNum -> [Event a] -> [Duration a]
 fadeIn t = map (\(tev,v)-> ((tev-t, tev), v))
 
 
+hold :: [Event a] -> [Duration a]
+hold [] = []
+hold ((t,v):[]) = [((t,maxBound), v)]
+hold ((t1,v):rest@((t2,_):more)) = ((t1,t2),v): hold rest
+
 filterTag :: Tagged t => (a->Bool) -> [t a] -> [t a]
 filterTag p = filter (p . getTag)
 

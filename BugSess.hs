@@ -307,7 +307,17 @@ dispatch opts ("plotsigs":sessNm:sigNm:_) = do
             sig <- signalsDirect sigNm
             return $ plotManySigs sig
   qreply <- qReply qres opts
-  putStrLn qreply
+  case dropPrefix "file:///var/bugpan/www/" qreply of
+    ("",s) -> cond [("-o" `elem` opts,  do
+                       system $ "gnome-open "++qreply
+                       return ()),
+                    ("-s" `elem` opts, do 
+                       system "ifconfig eth0 | perl -n -e 'if (m/inet addr:([\\d\\.]+)/g) { print $1 }' | cat >/tmp/my_ip_address" 
+                       ip <- readFile "/tmp/my_ip_address"
+                       putStrLn $ "http://"++ip++"/"++s)] $ putStrLn qreply
+    _ -> putStrLn qreply
+
+  --putStrLn qreply
 
   return ()
 

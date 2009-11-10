@@ -45,11 +45,11 @@ instance Functor Signal where
     fmap f (Signal t1 t2 dt arr (Kont g)) = Signal t1 t2 dt arr $ Kont $ f . g
 
 sigPnts :: Signal a -> Int
-sigPnts (Signal t1 t2 dt sf _ ) = round $ (t2-t1)/dt
+sigPnts (Signal t1 t2 dt arr _) = SV.length arr
 sigVPnts (SigV t1 t2 dt sf ) = round $ (t2-t1)/dt
 
-sigTimePoints (Signal t1 t2 dt _ _) = let n = (t2-t1)/dt
-                                      in map ((+t1) . (*dt)) [0..n-1]
+sigTimePoints s@(Signal t1 t2 dt _ _) = let n = realToFrac $ sigPnts s
+                                        in map ((+t1) . (*dt)) [0..n-1]
 
 sigVTimePoints (SigV t1 t2 dt _) = let n = (t2-t1)/dt
                                    in map ((+t1) . (*dt)) [0..n-1]
@@ -61,9 +61,11 @@ sigToList sig@(Signal t1 t2 dt arr (Kont f)) = map f $ SV.unpack arr
 
 sigInitialVal s  = head $ sigToList s
 
-sscan :: (Storable a, Storable b) => (a->b->a) -> a -> Signal b -> Signal a
-sscan f init s =
-    Signal (sigT1 s) (sigT2 s) (sigDT s) (SV.scanl f init $ sigArr s) Eq
+sscan :: (Storable a) => (a->b->a) -> a -> Signal b -> Signal a
+sscan f init s@(Signal t1 t2 dt arr Eq) =
+    Signal (sigT1 s) (sigT2 s) (sigDT s) (SV.scanl f init arr) Eq
+sscan f init s@(Signal t1 t2 dt arr (Kont k)) =
+    Signal (sigT1 s) (sigT2 s) (sigDT s) (SV.scanl (\last next ->f last (k next)) init arr) Eq
                              
 
 zipWithTime :: Storable a => Signal a -> Signal (a,Double)

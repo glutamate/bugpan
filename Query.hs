@@ -160,7 +160,9 @@ storeAs' ovwrt nm vls = do
                  saveVs (oneTrailingSlash bdir++subDir++nm++"/stored"++suffix) vs)
      Append -> liftIO $ do
                  createDirectoryIfMissing False $ bdir ./ subDir ./ nm
-                 saveVs (oneTrailingSlash bdir++subDir++nm++"/stored"++suffix) vs
+                 allfnms <- getSortedDirContents $ bdir ./ subDir ./ nm
+                 let fileNoMax = foldl (max) 0 $ catMaybes $ map (safeRead . (drop 6)) $ filter ("stored" `isPrefixOf`) allfnms
+                 saveVs (oneTrailingSlash bdir++subDir++nm++"/stored"++show (fileNoMax + idInt 1)) vs
   return vls
 
 deleteValue nm = do Session bdir t0 <- getSession
