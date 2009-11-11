@@ -40,7 +40,7 @@ import Query
 import HaskellBackend
 import ValueIO
 import Data.Monoid
-import Control.Applicative
+import Control.Applicative hiding (Const)
 
 
 simulatedTime :: MonadIO m => StateT QState m ()
@@ -56,11 +56,14 @@ useRemoteDriver = do Session bdir _ <- getSession
 isRemoteDriver :: MonadIO m => StateT QState m Bool
 isRemoteDriver = (isJust . remoteCmdFile) `fmap` get
 
-type CompiledToken = (String,Double,[(String, T)] )
+type CompiledToken = Either (String,Double,[(String, T)]) [Declare]
+--type CompiledToken = (String,Double,[(String, T)]) 
 
-compileFile fp params = do tok <- use fp
-                           compile tok params
-
+useFile fp params = do ds <- use fp
+                       ifM (isRemoteDriver)
+                           (return $ Right ds)
+                           (compile ds params)
+                          
 compile :: MonadIO m => [Declare] -> [(String, T)] -> StateT QState m CompiledToken
 compile ds params = do
   let trun = (lookupDefn "_tmax" ds >>= vToDbl) `orJust` 1
@@ -78,10 +81,16 @@ compile ds params = do
   liftIO $ whenM (not `fmap` doesFileExist ("/var/bugpan/queryCache/"++sha)) 
              (fail "could not compile")
   --hash declares, look in cache
-  return (sha, trun, params)
+  return $ Left (sha, trun, params)
+
+cyclically :: MonadIO m => [a] -> StateT QState m a
+cyclically xs = do
+  let n = length xs
+  ntrials <- length `fmap` durations "running" ()
+  return $ xs !! (ntrials `mod` n)
 
 invoke :: MonadIO m => CompiledToken ->[(String,V)] -> StateT QState m ()
-invoke (sha, tmax,pars) vals= do
+invoke (Left (sha, tmax,pars)) vals= do
   s <- get
   t0 <- getTnow
   Session sessNm _ <- getSession
@@ -93,6 +102,12 @@ invoke (sha, tmax,pars) vals= do
   put $ s { lastTStart = t0,
             lastTStop = t0 + tmax}
   return ()
+invoke (Right ds) vals = do
+  let newDs = snd $ runTravM ds [] $ do
+                           forM_ vals $ \(nm, vl) -> 
+                               alterDefinition nm . const . Const $ vl
+  run newDs
+                                                     
 
 run :: MonadIO m => [Declare] -> StateT QState m ()
 run ds = do
@@ -166,25 +181,22 @@ pause secs= ifM (realTime `fmap` get)
                 (do s <- get
                     put $ s { lastTStop = lastTStart s + secs} )
 
+newtype Range a = Range {unRange :: Double -> a}
 
-data Goal = Run String [(String,V)]
-          | Wait Double
-          | forall a. IfG [a] Goal Goal
-          | Goal :>>: Goal
+instance Functor Range where
+    fmap f (Range r) = Range $ \x -> f $ r x
 
-type Range a = Double -> a
+uniform lo hi = Range $ \x -> (hi-lo)*(realToFrac x)+lo
+oneOf xs = Range $  \x -> let idx = round $ x*(realToFrac $ length xs -1)
+                          in xs !! idx
 
-uniform lo hi = \x -> (hi-lo)*(realToFrac x)+lo
-oneOf xs = \x -> let idx = round $ x*(realToFrac $ length xs -1)
-                 in xs !! idx
-
-always x = \_ -> x
+always x = Range $ \_ -> x
 
 uniformLog lo hi = let (llo, lhi) = (log lo, log hi)
-                   in \x -> exp (uniform llo lhi x)
+                   in Range $ \x -> exp (unRange (uniform llo lhi) x)
 
 pick :: MonadIO m => Range a -> m a
-pick f = do
+pick (Range f) = do
   unitVal <- liftIO $ randomRIO (0, 1)
   return $ f unitVal
 
@@ -192,7 +204,7 @@ pick f = do
 --determine = undefined
 
 determine :: MonadIO m => CompiledToken -> [(String, Range V)] -> StateT QState m ()
-determine tok@(sha, tmax,parlist) rngs = do
+determine tok rngs = do
   vals <- forM rngs $ \(nm, rng) -> liftM ((,) nm) (liftIO $ pick rng)
   invoke tok vals
   return ()
@@ -203,29 +215,10 @@ times 0 _ = return ()
 times n m = m >> (n-1) `times` m
   
 
-optimise :: String -> [(String, Range V)] -> ([(String, V)] -> Double) -> Goal
-optimise = undefined
-
-until :: [a] -> Goal -> Goal
-until = undefined
-
-
 noDaqTrans ds = let daqVars = [ nm | ReadSource nm ("adc", _) <- ds ]
                     hasDaqVar (ReadSource nm _) = nm `elem` daqVars
                     hasDaqVar (SinkConnect (Var nm) _) = nm `elem` daqVars
                     hasDaqVar _ = False
                 in filter (not . hasDaqVar) ds
 
-newtype StaticIO a = SIO (a, IO ())
-
-instance Monoid a => Monoid (StaticIO a) where
-    mempty = SIO (mempty, return ())
-    mappend (SIO (x, iox)) (SIO (y, ioy)) = SIO (x `mappend` y, iox >> ioy)
-
-instance Functor StaticIO where
-    fmap f (SIO (x, a)) = SIO (f x, a)
-
-instance Applicative StaticIO where
-    pure x = SIO (x, return ())
-    (SIO (f,io1)) <*> (SIO (x, io2)) = SIO (f x, io1 >> io2)
 
