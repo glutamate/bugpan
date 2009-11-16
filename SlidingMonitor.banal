@@ -1,0 +1,32 @@
+> importHs SpikeDetect
+
+> everywhere spks = minInterval 0.001 spikesManual
+
+> everywhere running = displacedLoom
+> everywhere eq = nearly 1e-4
+> everywhere monitorPos = hold monitorMoveTo
+> everywhere move0 = (`eq` 0.00)//monitorPos
+> everywhere movePos = (>  0.05)//monitorPos
+> everywhere moveNeg = (< -0.05)//monitorPos
+
+> everywhere scat0 = scatter $ zipD (during move0 displacedAngle) $ realcountDuring running spks
+> everywhere scatPos = scatter $ zipD (during movePos displacedAngle) $ realcountDuring running spks
+> everywhere scatNeg = scatter $ zipD (during moveNeg displacedAngle) $ realcountDuring running spks
+
+> openSession
+> plot $ scat0
+> plot $ scatPos
+> plot $ scatNeg
+%> plotManyBy running monitorPos
+
+> close 
+
+%> table 
+%>   centreOfMassScatter $ filter ((<0.02). abs . fst) scat10
+%>   centreOfMassScatter $ filter ((<0.02). abs . fst) scat20
+%>   centreOfMassScatter $ filter ((<0.02). abs . fst) scat40
+
+
+% fit gaussian?
+% gain sims - show plot
+

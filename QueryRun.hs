@@ -57,6 +57,12 @@ isRemoteDriver :: MonadIO m => StateT QState m Bool
 isRemoteDriver = (isJust . remoteCmdFile) `fmap` get
 
 type CompiledToken = Either (String,Double,[(String, T)]) [Declare]
+
+class Invokable a where
+    toToken :: a -> IO CompiledToken
+
+--instance Invokable [Char] where
+--    toToken 
 --type CompiledToken = (String,Double,[(String, T)]) 
 
 useFile fp params = do ds <- use fp

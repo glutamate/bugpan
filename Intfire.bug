@@ -9,6 +9,7 @@ rate = 200
 --we go with sargent
 rin=1.0e9
 
+tonicInhib = 0
 
 vrest = -0.080
 
@@ -39,7 +40,7 @@ gcell :: Signal Real
 --fspikes = forget 0.02 rndSpike
 
 gcell = (convolve gsyn) (forget 0.02 rndSpike )
-cellOde = \v->{: ((<: gcell :>*(0-v)) - ((v-vrest)/rin))/cm :} 
+cellOde = \v->{: ((<: gcell :>*(0-v)) + (tonicInhib*((0-0.07)-v)) - ((v-vrest)/rin))/cm :} 
 
 
 vm = switch 
