@@ -1,0 +1,3 @@
+> openSession 
+
+> plot $ scatter $ zipD inputRate $ freqDuring running spike

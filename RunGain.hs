@@ -13,11 +13,9 @@ import Query
 import Control.Monad
 
 main = inNewSession $ do          
-         intfire <- useFile "Intfire" [("_tmax", realT),
-                                       ("rate", realT),
-                                       ("tonicInhib", realT)]
-         10 `times` determine intfire [("_tmax", always 4),
-                                       ("rate", uniform 600 1000),
-                                       ("tonicInhib", oneOf [0, 1])]
+         intfire <- useFile "Intfire" [("rate", realT),
+                                       ("tonicInhib", realT)] []
+         40 `times` determine intfire [("rate", uniform 0 1200),
+                                       ("tonicInhib", oneOf [0, 1e-12])]
 
 

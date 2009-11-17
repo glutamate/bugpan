@@ -65,10 +65,10 @@ class Invokable a where
 --    toToken 
 --type CompiledToken = (String,Double,[(String, T)]) 
 
-useFile fp params = do ds <- use fp
-                       ifM (isRemoteDriver)
-                           (return $ Right ds)
-                           (compile ds params)
+useFile fp params subs = do ds <- makeSubs subs `fmap` use fp
+                            ifM (isRemoteDriver)
+                                (return $ Right ds)
+                                (compile ds params)
                           
 compile :: MonadIO m => [Declare] -> [(String, T)] -> StateT QState m CompiledToken
 compile ds params = do
@@ -99,14 +99,17 @@ invoke :: MonadIO m => CompiledToken ->[(String,V)] -> StateT QState m ()
 invoke (Left (sha, tmax,pars)) vals= do
   s <- get
   t0 <- getTnow
+  let t0' = if t0 < lastTStop s 
+               then lastTStop s +1
+               else t0
   Session sessNm _ <- getSession
   let valargs = intercalate " " $ map (ppVal . snd) vals --ideally check ordering
-  let cmdStr = "time /var/bugpan/queryCache/"++sha++" "++(last $ splitBy '/' sessNm)++" "++show t0 ++" "++valargs
+  let cmdStr = "time /var/bugpan/queryCache/"++sha++" "++(last $ splitBy '/' sessNm)++" "++show t0' ++" "++valargs
   liftIO . putStrLn $ cmdStr
   liftIO $ putStrLn ""
   liftIO $ system $ cmdStr -- ++" +RTS -p"
-  put $ s { lastTStart = t0,
-            lastTStop = t0 + tmax}
+  put $ s { lastTStart = t0',
+            lastTStop = t0' + tmax}
   return ()
 invoke (Right ds) vals = do
   let newDs = snd $ runTravM ds [] $ do

@@ -16,11 +16,12 @@ vrest = -0.080
 cm = 2.5e-12
 
 --gsynmul = 1.2e-12
-gsynmul = 3.0e-13 -- for 7 mv
+--gsynmul = 3.0e-13 -- for 7 mv
+gsynmul = 1.0e-12
 --gsynmul = 1.342e-12
 
 _dt = 4.0e-5
-_tmax= 1
+_tmax= 20
 alpha tau t = if t<0.0 then 0.0 else tau*tau*t*(exp (-t*tau)) 
 
 rndSpike :: [(Real, ())]
@@ -63,17 +64,17 @@ inputRate *> store ""
 
 secs = {: <: seconds :> :}
 
-gsyn *> store ""
-gcell *> store ""
+--gsyn *> store ""
+--gcell *> store ""
 --vm *> print ()
-vm *> store ""
-secs *> store ""
+--vm *> store ""
+--secs *> store ""
 --vmpassive *> store ""
 --incrsig *> store ""
 spike *> store ""
-refrac_end *> store ""
+--refrac_end *> store ""
 --spike *> print ()
-rndSpike *> store ""
+--rndSpike *> store ""
 
 --foo = "foo"
 

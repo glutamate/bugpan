@@ -165,7 +165,7 @@ onlyOneModuleName ds = let isModNm (Let (PatVar "moduleName" _) (Const (StringV 
                            (modNms, otherDs ) = partition (isJust . isModNm) ds
                        in otherDs ++ [last modNms]
 
-makeSubs :: [(String, E)] -> [Declare] -> [Declare]
+makeSubs :: [(String, E)] -> [Declare] -> [Declare] --make substitutions
 makeSubs [] ds = ds
 makeSubs ((nm,e):subs) ds = makeSubs subs $ makeSub ds
     where makeSub [] = [Let (PatVar nm UnspecifiedT) e]

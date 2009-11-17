@@ -249,6 +249,9 @@ instance AccuShow Float where
 instance AccuShow Double where
     accushow = printf "%.3g"
 
+instance (AccuShow a, AccuShow b) => AccuShow (a,b) where
+    accushow (x,y) = "("++accushow x++","++accushow y++")"
+
 
 instance QueryResult [(Int, (Double, Double))] where
     qFilterSuccess = not . null

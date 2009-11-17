@@ -119,6 +119,8 @@ deleteSession (Session dir _) = system ("rm -rf "++ dir) >> return ()
    
 
 resolveApproxSession  :: FilePath -> String -> IO String
+resolveApproxSession  root "last" = do
+  (last . splitBy '/' . baseDir) `fmap` lastSession root 
 resolveApproxSession  root nm = do
   sessns <- getSessionInRootDir root
   --print sessns
