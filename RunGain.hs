@@ -15,7 +15,7 @@ import Control.Monad
 main = inNewSession $ do          
          intfire <- useFile "Intfire" [("rate", realT),
                                        ("tonicInhib", realT)] []
-         40 `times` determine intfire [("rate", uniform 0 1200),
-                                       ("tonicInhib", oneOf [0, 1e-12])]
+         300 `times` determine intfire [("rate", uniform 0 1200),
+                                        ("tonicInhib", oneOf [0, 1e-9, 2e-9,3e-9])]
 
 

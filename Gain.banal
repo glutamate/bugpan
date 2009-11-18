@@ -1,3 +1,16 @@
+> everywhere eq = nearly 1e-12
+
 > openSession 
 
-> plot $ scatter $ zipD inputRate $ freqDuring running spike
+> inhib0 = (`eq` 0)//tonicInhibG
+> inhib1 = (`eq` 1e-9)//tonicInhibG
+> inhib2 = (`eq` 2e-9)//tonicInhibG
+> inhib3 = (`eq` 3e-9)//tonicInhibG
+
+> plot $ (scatter $ zipD (during inhib0 inputRate) $ freqDuring inhib0 spike)
+>        :+:
+>        (scatter $ zipD (during inhib1 inputRate) $ freqDuring inhib1 spike)
+>        :+:
+>        (scatter $ zipD (during inhib2 inputRate) $ freqDuring inhib2 spike)
+>        :+:
+>        (scatter $ zipD (during inhib3 inputRate) $ freqDuring inhib3 spike)

@@ -21,7 +21,7 @@ gsynmul = 1.0e-12
 --gsynmul = 1.342e-12
 
 _dt = 4.0e-5
-_tmax= 20
+_tmax= 10
 alpha tau t = if t<0.0 then 0.0 else tau*tau*t*(exp (-t*tau)) 
 
 rndSpike :: [(Real, ())]
@@ -59,6 +59,10 @@ refrac_end :: [(Real, ())]
 refrac_end = later 2.5e-3 spike
 
 inputRate = [(0,tmax,rate)]
+
+tonicInhibG = [(0,tmax,tonicInhib)]
+
+tonicInhibG *> store ""
 
 inputRate *> store ""
 

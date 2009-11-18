@@ -472,6 +472,6 @@ burst' (Nothing) tmax ((t1,v1):res@((t2,v2):es)) | dist t1 t2 < tmax = burst' (J
                                                  | otherwise = burst' (Nothing) tmax res
 
 
-nearly epsilon x y = x - y < epsilon 
+nearly epsilon x y = abs (x - y) < epsilon 
 
 between x1 x2 x = x<max x1 x2 && x> min x1 x2
