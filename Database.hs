@@ -70,6 +70,12 @@ newSession rootDir = do
   createSession rootDir t0 uuid
 --sessEvalState s = EvalS 0 0 Nothing (qenv s ++( evalManyAtOnce $ sessPrelude s))
 
+newSessionNamed :: String -> FilePath -> IO Session
+newSessionNamed nm rootDir = do
+  t0@(TOD t1 t2) <- getClockTime  
+  createSession rootDir t0 nm
+
+
 cloneSession :: Session -> String-> Int -> IO Session
 cloneSession (Session oldBasedir t0@(TOD t1 t2)) postfix newVersion = do
   let baseDir = withoutTrailing '/' oldBasedir ++ postfix
@@ -106,6 +112,10 @@ loadUntyped fp = do
           return $ concat xs)
       ((print $ "dir not found:" ++fp) >> return [])
 
+existsSession :: String -> FilePath -> IO Bool
+existsSession nm root = 
+    doesDirectoryExist $ root ./ nm
+                 
 lastSession :: FilePath -> IO Session
 lastSession rootDir = do
   sesns <- getSessionInRootDir rootDir
@@ -119,9 +129,14 @@ deleteSession (Session dir _) = system ("rm -rf "++ dir) >> return ()
    
 
 resolveApproxSession  :: FilePath -> String -> IO String
-resolveApproxSession  root "last" = do
+resolveApproxSession  root nm | nm == "last" = do
   (last . splitBy '/' . baseDir) `fmap` lastSession root 
-resolveApproxSession  root nm = do
+                              | nm == "new" = do
+  (last . splitBy '/' . baseDir) `fmap` newSession root
+                              | "new:" `isPrefixOf` nm = do
+  let nm = (!!1) $ splitBy ':' nm
+  (last . splitBy '/' . baseDir) `fmap` newSessionNamed nm root
+                              | otherwise = do
   sessns <- getSessionInRootDir root
   --print sessns
   case find (nm `isPrefixOf`) sessns of

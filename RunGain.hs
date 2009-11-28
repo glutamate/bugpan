@@ -12,7 +12,7 @@ import TNUtils
 import Query 
 import Control.Monad
 
-main = inNewSession $ do          
+main = inSessionFromArgs $ do          
          intfire <- useFile "Intfire" [("rate", realT),
                                        ("tonicInhib", realT)] []
          300 `times` determine intfire [("rate", uniform 0 1200),

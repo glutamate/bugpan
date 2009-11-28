@@ -1,10 +1,6 @@
 module Main where
 
 import Text.Regex.Posix
-import Control.Monad.State
-import Control.Monad.Trans
-import Control.Monad.Writer hiding (tell)
-import qualified Control.Monad.Writer as W
 import Database
 import TNUtils
 import Query
@@ -13,19 +9,10 @@ import EvalM
 import System.Environment
 import System.Cmd
 import System.Exit
-
-
-
 import Data.List
-
-type CodeWriterT m a= StateT (Int, [String]) (WriterT [String] m) a
-
-indent n = do 
-  modify $ \(ind,ss)->(ind+n,ss)
+import Control.Monad.State.Lazy
+ 
   
-tell :: Monad m => String -> CodeWriterT m ()
-tell s = do n <- fst `fmap` get
-            lift $ W.tell [(replicate n ' ')++s]
 
 tellPrint s = tell $ "io $ putStrLn $ "++show s
 tellPrintNoLn s = tell $ "io $ putStr $ "++show s
@@ -42,16 +29,11 @@ tellEverywheres = do
   mapM_ (tell . ("let "++)) $ reverse dfns 
 
 modimport :: Monad m => String -> CodeWriterT m ()
-modimport s = lift $ W.tell ["import "++s]
+modimport s = tell $ "import "++s
 
 chomp :: String -> String
 chomp s = dropWhile (==' ') s
 
-execCodeWriterT :: Monad m => String -> CodeWriterT m () -> m String
-execCodeWriterT modNm cw = do
-  ss <- execWriterT $ execStateT cw (0,[])
-  let (imps, rest) = partition ("import " `isPrefixOf`) ss
-  return $ unlines (("module "++modNm++" where"):imps++rest)
 
 mkAnal :: [String] -> CodeWriterT IO ()
 mkAnal [] = return ()
@@ -68,7 +50,21 @@ mkAnal (('>':q):ss) =
                 mkAnal rest), 
              ("t-test" `isPrefixOf` (chomp q1), do
                 procTtest q1 tablines
-                mkAnal rest)] $  do 
+                mkAnal rest),
+             ("defineSession" `isPrefixOf` (chomp q1), do
+                liftIO $ case words q1 of
+                  defS:sessNm:goal:_ -> case last defS of
+                                          '!' -> do
+                                            s <- loadApproxSession sessNm root
+                                            deleteSession s
+                                            runGoal ("new:"++sessNm) goal
+                                          '+' -> ifM (existsSession sessNm root)
+                                                     (runGoal sessNm goal)
+                                                     (runGoal ("new:"++sessNm) goal)
+                                          _ -> whenM (not `fmap` existsSession sessNm root) $
+                                                         runGoal ("new:"++sessNm) goal
+                  _ -> return ()
+                return () )] $  do 
                      procQ writeQ $ unlines $ chomp q1 : map (tail) tablines
                      mkAnal rest
 
@@ -80,6 +76,13 @@ mkAnal ss = do
   tellPrint "</p>"
   mkAnal rest 
   
+
+runGoal :: String -> String -> IO ()
+runGoal sessNm goal = do
+  system $ "ghc -O2 --make "++goal
+  system $ "./"++goal++" "++sessNm
+  return ()
+           
 
 justText ('>':s) = False
 --justText ("") = False

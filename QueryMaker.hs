@@ -4,7 +4,7 @@ import Control.Monad.Writer.Lazy
 import Database
 import Query
 import System.Environment
-import TNUtils
+import TNUtils hiding (tell)
 import EvalM
 import Data.List
 import Data.Maybe
