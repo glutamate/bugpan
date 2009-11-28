@@ -64,6 +64,7 @@ transExp x = case x of
   SigDeriv exp  -> failure x
   SigFby exp0 exp  -> failure x
   Event exp  -> failure x
+  ETest exp0 exp  -> failure x
   Forget exp0 exp  -> failure x
   Switch exp switchlines  -> failure x
   Box exp  -> failure x

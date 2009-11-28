@@ -369,6 +369,7 @@ addBuffersToStore = mapD aBTS
 declInMainLoop  (Let _ (Sig _)) = True
 declInMainLoop  (Let _ (SigLimited _ _)) = True
 declInMainLoop  (Let _ (Event _)) = True
+declInMainLoop  (Let _ (ETest _ _)) = True
 declInMainLoop  (Let _ (Switch _ _)) = True
 declInMainLoop  (Let _ (SigDelay _ _)) = True
 declInMainLoop  (Let _ (SigFby _ _)) = True

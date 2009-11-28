@@ -273,6 +273,7 @@ queryM q e = queryM' e
           queryM' e@(SigDelay e1 e2) = concatM [q e, m e1,  m e2]
           queryM' e@(SigFby e1 e2) = concatM [q e, m e1,  m e2]
           queryM' e@(SigLimited e1 e2) = concatM [q e, m e1,  m e2]
+          queryM' e@(ETest e1 e2) = concatM [q e, m e1,  m e2]
           queryM' e@(Event e1) = concatM [q e, m e1]
           queryM' e@(Forget e1 e2) = concatM [q e, m e1, m e2]
           queryM' e@(Const _) = concatM [q e]
@@ -314,6 +315,7 @@ mapEM f e = mapEM' e
           mapEM' (Cmp o s1 s2) = (return (Cmp o) `ap` m s1 `ap` m s2) >>= f
           mapEM' (Pair s1 s2) = (return Pair `ap` m s1 `ap` m s2) >>= f
           mapEM' (Event s2) = (return Event `ap` m s2) >>= f
+          mapEM' (ETest s1 s2) = (return ETest `ap` m s1 `ap` m s2) >>= f
           mapEM' (Forget s1 s2) = (return Forget `ap` m s1 `ap` m s2) >>= f
           mapEM' (Const c) = f $ Const c
           mapEM' (Nil) = (f Nil)

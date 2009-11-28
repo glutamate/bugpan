@@ -78,6 +78,7 @@ cE (B.Sig e) = Sig $ cE e
 cE (B.SigLimited e1 e2) = SigLimited (cE e1) (cE e2)
 cE (B.SigVal e) = SigVal $ cE e
 cE (B.Event e) = Event $ cE e
+cE (B.ETest e1 e2) = ETest (cE e1) (cE e2)
 cE (B.Forget e1 e2) = Forget (cE e1) (cE e2)
 cE (B.SigDelay e1 e2) = SigDelay (cE e1) (cE e2)
 cE (B.SigAt e1 e2) = SigAt (cE e2) (cE e1)

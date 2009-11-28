@@ -57,6 +57,7 @@ data E =  If E E E
         | SolveOde E
         | Switch [(E,E)] E
         | Event E
+        | ETest E E
         | Forget E E
         | LetE [(Pat,E)] E
         | Box E

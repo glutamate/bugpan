@@ -170,51 +170,61 @@ compStageP ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++
           expBufs = map (++"Buf") exps
           consExpBufs = map (\nm-> (nm++"Buf", Cons (Var nm) (Var (nm++"Buf")))) exps
 
-          arg (Let (PatVar nm _) (Sig e)) = Just nm
-          arg (Let (PatVar nm _) (Event e)) = Just nm
-          arg (Let (PatVar nm _) (SigDelay (Var snm) v0)) = Just nm
-          arg (Let (PatVar nm _) (Switch eslams s0)) = Just nm
-          arg (Let (PatVar nm _) (Forget tm se)) = Just nm
-          arg (Let (PatVar nm _) (SolveOde (SigFby v e))) = Just $ nm
-          arg s = Nothing
+          arg (Let (PatVar nm _) (Sig e)) = [nm]
+          arg (Let (PatVar nm _) (Event e)) = [nm]
+          arg (Let (PatVar nm _) (ETest e e')) = [nm, nm++"HappenedLast"]
+          arg (Let (PatVar nm _) (SigDelay (Var snm) v0)) = [nm]
+          arg (Let (PatVar nm _) (Switch eslams s0)) = [nm]
+          arg (Let (PatVar nm _) (Forget tm se)) = [nm]
+          arg (Let (PatVar nm _) (SolveOde (SigFby v e))) = [nm]
+          arg s = []
           bufArgs = map (++"Buf") exps
-          args = ["seconds"]++catMaybes (map arg ds)++bufArgs
+          args = ["seconds"]++concat (map arg ds)++bufArgs
           
-          initV (Let nm (Sig e)) = Just "undefined"
-          initV (Let nm (Event e)) = Just "[]"
-          initV (Let nm (Forget tm e)) = Just $ pp e
-          initV (Let nm (SigDelay (Var snm) v0)) = Just $ pp v0
-          initV (Let nm (Switch eslams s0)) = Just "undefined"
-          initV (Let nm (SolveOde (SigFby v e))) = Just $ pp v
-          initV s = Nothing
+          initV (Let nm (Sig e)) = ["undefined"]
+          initV (Let nm (Event e)) = ["[]"]
+          initV (Let nm (ETest e1 e2)) = ["[]", "True"]
+          initV (Let nm (Forget tm e)) = [ pp e]
+          initV (Let nm (SigDelay (Var snm) v0)) = [ pp v0]
+          initV (Let nm (Switch eslams s0)) = [ "undefined"]
+          initV (Let nm (SolveOde (SigFby v e))) = [ pp v]
+          initV s = []
           bufInits = map (\_->"[]") exps
-          initVls =["0"]++catMaybes (map initV ds)++bufInits
+          initVls =["0"]++concat (map initV ds)++bufInits
 
           switchLine nmv ((Var nm), esLam) = "("++nm++", "++(pp $ (tweakEslamP (nmOrd nm) ds) esLam)++")"
 
-          callE (Let (PatVar nm _) _) = Just $ nm++"NxtV"
+          callE (Let (PatVar nm _) (ETest _ _)) = [nm++"NxtV", nm++"HappenedLastNxt"]
+          callE (Let (PatVar nm _) _) = [nm++"NxtV"]
 {-          callE (Let nm (Event e)) = Just $ "("++(pp . tweakExprP $ e) ++")++"++nm
           callE (Let nm (SigDelay (Var snm) v0)) = Just $ snm
           callE (Let nm (Switch ses s0)) = Just $ "selSwitch ["++(intercalate "," $ map switchLine ses)++"] ("++(pp . unSig $ tweakExprP s0)++")" -}
-          callE s = Nothing
+          callE s = []
           bufCallEs = map (\nm-> nm++"NxtV:"++nm++"Buf") exps
-          callEs = ("secondsNxtV"):catMaybes (map callE ds)++bufCallEs
+          callEs = ("secondsNxtV"):concat (map callE ds)++bufCallEs
           
           nmOrd = nmOrderinDS ds
 
-          lets (Let (PatVar nm _) (Sig e)) = Just (nm++"NxtV", pp . (tweakExprP (nmOrd nm) ds) $ e)
-          lets (Let (PatVar nm _) (SigDelay (Var snm) _)) = Just (nm++"NxtV",snm++"NxtV" )
+          lets (Let (PatVar nm _) (Sig e)) =  [(nm++"NxtV", pp . (tweakExprP (nmOrd nm) ds) $ e)]
+          lets (Let (PatVar nm _) (SigDelay (Var snm) _)) =  [(nm++"NxtV",snm++"NxtV" )]
           lets (Let (PatVar nm _) (Event e)) = 
-                                  Just $ (nm++"NxtV", "("++(pp . (tweakExprP (nmOrd nm) ds) $ e) ++")++"++nm)
+                                  [(nm++"NxtV", "("++(pp . (tweakExprP (nmOrd nm) ds) $ e) ++")++"++nm)]
+          lets (Let (PatVar nm _) (ETest pe se)) = let pp' = pp . (tweakExprP (nmOrd nm) ds) 
+                                                       predTrue = pp' pe++" sv" in
+                                  [("("++nm++"NxtV, "++nm++"HappenedLastNxt)", 
+                                    "let sv = "++pp' se++" in if "++nm++"HappenedLast then ("++nm++
+                                    ", "++predTrue++
+                                    ") else (if "++predTrue++" then (seconds,sv):"++nm++
+                                    " else ("++nm++", False))")]
           lets (Let (PatVar nm _) (Forget (Const tmV) se)) = 
-                        Just $ (nm++"NxtV", "dropWhile ((<(seconds-"++ppVal tmV++")) . fst) "++nm)
+                        [(nm++"NxtV", "dropWhile ((<(seconds-"++ppVal tmV++")) . fst) "++nm)]
           lets (Let (PatVar nm _) (Switch ses s0)) = 
-                                  Just (nm++"NxtV",  "selSwitch ["++(intercalate "," $ map (switchLine nm) ses)++
-                                                     "] ("++(pp . unSig $ (tweakExprP (nmOrd nm) ds) s0)++")")
-          lets (Let (PatVar nm _) (SolveOde (SigFby v e))) = Just (nm++"NxtV",nm++"+ dt*("++(pp . unSig . (tweakExprP (nmOrd nm) ds) $ e)++")")
-          lets e = Nothing
+                                  [(nm++"NxtV",  "selSwitch ["++(intercalate "," $ map (switchLine nm) ses)++
+                                                     "] ("++(pp . unSig $ (tweakExprP (nmOrd nm) ds) s0)++")")]
+          lets (Let (PatVar nm _) (SolveOde (SigFby v e))) = [(nm++"NxtV",nm++"+ dt*("++(pp . unSig . (tweakExprP (nmOrd nm) ds) $ e)++")")]
+          lets e = []
 
-          letss = ("secondsNxtV", "realToFrac (npnts- n)*dt"):catMaybes (map lets ds)
+          letss = ("secondsNxtV", "realToFrac (npnts- n)*dt"):concat (map lets ds)
 
           breakStep =  "\n                         " 
           runAtOnceSrcs = map (\(v,s,p)-> ind++v++" <- "++s++" tmax dt "++pp p) atOnceSrcs 

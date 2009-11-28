@@ -102,6 +102,7 @@ pp (SigFby v s) = ppa v++" fby "++ppa s
 pp (Switch swsgs sig1) = "switch {\n"++ ppa sig1 ++"; \n" ++ passocs ++ "}"
     where passocs = concatMap (\(e,slam)-> pp e ++ " ~> " ++ pp slam++";\n") swsgs
 pp (Event e) = "[: "++pp e++" :]"
+pp (ETest e1 e2) = ppa e1 ++ " ? " ++ ppa e2
 pp (Forget e1 e2) = "forget "++ppa e1++" "++ppa e2
 pp (M2 Mul e1 e2) = pp2op e1 "*" e2
 pp (M2 Add e1 e2) = pp2op e1 "+" e2
