@@ -132,6 +132,8 @@ lUT (Case et pates) = return Case `ap` return et `ap` forM pates (\(pat,e)-> ret
 lUT e = return e
 lUTLet (PatVar nm UnspecifiedT,e) = do tvar <- genSym nm
                                        return (PatVar nm $ UnknownT tvar,e)
+lUTLet (PatDeriv p,e) = do (p', e') <- lUTLet (p, e)
+                           return (PatDeriv p', e')
 lUTLet l = return l
 lUTPat (PatVar nm UnspecifiedT) = do tvar <- genSym nm
                                      return (PatVar nm $ UnknownT tvar)
@@ -141,6 +143,8 @@ lUTPat (PatPair p1 p2) = do p1' <- lUTPat p1
 lUTPat (PatCons p1 p2) = do p1' <- lUTPat p1
                             p2' <- lUTPat p2
                             return (PatCons p1' p2')
+lUTPat (PatDeriv p) = do p' <- lUTPat p
+                         return $ PatDeriv p'
 lUTPat p = return p
 
 symbolType :: String -> TravM (T, Bool)
@@ -153,9 +157,11 @@ symbolType nm = do path <- exprPath `fmap` get
           definesTy nm (Lam nm1 t _) | nm== nm1 = Just t
                                      | otherwise = Nothing
           definesTy nm (LetE assocs _) = 
-              (lookup nm $ map (\(PatVar nm1 t, e)-> (nm1, t))  assocs)
+              (lookup nm $ map letPat assocs)
           definesTy nm (Case _ ((pat,e):[])) = safeHead [ t | PatVar nmv t <- flatPat pat, nm == nmv]
           definesTy _ _ = Nothing
+          letPat (PatVar nm1 t, e)= (nm1, t)
+          letPat (PatDeriv p, e) = letPat (p,e)
           lookupGlobal :: String -> TravM (T,Bool)
           lookupGlobal nm = do decTys <- allDeclaredTypes
                                case lookup nm decTys of
@@ -274,10 +280,16 @@ checkTy (Case et pates) = do t1 <- checkTy et
                                      withPath (Case et [(pat,e)]) $ checkTy e
                              addManyConstraints ts
                              return $ head ts
-checkTy e@(LetE ses es) = do te <- withPath e $ checkTy es
-                             forM_ ses $ \(PatVar nm t,el)-> withPath e $ do tc <- checkTy el
-                                                                             addTyConstraint (t,tc)
-                             return te
+checkTy e@(LetE ses es) = 
+    do te <- withPath e $ checkTy es
+       forM_ ses $ chAssoc te
+       return te
+           where chAssoc te (PatVar nm t,el) = 
+                     withPath e $ do tc <- checkTy el
+                                     addTyConstraint (t,tc)                                  
+                 chAssoc te (PatDeriv p,el) =chAssoc te (p, el)
+
+                             
 checkTy e@(And e1 e2) = do t1 <- checkTy e1 
                            t2 <- checkTy e2 
                            addTyConstraint (t1, BoolT)
@@ -395,7 +407,7 @@ checkTy (Translate ve shpe) = do shpt <- checkTy shpe
 checkTy (Switch eslams es)  = do sigTy <- checkTy es
                                  telem <- case sigTy of
                                             SignalT telem' -> return telem'
-                                            _ -> do telem' <- UnknownT `fmap` (genSym "checkSigAt")
+                                            _ -> do telem' <- UnknownT `fmap` (genSym "checkSwitch")
                                                     addTyConstraint (sigTy, SignalT telem')
                                                     return $ telem'
 

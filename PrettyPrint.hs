@@ -99,6 +99,7 @@ pp (SigVal s) = "<: "++pp s++" :>"
 pp (SigAt t s) = ppa s ++ "@" ++ ppa t
 pp (SigDelay s v) = "delay "++ppa s++" "++ppa v
 pp (SigFby v s) = ppa v++" fby "++ppa s
+pp (SolveOde e) = "solveOde "++ppa e
 pp (Switch swsgs sig1) = "switch {\n"++ ppa sig1 ++"; \n" ++ passocs ++ "}"
     where passocs = concatMap (\(e,slam)-> pp e ++ " ~> " ++ pp slam++";\n") swsgs
 pp (Event e) = "[: "++pp e++" :]"

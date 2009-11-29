@@ -279,11 +279,16 @@ evalSigLimits = mapD eSSA
           eSSA e = return e 
 
 removePatDerivs :: TravM ()
-removePatDerivs = mapD rPD
-    where rPD (Let p@(PatDeriv _) e) =
+removePatDerivs = mapD rTLPD >>  mapDE (mapEM rPD)
+    where rTLPD (Let p@(PatDeriv _) e) =
                     let (nderivs, nm, tp) = procPat 0 p
                     in return $ (Let (PatVar nm tp) $ wrapSolves nderivs e)
+          rTLPD e = return e
+          rPD (LetE assocs le) = return $ LetE (map rPDLA assocs) le
           rPD e = return e
+          rPDLA (p@(PatDeriv _), e) = let (nderivs, nm, tp) = procPat 0 p
+                                  in (PatVar nm tp,  wrapSolves nderivs e)
+          rPDLA assoc = assoc
           procPat n (PatDeriv p) = procPat (n+1) p
           procPat n (PatVar nm tp) = (n, nm, tp)
           wrapSolves 0 e = e
@@ -494,6 +499,7 @@ compilablePrelude =
 ack str = (traceM str >>)
 
 transforms =   [(typeCheck, "typeCheck")
+                ,(removePatDerivs, "removePatDerivs")
                 ,(connectsLast, "connectsLast")
                 ,(floatConnectedSignals, "floatConnectedSignals")
                 ,(whileChanges substHasSigs, "substHasSigs")
@@ -504,7 +510,6 @@ transforms =   [(typeCheck, "typeCheck")
                 ,(whileChanges betaRedMakesShape, "betaRedMakesShape")
                 ,(letFloating, "letFloating")
                 ,(sigFloating, "sigFloating")
-                ,(removePatDerivs, "removePatDerivs")
                 ,(forgetFloating, "sigFloating")
                 ,(floatSwitchEvents, "floatSwitchEvents")
                 ,(substHasSigs, "substHasSigs")

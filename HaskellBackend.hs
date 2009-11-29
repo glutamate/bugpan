@@ -34,7 +34,7 @@ getDeclaredType ds nm =
                  
 
 compileToHask fp dt tmax ds params = do
-  --print $ length $ show ds
+  forM_ ds $ putStrLn .ppDecl
   let prg = toHask dt tmax ds params
   writeFile (fp) prg
   --putStrLn prg
@@ -264,97 +264,39 @@ isEvent nm ds = not $ null $ [() | Let (PatVar nm' _) (Event e) <- ds, nm' ==nm]
                              [() | Let (PatVar nm' _) (ETest _ _) <- ds, nm' ==nm]
 
 nmOrderinDS ds nm = aux 0 ds 
-    where aux n [] = error $ "nmOrderinDS: can't find "++nm
-          aux n ((Let (PatVar nm' _) _):dss) | nm' == nm = n
+    where aux n [] = Nothing --error $ "nmOrderinDS: can't find "++nm
+          aux n ((Let (PatVar nm' _) _):dss) | nm' == nm = Just n
                                   | otherwise = aux (n+1) dss
           aux n (d:dss) = aux (n+1) dss
 
 tweakExprP n ds e = mapE (changeRead . unSharp . unVal) e 
     where unVal (SigVal (Var ('#':nm))) = Var (nm) -- ++"Val")
           unVal (SigVal (Var "seconds")) = Var "secondsNxtV"
-          unVal (SigVal (Var nm)) | nmOrderinDS ds nm < n = Var (nm++"NxtV") -- ++"Val")
+          unVal (SigVal (Var nm)) | isJust (nmOrderinDS ds nm) && isJust n && 
+                                    fromJust (nmOrderinDS ds nm) < fromJust n 
+                                      = Var (nm++"NxtV") -- ++"Val")
                                   | otherwise = Var nm
-          unVal (Var nm) | isEvent nm ds && nmOrderinDS ds nm < n = Var (nm++"NxtV") -- ++"Val")
+          unVal (Var nm) | isEvent nm ds && isJust (nmOrderinDS ds nm) && 
+                           isJust n && fromJust (nmOrderinDS ds nm) < fromJust n 
+                             = Var (nm++"NxtV") -- ++"Val")
                          | otherwise = Var nm
           unVal e = e
-          unSharp (Var ('#':nm)) = Var nm
-          unSharp e = e
-          changeRead (SigAt t s) = (App (App (Var "readSig") (s)) t)
-          changeRead e = e
 
-tweakEslamP n ds = tweakEslamP' . tweakExprP n ds
+unSharp (Var ('#':nm)) = Var nm
+unSharp e = e
+changeRead (SigAt t s) = (App (App (Var "readSig") (s)) t)
+changeRead e = e
 
-tweakEslamP' (Lam t tt (Lam v vt (Sig s))) = (Lam t tt (Lam v vt s))
+tweakEslamP n ds = tweakEslamP' n . tweakExprP n ds
+
+tweakEslamP' nm (Lam t tt (Lam v vt (Sig s))) = (Lam t tt (Lam v vt s))
 --tweakEslamP' (Lam t tt (Lam v vt (SolveOde s))) = (Lam t tt (Lam v vt ()))
 --tweakEslamP' (Lam t tt (Lam v vt (Var nm))) = (Lam t tt (Lam v vt (Var $ nm++"Val")))
-tweakEslamP' e = e
+tweakEslamP' nm e = e
 
 inPar s = "("++s++")"
 
-
-
-{-compStage ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++" = do "):lns
-    where ind = "   "
-          loopInd = "       "
-          ds = snd $ runTravM ds' [] removeSigLimits
-          dsSrcs =  [(varNm, fromJust $ lookupSrc srcNm,param) | ReadSource varNm (srcNm, param) <- ds]
-          atOnceSrcs = [(varNm, srcf, param) | (varNm, Src _ _ _ _ (SrcOnce srcf), param)<- dsSrcs ]
-          rtSrcs = [(varNm, srcf, param) | (varNm, Src _ _ _ _ (SrcRealTimeSig srcf), param)<- dsSrcs ]
-          sigs = [ (nm,e) | Let  (PatVar nm _) (Sig e) <- ds ]
-          evs = [ nm | Let (PatVar nm _) (Event e) <- ds ]
-          comments = ["--imps="++show imps,
-                      "--exps="++show exps,
-                     "--evexps="++show evExps]
-          lns = initLns ++ newTmax ++ initBuffers++ runAtOnceSrcs++ startLoop ++readSigs++
-                writeSigs++readSigBuffers++readEventBuffers++returnLine++[""]
-          initLns = concatMap initLn ds
-          initLn (Let (PatVar nm _) (Sig e)) = [ind++nm++" <- newIORef undefined"]
-          initLn (Let (PatVar nm _) (Switch _ _)) = [ind++nm++" <- newIORef undefined"]
-          initLn (Let (PatVar nm _) (SigDelay (Var snm) v0)) = [ind++nm++" <- newIORef "++pp v0]
-          initLn (Let (PatVar nm _) (Event e)) = [ind++nm++"Queue <- newIORef []"]
-          initLn d = []
-          debugDsSrcs = show dsSrcs
-          runAtOnceSrcs = ("{-"++debugDsSrcs++"-}"):map (\(v,s,p)-> ind++v++" <- "++s++" tmax dt "++pp p) atOnceSrcs 
-          newTmax = let tm = localTmax tmax ds' in
-                    [ind++"let tmax = "++(show $ tm),
-                    ind++"let npnts = idInt . round $ tmax/dt"]
-          initBuffers = map (\sig-> ind++sig++"Buf <- newIORef []") exps
-          startLoop = [ind++"forM_ [0..npnts-1] $ \\npt -> do", 
-                       loopInd ++ "let secondsVal = (realToFrac npt)*dt"]
-          --readSigs = map (\sig-> loopInd++sig++"Val <- readIORef "++sig) $ map fst sigs
-          readSigs = concatMap readSig ds
-          readSig (Let (PatVar nm _) (Sig e)) = [loopInd++nm++"Val <- readIORef "++nm]
-          readSig (Let (PatVar nm _) (Switch _ _)) = [loopInd++nm++"Val <- readIORef "++nm]
-          readSig (Let (PatVar nm _) (SigDelay (Var snm) v0)) = [loopInd++nm++"Val <- readIORef "++nm]
-          readSig (Let (PatVar nm _) (Event _)) = [loopInd++nm++" <- readIORef "++nm++"Queue"]
-          readSig d = []
-          writeSigs = concatMap writeSig ds
-          writeSig (Let (PatVar nm _) (Sig e)) | nm `elem` exps = calcAndBuffer (nm, e)
-                                               | otherwise = [loopInd++"let "++nm++"Val = "++(pp $ tweakExpr e)
-                                                  ,loopInd++"writeIORef "++nm++" "++nm++"Val"]
-          writeSig (Let pv (SigDelay (Var snm) _)) = writeSig (Let pv (Sig $ SigVal (Var snm)))
-          writeSig (Let (PatVar nm _) (Event e)) = [loopInd++nm++" <- return $ ("++(pp $tweakExpr e)++")++"++nm, --SORT THESE!!!!
-                                        loopInd++"writeIORef "++nm++"Queue "++nm]
-          writeSig (Let (PatVar nm t) s@(Switch ses se)) = switch nm ses se
-          writeSig d = []
-          switch nm ses se = [loopInd++"let "++nm++"Switch = ["++
-                              (intercalate "," $ map switchLine ses)++"]",
-                             loopInd++"let "++nm++"Val = selSwitch "++nm++"Switch ("++
-                             (pp . unSig $ tweakExpr se)++")"
-                             ,loopInd++"writeIORef "++nm++" "++nm++"Val"
-                             ]++maybeExp nm
-          maybeExp nm = (if nm `elem` exps then [loopInd++"appendIORef "++nm++"Buf "++nm++"Val"] else [])
-          switchLine ((Var nm), esLam) = "("++nm++", "++(pp $ tweakEslam esLam)++")"
-          calcAndBuffer (nm, e) = [loopInd++"let "++nm++"Val = "++(pp  $ tweakExpr e)
-                                  ,loopInd++"writeIORef "++nm++" "++nm++"Val"
-                                  ,loopInd++"appendIORef "++nm++"Buf "++nm++"Val"
-                                  ]
-          readSigBuffers = map (\nm->ind++nm++"BufVal <- readIORef "++nm++"Buf") exps
-          readEventBuffers = map evQ evExps
-          evQ nm | nm `elem` evs = ind++nm++"QVal <- readIORef "++nm++"Queue"
-                 | otherwise = ind++"let "++nm++"QVal = "++nm
-          returnLine = [ind++"return "++(inTuple $ map (\nm-> "bufToSig tmax "++nm++"BufVal") exps ++ map (++"QVal") evExps)]
--}
+--unSolveOde (SolveOde
 
 
 tweakExpr e = mapE (changeRead . unSharp . unVal) e 

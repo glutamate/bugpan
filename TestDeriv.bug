@@ -1,0 +1,33 @@
+module TestDeriv where
+
+--use Prelude
+
+fst = \pr->case pr of (x,_) -> x
+snd = \pr->case pr of (_,x) -> x
+
+
+myLater tl es = escan (\pr->[((fst pr)+tl,(snd pr))]) es
+
+D v = 1 fby ({:  <: v :> :})
+
+w = switch 
+       let D s = 1 fby ({:  <: s :> :}) in s
+       e  ~> \_->\_-> {: 1.3 :}
+       e2 ~> \_->\_-> (let D s = 1 fby ({:  <: s :> :}) in s)
+
+e = (\x->x>1.5) ? v
+e2 = myLater 0.1 e
+
+--e2 = []
+--w = {: <: seconds :> :}
+
+_dt = 0.000001
+
+e2 :: [(Real, Real)]
+
+e :: [(Real, Real)]
+e *> store ""
+e2 *> store ""
+
+v *> store ""
+--w *> store ""
