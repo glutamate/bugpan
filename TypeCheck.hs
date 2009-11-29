@@ -198,6 +198,7 @@ applySolution = do cns <- tyConstraints `fmap` get
             --let newConstrs = unify ((ut,newTy):oldMatches++cns)
             --unity also ut with other
             --traceConstraints $  newConstrs
+            --traceM $ ppDecl $ DeclareType nm newTy
             alterDefinition nm . substTyInE $ newCns -- newConstrs
             return $ DeclareType nm newTy
           aS _ d = return d
@@ -357,7 +358,7 @@ checkTy (Event e) = do tev <- checkTy e
 
 checkTy (ETest p s) = do tp <- checkTy p
                          ts <- checkTy s
-                         case ts of
+{-                         case ts of
                            SignalT ta -> do
                                    addTyConstraint (tp, LamT ta BoolT)
                                    return $ EventT ta
@@ -365,11 +366,11 @@ checkTy (ETest p s) = do tp <- checkTy p
                                   LamT ta BoolT -> do 
                                           addTyConstraint (ts, SignalT ta)
                                           return $ EventT ta
-                                  _ -> do          
-                                    ta <- UnknownT `fmap` (genSym "etest")
-                                    addTyConstraint (tp, LamT ta BoolT)
-                                    addTyConstraint (ts, SignalT ta)
-                                    return $ EventT ta
+                                          _ -> do  -}        
+                         ta <- UnknownT `fmap` (genSym "etest")
+                         addTyConstraint (tp, LamT ta BoolT)
+                         addTyConstraint (ts, SignalT ta)
+                         return $ EventT ta
 checkTy (EScan f e) = do ta <- UnknownT `fmap` (genSym "etest")
                          tb <- UnknownT `fmap` (genSym "etest")
                          tf <- checkTy f
@@ -449,6 +450,7 @@ solve eqs = solv eqs []
           solv ((LamT t1 t2, LamT t3 t4):eq) sbst = solv ((t1, t3):(t2,t4):eq) sbst
           solv ((ListT t1, ListT t3):eq) sbst = solv ((t1, t3):eq) sbst
           solv ((SignalT t1, SignalT t3):eq) sbst = solv ((t1, t3):eq) sbst
+          solv ((EventT t1, EventT t3):eq) sbst = solv ((t1, t3):eq) sbst
           solv ((t1@(UnknownT nm), t2):eq) sbst | t1 == t2 = solv eq sbst
                                                 | not (t1 `partOfTy` t2) =
                                                     let ts = substT [(t1, t2)] in
@@ -480,6 +482,7 @@ recSubstT subs (PairT t1 t2) = PairT (substT subs t1) (substT subs t2)
 recSubstT subs (LamT t1 t2) = LamT (substT subs t1) (substT subs t2)
 recSubstT subs (ListT t1) = ListT (substT subs t1)
 recSubstT subs (SignalT t1) = SignalT (substT subs t1)
+recSubstT subs (EventT t1) = EventT (substT subs t1)
 recSubstT subs t = t 
 
 refresh :: T -> TravM T
@@ -504,6 +507,7 @@ flatT t@(PairT t1 t2) = t:flatT t1++flatT t2
 flatT t@(LamT t1 t2) = t:flatT t1++flatT t2
 flatT t@(ListT tl) = t:flatT tl
 flatT t@(SignalT ts) = t:flatT ts
+flatT t@(EventT ts) = t:flatT ts
 flatT t = [t]
 
 flatPat p@(PatPair p1 p2) = p:flatPat p1++flatPat p2

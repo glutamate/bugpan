@@ -27,10 +27,14 @@ test = do ds <- fileDecls "Intfire" []
           compileToHask "Intfire.hs" 0.001 0.2 ds []
 
 getDeclaredType :: [Declare] -> String -> T
-getDeclaredType ds nm = head [ t | DeclareType nm' t <- ds, nm == nm']
+getDeclaredType ds nm = 
+    case [ t | DeclareType nm' t <- ds, nm == nm'] of
+         x:_ -> x
+         _ -> error $ "getDeclaredType: cant find "++nm
+                 
 
 compileToHask fp dt tmax ds params = do
-  --putStrLn "hello"
+  --print $ length $ show ds
   let prg = toHask dt tmax ds params
   writeFile (fp) prg
   --putStrLn prg
@@ -83,9 +87,13 @@ allSrcImports ds = let snms = [nm | ReadSource _ (nm, _) <- ds]
 
 rootDir = "/var/bugpan/sessions"
 
+headErr _ (x:_) = x
+headErr s _ = error s
+
 mainFun ds exps = 
     let ind = "   "
-        modNm = head [nm | Let (PatVar "moduleName" _) (Const (StringV nm)) <- ds]
+        modNm = headErr "no module defined" 
+                 [nm | Let (PatVar "moduleName" _) (Const (StringV nm)) <- ds]
     in
           ["main = do",
            ind++"sessNm:t0Str:_ <- getArgs",
@@ -218,11 +226,11 @@ compStageP ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++
           lets (Let (PatVar nm _) (Event e)) = 
                                   [(nm++"NxtV", "("++(pp . (tweakExprP (nmOrd nm) ds) $ e) ++")++"++nm)]
           lets (Let (PatVar nm _) (EScan f e)) =  let pp' = pp . (tweakExprP (nmOrd nm) ds) in
-                                  [(nm++"NxtV", "("++(pp' f) ++" $ takeWhile ((>(seconds-dt/2)) . fst) $ "++pp' e++")++"++nm)]
+                                  [(nm++"NxtV", "(concatMap ("++(pp' f) ++") $ takeWhile ((>(seconds-dt/2)) . fst) $ "++pp' e++")++"++nm)]
           lets (Let (PatVar nm _) (ETest pe se)) = let pp' = pp . (tweakExprP (nmOrd nm) ds) 
                                                        predTrue = "("++pp' pe++") sv" in
                                   [("("++nm++"NxtV, "++nm++"HappenedLastNxt)", 
-                                    "let sv = "++pp' se++" in if "++nm++"HappenedLast then ("++nm++
+                                    "let sv = "++pp' (SigVal se)++" in if "++nm++"HappenedLast then ("++nm++
                                     ", "++predTrue++
                                     ") else (if "++predTrue++" then (((seconds,sv):"++nm++
                                     "), True) else ("++nm++", False))")]
@@ -251,7 +259,9 @@ compStageP ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++
 bang nm = '!':nm
 
 isEvent :: String -> [Declare] -> Bool
-isEvent nm ds = not $ null [() | Let (PatVar nm' _) (Event e) <- ds, nm' ==nm]
+isEvent nm ds = not $ null $ [() | Let (PatVar nm' _) (Event e) <- ds, nm' ==nm]++
+                             [() | Let (PatVar nm' _) (EScan _ _) <- ds, nm' ==nm]++
+                             [() | Let (PatVar nm' _) (ETest _ _) <- ds, nm' ==nm]
 
 nmOrderinDS ds nm = aux 0 ds 
     where aux n [] = error $ "nmOrderinDS: can't find "++nm
@@ -409,6 +419,8 @@ reactive e = {- trace (pp e ) $ -} or `fmap` queryM (hasSigAux []) e
     where hasSigAux :: [String] -> E -> TravM [Bool]
           hasSigAux _ (Sig _) = return [True]
           hasSigAux _ (Event _) = return [True]
+          hasSigAux _ (EScan _ _) = return [True]
+          hasSigAux _ (ETest _ _) = return [True]
           hasSigAux _ (SigDelay _ _) = return [True]
           hasSigAux _ (SolveOde _) = return [True]
           hasSigAux _ (SigVal _) = return [True]

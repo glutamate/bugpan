@@ -436,6 +436,8 @@ hasSig e = {- trace (pp e ) $ -} or `fmap` queryM (hasSigAux []) e
     where hasSigAux :: [String] -> E -> TravM [Bool]
           hasSigAux _ (Sig _) = return [True]
           hasSigAux _ (Event _) = return [True]
+          hasSigAux _ (EScan _ _) = return [True]
+          hasSigAux _ (ETest _ _) = return [True]
           hasSigAux _ (SigDelay _ _) = return [True]
           hasSigAux lu v@(Var nm) = 
               ifM ({-mor (inBoundVars nm) (isDefBySrc nm)) -} (dontLookUp nm)) 

@@ -123,7 +123,8 @@ haskTypeString (SignalT t) = "Signal "++haskTypeString t
 haskTypeString (TyVar s) = s
 haskTypeString (ShapeT) = "Shape Double"
 haskTypeString (StringT) = "String"
-haskTypeString t = error $ show t
+haskTypeString (EventT t) = "[(Double, "++haskTypeString t++")]"
+haskTypeString t = error $ "haskTypeString: unknown type "++show t
 
 isSubtypeOf:: T -> T -> Bool
 isSubtypeOf (NumT _) (NumT Nothing) = True
