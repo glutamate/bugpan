@@ -51,6 +51,7 @@ data Exp =
  | SigFby Exp Exp
  | Event Exp
  | ETest Exp Exp
+ | EScan Exp Exp
  | Forget Exp Exp
  | Switch Exp [SwitchLine]
  | Box Exp

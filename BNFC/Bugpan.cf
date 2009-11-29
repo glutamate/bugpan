@@ -54,6 +54,7 @@ SigFby. Exp2 ::= Exp2 "fby" Exp3;
 
 Event. Exp4 ::= "[:" Exp ":]" ;
 ETest. Exp2 ::= Exp2 "?" Exp3 ; 
+EScan. Exp4 ::= "escan" Exp4 Exp5  ;
 Forget. Exp4 ::= "forget" Exp4 Exp5  ;
 Switch. Exp ::= "switch" "{" Exp ";" [SwitchLine] "}";
 Box. Exp5 ::= "box" Exp4;

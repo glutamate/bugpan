@@ -61,6 +61,7 @@ typeCheck = do addBuiltinsTypeAnnos
 
 tyCheckD d@(Let (PatVar nm tp) e) = 
                       do decTys <- allDeclaredTypes
+                         --traceM $ "checking: "++ppDecl d
                          tpn <-  if tp== UnspecifiedT
                                     then UnknownT `fmap` genSym nm
                                     else return tp
@@ -72,6 +73,7 @@ tyCheckD d@(Let (PatVar nm tp) e) =
                                          t <- UnknownT `fmap` genSym nm
                                          insertBefore [DeclareType nm t]
                                          tcalc <- checkTy e'
+                                         --traceM $ "checking: "++ppDecl d
                                          addTyConstraint (t,tcalc)
                                          addTyConstraint (t,tpn) -- ?
                                          solveConstraints
@@ -352,6 +354,29 @@ checkTy (Event e) = do tev <- checkTy e
                        telem <- UnknownT `fmap` (genSym "checkEvent")
                        addTyConstraint (tev, ListT $ PairT realT telem)
                        return tev
+
+checkTy (ETest p s) = do tp <- checkTy p
+                         ts <- checkTy s
+                         case ts of
+                           SignalT ta -> do
+                                   addTyConstraint (tp, LamT ta BoolT)
+                                   return $ EventT ta
+                           _ -> case tp of 
+                                  LamT ta BoolT -> do 
+                                          addTyConstraint (ts, SignalT ta)
+                                          return $ EventT ta
+                                  _ -> do          
+                                    ta <- UnknownT `fmap` (genSym "etest")
+                                    addTyConstraint (tp, LamT ta BoolT)
+                                    addTyConstraint (ts, SignalT ta)
+                                    return $ EventT ta
+checkTy (EScan f e) = do ta <- UnknownT `fmap` (genSym "etest")
+                         tb <- UnknownT `fmap` (genSym "etest")
+                         tf <- checkTy f
+                         addTyConstraint (tf, LamT (PairT realT ta) (ListT (PairT realT tb)))
+                         te <- checkTy e
+                         addTyConstraint (te, EventT ta)
+                         return $ EventT tb
 
 checkTy (Box e) = do vecTy <-checkTy e
                      addTyConstraint (vecTy, vec3Ty)

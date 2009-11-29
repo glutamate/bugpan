@@ -39,6 +39,7 @@ help = putStrLn $ unlines [
         "\t-t {seconds}\tSet run length",
         "\t-d {seconds}\tSet timestep",
         "\t-p\t\tParse file only",
+        "\t-r {file}\tCompile and run",
         "\t-o {file}\tCompile to Haskell code\n"
  ]
 

@@ -142,6 +142,7 @@ instance Print Exp where
    SigFby exp0 exp -> prPrec i 2 (concatD [prt 2 exp0 , doc (showString "fby") , prt 3 exp])
    Event exp -> prPrec i 4 (concatD [doc (showString "[:") , prt 0 exp , doc (showString ":]")])
    ETest exp0 exp -> prPrec i 2 (concatD [prt 2 exp0 , doc (showString "?") , prt 3 exp])
+   EScan exp0 exp -> prPrec i 4 (concatD [doc (showString "escan") , prt 4 exp0 , prt 5 exp])
    Forget exp0 exp -> prPrec i 4 (concatD [doc (showString "forget") , prt 4 exp0 , prt 5 exp])
    Switch exp switchlines -> prPrec i 0 (concatD [doc (showString "switch") , doc (showString "{") , prt 0 exp , doc (showString ";") , prt 0 switchlines , doc (showString "}")])
    Box exp -> prPrec i 5 (concatD [doc (showString "box") , prt 4 exp])

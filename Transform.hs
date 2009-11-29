@@ -370,6 +370,7 @@ declInMainLoop  (Let _ (Sig _)) = True
 declInMainLoop  (Let _ (SigLimited _ _)) = True
 declInMainLoop  (Let _ (Event _)) = True
 declInMainLoop  (Let _ (ETest _ _)) = True
+declInMainLoop  (Let _ (EScan _ _)) = True
 declInMainLoop  (Let _ (Switch _ _)) = True
 declInMainLoop  (Let _ (SigDelay _ _)) = True
 declInMainLoop  (Let _ (SigFby _ _)) = True
@@ -393,6 +394,8 @@ isSignalOrEvt :: E -> TravM IsSigOrEvent
 isSignalOrEvt (Sig _) = return IsSig
 isSignalOrEvt (SigDelay _ _) = return IsSig
 isSignalOrEvt (Event _) = return IsEvt
+isSignalOrEvt (ETest _ _) = return IsEvt
+isSignalOrEvt (EScan _ _) = return IsEvt
 isSignalOrEvt (Switch _ _) = return IsSig
 isSignalOrEvt (SolveOde _) = return IsSig
 isSignalOrEvt (Var "seconds") = return IsSig
@@ -523,7 +526,9 @@ transforms =   [(typeCheck, "typeCheck")
                ]
 
 transform :: TravM ()
-transform = sequence_ $ map (\(tr, nm) -> errorInfo ("in transform: "++nm) tr) transforms
+transform = do
+  sequence_ $ map (\(tr, nm) -> errorInfo ("in transform: "++nm) tr) transforms 
+  --traceM "all trans Ok"
                 
 
 splitByStages :: [Declare] -> [[Declare]]

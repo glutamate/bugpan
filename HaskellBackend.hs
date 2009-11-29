@@ -170,9 +170,16 @@ compStageP ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++
           expBufs = map (++"Buf") exps
           consExpBufs = map (\nm-> (nm++"Buf", Cons (Var nm) (Var (nm++"Buf")))) exps
 
+--we are going to assume that all escans work on events that have been
+--created in the last timestep. This is inefficient and incorrect (in
+--case of sequential escans). In the future, transform escans so they
+--always take a named event, and change events (etest or escan) to gen
+--two let vars: one for new events
+
           arg (Let (PatVar nm _) (Sig e)) = [nm]
           arg (Let (PatVar nm _) (Event e)) = [nm]
           arg (Let (PatVar nm _) (ETest e e')) = [nm, nm++"HappenedLast"]
+          arg (Let (PatVar nm _) (EScan e e')) = [nm]
           arg (Let (PatVar nm _) (SigDelay (Var snm) v0)) = [nm]
           arg (Let (PatVar nm _) (Switch eslams s0)) = [nm]
           arg (Let (PatVar nm _) (Forget tm se)) = [nm]
@@ -183,10 +190,11 @@ compStageP ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++
           
           initV (Let nm (Sig e)) = ["undefined"]
           initV (Let nm (Event e)) = ["[]"]
+          initV (Let nm (EScan _ _)) = ["[]"]
           initV (Let nm (ETest e1 e2)) = ["[]", "True"]
           initV (Let nm (Forget tm e)) = [ pp e]
           initV (Let nm (SigDelay (Var snm) v0)) = [ pp v0]
-          initV (Let nm (Switch eslams s0)) = [ "undefined"]
+          initV (Let nm (Switch eslams s0)) = ["undefined"]
           initV (Let nm (SolveOde (SigFby v e))) = [ pp v]
           initV s = []
           bufInits = map (\_->"[]") exps
@@ -209,13 +217,15 @@ compStageP ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++
           lets (Let (PatVar nm _) (SigDelay (Var snm) _)) =  [(nm++"NxtV",snm++"NxtV" )]
           lets (Let (PatVar nm _) (Event e)) = 
                                   [(nm++"NxtV", "("++(pp . (tweakExprP (nmOrd nm) ds) $ e) ++")++"++nm)]
+          lets (Let (PatVar nm _) (EScan f e)) =  let pp' = pp . (tweakExprP (nmOrd nm) ds) in
+                                  [(nm++"NxtV", "("++(pp' f) ++" $ takeWhile ((>(seconds-dt/2)) . fst) $ "++pp' e++")++"++nm)]
           lets (Let (PatVar nm _) (ETest pe se)) = let pp' = pp . (tweakExprP (nmOrd nm) ds) 
-                                                       predTrue = pp' pe++" sv" in
+                                                       predTrue = "("++pp' pe++") sv" in
                                   [("("++nm++"NxtV, "++nm++"HappenedLastNxt)", 
                                     "let sv = "++pp' se++" in if "++nm++"HappenedLast then ("++nm++
                                     ", "++predTrue++
-                                    ") else (if "++predTrue++" then (seconds,sv):"++nm++
-                                    " else ("++nm++", False))")]
+                                    ") else (if "++predTrue++" then (((seconds,sv):"++nm++
+                                    "), True) else ("++nm++", False))")]
           lets (Let (PatVar nm _) (Forget (Const tmV) se)) = 
                         [(nm++"NxtV", "dropWhile ((<(seconds-"++ppVal tmV++")) . fst) "++nm)]
           lets (Let (PatVar nm _) (Switch ses s0)) = 
