@@ -69,3 +69,4 @@ compileAdcSrc rs@(ReadSource nm ("adc", Const (PairV (PairV chanS rtHzS) lenS)))
                                return ()
     ]
 
+compileAdcSrc rs = error $ "compileAdcSrc :"++show rs
