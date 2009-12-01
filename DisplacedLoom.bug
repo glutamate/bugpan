@@ -6,7 +6,7 @@ lov = 4.0000e-2
 l = 0.2980
 v = l/(lov*2)
 angle = 0.01
-stopDist = -0.5
+stopDist = -0.17
 
 
 travel_dist = v*5
@@ -45,6 +45,6 @@ _tmax=6
 --_dt=0.5
 --pos *> "print"
 
---ecVoltage <* adc (0,20000,6) 
+ecVoltage <* adc (0,20000,6) 
 
---ecVoltage *> store ""
+ecVoltage *> store ""
