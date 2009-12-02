@@ -38,10 +38,12 @@ enowAux t dt evs = let nstep t dt = round (t/dt)
 --selSwitch :: [([(Double, a)], Double -> a -> b)] -> b -> b
 --selSwitch eslams def = selSwitch' eslams def 0
 
-selSwitch' [] def _ = def
-selSwitch' (([], _):es) def t = selSwitch' es def t
-selSwitch' (((tev,x):_, f):es) def t | tev > t = selSwitch' es (f tev x) tev
-                                     | otherwise = selSwitch' es def t
+selSwitch' tnow [] def _ = def
+selSwitch' tnow (([], _):es) def t = selSwitch' tnow es def t
+selSwitch' tnow (((tev,x):rest, f):es) def t
+    | tev > tnow = selSwitch' tnow ((rest,f):es) def t
+    | tev > t = selSwitch' tnow es (f tev x) tev
+    | otherwise = selSwitch' tnow es def t
 
 
 sigTmax :: Signal a -> Double

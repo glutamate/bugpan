@@ -45,7 +45,7 @@ toHask dt tmax ds params
     = let (env:stageDs) = splitByStages ds
           nonMainLoop = filter (notbanned (map fst params) ) $
                         filter (notbanned banned) $ fst (runTravM env [] compilableEnv) 
-      in unlines $ ["{-# LANGUAGE NoMonomorphismRestriction, BangPatterns#-}",
+      in unlines $ ["{-# LANGUAGE NoMonomorphismRestriction, BangPatterns #-}",
                     --"module "++capitalize modNm++" where",
                     "module Main where",
                     "",
@@ -67,7 +67,7 @@ toHask dt tmax ds params
                    allSrcImports ds++
                    ["",
                     "default (Int, Double)",
-                    "floor = realToFrac . P.floor ","",
+                    "floor = realToFrac . P.floor ","", "dt::Double", "tmax :: Double",
                    "dt="++show dt, "tmax="++show tmax, "npnts="++show(round $ tmax/dt)]++
                    writeBufToSig++writeSelSwitch++
                    concatMap readParam (zip params [2..])++
@@ -122,8 +122,8 @@ writeBufToSig = ["",
 --Signal 0 tmax dt sf Eq", ""]
 
 
-writeSelSwitch = ["selSwitch :: [([(Double, a)], Double -> a -> b)] -> b -> b",
-                  "selSwitch eslams def = selSwitch' eslams def 0"]
+writeSelSwitch = ["selSwitch :: Double -> [([(Double, a)], Double -> a -> b)] -> b -> b",
+                  "selSwitch t eslams def = selSwitch' t eslams def 0"]
 
 
 compileStages ds tmax stgs =  mainFun ds allStore ++ ["goMain = do "] ++lns++retLine++stages
@@ -185,6 +185,7 @@ compStageP ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++
 --two let vars: one for new events
 
           arg (Let (PatVar nm _) (Sig e)) = [nm]
+          arg (Let (PatVar nm t) (SigFby v e)) =  arg (Let (PatVar nm t) e)
           arg (Let (PatVar nm _) (Event e)) = [nm]
           arg (Let (PatVar nm _) (ETest e e')) = [nm, nm++"HappenedLast"]
           arg (Let (PatVar nm _) (EScan e e')) = [nm]
@@ -195,20 +196,25 @@ compStageP ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++
           arg s = []
           bufArgs = map (++"Buf") exps
           args = ["seconds"]++concat (map arg ds)++bufArgs
-          
+
           initV (Let nm (Sig e)) = ["undefined"]
           initV (Let nm (Event e)) = ["[]"]
           initV (Let nm (EScan _ _)) = ["[]"]
           initV (Let nm (ETest e1 e2)) = ["[]", "True"]
           initV (Let nm (Forget tm e)) = [ pp e]
           initV (Let nm (SigDelay (Var snm) v0)) = [ pp v0]
-          initV (Let nm (Switch eslams s0)) = ["undefined"]
-          initV (Let nm (SolveOde (SigFby v e))) = [ pp v]
+          initV (Let nm (Switch eslams s0)) = initV (Let nm s0)
+          initV (Let nm (SigFby v e)) = [ pp v]
+          initV (Let nm (SolveOde e)) = let inner = initV (Let nm e)
+                                        in if null inner then ["undefined"] else inner
+          initV (Let nm (LetE [(PatVar nm'' t, e)] (Var nm'))) 
+                         | nm' == nm'' = initV (Let nm e)
+                         | otherwise = []
           initV s = []
           bufInits = map (\_->"[]") exps
           initVls =["0"]++concat (map initV ds)++bufInits
 
-          switchLine nmv ((Var nm), esLam) = "("++nm++", "++(pp $ (tweakEslamP (nmOrd nm) ds) esLam)++")"
+          switchLine nmv ((Var nm), esLam) = "("++nm++", "++(pp $ (tweakEslamP nmv (nmOrd nm) ds) esLam)++")"
 
           callE (Let (PatVar nm _) (ETest _ _)) = [nm++"NxtV", nm++"HappenedLastNxt"]
           callE (Let (PatVar nm _) _) = [nm++"NxtV"]
@@ -222,6 +228,7 @@ compStageP ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++
           nmOrd = nmOrderinDS ds
 
           lets (Let (PatVar nm _) (Sig e)) =  [(nm++"NxtV", pp . (tweakExprP (nmOrd nm) ds) $ e)]
+          lets (Let (PatVar nm t) (SigFby _ e)) = lets (Let (PatVar nm t) e)   
           lets (Let (PatVar nm _) (SigDelay (Var snm) _)) =  [(nm++"NxtV",snm++"NxtV" )]
           lets (Let (PatVar nm _) (Event e)) = 
                                   [(nm++"NxtV", "("++(pp . (tweakExprP (nmOrd nm) ds) $ e) ++")++"++nm)]
@@ -237,8 +244,8 @@ compStageP ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++
           lets (Let (PatVar nm _) (Forget (Const tmV) se)) = 
                         [(nm++"NxtV", "dropWhile ((<(seconds-"++ppVal tmV++")) . fst) "++nm)]
           lets (Let (PatVar nm _) (Switch ses s0)) = 
-                                  [(nm++"NxtV",  "selSwitch ["++(intercalate "," $ map (switchLine nm) ses)++
-                                                     "] ("++(pp . unSig $ (tweakExprP (nmOrd nm) ds) s0)++")")]
+                                  [(nm++"NxtV",  "selSwitch seconds ["++(intercalate "," $ map (switchLine nm) ses)++
+                                                     "] ("++(pp $ (tweakEslamP nm (nmOrd nm) ds) s0)++")")]
           lets (Let (PatVar nm _) (SolveOde (SigFby v e))) = [(nm++"NxtV",nm++"+ dt*("++(pp . unSig . (tweakExprP (nmOrd nm) ds) $ e)++")")]
           lets e = []
 
@@ -287,31 +294,38 @@ unSharp e = e
 changeRead (SigAt t s) = (App (App (Var "readSig") (s)) t)
 changeRead e = e
 
-tweakEslamP n ds = tweakEslamP' n . tweakExprP n ds
+--this stuff should really be a transform.
+tweakEslamP nm n ds = tweakEslamP' nm . tweakExprP n ds
 
-tweakEslamP' nm (Lam t tt (Lam v vt (Sig s))) = (Lam t tt (Lam v vt s))
+tweakEslamP' nm (Lam t tt (Lam v vt e)) = (Lam t tt (Lam v vt (tweakEslamP' nm e)))
+tweakEslamP' nm (Sig se) = tweakEslamP' nm se
+tweakEslamP' nm e@(LetE [(PatVar nm'' t, SolveOde ode)] (Var nm')) 
+    | nm' == nm'' = tweakEslamP' nm. SolveOde $ subVar nm' (Var nm) ode 
+    | otherwise = e 
+tweakEslamP' nm e@(SolveOde (SigFby _ ode)) = tweakEslamP' nm (SolveOde ode)
+tweakEslamP' nm e@(SolveOde ode) = Var nm + Var "dt"*ode
 --tweakEslamP' (Lam t tt (Lam v vt (SolveOde s))) = (Lam t tt (Lam v vt ()))
 --tweakEslamP' (Lam t tt (Lam v vt (Var nm))) = (Lam t tt (Lam v vt (Var $ nm++"Val")))
-tweakEslamP' nm e = e
+tweakEslamP' _ e = e
 
 inPar s = "("++s++")"
 
 --unSolveOde (SolveOde
 
 
-tweakExpr e = mapE (changeRead . unSharp . unVal) e 
+{-tweakExpr e = mapE (changeRead . unSharp . unVal) e 
     where unVal (SigVal (Var nm)) = Var (nm++"Val")
           unVal e = e
           unSharp (Var ('#':nm)) = Var nm
           unSharp e = e
           changeRead (SigAt t s) = (App (App (Var "readSig") (s)) t)
-          changeRead e = e
+          changeRead e = e -}
 
-tweakEslam = tweakEslam' . tweakExpr
+{-tweakEslam = tweakEslam' . tweakExpr
 
 tweakEslam' (Lam t tt (Lam v vt (Sig s))) = (Lam t tt (Lam v vt s))
 tweakEslam' (Lam t tt (Lam v vt (Var nm))) = (Lam t tt (Lam v vt (Var $ nm++"Val")))
-tweakEslam' e = e
+tweakEslam' e = e -}
 
 unSig (Sig s) = s
 unSig e = e
