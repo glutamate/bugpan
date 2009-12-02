@@ -314,7 +314,12 @@ dispatch opts ("plotsigs":sessNm:sigNm:_) = do
                     ("-s" `elem` opts, do 
                        system "ifconfig eth0 | perl -n -e 'if (m/inet addr:([\\d\\.]+)/g) { print $1 }' | cat >/tmp/my_ip_address" 
                        ip <- readFile "/tmp/my_ip_address"
-                       putStrLn $ "http://"++ip++"/"++s)] $ putStrLn qreply
+                       putStrLn $ "http://"++ip++"/"++s
+                       system $ "chmod -x /var/bugpan/www/"++s
+                       system $ "sed -i 's/\\/var\\/bugpan\\/www\\//\\//g' /var/bugpan/www/somewhere/*.html"
+                       system $ "chmod -x /var/bugpan/www/somewhere/*.png"
+                       return ())] $ putStrLn qreply
+                       
     _ -> putStrLn qreply
 
   --putStrLn qreply
