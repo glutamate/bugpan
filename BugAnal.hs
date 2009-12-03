@@ -5,6 +5,7 @@ import Database
 import TNUtils
 import Query
 import QueryMaker
+import QueryTypes
 import EvalM
 import System.Environment
 import System.Cmd
@@ -12,23 +13,31 @@ import System.Exit
 import Data.List
 import Control.Monad.State.Lazy
  
-  
+--tables  
+
+
 
 tellPrint s = tell $ "io $ putStrLn $ "++show s
 tellPrintNoLn s = tell $ "io $ putStr $ "++show s
 
-tellPrintCode s = tell $ "io $ putStrLn $ \"<pre>\"++"++show s++"++\"</pre>\""
+tellPrintCode s = do
+  tellBeginCode
+  tellPrint s -- $ "io $ putStrLn $ \""++show s++"++\""
+  tellEndCode
+tellBeginCode = tell $ "io $ putStrLn $ \"\\\\begin{code}\\n\""
+tellEndCode = tell $ "io $ putStrLn $ \"\\\\end{code}\\n\""
 
 tellPrintSessionName = do
     tell "sessionIdentifier <- getSessionName"
-    tell "io $ putStrLn $ \"<pre>\"++\"> openSession \"++sessionIdentifier++\"</pre>\""
-
+    tellBeginCode
+    tell "io $ putStrLn $ \"openSession \"++sessionIdentifier"
+    tellEndCode
 tellEverywheres = do
   dfns <- snd `fmap` get
   --io $ print dfns
   mapM_ (tell . ("let "++)) $ reverse dfns 
 
-modimport :: Monad m => String -> CodeWriterT m ()
+modimport :: Monad m => String -> CodeWriterT m () 
 modimport s = tell $ "import "++s
 
 chomp :: String -> String
@@ -70,10 +79,10 @@ mkAnal (('>':q):ss) =
 
 mkAnal ("":ss) = mkAnal ss
 mkAnal ss = do
-  let (para, rest) = span (\ln -> justText ln && (not $ null $ ln)) ss
-  tellPrint "<p>"
+  let (para, rest) = span (\ln -> justText ln && (not $ null $ ln) && (not $ '%' == head ln)) ss
+  tellPrint ""
   mapM tellPrint para
-  tellPrint "</p>"
+  tellPrint ""
   mkAnal rest 
   
 
@@ -176,14 +185,15 @@ procQ writeQ s
            let [[all, lhs, rhs]] = (s =~ "^\\s*(\\w+)\\s*@=\\s*(.+)")::[[String]]     
            in do tell $ "let "++lhs ++" = "++rhs
                  tell $ "storeAsOvwrt "++show lhs ++" "++lhs
-                 when writeQ $ tellPrintCode $ "> "++lhs ++ " = " ++ rhs
+                 when writeQ $ tellPrintCode $ lhs ++ " = " ++ rhs
     | s =~ "^\\s*(\\w+)\\s*=\\s*(.+)" = 
            let [[all, lhs, rhs]] = (s =~ "^\\s*(\\w+)\\s*=\\s*(.+)")::[[String]]     
            in do tell $ "let "++lhs ++" = "++rhs
-                 when writeQ $ tellPrintCode $ "> "++lhs ++ " = " ++ rhs
+                 when writeQ $ tellPrintCode $ lhs ++ " = " ++ rhs
     | s =~ "^\\s*openSession\\s*$" = 
            do tell "inSessionFromArgs $ do"
               indent 3
+              tell "setForLiterate"
               tellNmsTys
               tellPrintSessionName
     | s =~ "^\\s*inEverySession\\s*$" = 
@@ -196,7 +206,7 @@ procQ writeQ s
            in do tell $ "inApproxSession "++show sessnm++" $ do"
                  indent 3
                  tellNmsTys              
-                 tellPrintCode $ "> openSession "++sessnm
+                 tellPrintCode $ "openSession "++sessnm
     | s =~ "^\\s*importHs\\s*(.+)" = 
            let [[all, modnm]] = (s =~ "^\\s*importHs\\s*(.+)")::[[String]]
            in modimport modnm
@@ -212,15 +222,19 @@ procQ writeQ s
            in do --io $ print s
                  modify $ \(i, ss) -> (i, defn:ss)
                  --io $ putStrLn $ "remembering "++defn
-                 when writeQ $tellPrintCode $ "> everywhere "++defn
+                 when writeQ $tellPrintCode $ "everywhere "++defn
     | chomp s == "" = return ()
-    | otherwise = do when writeQ $ tellPrintCode $ unlines $ map ("> "++) (lines s)
+    | otherwise = do when writeQ $ do
+                       tellBeginCode
+                       tellPrint s 
+                       tellEndCode
+                       tellPrintNoLn "| => |"
                      tell $ "askForLiterate $ "++(concat $ map chomp $ lines s)
-                     tellPrint "<p />"
+                     
 
 
 initHtml = 
-           ["<html>",
+           {- ["<html>",
             "<head>",
              "<style>",
              "table { border-top: 1px solid black; ",
@@ -229,11 +243,13 @@ initHtml =
              --"tbody  tr { border-top: 1px solid black; }",
              --"table td, thead th { cell-spacing: 5px; }",
              "</style>",
-            "</head><body>"]
-
+            "</head><body>"] -}
+    ["\\documentclass[a4paper]{article}",
+     "%include polycode.fmt",
+     "\\begin{document}"]
 
 endHtml = 
-      ["</body></html>"]
+      ["\\end{document}"]
 
 
 
@@ -248,9 +264,11 @@ writer s = do
   modimport "TNUtils"
   tell "main = do"
   indent 3
-  mapM tellPrint initHtml
+  when (('\\'/=) $ head $ head $ s) $
+        mapM_ tellPrint initHtml
   mkAnal s
-  mapM tellPrint endHtml
+  when (('\\'/=) $ head $ head $ s) $
+        mapM_ tellPrint endHtml
   tell "return ()"
 main = do 
   allArgs <- getArgs -- (fileNm:rest)
@@ -258,7 +276,7 @@ main = do
   file <- lines `fmap` readFile fileNm
   let fileProper = head $ splitBy '.' fileNm
   let hsFile = fileProper++".hs"
-  let htmlFile = fileProper++".html"
+  let htmlFile = fileProper++".lhs"
   code <- execCodeWriterT "Main" (writer file) 
   writeFile hsFile code
   ghcres <- if ("-p" `elem` opts)
@@ -271,8 +289,8 @@ main = do
                         sessNms <-  getSessionInRootDir "/var/bugpan/sessions/"
                         forM_ sessNms $ \sess -> do
                              let cmd = if ("-p" `elem` opts) 
-                                          then "./"++fileProper++" "++sess++" >"++fileProper++take 6 sess++".html +RTS -p"
-                                          else "./"++fileProper++" "++sess++" >"++fileProper++take 6 sess++".html"
+                                          then "./"++fileProper++" "++sess++" >"++fileProper++take 6 sess++".lhs +RTS -p"
+                                          else "./"++fileProper++" "++sess++" >"++fileProper++take 6 sess++".lhs"
                              putStrLn cmd
                              system cmd
                       else do 

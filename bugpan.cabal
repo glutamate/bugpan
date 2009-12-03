@@ -13,14 +13,20 @@ Library
    Exposed-modules:  Query, QueryTypes, QueryUtils, Numbers, PlotGnuplot, EvalM, Database, HaskShapes, RandomSources, QueryPlots, Expr, ValueIO, HaskSyntaxUntyped, NewSignal
    ghc-options:      -O2
    other-modules:    Parse, Types,Eval, Traverse, Transform, PrettyPrint, BNFC.LexBugpan, BNFC.ParBugpan, BNFC.SkelBugpan,BNFC.PrintBugpan,BNFC.LayoutBugpan ,BNFC.ErrM,UnitTesting, BNFC.AbsBugpan,BuiltIn, TypeCheck, CompiledSrcsSinks
-   Build-depends:    tnutils, probably, process, directory, regex-posix, random, base, bytestring, binary, old-time, storablevector, mtl, data-binary-ieee754, uuid, readline, mersenne-random, storable-tuple
+   Build-depends:    tnutils, probably, process, directory, regex-posix, random, base, bytestring, binary, old-time, storablevector, mtl, data-binary-ieee754, uuid, mersenne-random, storable-tuple
 
 
 Executable bugsess   
    Main-Is:          BugSess.hs
    ghc-options:      -O2
    other-modules:    EvalM, Parse, Types,Database,Eval,Expr, Traverse, Transform, HaskSyntaxUntyped, ValueIO, PrettyPrint, BNFC.LexBugpan, BNFC.ParBugpan, BNFC.SkelBugpan,BNFC.PrintBugpan,BNFC.LayoutBugpan ,BNFC.ErrM,UnitTesting, BNFC.AbsBugpan,BuiltIn, TypeCheck
-   Build-depends:    array, tnutils, probably, haskell98, process, directory, regex-posix, random, base, bytestring, binary, old-time, storablevector, mtl, data-binary-ieee754, uuid, hint, SHA, readline, mersenne-random, storable-tuple
+   Build-depends:    array, tnutils, probably, haskell98, process, directory, regex-posix, random, base, bytestring, binary, old-time, storablevector, mtl, data-binary-ieee754, uuid, hint, SHA, mersenne-random, storable-tuple
+
+Executable buganal   
+   Main-Is:          BugAnal.hs
+   ghc-options:      -O2
+   other-modules:    EvalM, Parse, Types,Database,Eval,Expr, Traverse, Transform, HaskSyntaxUntyped, ValueIO, PrettyPrint, BNFC.LexBugpan, BNFC.ParBugpan, BNFC.SkelBugpan,BNFC.PrintBugpan,BNFC.LayoutBugpan ,BNFC.ErrM,UnitTesting, BNFC.AbsBugpan,BuiltIn, TypeCheck
+   Build-depends:    array, tnutils, probably, haskell98, process, directory, regex-posix, random, base, bytestring, binary, old-time, storablevector, mtl, data-binary-ieee754, uuid, hint, SHA, mersenne-random, storable-tuple
 
 Executable bugdriver   
    Main-Is:            Driver.hs
@@ -46,7 +52,7 @@ Executable runbugpan
 
    Build-depends:    array, tnutils, probably, haskell98, process, directory, regex-posix, 
                      utility-ht, random, base, bytestring, binary, old-time, storablevector, 
-                     mtl, data-binary-ieee754, uuid, GLFW>0.3, unix, stm, OpenGL<2.4, readline,
+                     mtl, data-binary-ieee754, uuid, GLFW>0.3, unix, stm, OpenGL<2.4, 
                      storable-tuple
 --
    c-sources:        Comedi/comedi_hs_helper.c

@@ -235,18 +235,30 @@ gnuplotMany opts nmbxs = do
   let w = optVal 'w' 640 opts
   let term = "set terminal png size "++ show w++","++show h++" crop\n"
   let cmds = start++term ++concatMap plotOne nmcmds
-  --putStrLn cmds
   execGP cmds
 
-  {-writeFile "/tmp/gnuplotCmds" cmds
-  system "gnuplot /tmp/gnuplotCmds"
-  removeFile "/tmp/gnuplotCmds"-}
   forM_ nmcmds $ \(_,cmd) -> cleanupCmds $ map snd cmd
-
   return ()
     where plotOne (fp, plines) = "set output '"++fp++"'\n"++
                                  (showMultiPlot plines)
-  
+
+gnuplotManyLatex :: [String] -> [(String, GnuplotBox)] -> IO ()
+gnuplotManyLatex opts nmbxs = do
+  nmcmds <- forM nmbxs $ \(nm, GnuplotBox x) -> do
+                      cmd <- multiPlot unitRect x
+                      --print2 nm cmd
+                      return (nm,cmd)
+  let start = "set datafile missing \"NaN\"\n"
+  let h = optVal 'h' 480 opts
+  let w = optVal 'w' 640 opts
+  let term = "set terminal latex\n" -- size "++ show w++","++show h++" crop\n"
+  let cmds = start++term ++concatMap plotOne nmcmds
+  execGP cmds
+  forM_ nmcmds $ \(_,cmd) -> cleanupCmds $ map snd cmd
+  return ()
+    where plotOne (fp, plines) = "set output '"++fp++"'\n"++
+                                 (showMultiPlot plines)
+ 
 
 infixl 4 %
 infixr 3 :+:

@@ -70,17 +70,17 @@ instance PlotWithGnuplot FunSeg where
 instance QueryResult [GnuplotBox] where
     qFilterSuccess [] = False
     qFilterSuccess _ = True
-    qReply gpbxs opts = do 
+    qReply gpbxs opts = if "-litlatex" `elem` opts 
+                           then queryManyGnuBoxLit gpbxs opts
+                           else queryManyGnuBox gpbxs opts
+      
+
+queryManyGnuBox gpbxs opts = do 
       let resdir = optStr 'd' "somewhere" opts
       unlessM (doesDirectoryExist $ "/var/bugpan/www/"++resdir) $ do
                        createDirectoryIfMissing False $ "/var/bugpan/www/"++resdir
                        system $ "chmod 777 /var/bugpan/www/"++resdir
                        return ()
-      --createDirectoryIfMissing False $ "/var/bugpan/www/"++resdir
---      setFileMode ("/var/bugpan/www/"++resdir) 777
-      --system $ "chmod 777 /var/bugpan/www/"++resdir
-      --p <- getPermissions ("/var/bugpan/www/"++resdir) 
-      --setPermissions ("/var/bugpan/www/"++resdir) $ p { writable = True }
       u <- (show. hashUnique) `fmap` newUnique
       let htmlFile  ="/var/bugpan/www/"./resdir./("plots"++u++".html" )
       h <- openFile (htmlFile) WriteMode
@@ -96,7 +96,17 @@ instance QueryResult [GnuplotBox] where
         system $ "gnome-open file://"++ htmlFile
         return ()
       return $ "file://"++ htmlFile
-      
+
+
+queryManyGnuBoxLit gpbxs opts = do 
+      u <- (show. hashUnique) `fmap` newUnique
+      fnms <- forM gpbxs .  const $ do fnm <- ("latpic"++) `fmap` uniqueIntStr
+                                       --putStrLn $ "\\input{"++fnm++"}"
+                                       return $ fnm
+      gnuplotManyLatex opts $ zip fnms gpbxs 
+      return $ unlines $ map (\fn->"\\input{"++fn++"}") fnms
+
+
 
 plot :: PlotWithGnuplot a => a -> [GnuplotBox]
 plot x = [GnuplotBox x]

@@ -44,7 +44,7 @@ import ValueIO
 import Data.Unique
 import qualified Data.Binary as B
 import System.Environment
-import System.Console.Readline
+--import System.Console.Readline
 import System.IO
 import Math.Probably.Student
 import Math.Probably.FoldingStats
@@ -217,7 +217,7 @@ inSession :: (MonadIO m, Functor m) => Session -> StateT QState m a -> m a
 inSession s sma =  do args <- liftIO $ getArgs
                       gen <- liftIO $ getStdGen
                       rnds <- liftIO $ randoms gen
-                      fst `fmap`  (runStateT sma $ QState s 0 0 True args Nothing rnds)
+                      fst `fmap`  (runStateT sma $ QState s 0 0 True args Nothing rnds False False)
 
 inSessionFromArgs :: (MonadIO m, Functor m) => StateT QState m a -> m a
 inSessionFromArgs sma = do allargs <- liftIO $ getArgs
@@ -225,7 +225,7 @@ inSessionFromArgs sma = do allargs <- liftIO $ getArgs
                            sess <- liftIO $ loadApproxSession "/var/bugpan/sessions/" nm
                            gen <- liftIO $ getStdGen
                            rnds <- liftIO $ randoms gen
-                           fst `fmap`  (runStateT sma $ QState sess 0 0 True (opts++args) Nothing rnds)
+                           fst `fmap`  (runStateT sma $ QState sess 0 0 True (opts++args) Nothing rnds False False)
 
 
 inNewSession :: (MonadIO m, Functor m) => StateT QState m a -> m a
@@ -299,6 +299,8 @@ io = liftIO
 undefinedPerformQuery :: MonadIO m => StateT QState m a -> a
 undefinedPerformQuery = error $ "undefinedPerformQuery"
 
+{-
+
 initUserInput = liftIO $ do --hSetBuffering stdin NoBuffering 
                             initialize
 
@@ -340,6 +342,8 @@ userConfirm s = do liftIO $ putStr $ s++ " (y/N)? "
                    choice <- liftIO $ readChar
                    return $ toLower choice == 'y'
 
+
+-}
 
 {-plot :: [V] -> IO ()
 plot vs = do --let g = map ansToPlot ans

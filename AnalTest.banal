@@ -1,24 +1,26 @@
 hello world
+
 > openSession
 > take 1 approachLoV
+
 how are you
+
 > x = take 1 ecVoltage
-%> plot $ (A x
-%>        :||: B x) :==: (C x :||: D x)
-%> close
+> plot $ (A x :||: B x) :==: (C x :||: D x)
+> close
 
-> break
+%> break
 
-> openSession 40
+%> openSession 40
+
 foobar
-> take 2 displacedAngle
+
+%> take 2 displacedAngle
 
 now for testing interpolation
 
-> ss = [sineSig]
-
-> importHs NewSignal
-
-> plot $ ss :+: upsample 10 ss
+%> ss = [sineSig]
+%> importHs NewSignal
+%> plot $ ss :+: upsample 10 ss
 
 That's all folks

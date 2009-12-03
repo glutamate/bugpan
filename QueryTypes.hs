@@ -62,7 +62,9 @@ data QState = QState { qsSess:: Session,
                        realTime :: Bool,
                        shArgs :: [String],
                        remoteCmdFile :: Maybe String,
-                       rnds :: [Double]
+                       rnds :: [Double],
+                       forLiterate :: Bool,
+                       forTable :: Bool
                      } deriving Show
 
 type QueryM = StateT QState IO
@@ -92,6 +94,12 @@ getSessionName = do Session bdir _ <- getSession
 openReplies = modify (\s-> s { shArgs = "-o" : shArgs s })
 plotSize w h = modify (\s-> s { shArgs = ("-h"++show h) : ("-w"++show w): shArgs s })
 
+setForLiterate = modify (\s-> s { forLiterate = True})
+setForTable = modify (\s-> s { forTable = True})
+setNotForTable = modify (\s-> s { forTable = False})
+
+isForLiterate = forLiterate `fmap` get
+isForTable = forTable `fmap` get
 
 --zipWithTime :: Signal a -> Signal (a,Double)
 --zipWithTime (Signal t1 t2 dt sf) = Signal t1 t2 dt $ \pt -> (sf pt, (realToFrac pt)*dt+t1)
@@ -238,9 +246,10 @@ ask qx = do
 
 askForLiterate :: (QueryResult a, MonadIO m) => a -> StateT QState m ()
 askForLiterate qx = do
+  modify (\s-> s { shArgs = "-litlatex" : shArgs s })
   x <- qResThroughSession qx
   args <- shArgs `fmap` get
-  str <- liftIO $ qReply x args
+  str <- liftIO $ qReply x (args)
   --let str = unlines $ [s | QString s <- qos ]
   --liftIO $ putStrLn $ qos
   cond [(str =~ "file://(.+)\\.html", liftIO $ do
@@ -250,12 +259,16 @@ askForLiterate qx = do
         (str =~ "file://(.+)\\.png", liftIO $ do
                   let [[_, s]] = str =~ "file://(.+)\\.png"
                   putStr $ "<img src=\""++ s++".png\" />")
-       ] $ (liftIO $ putStrLn $ "<pre>=> "++str++"</pre>")
+       ] $ (liftIO $ putStrLn $ noTypeLine str)
   return ()
+
+noTypeLine s = unlines $ ntl $ lines s
+    where ntl ls@(ln:lns) | "type = " `isPrefixOf` ln = lns
+                          | otherwise = ls
 
 askForLiterateTable :: (QueryResult a, MonadIO m) => a -> StateT QState m ()
 askForLiterateTable qx = do
-  modify (\s-> s { shArgs = "-g" : shArgs s })
+  modify (\s-> s { shArgs = "-litlatex" :"-g" : shArgs s })
   x <- qResThroughSession qx
   args <- shArgs `fmap` get
   str <- liftIO $ qReply x args
