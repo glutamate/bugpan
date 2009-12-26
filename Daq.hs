@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+
 module Daq where
 import Foreign.C
 import Foreign.Ptr
@@ -7,10 +9,13 @@ import Expr
 import Numbers
 import Data.HashTable as H
 import EvalM
+#ifndef NODAQ
 import Comedi.Comedi
+#endif
 import Control.Concurrent hiding (Chan)
 import Data.Array
 
+#ifndef NODAQ
 setupInput ::  Int -> IO ()
 setupInput rtHz = do subdev <- findSubdeviceByType  AnalogInput
                      new_trial (fromIntegral $ subdev) 
@@ -70,3 +75,6 @@ compileAdcSrc rs@(ReadSource nm ("adc", Const (PairV (PairV chanS rtHzS) lenS)))
     ]
 
 compileAdcSrc rs = error $ "compileAdcSrc :"++show rs
+#else
+compileAdcSrc rs = error $ "compileAdcSrc ("++show rs++") compiled with NODAQ"
+#endif
