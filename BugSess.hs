@@ -326,28 +326,26 @@ dispatch opts ("plotsigs":sessNm:sigNm:_) = do
 
   return ()
 
-dispatch opts ("mksdur":sessNm:durnm:val:_) = do
-  qres <- inApproxSession sessNm $ do
-            storeAsOvwrt durnm $ dur val
+dispatch opts ("mkdur":sessNm:durnm:rest) = do
+  inApproxSession sessNm $ do
+            case rest of
+              [] -> storeAsOvwrt durnm (dur ()) >> return ()
+              val:[] -> case safeRead val of
+                          Just x -> storeAsOvwrt durnm (durd x) >> return ()
+                          Nothing -> storeAsOvwrt durnm (dur val) >> return ()
   return ()
 
 
-dispatch opts ("mkndur":sessNm:durnm:val:_) = do
-  qres <- inApproxSession sessNm $ do
-            case safeRead val of
-              Just x -> storeAsOvwrt durnm (durd x) >> return ()
-              Nothing -> return ()
-  return ()
-
-
-dispatch opts ("addnev":sessNm:evNm:val:_) = do
+dispatch opts ("addev":sessNm:evNm:rest) = do
   qres <- inApproxSession sessNm $ do
             sess <- getSession
             tnow <- io $ getClockTime
             let t0 = diffInS tnow $ tSessionStart sess
-            case safeRead val of
-              Just x -> storeAsAppend evNm [(t0::Double,x::Double)] >> return ()
-              Nothing -> return ()
+            case rest of
+              [] -> storeAsAppend evNm [(t0::Double,())] >> return ()
+              val:[] -> case safeRead val of
+                          Just x -> storeAsAppend evNm [(t0::Double,x::Double)] >> return ()
+                          Nothing -> storeAsAppend evNm [(t0::Double,val)] >> return ()          
   return ()
 
     
@@ -365,9 +363,8 @@ dispatch os ss = putStrLn $ unlines ["",
               "\tbugsess convert1 {session}",
               "\tbugsess lnsess {sessionDir}",
               "\tbugsess mvevs {session} {oldName} {newName}",
-              "\tbugsess mkndur {session} {durationName} {value}",
-              "\tbugsess addnev {session} {eventName} {value}",
-              "\tbugsess mksdur {session} {durationName} {value}",
+              "\tbugsess mkdur {session} {durationName} [value]",
+              "\tbugsess addev {session} {eventName} [value]",
               "\tbugsess plotsigs {session} {signalName}",
               "\tbugsess askall {query}"
  ]

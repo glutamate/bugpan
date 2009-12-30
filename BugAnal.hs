@@ -12,6 +12,7 @@ import System.Cmd
 import System.Exit
 import Data.List
 import Control.Monad.State.Lazy
+import Data.Maybe
  
 --tables  
 
@@ -55,10 +56,10 @@ mkAnal (('>':q):ss) =
         (tablines, rest) = span (\ln-> not (justText ln) && 
                                                    indentMoreThan ind (tail ln)) ss
     in cond [("table" `isPrefixOf` (chomp q1), do
-                procTable q1 tablines
+                procTable (words q1) tablines
                 mkAnal rest), 
              ("t-test" `isPrefixOf` (chomp q1), do
-                procTtest q1 tablines
+                procTtest (words q1) tablines
                 mkAnal rest),
              ("defineSession" `isPrefixOf` (chomp q1), do
                 liftIO $ case words q1 of
@@ -155,7 +156,10 @@ procTtest q [tl] = do
 
   return ()
 
-procTable q tablines = do
+procTable qs tablines = do
+  let mfiltr = case qs of
+                 "table":"where":f:_ -> Just f
+                 _ -> Nothing
   tellPrint "<table cellspacing = \"5\"><thead><tr>"
   tellPrint "<th>session</th>"
   tellPrint $ concatMap (\l-> "<th>"++tail (chomp l)++"</th>") tablines
@@ -163,6 +167,8 @@ procTable q tablines = do
   tell "inEverySession_ $ do"
   indent 3
   tellNmsTys
+  when (isJust mfiltr) $ do tell $ "when ("++fromJust mfiltr++") $ do"
+                            indent 3                       
   tellPrint "<tr>"
   tell "sessionIdentifier <- getSessionName"
   tell "io $ putStrLn $ \"<td align=center>\"++take 6 sessionIdentifier++\"</td>\""
@@ -173,7 +179,9 @@ procTable q tablines = do
                          tellPrint "</td>"
   tellPrint "</tr>"
   -- tell $ "io $ putStrLn $ "
-  indent $ -3
+  if (isJust mfiltr) 
+     then indent $ -6
+     else indent $ -3
   tellPrint "</tbody></table>"
 
   return ()
@@ -201,6 +209,14 @@ procQ writeQ s
               indent 3
               tellNmsTys
               tellPrintSessionName
+    | s =~ "^\\s*inSessionsWhere\\s*(.+)" = 
+           let [[all, filtr]] = (s =~ "^\\s*inSessionsWhere\\s*(.+)")::[[String]]
+           in do tell $ "inApproxSession "++show filtr++" $ do"
+                 indent 3
+                 tellNmsTys              
+                 tellPrintCode $ "inSessionsWhere "++filtr
+                 tell $ "when ("++filtr++") $ do"
+                 indent 3
     | s =~ "^\\s*openSession\\s*(.+)" = 
            let [[all, sessnm]] = (s =~ "^\\s*openSession\\s*(.+)")::[[String]]
            in do tell $ "inApproxSession "++show sessnm++" $ do"
@@ -214,7 +230,7 @@ procQ writeQ s
            let [[all, h, w]] = (s =~ "^\\s*plotSize\\s*(.+)x(.+)")::[[String]]
            in tell $ "plotSize "++h++" "++w
     | s =~ "^\\s*close\\s*" = do tell "return ()"
-                                 indent $ -3
+                                 indentAbs $ 5
     | s =~ "^\\s*break\\s*" = tellPrint "<div style=\"page-break-before: always\" />"
                                 
     | s =~ "^\\s*everywhere\\s*(.+)" = 
