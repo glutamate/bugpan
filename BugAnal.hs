@@ -63,16 +63,17 @@ mkAnal (('>':q):ss) =
                 mkAnal rest),
              ("defineSession" `isPrefixOf` (chomp q1), do
                 liftIO $ case words q1 of
-                  defS:sessNm:goal:_ -> case last defS of
-                                          '!' -> do
-                                            s <- loadApproxSession sessNm root
-                                            deleteSession s
-                                            runGoal ("new:"++sessNm) goal
-                                          '+' -> ifM (existsSession sessNm root)
-                                                     (runGoal sessNm goal)
-                                                     (runGoal ("new:"++sessNm) goal)
-                                          _ -> whenM (not `fmap` existsSession sessNm root) $
-                                                         runGoal ("new:"++sessNm) goal
+                  defS:sessNm:goal:rest -> let ntimes = (safeHead rest >>= safeRead) `orJust` 1 in
+                                           case last defS of
+                                             '!' -> do
+                                               s <- loadApproxSession sessNm root
+                                               deleteSession s
+                                               runGoal ("new:"++sessNm) goal ntimes
+                                             '+' -> ifM (existsSession sessNm root)
+                                                        (runGoal sessNm goal ntimes)
+                                                        (runGoal ("new:"++sessNm) goal ntimes)
+                                             _ -> whenM (not `fmap` existsSession sessNm root) $
+                                                         runGoal ("new:"++sessNm) goal ntimes
                   _ -> return ()
                 return () )] $  do 
                      procQ writeQ $ unlines $ chomp q1 : map (tail) tablines
@@ -87,10 +88,10 @@ mkAnal ss = do
   mkAnal rest 
   
 
-runGoal :: String -> String -> IO ()
-runGoal sessNm goal = do
+runGoal :: String -> String -> Int -> IO ()
+runGoal sessNm goal n = do
   system $ "ghc -O2 --make "++goal
-  system $ "./"++goal++" "++sessNm
+  forM [1..n] $ const $ system $ "./"++goal++" "++sessNm
   return ()
            
 
@@ -127,7 +128,10 @@ tellNmsTys = do
                                                       ]
   tellEverywheres
 
-procTtest q [tl1, tl2] = do
+procTtest qs [tl1, tl2] = do
+  let mfiltr = case qs of
+                 "table":"where":f:_ -> Just f
+                 _ -> Nothing
   tell "tres <- ttest $ do"
   let q1= (chomp $ tail $ tl1)
   let q2= (chomp $ tail $ tl2)
@@ -142,7 +146,10 @@ procTtest q [tl1, tl2] = do
 
   return ()
 
-procTtest q [tl] = do
+procTtest qs [tl] = do
+  let mfiltr = case qs of
+                 "table":"where":f:_ -> Just f
+                 _ -> Nothing
   tell "tres <- ttest1 $ do"
   let q1= (chomp $ tail $ tl)
   indent 3
@@ -160,29 +167,31 @@ procTable qs tablines = do
   let mfiltr = case qs of
                  "table":"where":f:_ -> Just f
                  _ -> Nothing
-  tellPrint "<table cellspacing = \"5\"><thead><tr>"
-  tellPrint "<th>session</th>"
-  tellPrint $ concatMap (\l-> "<th>"++tail (chomp l)++"</th>") tablines
-  tellPrint "</tr></thead><tbody>"
+  tellPrintNoLn "\\begin{tabular}{ l"
+  tellPrintNoLn $ concatMap (\l-> " | c") tablines
+  tellPrint " }"
+  tellPrintNoLn "session"
+  tellPrintNoLn $ concatMap (\l-> " & "++tail (chomp l)) tablines
+  tellPrint " \\"
+  tellPrint "\\hline"
   tell "inEverySession_ $ do"
   indent 3
   tellNmsTys
   when (isJust mfiltr) $ do tell $ "when ("++fromJust mfiltr++") $ do"
                             indent 3                       
-  tellPrint "<tr>"
+  --tellPrint "<tr>"
   tell "sessionIdentifier <- getSessionName"
-  tell "io $ putStrLn $ \"<td align=center>\"++take 6 sessionIdentifier++\"</td>\""
-
+  tell "io $ putStrLn $ take 6 sessionIdentifier"
   forM_ (tablines ) $ \ln -> do
-                         tellPrint "<td align=center>"
+                         tellPrintNoLn " & "
                          tell $ "askForLiterateTable $ "++chomp (tail ln)
-                         tellPrint "</td>"
-  tellPrint "</tr>"
+  tellPrint " \\"
   -- tell $ "io $ putStrLn $ "
   if (isJust mfiltr) 
      then indent $ -6
      else indent $ -3
-  tellPrint "</tbody></table>"
+  tellPrint "\\hline"
+  tellPrint "\\end{tabular}"
 
   return ()
 
@@ -292,29 +301,22 @@ main = do
   file <- lines `fmap` readFile fileNm
   let fileProper = head $ splitBy '.' fileNm
   let hsFile = fileProper++".hs"
-  let htmlFile = fileProper++".lhs"
+  let lhsFile = fileProper++".lhs"
   code <- execCodeWriterT "Main" (writer file) 
   writeFile hsFile code
   ghcres <- if ("-p" `elem` opts)
                then system $ "ghc -O2 -prof -auto-all --make "++hsFile
                else system $ "ghc -O2 --make "++hsFile
+  let profOpts =  if ("-p" `elem` opts)
+                    then " +RTS -p"
+                    else ""
   case ghcres of
     ExitFailure _ -> fail $ "ghc fail: "++show ghcres
-    ExitSuccess -> if "-a" `elem` opts 
-                      then do
-                        sessNms <-  getSessionInRootDir "/var/bugpan/sessions/"
-                        forM_ sessNms $ \sess -> do
-                             let cmd = if ("-p" `elem` opts) 
-                                          then "./"++fileProper++" "++sess++" >"++fileProper++take 6 sess++".lhs +RTS -p"
-                                          else "./"++fileProper++" "++sess++" >"++fileProper++take 6 sess++".lhs"
-                             putStrLn cmd
-                             system cmd
-                      else do 
-                        if ("-p" `elem` opts)
-                           then system $ "./"++fileProper++" "++intercalate " " ((opts\\["-o", "-a"])++rest) ++" >"++htmlFile++ " +RTS -p"
-                           else system $ "./"++fileProper++" "++intercalate " " ((opts\\["-o", "-a"])++rest) ++" >"++htmlFile
-                        when ("-o" `elem` opts) $ do
-                             system $"gnome-open "++htmlFile
+    ExitSuccess -> do 
+                        system $ "./"++fileProper++" "++intercalate " " ((opts\\["-o", "-a"])++rest) ++" >"++lhsFile++profOpts
+                        unless ("-nopdf" `elem` opts) $ do
+                             system $ "lhs2tex --poly -o "++fileProper++".tex"
+                             system $ "pdflatex "++fileProper++".tex"
                              return ()
                         return ()
   return ()

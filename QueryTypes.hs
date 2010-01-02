@@ -281,7 +281,7 @@ askForLiterateTable qx = do
         (str =~ "file://(.+)\\.png", liftIO $ do
                   let [[_, s]] = str =~ "file://(.+)\\.png"
                   putStr $ "<img src=\""++ s++".png\" />")
-       ] $ (liftIO $ putStrLn $ str)
+       ] $ (liftIO $ putStr $ str)
   modify (\s-> s { shArgs = tail $ shArgs s })
   return ()
 
