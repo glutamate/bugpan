@@ -13,6 +13,7 @@ import System.Exit
 import Data.List
 import Control.Monad.State.Lazy
 import Data.Maybe
+import System.IO
  
 --tables  
 
@@ -168,16 +169,16 @@ procTable qs tablines = do
                  "table":"where":f:_ -> Just f
                  _ -> Nothing
   tellPrintNoLn "\\begin{tabular}{ l"
-  tellPrintNoLn $ concatMap (\l-> " | c") tablines
+  tellPrintNoLn $ concatMap (\l-> " || c") tablines
   tellPrint " }"
   tellPrintNoLn "session"
   tellPrintNoLn $ concatMap (\l-> " & "++tail (chomp l)) tablines
-  tellPrint " \\"
+  tellPrint " \\\\"
   tellPrint "\\hline"
   tell "inEverySession_ $ do"
   indent 3
   tellNmsTys
-  when (isJust mfiltr) $ do tell $ "when ("++fromJust mfiltr++") $ do"
+  when (isJust mfiltr) $ do tell $ "when (not . null $ "++fromJust mfiltr++") $ do"
                             indent 3                       
   --tellPrint "<tr>"
   tell "sessionIdentifier <- getSessionName"
@@ -185,7 +186,7 @@ procTable qs tablines = do
   forM_ (tablines ) $ \ln -> do
                          tellPrintNoLn " & "
                          tell $ "askForLiterateTable $ "++chomp (tail ln)
-  tellPrint " \\"
+  tellPrint " \\\\"
   -- tell $ "io $ putStrLn $ "
   if (isJust mfiltr) 
      then indent $ -6
@@ -224,7 +225,7 @@ procQ writeQ s
                  indent 3
                  tellNmsTys              
                  tellPrintCode $ "inSessionsWhere "++filtr
-                 tell $ "when ("++filtr++") $ do"
+                 tell $ "when (not . null $ "++filtr++") $ do"
                  indent 3
     | s =~ "^\\s*openSession\\s*(.+)" = 
            let [[all, sessnm]] = (s =~ "^\\s*openSession\\s*(.+)")::[[String]]
@@ -287,6 +288,7 @@ writer s = do
   modimport "PlotGnuplot"
   modimport "Data.List"
   modimport "TNUtils"
+  modimport "Control.Monad"
   tell "main = do"
   indent 3
   when (('\\'/=) $ head $ head $ s) $
@@ -315,8 +317,10 @@ main = do
     ExitSuccess -> do 
                         system $ "./"++fileProper++" "++intercalate " " ((opts\\["-o", "-a"])++rest) ++" >"++lhsFile++profOpts
                         unless ("-nopdf" `elem` opts) $ do
-                             system $ "lhs2tex --poly -o "++fileProper++".tex"
-                             system $ "pdflatex "++fileProper++".tex"
-                             return ()
+                          print "generating pdf..."
+                          hFlush stdout
+                          system $ "lhs2TeX --poly -o "++fileProper++".tex "++fileProper++".lhs"
+                          system $ "pdflatex "++fileProper++".tex"
+                          return ()
                         return ()
   return ()

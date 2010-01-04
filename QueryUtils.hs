@@ -280,6 +280,9 @@ gaussian dt mean sd = let t1 =(-5*sd)
                           arr = SV.pack $ map (gaussianf mean sd) (sigTimePoints sig)
                       in sig 
 
+tagValues :: (Eq a, Tagged t) => [t a] -> [a]
+tagValues = nub . map getTag
+
 convolveWithin :: (Storable a, Num a) => [Duration b] -> Signal a -> [Event a] -> [Signal a]
 convolveWithin [] _ _ = []
 convolveWithin (dur@((td1, td2), v):durs) irf@(Signal t1 t2 dt sf Eq) evs' =
@@ -433,6 +436,13 @@ histSigBZ bz evs  = let (hlist, lo, hi, bin)= histListBZ bz $ map (getTag) evs
                         len = length hlist                        
                     in Signal lo hi bin (SV.pack hlist) Eq
 
+spikeHistOver :: [Duration a] -> Double -> [Event b] -> Signal Double
+spikeHistOver [] _ _ = ConstSig 0
+spikeHistOver (d:durs) dt es = sigTimeZero (hist (during [d] es)) + spikeHistOver durs dt es
+    where sigTimeZero (Signal t1 t2 dt a e) = Signal 0 (t2-t1) dt a e
+          sigTimeZero s = s
+          hist evs = let (hlist, lo, hi, bin) = histListBZ dt $ map fst evs
+                     in Signal lo hi bin (SV.pack hlist) Eq
 
 integralOfSig s@(Signal t1 t2 dt _ _) =
     let sm = sum $ sigToList s

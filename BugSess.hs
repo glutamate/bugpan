@@ -30,6 +30,7 @@ import PlotGnuplot
 import QueryUtils
 import QueryPlots
 import QueryMaker
+import System.IO
 
 
 main = do
@@ -348,7 +349,26 @@ dispatch opts ("addev":sessNm:evNm:rest) = do
                           Nothing -> storeAsAppend evNm [(t0::Double,val)] >> return ()          
   return ()
 
-    
+dispatch opts ("check":sessSpec:_) = 
+    if sessSpec == "all"
+       then do  sesns <- getSessionInRootDir root
+                forM_ sesns checkit
+       else checkit sessSpec
+
+    where checkit sessNm = do
+            sess <- loadApproxSession root sessNm
+            tps <- sessionTypes sess
+            putStr $ sessNm++ ": "
+            hFlush stdout
+            lens<- forM ["signals", "events", "durations"] $ \kind -> do
+                                   sigs <- getDirContents $ (oneTrailingSlash $ baseDir sess)++kind
+                                   let path  = (oneTrailingSlash $ baseDir sess)++kind++"/"
+                                   forM sigs $ \sig -> do 
+                                     fnms <- getSortedDirContents $ path++sig
+                                     utevs <- forM fnms $ \fn-> liftIO $ loadVs $ path++sig++"/"++fn
+                                     return $ sum $ map length utevs
+            putStrLn $ "OK ("++show ((sum $ map sum lens) + (length $ concatMap show tps))++")"
+
 dispatch os ss = putStrLn $ unlines ["",
               "Unknown command: bugsess "++intercalate " " os++" "++intercalate " " ss,
               "",
