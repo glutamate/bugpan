@@ -124,6 +124,15 @@ crossSigUp thr s@(Signal t1 t2 dt arr (Kont k)) =
     idxsToTimes s $ SV.findIndices id $ SV.zipWith (f) arr (SV.tail arr)
         where f y1 y2 = (k y2) > thr && (k y1) < thr
 
+(??) :: (a->Bool) -> Signal a -> [(Double,())]
+p ?? s@(Signal t1 t2 dt arr Eq) = 
+    zip (idxsToTimes s $ SV.findIndices id $ SV.zipWith (p') arr (SV.tail arr)) (repeat ())
+        where p' y1 y2 = p y2  && not (p y1)
+p ?? s@(Signal t1 t2 dt arr (Kont k)) = 
+    zip (idxsToTimes s $ SV.findIndices id $ SV.zipWith (p') arr (SV.tail arr)) (repeat ())
+        where p' y1 y2 = p (k y2)  && not (p (k y1))
+
+
 
 idxsToTimes :: Signal a -> [Int] -> [Double]
 idxsToTimes (Signal t1 t2 dt _ _) = map $ (+t1) . (*dt) . realToFrac

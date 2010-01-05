@@ -323,6 +323,14 @@ askPics qx = do
   conts <- liftIO $ readFile $ drop 7 qos
   return $ extractImages conts
 
+askPicsIO :: QueryResult a => a -> IO [String]
+askPicsIO x = do
+  qos <- qReply x []
+  --liftIO $ putStrLn str
+  --let str = concat [s | QString s <- qos ]
+  conts <- readFile $ drop 7 qos
+  return $ extractImages conts
+
 unitList x = [x]
 
 extractImages :: String -> [String]

@@ -83,50 +83,15 @@ dispatch opts ("ask1":sessNm:queryStr':_) = do
 dispatch opts ("askall":q:_) = do
   sesns <- getSessionInRootDir root
   forM_ sesns $ \sNm -> do
+    putStr $ "bugsess ask1 "++sNm++" '"++q++"': "
+    hFlush stdout
     system $ "bugsess ask1 "++sNm++" '"++q++"'"
            
 
-dispatch opts ("ask":sessNm:queryStr':_) = do
-  sess <- loadApproxSession root sessNm
-  let sessNm = last . splitBy '/' $ baseDir sess 
-  let queryStr = preprocessQuery queryStr'
-  when (not $ validateQuery queryStr) $
-       fail $ "cannot validate query string"
-  --putStrLn queryStr
-  --print sessNm
-  tps <- sessionTypes sess
-  setCurrentDirectory "/var/bugpan/"
-  --setResourceLimit ResourceOpenFiles $ ResourceLimits (ResourceLimit 32000) (ResourceLimit 32000) 
-  --mapM_ print tps
-  let cmd = mkQuery tps ("\""++ sessNm++"\"") queryStr "return $ QResBox "
-  out <- runInterpreter $ do
-           --loadModules ["Query", "QueryTypes", "QueryUtils"]
-           --setTopLevelModules [""]
-           setImportsQ $ map withNothing ["Prelude","Query", "QueryTypes", "QueryUtils", 
-                                          "Numbers", "Math.Probably.PlotR"]
-           
-           n <- interpret (unlines cmd) (as :: IO QueryResultBox)
-           return n
-  --QResBox qres <- (theQuery v) sessNm
-  --print qres
-  case out of
-    Right outaction -> do 
-             QResBox qres <- outaction 
-             qreply <- qReply qres opts
-             case dropPrefix "file:///var/bugpan/www/" qreply of
-               ("",s) -> cond [("-o" `elem` opts,  do
-                                        system $ "gnome-open "++qreply
-                                        return ()),
-                              ("-s" `elem` opts, do 
-                                 system "ifconfig eth0 | perl -n -e 'if (m/inet addr:([\\d\\.]+)/g) { print $1 }' | cat >/tmp/my_ip_address" 
-                                 ip <- readFile "/tmp/my_ip_address"
-                                 putStrLn $ "http://"++ip++"/"++s)] $ putStrLn qreply
-               _ -> putStrLn qreply
-
-                     
-    Left err -> do putStrLn $ unlines cmd 
-                   print err
-  return ()
+dispatch opts ("ask":sessNm:rest) = do
+  if sessNm == "all"
+     then dispatch opts $ "askall":rest
+     else dispatch opts $ "ask1":sessNm:rest
 
 dispatch _ ("convert1":sessNm:_) = do
   sess <- loadApproxSession root sessNm

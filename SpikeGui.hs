@@ -46,7 +46,6 @@ main = spikeDetectIO
 autoSpikes sigNm = do
   sigs <- signalsDirect sigNm 
   running <- durations "running" ()
-  io $ initGUI
   let nsigs = length sigs
 
   Session bdir _ <- getSession
@@ -65,13 +64,17 @@ autoSpikes sigNm = do
 
   labelProg <- io $ labelNew $ Nothing
 
-  currentThreshold <- io $ newIORef 0
+  currentThreshold <- io $ newIORef (0::Double)
   currentStart <- io $ newIORef 0
   currentNumberPerView <- io $ newIORef 8
+  currentSigs <- io $ newIORef []
 
   let updateProg = do st <- readIORef currentStart
                       num <- readIORef currentNumberPerView
                       labelSetText labelProg  $ show st++"-"++show (st+num) ++"/"++show nsigs
+                      let cursigs = downSample 500 $ take num $ drop st sigs
+                      io $ writeIORef currentSigs cursigs
+
   io $ updateProg
 
   io $ forM_ [0..3] $ \h-> do
@@ -84,24 +87,30 @@ autoSpikes sigNm = do
                               boxPackStart hb vb PackGrow 0
                      boxPackStart hbox2 hb PackGrow 0
 
+
   let displayData  = do
-                     io $ putStr "pca..."
+                     --t1 <- io $ tic
+                     --io $ putStr "pca..."
                      -- plotSize 500 500 
                      -- luspic <- askPics $ plot $ LabelConsecutively $ map (clusteredvs!!) [0..realnclust-1]
                      plotSize 350 220
 
                      start <- io $ readIORef currentStart
                      num <- io $ readIORef currentNumberPerView
-                     let cursigs = take num $ drop start sigs
+                     --let cursigs = take num $ drop start sigs
                      tv <- io $ readIORef currentThreshold
-                     pics <- askPics $ plotManyBy (map sigDur cursigs) $ DownTo 500 cursigs :+: tv `tag` map sigDur cursigs
+                     
+                     cursigs <- io $ readIORef currentSigs
+                     pics <- askPics $ plotManyBy (map sigDur cursigs) $ cursigs :+: tv `tag` map sigDur cursigs
+                     --pics <- askPics $ plotManyBy (map sigDur cursigs) $ DownTo 500 cursigs :+: tv `tag` map sigDur cursigs
                      forM_ (zip [0..(num-1)] cursigs) $ \(i,sig)-> do
                        --io $ print (i, num, length cursigs)
                        --pic <- askPics $ plot $ DownTo 500 [cursigs!!i] :+: tv `tag` [sigDur $ cursigs!!i]
                        io $ imageSetFromFile (indivIms!!i) $ (pics!!i)
                        return ()
 
-                     io $ putStrLn "done"
+                     --io $ putStr "done: "
+                     --io $ toc t1 >>= print
                      --fail "foo"                    
                      return ()
                
@@ -111,14 +120,16 @@ autoSpikes sigNm = do
         let cursigs = take num $ drop start sigs
         threshval <- io $ readIORef currentThreshold
                            
-        let spikes = if threshval >0
+        --let t1 = sigT1 $ head sigs 
+        --let t2 = sigT2 $ last sigs 
+        {-let spikes = if threshval >0
                        then crossesUp (threshval `tag` (map sigDur cursigs)) cursigs
-                       else crossesDown (threshval `tag` (map sigDur cursigs)) cursigs
+                       else crossesDown (threshval `tag` (map sigDur cursigs)) cursigs-}
 
         writeIORef currentStart (start+num)
         io $ updateProg
         inApproxSession sessNm $ do
-                     storeAsAppend "spikesManual" spikes
+                     storeAsAppend "spikeThreshold" (threshval `tag` (map sigDur cursigs))
                      displayData
                                 --putStrLn $ "saved "++show (length finalEvs)++" spikes..."
                                 --print finalEvs
@@ -130,17 +141,22 @@ autoSpikes sigNm = do
                            displayData
       dispatchKey "k" = do io $ modifyIORef currentThreshold (\x->x+1)
                            displayData
+      dispatchKey "n" = do io $ modifyIORef currentThreshold (negate)
+                           displayData
       dispatchKey "space" = do io $ saveAction 
       dispatchKey "BackSpace" = do curnum<- io $ readIORef currentNumberPerView 
                                    io $ widgetHide $ indivIms!!(curnum-1)
                                    io $ writeIORef currentNumberPerView (curnum-1)
+                                   io $ updateProg
                                    displayData
       dispatchKey "Insert"    = do curnum<- io $ readIORef currentNumberPerView 
                                    io $ widgetShow $ indivIms!!(curnum)
                                    io $ writeIORef currentNumberPerView (curnum+1)
+                                   io $ updateProg
                                    displayData
 
-      dispatchKey s = do io $ putStrLn $ "hit unknown key: "++show s
+      dispatchKey s = do --io $ putStrLn $ "hit unknown key: "++show s
+                         return ()
 
   io $ onClicked buttonNext saveAction -- (putStrLn "Hello World")
   io $ onClicked buttonUp $ do
@@ -209,8 +225,34 @@ autoSpikes sigNm = do
   --io $ print $ dataMatrix
   return ()
 
+promptForSess = do
+  dia <- dialogNew
+  vbox <- dialogGetUpper dia
+  sel <- comboBoxNewText
+  boxSetHomogeneous vbox False
+  sesns <- getSessionInRootDir "/var/bugpan/sessions"
+  forM_ sesns $ \snm -> inApproxSession snm $ do
+                  thrs <- durations "spikeThreshold" (0::Double)
+                  modNm <- durations "moduleName" ""
+                  let mods = (show $ length modNm)++" modules run"
+                  io $ comboBoxAppendText sel ((take 6 snm)++": "++(show $ length thrs)++" thresholds, "++mods )
+  boxPackStart vbox sel PackGrow 0
+  dialogAddButton dia "OK" ResponseOk
+  comboBoxSetActive sel 0
+  widgetShowAll dia
+
+  resp <- dialogRun dia
+  ind <- comboBoxGetActive sel
+  widgetDestroy dia
+  print  $ sesns!!ind
+  return $ sesns!!ind
+
 spikeDetectIO = do 
-  (snm:_) <-getArgs 
+  initGUI
+  (args) <-getArgs 
+  snm <- case args of
+           s:_ -> return s
+           _ -> promptForSess
   inApproxSession snm $ do 
                   --openReplies
                   --initUserInput
@@ -222,7 +264,7 @@ spikeDetectIO = do
                   --spikeDetect [overDur] normV []
 
 
-spikeDetect overs normV spks = do
+{-spikeDetect overs normV spks = do
   let over = head overs
   io $ putStrLn $ "currently considering "++show (length over)++" durations, "++show (length spks)++" spikes"
   userChoice [('s', "show normV and existing spikes", 
@@ -256,6 +298,6 @@ spikeDetect overs normV spks = do
                       ask $ plotManyBy over $ normV :+: thresh :+: thr `tagd` spikes
                       ifM (userConfirm "accept spikes")
                           (spikeDetect overs normV (spks++spikes))
-                          (spikeDetect overs normV spks))]  
+                          (spikeDetect overs normV spks))]  -}
                                            
 

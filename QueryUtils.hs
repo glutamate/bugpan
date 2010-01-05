@@ -271,6 +271,22 @@ crossesUp thresDurs sigs = concatMap f $ sectionGen sigs thresDurs
 
 crossesDown th sigs = crossesUp (negate <$$> th) (negate <$$> sigs)
 
+crossesUpOrDown :: (Num a, Ord a) => [Duration a] -> [Signal a] -> [Event ()]
+crossesUpOrDown thresDurs sigs = concatMap f $ sectionGen sigs thresDurs
+    where f (_,(thresh,s@(Signal t1 t2 dt _ _))) = if thresh >0 
+                                                      then (>thresh) ?? s
+                                                      else (<thresh) ?? s
+{-              let npts = sigPnts s
+                  --pts = [0..npts-1]                
+                  go n last hits | n <npts -1 = let this = readSigPt s n
+                                                 in if this >thresh && last < thresh
+                                                      then go (n+1) this (n:hits)
+                                                      else go (n+1) this (hits)
+                                 | otherwise = hits
+              in map ((\t->(t,())) .  (+t1) . (*dt) . realToFrac) $ reverse $ go  0 (thresh+1) []
+-}
+
+
 gaussianf :: Double -> Double -> Double ->  Double
 gaussianf mean sd x = let factor = (recip $ sd*sqrt (2*pi))
                       in factor * (exp . negate $ (((x-mean)**2)/(2*sd**2)))
