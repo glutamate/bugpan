@@ -131,7 +131,7 @@ tellNmsTys = do
 
 procTtest qs [tl1, tl2] = do
   let mfiltr = case qs of
-                 "table":"where":f:_ -> Just f
+                 "table":"where":tl -> Just $ unwords tl
                  _ -> Nothing
   tell "tres <- ttest $ do"
   let q1= (chomp $ tail $ tl1)
@@ -149,7 +149,7 @@ procTtest qs [tl1, tl2] = do
 
 procTtest qs [tl] = do
   let mfiltr = case qs of
-                 "table":"where":f:_ -> Just f
+                 "table":"where":tl -> Just $ unwords tl
                  _ -> Nothing
   tell "tres <- ttest1 $ do"
   let q1= (chomp $ tail $ tl)
@@ -165,8 +165,10 @@ procTtest qs [tl] = do
   return ()
 
 procTable qs tablines = do
+--  io $ print "table!"
+--  io $ print qs
   let mfiltr = case qs of
-                 "table":"where":f:_ -> Just f
+                 "table":"where":tl -> Just $ unwords tl
                  _ -> Nothing
   tellPrintNoLn "\\begin{tabular}{ l"
   tellPrintNoLn $ concatMap (\l-> " || c") tablines
@@ -221,12 +223,15 @@ procQ writeQ s
               tellPrintSessionName
     | s =~ "^\\s*inSessionsWhere\\s*(.+)" = 
            let [[all, filtr]] = (s =~ "^\\s*inSessionsWhere\\s*(.+)")::[[String]]
-           in do tell $ "inApproxSession "++show filtr++" $ do"
+           in do tellPrintCode $ "inSessionsWhere "++filtr
+                 tell "inEverySession_ $ do"
                  indent 3
-                 tellNmsTys              
-                 tellPrintCode $ "inSessionsWhere "++filtr
+                 tellNmsTys  
+                 --tellPrintSessionName
+                 --tell $ " io $ print (not . null $ "++filtr++")"
                  tell $ "when (not . null $ "++filtr++") $ do"
                  indent 3
+                 tellPrintSessionName
     | s =~ "^\\s*openSession\\s*(.+)" = 
            let [[all, sessnm]] = (s =~ "^\\s*openSession\\s*(.+)")::[[String]]
            in do tell $ "inApproxSession "++show sessnm++" $ do"
@@ -240,8 +245,8 @@ procQ writeQ s
            let [[all, h, w]] = (s =~ "^\\s*plotSize\\s*(.+)x(.+)")::[[String]]
            in tell $ "plotSize "++h++" "++w
     | s =~ "^\\s*close\\s*" = do tell "return ()"
-                                 indentAbs $ 5
-    | s =~ "^\\s*break\\s*" = tellPrint "<div style=\"page-break-before: always\" />"
+                                 indentAbs $ 3
+    | s =~ "^\\s*break\\s*" = tellPrint "\\pagebreak"
                                 
     | s =~ "^\\s*everywhere\\s*(.+)" = 
            let [[_, defn]] = s =~ "^\\s*everywhere\\s*(.+)"
@@ -288,12 +293,14 @@ writer s = do
   modimport "PlotGnuplot"
   modimport "Data.List"
   modimport "TNUtils"
+  modimport "NewSignal"
   modimport "Control.Monad"
   tell "main = do"
   indent 3
   when (('\\'/=) $ head $ head $ s) $
         mapM_ tellPrint initHtml
   mkAnal s
+  indentAbs 3
   when (('\\'/=) $ head $ head $ s) $
         mapM_ tellPrint endHtml
   tell "return ()"
@@ -317,10 +324,10 @@ main = do
     ExitSuccess -> do 
                         system $ "./"++fileProper++" "++intercalate " " ((opts\\["-o", "-a"])++rest) ++" >"++lhsFile++profOpts
                         unless ("-nopdf" `elem` opts) $ do
-                          print "generating pdf..."
-                          hFlush stdout
+--                          print "generating pdf..."
+--                          hFlush stdout
                           system $ "lhs2TeX --poly -o "++fileProper++".tex "++fileProper++".lhs"
-                          system $ "pdflatex "++fileProper++".tex"
+                          system $ "pdflatex -interaction=batchmode "++fileProper++".tex"
                           return ()
                         return ()
   return ()

@@ -1,0 +1,36 @@
+%hello!
+
+>> everywhere eq = nearly 1e-8 
+>> everywhere notDisplaced = (eq 0)//displacedAngle
+>> everywhere longStop = (eq $ -0.17)//zStopDist
+>> everywhere shortStop = (eq $ -0.50)//zStopDist
+>> everywhere speed lov = (eq $ lov/1000)//approachLoV
+
+%> table where zStopDist & spikes & (eq 0)//displacedAngle
+%>   tagValues zStopDist
+%>   length spikes
+%>   length notDisplaced
+%>   tagValues approachLoV
+
+> inSessionsWhere zStopDist  & spikes & notDisplaced
+
+%>> shist = spikeHistOver (during ((eq $ -0.17)//zStopDist) notDisplaced) 0.1 spikes
+
+> plot $ ("long10", spikeHistOver (extendDur 1 $ during (speed 10) $ during longStop notDisplaced) 0.02 spikes) :+:
+>        ("short10", spikeHistOver (extendDur 1 $ during (speed 10) $ during shortStop notDisplaced) 0.02 spikes)
+
+> plot $ ("long20", spikeHistOver (extendDur 1 $ during (speed 20) $ during longStop notDisplaced) 0.02 spikes) :+:
+>        ("short20", spikeHistOver (extendDur 1 $ during (speed 20) $ during shortStop notDisplaced) 0.02 spikes)
+
+> plot $ ("long40", spikeHistOver (extendDur 1 $ during (speed 40) $ during longStop notDisplaced) 0.02 spikes) :+:
+>        ("short40", spikeHistOver (extendDur 1 $ during (speed 40) $ during shortStop notDisplaced) 0.02 spikes)
+
+> plot $ ("long40", spikeHistOver (extendDur 1 $ during (speed 40) $ during longStop notDisplaced) 0.02 spikes) :+:
+>        ("long20", spikeHistOver (extendDur 1 $ during (speed 20) $ during longStop notDisplaced) 0.02 spikes) :+:
+>        ("long10", spikeHistOver (extendDur 1 $ during (speed 10) $ during longStop notDisplaced) 0.02 spikes)
+
+> break
+> close 
+
+goodbye!
+

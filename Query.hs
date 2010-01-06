@@ -260,8 +260,12 @@ inEverySession sma = do
 inEverySession_ :: (MonadIO m, Functor m) => StateT QState m a -> m ()
 inEverySession_ sma = do
   sessNms <- liftIO $ getSessionInRootDir "/var/bugpan/sessions/"
-  sessns <- liftIO $ mapM (loadExactSession . ("/var/bugpan/sessions/"++)) sessNms
-  forM_ sessns $ \s -> inSession s sma
+  --liftIO $ mapM print sessNms
+--  sessns <- liftIO $ mapM (loadExactSession . ("/var/bugpan/sessions/"++)) sessNms
+  forM_ sessNms $ \snm -> do 
+    --ftIO $ print $ snm++" start"
+    inSessionNamed snm sma
+    --liftIO $ print $ snm++" done "
 
 
 inEverySessionWhere :: (MonadIO m, Functor m) => StateT QState m Bool -> StateT QState m a -> m [a]

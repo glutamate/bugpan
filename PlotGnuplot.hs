@@ -87,8 +87,16 @@ histListBZ bz vls    = let lo = foldl1' min vls
                            binSize = bz
                            nbins = round $ (hi-lo)/bz
                            ixs = map (\v-> floor $! (v-lo)/binSize ) vls
-                           hArr = histArr (0,nbins-1) $ ixs
+                           hArr = histArr (0,nbins) $ ixs
                        in (elems hArr, lo, hi, binSize)
+
+histListFixed :: Double -> Double -> Double -> [Double] -> [Double]
+histListFixed t1 t2 dt [] = take (round $ (t2-t1)/dt) $ repeat 0
+histListFixed t1 t2 dt vls = let nbins = round $ (t2-t1)/dt
+                                 ixs = map (\v-> floor $! (v-t1)/dt ) vls
+                                 hArr = histArr (0,nbins-1) $ ixs
+                             in elems hArr
+
                    
 
 uniqueIntStr = (show. hashUnique) `fmap` newUnique

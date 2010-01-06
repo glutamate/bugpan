@@ -251,7 +251,8 @@ askForLiterate qx = do
   args <- shArgs `fmap` get
   str <- liftIO $ qReply x (args)
   --let str = unlines $ [s | QString s <- qos ]
-  --liftIO $ putStrLn $ qos
+  --liftIO $ putStr "askForLiterate"
+  --liftIO $ putStrLn $ str
   cond [(str =~ "file://(.+)\\.html", liftIO $ do
                   let [[_, s]] = str =~ "file://(.+)\\.html"
                   lns <- lines `fmap` (readFile $ s++".html")

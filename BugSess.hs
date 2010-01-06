@@ -190,31 +190,9 @@ dispatch opts ("list":_) = do
                              liftIO . putStr $ ": "++(showDiffModules $ map snd modNm)
       putStrLn ""
 
-dispatch _ ("filter":filtr:_) = do
-  sesns <- getSessionInRootDir root
-  setCurrentDirectory "/var/bugpan/"
-  nmtys <- getNamesAndTypes sesns
+dispatch opts ("filter":rest) = do
+  dispatch opts ("filter1":rest)
 
-  let filtFunStr = spliceFirst "\\sess -> " $ mkQuery nmtys ("sess") filtr "return $ qFilterSuccess "
-  when (not $ validateQuery filtr) $
-       fail $ "cannot validate query string"
-
-  --putStrLn $ unlines filtFunStr  
-  filtrFunO<- runInterpreter $ do
-                --loadModules ["Query", "QueryTypes", "QueryUtils"]
-                setImportsQ $ map withNothing ["Prelude","Query", "QueryTypes", 
-                                               "QueryUtils", "Numbers", "Math.Probably.PlotR"]          
-                n <- interpret (unlines filtFunStr) (as :: String -> IO Bool)
-                return n
-  --QResBox qres <- (theQuery v) sessNm
-  --print qres
-  filFun <- case filtrFunO of
-              Right fitlrFun -> do return fitlrFun
-              Left err -> fail $ show err
-  forM_ sesns $ \sNm -> do
-    pass <- filFun sNm
-    putStrLn $ sNm++": "++show pass
- 
 dispatch opts ("filter1":queryStr':_) = do
   sesns <- getSessionInRootDir root
   setCurrentDirectory "/var/bugpan/"

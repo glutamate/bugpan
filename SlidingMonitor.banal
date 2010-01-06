@@ -1,4 +1,4 @@
-> importHs SpikeDetect
+%> importHs SpikeDetect
 
 > everywhere spks = minInterval 0.001 spikesManual
 

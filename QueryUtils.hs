@@ -72,6 +72,8 @@ filterTag p = filter (p . getTag)
 
 infixr //
 
+infixl 3 &
+
 (//) :: Tagged t => (a->Bool) -> [t a] -> [t a]
 (//) = filterTag
 
@@ -452,13 +454,19 @@ histSigBZ bz evs  = let (hlist, lo, hi, bin)= histListBZ bz $ map (getTag) evs
                         len = length hlist                        
                     in Signal lo hi bin (SV.pack hlist) Eq
 
-spikeHistOver :: [Duration a] -> Double -> [Event b] -> Signal Double
-spikeHistOver [] _ _ = ConstSig 0
-spikeHistOver (d:durs) dt es = sigTimeZero (hist (during [d] es)) + spikeHistOver durs dt es
-    where sigTimeZero (Signal t1 t2 dt a e) = Signal 0 (t2-t1) dt a e
-          sigTimeZero s = s
-          hist evs = let (hlist, lo, hi, bin) = histListBZ dt $ map fst evs
-                     in Signal lo hi bin (SV.pack hlist) Eq
+extendDur te = map (\((t1, t2), v)-> ((t1, t2+te), v))
+
+spikeHistOver :: [Duration a] -> Double -> [Event b] -> [Signal Double]
+spikeHistOver [] _ _ = [ConstSig 0]
+spikeHistOver ds dt es = [(/(realToFrac $ length ds))`fmap` spikeHistOver' ds dt es]
+
+spikeHistOver' :: [Duration a] -> Double -> [Event b] -> Signal Double
+spikeHistOver' [] _ _ = ConstSig 0
+spikeHistOver' (d@((t1, t2),_):durs) dt es = (hist (during [d] es)) + spikeHistOver' durs dt es
+    where hist [] = ConstSig 0
+          hist evs = let hlist= map (/dt) $ histListFixed t1 t2 dt $ map fst evs
+                     in Signal 0 (t2-t1) dt (SV.pack hlist) Eq
+          
 
 integralOfSig s@(Signal t1 t2 dt _ _) =
     let sm = sum $ sigToList s
