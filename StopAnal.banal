@@ -14,21 +14,25 @@
 
 > inSessionsWhere zStopDist  & spikes & notDisplaced
 
-%>> shist = spikeHistOver (during ((eq $ -0.17)//zStopDist) notDisplaced) 0.1 spikes
+>> shist10 = spikeHistOver (extendDur 1 $ during (speed 10) $ during longStop notDisplaced) 0.02 spikes
+>> shist40 = spikeHistOver (extendDur 1 $ during (speed 40) $ during longStop notDisplaced) 0.02 spikes
 
 > plot $ ("long10", spikeHistOver (extendDur 1 $ during (speed 10) $ during longStop notDisplaced) 0.02 spikes) :+:
 >        ("short10", spikeHistOver (extendDur 1 $ during (speed 10) $ during shortStop notDisplaced) 0.02 spikes)
 
-> plot $ ("long20", spikeHistOver (extendDur 1 $ during (speed 20) $ during longStop notDisplaced) 0.02 spikes) :+:
->        ("short20", spikeHistOver (extendDur 1 $ during (speed 20) $ during shortStop notDisplaced) 0.02 spikes)
+%> plot $ ("long20", spikeHistOver (extendDur 1 $ during (speed 20) $ during longStop notDisplaced) 0.02 spikes) :+:
+%>        ("short20", spikeHistOver (extendDur 1 $ during (speed 20) $ during shortStop notDisplaced) 0.02 spikes)
 
 > plot $ ("long40", spikeHistOver (extendDur 1 $ during (speed 40) $ during longStop notDisplaced) 0.02 spikes) :+:
 >        ("short40", spikeHistOver (extendDur 1 $ during (speed 40) $ during shortStop notDisplaced) 0.02 spikes)
 
-> plot $ ("long40", spikeHistOver (extendDur 1 $ during (speed 40) $ during longStop notDisplaced) 0.02 spikes) :+:
->        ("long20", spikeHistOver (extendDur 1 $ during (speed 20) $ during longStop notDisplaced) 0.02 spikes) :+:
->        ("long10", spikeHistOver (extendDur 1 $ during (speed 10) $ during longStop notDisplaced) 0.02 spikes)
+%> plot $ ("long40", spikeHistOver (extendDur 1 $ during (speed 40) $ during longStop notDisplaced) 0.02 spikes) :+:
+%>        ("long20", spikeHistOver (extendDur 1 $ during (speed 20) $ during longStop notDisplaced) 0.02 spikes) :+:
+%>        ("long10", spikeHistOver (extendDur 1 $ during (speed 10) $ during longStop notDisplaced) 0.02 spikes)
 
+> Fit "pos(-((x-t0)/tau) * A * exp(1 + (x-t0)/tau))" [("t0",5),("A",100),("tau", 1)] $ head shist10
+%> Fit "pos(A*(exp((x-t0)/tau1)-exp((x-t0)/tau2))/(tau1-tau2))" [("t0",5),("A",100),("tau1", 1),("tau2", 2)] $ head shist10
+% MaxG * ( exp(-t/tau1) - exp(-t/tau2) ) / ( tau1 - tau2 )
 > break
 > close 
 

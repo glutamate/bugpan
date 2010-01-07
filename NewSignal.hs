@@ -270,9 +270,20 @@ listToSig dt t1 lst = let arr = SV.pack lst
                           t2 = (realToFrac $ SV.length arr-1) *dt +t1
                       in Signal t1 t2 dt arr Eq
 
-sineSig = Signal 0 3 (0.1) (SV.pack $ map sin (sigTimePoints sineSig)) Eq
+sineSig :: Signal Double
+sineSig = Signal 0 3 (0.1) (SV.pack $ map sin [0,0.1..3]) Eq
 
 sigRevArr (Signal t1 t2 dt arr eq) = (Signal t1 t2 dt (SV.reverse arr) eq)
+
+showItx nm = showItx' nm . forceSigEq
+
+showItx' :: String -> Signal Double -> String
+showItx' nm (Signal t1 t2 dt arr Eq) = 
+    unlines $ ["IGOR", "WAVES\t"++nm, "BEGIN"]++
+              (map show $ SV.unpack arr)++
+              ["END", 
+               "X SetScale/P x "++^t1++","++^dt++",\"\", "++nm++";"]
+    where x++^y =x++(show y)
 
 --http://local.wasp.uwa.edu.au/~pbourke/miscellaneous/interpolation/
 --mu2 = (1-cos(mu*PI))/2;

@@ -45,6 +45,16 @@ execGPSh program  =
    in  do putStrLn cmd
           system cmd
 
+execGPPersist ::
+      String {-^ The lines of the gnuplot script to be piped into gnuplot -}
+--   -> [String] {-^ Options for gnuplot -}
+   -> IO ()
+execGPPersist cmds = do
+  x <- randomRIO (0,99999999::Int)
+  let fnm = "/tmp/gnuplotCmds"++show x
+  writeFile fnm cmds
+  system $ "gnuplot -persist "++fnm
+  removeFile $ fnm
 
 execGPTmp cmds = do
   x <- randomRIO (0,99999999::Int)

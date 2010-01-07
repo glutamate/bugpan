@@ -295,6 +295,7 @@ writer s = do
   modimport "TNUtils"
   modimport "NewSignal"
   modimport "Control.Monad"
+  modimport "FitGnuplot"
   tell "main = do"
   indent 3
   when (('\\'/=) $ head $ head $ s) $
