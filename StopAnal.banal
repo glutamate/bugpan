@@ -2,6 +2,7 @@
 
 >> everywhere eq = nearly 1e-8 
 >> everywhere notDisplaced = (eq 0)//displacedAngle
+>> everywhere displaced = (not . eq 0)//displacedAngle
 >> everywhere longStop = (eq $ -0.17)//zStopDist
 >> everywhere shortStop = (eq $ -0.50)//zStopDist
 >> everywhere speed lov = (eq $ lov/1000)//approachLoV
@@ -33,6 +34,8 @@
 > Fit "pos(-((x-t0)/tau) * A * exp(1 + (x-t0)/tau))" [("t0",5),("A",100),("tau", 1)] $ head shist10
 %> Fit "pos(A*(exp((x-t0)/tau1)-exp((x-t0)/tau2))/(tau1-tau2))" [("t0",5),("A",100),("tau1", 1),("tau2", 2)] $ head shist10
 % MaxG * ( exp(-t/tau1) - exp(-t/tau2) ) / ( tau1 - tau2 )
+
+
 > break
 > close 
 

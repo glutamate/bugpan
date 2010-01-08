@@ -164,6 +164,14 @@ procTtest qs [tl] = do
 
   return ()
 
+beforeTilde, afterTilde :: [Char] -> [Char]
+beforeTilde ln = head $ splitBy '~' ln
+
+afterTilde ln = case splitBy '~' ln of
+                   [cs] -> cs
+                   _:cs:_ -> cs
+
+
 procTable qs tablines = do
 --  io $ print "table!"
 --  io $ print qs
@@ -174,7 +182,7 @@ procTable qs tablines = do
   tellPrintNoLn $ concatMap (\l-> " || c") tablines
   tellPrint " }"
   tellPrintNoLn "session"
-  tellPrintNoLn $ concatMap (\l-> " & "++tail (chomp l)) tablines
+  tellPrintNoLn $ concatMap (\l-> " & "++(beforeTilde $ tail $ chomp l)) tablines
   tellPrint " \\\\"
   tellPrint "\\hline"
   tell "inEverySession_ $ do"
@@ -187,7 +195,7 @@ procTable qs tablines = do
   tell "io $ putStrLn $ take 6 sessionIdentifier"
   forM_ (tablines ) $ \ln -> do
                          tellPrintNoLn " & "
-                         tell $ "askForLiterateTable $ "++chomp (tail ln)
+                         tell $ "askForLiterateTable $ "++(afterTilde $ chomp $ tail ln)
   tellPrint " \\\\"
   -- tell $ "io $ putStrLn $ "
   if (isJust mfiltr) 
@@ -308,8 +316,13 @@ writer s = do
 main = do 
   allArgs <- getArgs -- (fileNm:rest)
   let (opts, fileNm:rest) = partition beginsWithHyphen allArgs
-  file <- lines `fmap` readFile fileNm
-  let fileProper = head $ splitBy '.' fileNm
+  let fullFileNm = if '.' `elem` fileNm
+                      then fileNm
+                      else fileNm++".banal"
+  file <- lines `fmap` readFile fullFileNm
+  let fileProper = if '.' `elem` fileNm
+                      then head $ splitBy '.' fileNm
+                      else fileNm
   let hsFile = fileProper++".hs"
   let lhsFile = fileProper++".lhs"
   code <- execCodeWriterT "Main" (writer file) 

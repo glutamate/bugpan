@@ -1,0 +1,15 @@
+>> everywhere eq = nearly 1e-8 
+>> everywhere notDisplaced = (eq 0)//displacedAngle
+
+
+> table where displacedLoom & spikes
+>   angles ~ accushow $ tagRange displacedAngle
+>   LoVs ~ tagValues approachLoV
+>   spikes ~ length spikes
+>   angle=0 ~ length notDisplaced
+>   monitor positions ~ tagValues monitorMoveTo
+>   zStops ~ tagValues zStopDist  
+
+
+> break
+
