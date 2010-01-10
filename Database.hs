@@ -73,6 +73,7 @@ newSession rootDir = do
 newSessionNamed :: String -> FilePath -> IO Session
 newSessionNamed nm rootDir = do
   t0@(TOD t1 t2) <- getClockTime  
+  putStrLn $ "creating new session called "++nm
   createSession rootDir t0 nm
 
 
@@ -134,8 +135,8 @@ resolveApproxSession  root nm | nm == "last" = do
                               | nm == "new" = do
   (last . splitBy '/' . baseDir) `fmap` newSession root
                               | "new:" `isPrefixOf` nm = do
-  let nm = (!!1) $ splitBy ':' nm
-  (last . splitBy '/' . baseDir) `fmap` newSessionNamed nm root
+  let newnm = (!!1) $ splitBy ':' nm
+  (last . splitBy '/' . baseDir) `fmap` newSessionNamed newnm root
                               | otherwise = do
   sessns <- getSessionInRootDir root
   --print sessns
@@ -145,7 +146,9 @@ resolveApproxSession  root nm | nm == "last" = do
   
 loadApproxSession :: FilePath -> String -> IO Session
 loadApproxSession root nm = do
+  --putStrLn $ "asked to resolve: "++ nm
   sessNm <- resolveApproxSession root nm
+  --putStrLn "done"
   loadExactSession $ oneTrailingSlash root++sessNm
 
 loadExactSession :: FilePath -> IO Session

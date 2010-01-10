@@ -11,6 +11,9 @@ add x y = x+y
 
 negate x = 0-x
 
+idfun :: a -> a
+idfun x = x
+
 --constSig :: a -> Signal a
 constSig x = {: x :}
 

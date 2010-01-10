@@ -62,6 +62,9 @@ mkAnal (('>':q):ss) =
              ("t-test" `isPrefixOf` (chomp q1), do
                 procTtest (words q1) tablines
                 mkAnal rest),
+             (":=" `isInfixOf` (chomp q1), do
+                procCalc q1 tablines
+                mkAnal rest),
              ("defineSession" `isPrefixOf` (chomp q1), do
                 liftIO $ case words q1 of
                   defS:sessNm:goal:rest -> let ntimes = (safeHead rest >>= safeRead) `orJust` 1 in
@@ -165,7 +168,7 @@ procTtest qs [tl] = do
   return ()
 
 beforeTilde, afterTilde :: [Char] -> [Char]
-beforeTilde ln = head $ splitBy '~' ln
+beforeTilde = head . splitByMany " ~ " 
 
 afterTilde ln = case splitBy '~' ln of
                    [cs] -> cs
@@ -206,6 +209,27 @@ procTable qs tablines = do
 
   return ()
 
+
+procCalc q tablines = do
+  let nm:rhs:_ = splitByMany ":=" q
+  let (xform,query) = if "$$" `isInfixOf` rhs
+                          then let x:q:_ = splitByMany "$$" rhs in (x,q)
+                          else ("id", rhs)
+  let mfiltr = case filter (elem "where" . words) tablines of
+                      whereln:_ -> Just (intercalate " " $ tail $ words whereln)
+                      _ -> Nothing
+  
+  if isJust mfiltr 
+     then tell $ nm ++" <- fmap ("++xform++") $ inEverySession $ do"
+     else tell $ nm ++" <- fmap (("++xform++") . catMaybes) $ inEverySession $ do"
+  indent 3
+  tellNmsTys
+  when (isJust mfiltr) $ do tell $ "if (not . null $ "++fromJust mfiltr++")"
+                            tell $ "   then return $ Just $ "++ query
+                            tell $ "   else return Nothing"
+  indent $ -3
+  tell $ "askForLiterateIO "++nm
+  return ()
 
 
 procQ writeQ s 

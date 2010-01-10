@@ -263,6 +263,23 @@ askForLiterate qx = do
        ] $ (liftIO $ putStrLn $ noTypeLine str)
   return ()
 
+askForLiterateIO :: (QueryResult a, MonadIO m) => a -> m ()
+askForLiterateIO qx = do
+  str <- liftIO $ qReply qx ["-litlatex"]
+  --let str = unlines $ [s | QString s <- qos ]
+  --liftIO $ putStr "askForLiterate"
+  --liftIO $ putStrLn $ str
+  cond [(str =~ "file://(.+)\\.html", liftIO $ do
+                  let [[_, s]] = str =~ "file://(.+)\\.html"
+                  lns <- lines `fmap` (readFile $ s++".html")
+                  putStr $ unlines $ map (substitute "style=\"float: left\"" "") lns),
+        (str =~ "file://(.+)\\.png", liftIO $ do
+                  let [[_, s]] = str =~ "file://(.+)\\.png"
+                  putStr $ "<img src=\""++ s++".png\" />")
+       ] $ (liftIO $ putStrLn $ noTypeLine str)
+  return ()
+
+
 noTypeLine s = unlines $ ntl $ lines s
     where ntl ls@(ln:lns) | "type = " `isPrefixOf` ln = lns
                           | otherwise = ls

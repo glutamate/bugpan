@@ -35,6 +35,10 @@
 %> Fit "pos(A*(exp((x-t0)/tau1)-exp((x-t0)/tau2))/(tau1-tau2))" [("t0",5),("A",100),("tau1", 1),("tau2", 2)] $ head shist10
 % MaxG * ( exp(-t/tau1) - exp(-t/tau2) ) / ( tau1 - tau2 )
 
+> avhist10 := averageSig $$ shist10
+>   where zStopHist & spikes & notDisplaced
+
+
 
 > break
 > close 

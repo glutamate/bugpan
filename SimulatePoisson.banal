@@ -1,0 +1,5 @@
+> defineSession poisson SimulatePoissonGoal
+
+> openSession poissonSim
+
+> plot spikeHistOver running 0.1 spikes
