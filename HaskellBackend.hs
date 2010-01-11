@@ -34,7 +34,7 @@ getDeclaredType ds nm =
                  
 
 compileToHask fp dt tmax ds params = do
-  forM_ ds $ putStrLn .ppDecl
+  --forM_ ds $ putStrLn .ppDecl
   let prg = toHask dt tmax ds params
   writeFile (fp) prg
   --putStrLn prg
@@ -157,6 +157,8 @@ foo = do
 --lookup tp see that it is not realtime
 --isEventFullyDefined ds nm = not. null $ [() | ReadSource varNm (srcNm, arg) <- ds, varNm == nm ]
 
+comment s = ("--"++s++"\n")
+
 
 catMayMap f xs = catMaybes . map f $ xs
 
@@ -168,11 +170,11 @@ compStageP ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++
           rtSrcs = [(varNm, srcf, param) | (varNm, Src _ _ _ _ (SrcRealTimeSig srcf), param)<- dsSrcs ]
           --sigs = ("seconds", (App (Var "realToFrac") (Var "npnts"-Var"n"))/Var "dt"):[ (nm,e) | Let (PatVar nm _) (Sig e) <- ds ]
           --evs = [ nm | Let nm (Event e) <- ds ]
-          lns = newTmax++runAtOnceSrcs++ defineStep++runLine++retLine
+          lns = newTmax++runAtOnceSrcs++ defineStep++runLine++retLine++["--rtsrcs: "]++map (comment . show) rtSrcs
           newTmax = let tm = localTmax tmax ds' in
-                    [ind++"let tmax = "++(show $ tm),
-                    ind++"let npnts = idInt . round $ tmax/dt"]
-          runLine = [ind++"("++intercalate "," (exps++evExps)++") <- return $ step1 npnts "++(intercalate " " $ initVls)]
+                    [ind++"let tmax = "++show tm,
+                     ind++"let npnts = idInt . round $ tmax/dt"]
+          runLine = [ind++"("++intercalate "," (exps++evExps)++") <- step1 npnts "++(intercalate " " $ initVls)]
           retLine = [ind++"return ("++(intercalate "," $ map ("bufToSig tmax "++) exps++ evExps)++")\n"]
           --returnLine = [ind++"return "++(inTuple $ map (\nm-> "bufToSig tmax "++nm++"BufVal") exps ++ map (++"QVal") evExps)]
           expBufs = map (++"Buf") exps
@@ -248,18 +250,24 @@ compStageP ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++
                                                      "] ("++(pp $ (tweakEslamP nm (nmOrd nm) ds) s0)++")")]
           lets (Let (PatVar nm _) (SolveOde (SigFby v e))) = [(nm++"NxtV",nm++"+ dt*("++(pp . unSig . (tweakExprP (nmOrd nm) ds) $ e)++")")]
           lets e = []
+          rtSrcLets = map (\(nm,_,_)->(nm++"NxtV", nm)) rtSrcs
 
-          letss = ("secondsNxtV", "realToFrac (npnts- n)*dt"):concat (map lets ds)
+          letss = (("secondsNxtV", "realToFrac (npnts- n)*dt"):concat (map lets ds))++rtSrcLets
 
           breakStep =  "\n                         " 
-          runAtOnceSrcs = map (\(v,s,p)-> ind++v++" <- "++s++" tmax dt "++pp p) atOnceSrcs 
+          runRtSrcs = map (\(v,s,p)-> ind++v++" <- "++s++" tmax dt "++pp p) rtSrcs
+          runAtOnceSrcs = map (\(v,s,p)-> v++" <- "++s++" tmax dt "++pp p) atOnceSrcs 
           --initVls = ["0"]++map (\_->"undefined") (init sigs)++ (map (inPar . pp . (tweakExprP (nmOrd nm) ds) .snd) delays)++map (\_->"[]") exps
-          defineStep = [ind++"let step 0 "++(intercalate " " args) ++" = ("++
+          defineStep = [ind++"let step 0 "++(intercalate " " args) ++" = return ("++
                           (intercalate ", " $ expBufs++evExps )++")",
-                        ind++"    step !n "++(intercalate " "  $ map ('!':) args)++" = \n"++replicate 20 ' '++
+                        ind++"    step !n "++(intercalate " "  $ map ('!':) args)++" = do\n"
+                           ++concatMap (\s->replicate 18 ' '++s++"\n") runRtSrcs
+                           ++replicate 20 ' '++
                            " let {\n" ++(concatMap (\(nm,expr)->nm ++ "="++expr++";\n") letss)++"} in "++
                           "step (n-1) "++breakStep++(intercalate breakStep $ map (inPar) callEs),
-                        ind++"    step1 !n "++(intercalate " " args)++" = \n"++replicate 20 ' '++
+                        ind++"    step1 !n "++(intercalate " " args)++" = do \n"
+                           ++concatMap (\s->replicate 18 ' '++s++"\n") runRtSrcs
+                           ++replicate 20 ' '++
                            " let {\n" ++(concatMap (\(nm,expr)->nm ++ "="++expr++";\n") letss)++"} in "++
                           "step (n-1) "++breakStep++(intercalate breakStep $ map (inPar) callEs) ]
 

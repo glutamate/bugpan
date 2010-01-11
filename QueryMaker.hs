@@ -76,7 +76,7 @@ compileQuery opts sha q = do
   let initModule = unlines $ "module Main where":(map ("import "++) ["Prelude","Query", "QueryTypes", "QueryPlots", 
                                                                     "QueryUtils", "Numbers",
                                                                     "System.Environment","Data.List", "TNUtils",
-                                                                    "PlotGnuplot"])
+                                                                    "PlotGnuplot", "NewSignal"])
                    ++["default (Int, Double)"]
       
   let mainFun = ["querySha = \""++sha++"\"", 

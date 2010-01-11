@@ -279,6 +279,9 @@ dispatch opts ("mkdur":sessNm:durnm:rest) = do
                           Nothing -> storeAsOvwrt durnm (dur val) >> return ()
   return ()
 
+dispatch opts ("kill":sessNm:_) = do
+  s <- loadApproxSession root sessNm
+  deleteSession s
 
 dispatch opts ("addev":sessNm:evNm:rest) = do
   qres <- inApproxSession sessNm $ do
@@ -324,6 +327,7 @@ dispatch os ss = putStrLn $ unlines ["",
               "\tbugsess compact {session}",
               "\tbugsess convert2 {session}",
               "\tbugsess convert1 {session}",
+              "\tbugsess kill {session}",
               "\tbugsess lnsess {sessionDir}",
               "\tbugsess mvevs {session} {oldName} {newName}",
               "\tbugsess mkdur {session} {durationName} [value]",

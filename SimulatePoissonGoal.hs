@@ -13,10 +13,9 @@ import Query
 import Control.Monad
 
 main = 
-    do getArgs >>= print
-       inSessionFromArgs $ do          
+    do inSessionFromArgs $ do          
          intfire <- useFile "SimulatePoissonSpikes" [] []
-         --100 `times` determine intfire []
+         100 `times` determine intfire []
          return ()
 
 

@@ -10,10 +10,19 @@ tau = 0.2
 baseline = 0.1
 t0 = 5
 
+_tmax = 6
+_dt = 0.001
+
 only_pos x = if x > 0 then x else 0
 
-rate x = only_pos((-(x-t0)/tau)*exp(1+(x-t0)/tau)*(maxRate-baseline))+baseline
+--rate x = only_pos((-(x-t0)/tau)*exp(1+(x-t0)/tau)*(maxRate-baseline))+baseline
 
-spike = idfun ? ({: <: unifs :> < (rate <: seconds :>) :})
+rate x = only_pos((-(x-t0)/tau)*exp(1+(x-t0)/tau))*(maxRate-baseline)+baseline
+
+rateSig = smap rate seconds
+
+spike = eventIf (<: unifs :> < (rate <: seconds :> * dt ))
 
 spike *> store ""
+unifs *> store ""
+rateSig *> store ""

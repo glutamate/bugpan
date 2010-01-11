@@ -32,7 +32,7 @@ srcs = [
  Src "uniform1" (PairT realT realT) (realT) ["System.Random"]
      $ SrcOnce ("(\\_ _ (lo,hi) -> randomRIO (lo,hi))"),
  Src "uniform" (PairT realT realT) (SignalT realT) ["System.Random"]
-     $ SrcRealTimeSig ("(\\_ _ (lo,hi)-> randomRIO (lo,hi))"),
+     $ SrcRealTimeSig ("(\\_ _ (lo,hi)-> randomRIO (lo::Double,hi::Double))"),
  Src "poisson1" (realT) (realT) ["RandomSources"]
      $ SrcOnce ("poisson1"),
  Src "poisson" (realT) (ListT (PairT realT UnitT)) ["RandomSources"]

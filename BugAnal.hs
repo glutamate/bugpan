@@ -79,7 +79,7 @@ mkAnal (('>':q):ss) =
                                              _ -> whenM (not `fmap` existsSession sessNm root) $
                                                          runGoal ("new:"++sessNm) goal ntimes
                   _ -> return ()
-                return () )] $  do 
+                mkAnal rest)] $  do 
                      procQ writeQ $ unlines $ chomp q1 : map (tail) tablines
                      mkAnal rest
 
@@ -92,11 +92,13 @@ mkAnal ss = do
   mkAnal rest 
   
 
+--BUG: should not saw new: at beginning if run more than once
 runGoal :: String -> String -> Int -> IO ()
 runGoal sessNm goal n = do
-  system $ "ghc -O2 --make "++goal
+  system $ "ghc -O2 -DNODAQ --make "++goal
   forM [1..n] $ const $ system $ "./"++goal++" "++sessNm
   return ()
+
            
 
 justText ('>':s) = False
