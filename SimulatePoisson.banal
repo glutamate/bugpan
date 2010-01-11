@@ -4,14 +4,4 @@
 
 > plot $ spikeHistOver running 0.1 spike
 
-%keep this out of literate files, i am afraid. model files (like goal files).
-
-> model spike
->   L(spike|(maxrate, tau,t0)) = ...
->   where poissonSim
->   when running
->   prior =
->     a <- gauss 3 0.5 
->     return (a,b,c)
->   proposal (a,b,c) = do
->     a' <- gauss a     
+%keep model out of literate files, i am afraid. model files (like goal files).
