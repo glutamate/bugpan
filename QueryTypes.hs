@@ -353,6 +353,10 @@ instance ChopByDur [Event a] where
 instance ChopByDur [Duration a] where
     chopByDur chopDurs durs = map (\dur->sectionDur1 dur durs) chopDurs
 
+chopAndReset :: (ChopByDur a, Shiftable a) => [Duration b] -> a -> [a]
+chopAndReset durs evs = map (\(xs, ((t1,t2),v))-> shift (negate t1) xs) $ zip (chopByDur durs evs) durs
+
+
 downSample n = map (downSample' (n `div` 2))
 
 downSample' :: (Ord a, Bounded a, Num a, Storable a) => Int -> Signal a -> Signal a

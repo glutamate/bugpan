@@ -140,6 +140,7 @@ centreOfMassScatter pts = let vls =map snd pts
 
 
 
+
                                    
 upsample n = map (upsample' n)
 upsample' :: Int -> Signal Double -> Signal Double
