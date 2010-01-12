@@ -353,6 +353,9 @@ instance ChopByDur [Event a] where
 instance ChopByDur [Duration a] where
     chopByDur chopDurs durs = map (\dur->sectionDur1 dur durs) chopDurs
 
+instance (ChopByDur a, ChopByDur b) => ChopByDur (a,b) where
+    chopByDur durs (xs, ys) = zip (chopByDur durs xs) (chopByDur durs ys)
+
 chopAndReset :: (ChopByDur a, Shiftable a) => [Duration b] -> a -> [a]
 chopAndReset durs evs = map (\(xs, ((t1,t2),v))-> shift (negate t1) xs) $ zip (chopByDur durs evs) durs
 
