@@ -69,7 +69,6 @@ within short long = concatMap f short
 distinct :: [Duration a] -> [Duration [Int]]
 distinct durs = map (\((t1t2,_),n)->(t1t2,[n])) $ zip durs [0..]
 
-
 r (rate, tau, baseline, t0) t 
     | t < t0 = ((-(t-t0)/tau)*exp(1+(t-t0)/tau))*(rate-baseline)+baseline
     | otherwise = baseline

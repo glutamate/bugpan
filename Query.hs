@@ -217,7 +217,7 @@ inSession :: (MonadIO m, Functor m) => Session -> StateT QState m a -> m a
 inSession s sma =  do args <- liftIO $ getArgs
                       gen <- liftIO $ getStdGen
                       rnds <- liftIO $ randoms gen
-                      fst `fmap`  (runStateT sma $ QState s 0 0 True args Nothing rnds False False)
+                      fst `fmap`  (runStateT sma $ QState s 0 0 True args Nothing rnds False False 0)
 
 inSessionFromArgs :: (MonadIO m, Functor m) => StateT QState m a -> m a
 inSessionFromArgs sma = do allargs <- liftIO $ getArgs
@@ -225,7 +225,7 @@ inSessionFromArgs sma = do allargs <- liftIO $ getArgs
                            sess <- liftIO $ loadApproxSession "/var/bugpan/sessions/" nm
                            gen <- liftIO $ getStdGen
                            rnds <- liftIO $ randoms gen
-                           fst `fmap`  (runStateT sma $ QState sess 0 0 True (opts++args) Nothing rnds False False)
+                           fst `fmap`  (runStateT sma $ QState sess 0 0 True (opts++args) Nothing rnds False False 0)
 
 
 inNewSession :: (MonadIO m, Functor m) => StateT QState m a -> m a
@@ -266,6 +266,21 @@ inEverySession_ sma = do
     --ftIO $ print $ snm++" start"
     inSessionNamed snm sma
     --liftIO $ print $ snm++" done "
+
+manySessionData :: (MonadIO m, Functor m) => StateT QState m (Maybe a) -> m [a]
+manySessionData sma = do -- catMaybes `fmap` inEverySession (setup >> ma)
+  sessNms <- liftIO $ getSessionInRootDir "/var/bugpan/sessions/"
+  sessns <- liftIO $ mapM (loadExactSession . ("/var/bugpan/sessions/"++)) sessNms
+  ress <- forM sessns $ \s -> inSession s (setup >> sma) -- no, here increment lastTStop
+  return $ catMaybes ress
+    where setup = do
+            running <- durations "running" ()
+            let t2s = foldr (max) minBound $ map (snd . fst) running
+            return ()
+
+--oneDur :: [Duration a] -> [Duration ()]
+--oneDur durs = (runStat (before minF fst `both` before maxF snd) $ map fst durs, ()):[]
+
 
 
 inEverySessionWhere :: (MonadIO m, Functor m) => StateT QState m Bool -> StateT QState m a -> m [a]

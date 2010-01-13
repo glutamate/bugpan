@@ -64,7 +64,8 @@ data QState = QState { qsSess:: Session,
                        remoteCmdFile :: Maybe String,
                        rnds :: [Double],
                        forLiterate :: Bool,
-                       forTable :: Bool
+                       forTable :: Bool,
+                       loadShift :: Double
                      } deriving Show
 
 type QueryM = StateT QState IO
