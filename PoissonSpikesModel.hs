@@ -33,15 +33,42 @@ priorPDF (rate, tau, baseline, t0) | between 0 300 rate && between 0.01 0.3 tau 
                                    | otherwise = - 1e20
     where between l u x = x > l && x < u
 
+hyperPriorPDF (poprate, popRateSD, trialRateSD, tau, baseline, t0, _) 
+    | between 0 300 poprate && between 0.01 0.3 tau &&
+      between 0 1 baseline && between 4.5 5.5 t0 =  0
+    | otherwise = - 1e20
+    
+
+sessPriorPDF (poprate, popratesd, trialRateSD, tau, baseline, t0, sessRates, trialRates) =
+    sum $ map (\sr -> log $ P.gauss poprate popratesd sr) sessRates
+
+trialPriorPDF (poprate, popratesd, trialRateSD, tau, baseline, t0, sessRates, trialRates) =
+    sum $ mapIdx (\i -> sum $ map (\tr-> log $ P.gauss (sessRates!!i) trialRateSD tr) (trialRates!!i)) sessRates
+    
+
+likelihoodH [session, trial] spikes (poprate, popratesd, trialRateSD, tau, baseline, t0, sessRates, trialRates) =
+    let pars = (trialRates!!session!!trial, tau, baseline, t0) in
+    ((sum $ (map (log . r pars . fst) spikes))- integralR pars 6  )
+
+
 likelihood pars@(rate, tau, baseline, t0) spikes =
     ((sum $ (map (log . r pars . fst) spikes))- integralR pars 6  )
 
-lhIgrl pars@(rate, tau, baseline, t0) spikes =
-    exp (integralR pars 6)
-lhSpks pars@(rate, tau, baseline, t0) spikes =
-    exp( sum $ (map (log . r pars . fst) spikes) )
+manyLikeH :: (ChopByDur obs,Shiftable obs) => 
+             [Duration [Int]] -> 
+            ([Int] -> obs -> P.PDF theta) -> 
+            (obs -> P.PDF theta)
+manyLikeH durs lh1 = \obs-> \theta-> sum $ map (\(obs, (_,ints)) -> lh1 ints obs theta) $ zip (chopAndReset durs obs) durs
 
-only_pos x = if x>0 then x else 0
+within :: [Duration [Int]] -> [Duration [Int]] -> [Duration [Int]]
+within short long = concatMap f short 
+    where f d@((t1t2), sints) = case sectionDur1 d long of 
+                                  []-> []
+                                  (_,lints):_ -> [(t1t2, lints++sints)]
+
+distinct :: [Duration a] -> [Duration [Int]]
+distinct durs = map (\((t1t2,_),n)->(t1t2,[n])) $ zip durs [0..]
+
 
 r (rate, tau, baseline, t0) t 
     | t < t0 = ((-(t-t0)/tau)*exp(1+(t-t0)/tau))*(rate-baseline)+baseline
@@ -72,7 +99,7 @@ main =
          running <- durations "running" ()
          ps <- io $ do
            let lh = (manyLikeOver running likelihood spike)
-           let bayfun = bayesMetLog proposal (manyLikeOver running likelihood spike) priorPDF
+           let bayfun = bayesMetLog proposal [manyLikeOver running likelihood spike, priorPDF]
            inits <- fmap head $ runSamplerIO priorSampler
            let baymarkov = Mrkv bayfun inits id
            ps <- (take 15000) `fmap` runMarkovIO baymarkov
@@ -104,3 +131,10 @@ lastn n xs = let len = length xs
              in if n > len
                    then xs
                    else drop (len - n) xs
+
+
+between l u x = x > l && x < u
+
+
+mapIdx :: (Int -> b) -> [a] -> [b]
+mapIdx f xs = map f [0..length xs-1]

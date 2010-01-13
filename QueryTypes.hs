@@ -229,6 +229,11 @@ instance Shiftable a => Shiftable [a] where
     shift ts vls = map (shift ts) vls
     rebaseTime t = map (rebaseTime t)
 
+instance (Shiftable a, Shiftable b) => Shiftable (a,b) where
+    shift ts (x,y) = (shift ts x, shift ts y)
+    rebaseTime t (x,y) = (rebaseTime t x, rebaseTime t y)
+
+
 individually :: ListT m a -> m [a]
 individually = runListT
 

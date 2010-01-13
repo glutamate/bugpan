@@ -5,7 +5,10 @@
 >> everywhere displaced = (not . eq 0)//displacedAngle
 >> everywhere longStop = (eq $ -0.17)//zStopDist
 >> everywhere shortStop = (eq $ -0.50)//zStopDist
+>> everywhere longNotDisplaced = during longStop notDisplaced     
 >> everywhere speed lov = (eq $ lov/1000)//approachLoV
+>> everywhere nspikes = realcountDuring (approachLoV) spikes
+>> everywhere shist lov = spikeHistOver (extendDur 1 $ during (speed lov) $ during longStop notDisplaced) 0.02 spikes
 
 %> table where zStopDist & spikes & (eq 0)//displacedAngle
 %>   tagValues zStopDist
@@ -15,28 +18,27 @@
 
 > inSessionsWhere zStopDist  & spikes & notDisplaced
 
->> shist10 = spikeHistOver (extendDur 1 $ during (speed 10) $ during longStop notDisplaced) 0.02 spikes
->> shist40 = spikeHistOver (extendDur 1 $ during (speed 40) $ during longStop notDisplaced) 0.02 spikes
 
-> plot $ ("long10", spikeHistOver (extendDur 1 $ during (speed 10) $ during longStop notDisplaced) 0.02 spikes) :+:
->        ("short10", spikeHistOver (extendDur 1 $ during (speed 10) $ during shortStop notDisplaced) 0.02 spikes)
+%> plot $ ("long10", spikeHistOver (extendDur 1 $ during (speed 10) $ during longStop notDisplaced) 0.02 spikes) :+:
+%>        ("short10", spikeHistOver (extendDur 1 $ during (speed 10) $ during shortStop notDisplaced) 0.02 spikes)
 
 %> plot $ ("long20", spikeHistOver (extendDur 1 $ during (speed 20) $ during longStop notDisplaced) 0.02 spikes) :+:
 %>        ("short20", spikeHistOver (extendDur 1 $ during (speed 20) $ during shortStop notDisplaced) 0.02 spikes)
 
-> plot $ ("long40", spikeHistOver (extendDur 1 $ during (speed 40) $ during longStop notDisplaced) 0.02 spikes) :+:
->        ("short40", spikeHistOver (extendDur 1 $ during (speed 40) $ during shortStop notDisplaced) 0.02 spikes)
-
 %> plot $ ("long40", spikeHistOver (extendDur 1 $ during (speed 40) $ during longStop notDisplaced) 0.02 spikes) :+:
-%>        ("long20", spikeHistOver (extendDur 1 $ during (speed 20) $ during longStop notDisplaced) 0.02 spikes) :+:
-%>        ("long10", spikeHistOver (extendDur 1 $ during (speed 10) $ during longStop notDisplaced) 0.02 spikes)
+%>        ("short40", spikeHistOver (extendDur 1 $ during (speed 40) $ during shortStop notDisplaced) 0.02 spikes)
 
-> Fit "pos(-((x-t0)/tau) * A * exp(1 + (x-t0)/tau))" [("t0",5),("A",100),("tau", 1)] $ head shist10
-%> Fit "pos(A*(exp((x-t0)/tau1)-exp((x-t0)/tau2))/(tau1-tau2))" [("t0",5),("A",100),("tau1", 1),("tau2", 2)] $ head shist10
+> plot $ ("long40", spikeHistOver (extendDur 1 $ during (speed 40) $ during longStop notDisplaced) 0.02 spikes) :+:
+>        ("long20", spikeHistOver (extendDur 1 $ during (speed 20) $ during longStop notDisplaced) 0.02 spikes) :+:
+>        ("long10", spikeHistOver (extendDur 1 $ during (speed 10) $ during longStop notDisplaced) 0.02 spikes)
+
+> plot $ scatter $ zipD (during longNotDisplaced approachLoV) nspikes
+
+> Fit "pos(-((x-t0)/tau) * (A-bl) * exp(1 + (x-t0)/tau))+bl" [("t0",5),("A",100),("tau", 1), ("bl", 0.1)] $ head $ shist 10
+
+
+%> Fit "pos((A-bl)*(exp((x-t0)/tau1)-exp((x-t0)/tau2))/(tau1-tau2))+bl" [("t0",5),("A",100),("tau1", 1),("tau2", 2)] $ head $ shist 10
 % MaxG * ( exp(-t/tau1) - exp(-t/tau2) ) / ( tau1 - tau2 )
-
-> avhist10 := averageSig $$ shist10
->   where zStopHist & spikes & notDisplaced
 
 
 

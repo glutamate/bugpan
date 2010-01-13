@@ -4,24 +4,21 @@
 > everywhere spks = minInterval 0.001 spikesManual
 
 > everywhere running = displacedLoom
-> everywhere eq = nearly 1e-4
-> everywhere lov10 = (`eq` 0.01)//approachLoV
-> everywhere lov20 = (`eq` 0.02)//approachLoV
-> everywhere lov40 = (`eq` 0.04)//approachLoV
-> everywhere scat10 = scatter $ zipD (during lov10 displacedAngle) $ realcountDuring running spks
-> everywhere scat20 = scatter $ zipD (during lov20 displacedAngle) $ realcountDuring running spks
-> everywhere scat40 = scatter $ zipD (during lov40 displacedAngle) $ realcountDuring running spks
+> everywhere eq = nearly 1e-8
+>> everywhere speed lov = (eq $ lov/1000)//approachLoV
+
+> everywhere scat lov = scatter $ zipD (during (speed lov) displacedAngle) $ realcountDuring running spks
 
 
 > openSession
-> plot $ scat40
+> plot $ scat 40
 
 > close 
 
 > table 
->   centreOfMassScatter $ filter ((<0.02). abs . fst) scat10
->   centreOfMassScatter $ filter ((<0.02). abs . fst) scat20
->   centreOfMassScatter $ filter ((<0.02). abs . fst) scat40
+>   centreOfMassScatter $ filter ((<0.02). abs . fst) $ scat 10
+>   centreOfMassScatter $ filter ((<0.02). abs . fst) $ scat 20
+>   centreOfMassScatter $ filter ((<0.02). abs . fst) $ scat 40
 
 
 % fit gaussian?
