@@ -294,12 +294,17 @@ manySessionData sma = do -- catMaybes `fmap` inEverySession (setup >> ma)
             running <- durations "running" ()
             let t2s = foldr (max) minBound $ map (snd . fst) running
             --lastLastTStop <- lastTStop `fmap` get
-            modify (\s -> s {loadShift = lastTStop + 60})
+            modify (\s -> s {loadShift = lastTStop})
+            --io $ print (sNm,lastTStop + 60) 
             res <- sma
-            return (lastTStop + 60, res) 
+            if isJust res
+               then return (lastTStop + 60 + t2s, res) 
+               else return (lastTStop, res) 
 
-sessionDur :: StateT QState m [Duration ()]
-sessionDur = oneDur `fmap` durations "running" ()
+sessionDur :: (MonadIO m, Functor m) => StateT QState m [Duration String]
+sessionDur = do
+  snm <- getSessionName
+  fmap (map (\(ts,v) -> (ts, snm))) $ oneDur `fmap` durations "running" ()
   
 oneDur :: [Duration a] -> [Duration ()]
 oneDur durs = (runStat (before minF fst `both` before maxF snd) $ map fst durs, ()):[]

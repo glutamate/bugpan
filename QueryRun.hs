@@ -77,6 +77,7 @@ compile ds params = do
   let commentParams = map (\(nm,ty)-> Comment $ "PARAMETER: "++nm++ppType ty) params
   let sha = take 50 . showDigest . sha512 . L.pack $ map c2w $ show (ds++commentParams)
   let dsTrans = snd $ runTravM ds [] transform
+  curDir <- liftIO $ getCurrentDirectory
   --liftIO $ mapM_ (putStrLn . ppDecl) dsTrans
   liftIO $ createDirectoryIfMissing False "/var/bugpan/queryCache/"
   liftIO $ whenM (not `fmap` doesFileExist ("/var/bugpan/queryCache/"++sha)) 
@@ -87,6 +88,7 @@ compile ds params = do
   liftIO $ whenM (not `fmap` doesFileExist ("/var/bugpan/queryCache/"++sha)) 
              (fail "could not compile")
   --hash declares, look in cache
+  liftIO $ setCurrentDirectory curDir
   return $ Left (sha, trun, params)
 
 cyclically :: MonadIO m => [a] -> StateT QState m a
