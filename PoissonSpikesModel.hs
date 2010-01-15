@@ -55,8 +55,11 @@ hyperPriorPDF ((poprate, popRateSD, trialRateSD), (tau, baseline, t0), _, _)
     | otherwise = - 1e20
     
 
+bigSigma :: Num b =>  [a] -> (a->b)-> b
+bigSigma xs f = sum $ map f xs
+
 sessPriorPDF ((poprate, popratesd, _), _, sessRates, _) =
-    sum $ map (\sr -> log $ P.gauss poprate popratesd sr) sessRates
+    sum $ map (log . P.gauss poprate popratesd) sessRates
 
 trialPriorPDF ((_, _, trialRateSD), _, sessRates, trialRates) =
     sum $ map (\(sr, trRates) -> sum $ map (log . P.gauss sr trialRateSD) trRates) $ zip sessRates trialRates
@@ -168,8 +171,8 @@ main = do
   --print segs
   let bayfun = bayesMetLog (mutGauss 0.0005) [hyperPriorPDF, sessPriorPDF, trialPriorPDF, lh]
   let baymarkov = Mrkv bayfun inits id
-  ps <- (take 400) `fmap` runMarkovIO baymarkov
-  let noburn = {-drop 15000 -} ps
+  ps <- (take 150000) `fmap` runMarkovIO baymarkov
+  let noburn = drop 130000  ps
 
   let plotWith nm f =  (nm, Lines $ zip [(0::Double)..] $ map f ps)
               
@@ -180,8 +183,8 @@ main = do
   putStrLn $ "baseline "++ show ((meanSDF `both` nSumSumSqr) `runStat` map (snd3 . snd4) noburn)
   putStrLn $ "t0 "++ show ((meanSDF `both` nSumSumSqr) `runStat` map (trd3 . snd4) noburn)
 
-  --gnuplotOnScreen $ (plotWith "rate" (fst3 . fst4)  :||: plotWith "tau" (fst3 . snd4)) :==: 
-   --                   (plotWith "baseline" (snd3 . snd4) :||: plotWith "t0" (trd3 . snd4)) 
+  gnuplotOnScreen $ (plotWith "rate" (fst3 . fst4)  :||: plotWith "tau" (fst3 . snd4)) :==: 
+                      (plotWith "baseline" (snd3 . snd4) :||: plotWith "t0" (trd3 . snd4)) 
 
   --mapM print $ map (\p-> (lh p, fst4 p, snd4 p)) $ lastn 20 noburn 
   return ()

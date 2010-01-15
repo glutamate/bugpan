@@ -13,6 +13,7 @@ import Query
 import Control.Monad
 import Math.Probably.Sampler
 import Control.Monad.Trans
+import QueryUtils
 
 sample1 :: MonadIO m => Sampler a -> m a
 sample1 sam = liftM head $ (io $ runSamplerIO sam)
@@ -27,10 +28,12 @@ trialRateSD = 20
 main = forM_ [0..9] $ \i -> inApproxSession ("new:poisson"++show i) $ do          
          sessRate <- sample1 $ gauss poprate popratesd
          ntrials <- sample1 $ oneOf [20..100]
-         intfire <- useFile "SimulatePoissonSpikes" [("maxRate", realT)] []
+         simspikes <- useFile "SimulatePoissonSpikes" [("maxRate", realT)] []
          times ntrials $ do 
            trialRate <- sample1 $ gauss sessRate trialRateSD
-           determine intfire [("maxRate", always $ NumV $ NReal trialRate)]
+           determine simspikes [("maxRate", always $ NumV $ NReal trialRate)]
+         sd <- sessionDur
+         storeAs "sessionRate" $ tag sessRate sd
          return ()
 
 
