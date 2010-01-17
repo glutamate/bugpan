@@ -128,7 +128,6 @@ lastSession rootDir = do
 deleteSession :: Session -> IO ()
 deleteSession (Session dir _) = system ("rm -rf "++ dir) >> return ()
    
-
 resolveApproxSession  :: FilePath -> String -> IO String
 resolveApproxSession  root nm | nm == "last" = do
   (last . splitBy '/' . baseDir) `fmap` lastSession root 

@@ -26,18 +26,18 @@ import Database
 
 priorSampler = 
     do rate <- uniform 0 300
-       tau <- uniform 0.01 0.3
+       tau <- uniform 0.19 0.21
        baseline <- uniform 0 1
        t0 <- uniform 4.5 5.5
        return (rate, tau, baseline, t0)
 
 priorSamplerH nsess ntrialsPerSess= 
-    do poprate <- uniform 0 300
-       popratesd <- uniform 0 60
-       trRateSD <- uniform 0 60
-       tau <- uniform 0.01 0.3
-       baseline <- uniform 0 1
-       t0 <- uniform 4.5 5.5
+    do poprate <- uniform 199 201
+       popratesd <- uniform 19 21
+       trRateSD <- uniform 29 31
+       tau <- uniform 0.19 0.21
+       baseline <- uniform 0.09 0.11
+       t0 <- uniform 4.95 5.05
        sessrates <- times nsess $ gauss poprate popratesd
        trrates <- forM (zip ntrialsPerSess sessrates) $ \(ntrs, sr) -> times ntrs $ gauss sr trRateSD
        return ((poprate,popratesd, trRateSD), (tau, baseline, t0), sessrates, trrates)
@@ -67,16 +67,18 @@ trialPriorPDF ((_, _, trialRateSD), _, sessRates, trialRates) =
 
 likelihoodH [session, trial] spikes (_, (tau, baseline, t0), sessRates, trialRates) =
     let pars = (trialRates!!session!!trial, tau, baseline, t0) in
-    ((sum $ (map (log . r pars . fst) spikes))- integralR pars 6  )
+    ((sum $ (map (log . r pars) spikes))- integralR pars 6  )
 
 likelihood pars@(rate, tau, baseline, t0) spikes =
-    ((sum $ (map (log . r pars . fst) spikes))- integralR pars 6  )
+    ((sum $ (map (log . r pars) spikes))- integralR pars 6  )
 
 manyLikeH :: (ChopByDur obs,Shiftable obs) => 
              [Duration [Int]] -> 
             ([Int] -> obs -> P.PDF theta) -> 
             (obs -> P.PDF theta)
-manyLikeH durs lh1 = \obs-> \theta-> sum $ map (\(obs, (_,ints)) -> lh1 ints obs theta) $ zip (chopAndReset durs obs) durs
+manyLikeH durs lh1 obs = 
+    let z = zip (chopAndReset durs obs) durs
+    in \theta-> sum $ map (\(obs, (_,ints)) -> lh1 ints obs theta) $ z
 
 within :: [Duration [Int]] -> [Duration [Int]] -> [Duration [Int]]
 within short long = concatMap f $ relabelWithin long short 
@@ -152,8 +154,11 @@ eqpar (rate, tau, baseline, t0) (rate1, tau1, baseline1, t01) =
 
 main :: IO ()
 main = do
+  (read -> count) : _  <- getArgs 
+  let dropn = (count*3) `div` 4
+  putStrLn $ "droping "++show dropn
   (concat -> spikes, concat -> running, concat -> sess) <- fmap unzip3 $ manySessionData $ do
-           spikes <- events "spike" ()
+           spikes <-  map fst `fmap` events "spike" ()
            running <- durations "running" ()
            modNm <- durations "moduleName" "foo"
            sess <- sessionDur
@@ -169,33 +174,37 @@ main = do
   putStrLn $ "inits "++show (lh inits, fst4 inits)
   --putStrLn "segs"
   --print segs
-  let bayfun = bayesMetLog (mutGauss 0.0005) [hyperPriorPDF, sessPriorPDF, trialPriorPDF, lh]
+  let bayfun = bayesMetLog (mutGauss 0.001) [hyperPriorPDF, sessPriorPDF, trialPriorPDF, lh]
   let baymarkov = Mrkv bayfun inits id
-  ps <- (take 150000) `fmap` runMarkovIO baymarkov
-  let noburn = drop 130000  ps
+  ps <- take count `fmap` runMarkovIO baymarkov
+  let noburn = drop dropn ps
 
   let plotWith nm f =  (nm, Lines $ zip [(0::Double)..] $ map f ps)
               
-  putStrLn $ "poprate "++ show ((meanSDF `both` nSumSumSqr) `runStat` map (fst3 . fst4)  noburn) 
-  putStrLn $ "popratesd "++ show ((meanSDF `both` nSumSumSqr) `runStat` map (snd3 . fst4)  noburn) 
-  putStrLn $ "trialRateSD "++ show ((meanSDF `both` nSumSumSqr) `runStat` map (trd3 . fst4)  noburn) 
-  putStrLn $ "tau "++ show ((meanSDF `both` nSumSumSqr) `runStat` map (fst3 . snd4) noburn)
-  putStrLn $ "baseline "++ show ((meanSDF `both` nSumSumSqr) `runStat` map (snd3 . snd4) noburn)
-  putStrLn $ "t0 "++ show ((meanSDF `both` nSumSumSqr) `runStat` map (trd3 . snd4) noburn)
+  putStrLn $ "poprate "++ show (meanSDF `runStat` map (fst3 . fst4)  noburn) 
+  putStrLn $ "popratesd "++ show (meanSDF  `runStat` map (snd3 . fst4)  noburn) 
+  putStrLn $ "trialRateSD "++ show (meanSDF `runStat` map (trd3 . fst4)  noburn) 
+  putStrLn $ "tau "++ show (meanSDF `runStat` map (fst3 . snd4) noburn)
+  putStrLn $ "baseline "++ show (meanSDF `runStat` map (snd3 . snd4) noburn)
+  putStrLn $ "t0 "++ show (meanSDF `runStat` map (trd3 . snd4) noburn)
 
-  gnuplotOnScreen $ (plotWith "rate" (fst3 . fst4)  :||: plotWith "tau" (fst3 . snd4)) :==: 
-                      (plotWith "baseline" (snd3 . snd4) :||: plotWith "t0" (trd3 . snd4)) 
+  gnuplotOnScreen $ (plotWith "poprate" (fst3 . fst4)  :||: plotWith "popratesd" (snd3 . fst4)) :==: 
+                      (plotWith "baseline" (snd3 . snd4) :||: plotWith "trialratesd" (trd3 . fst4)) 
 
   --mapM print $ map (\p-> (lh p, fst4 p, snd4 p)) $ lastn 20 noburn 
   return ()
 
+instance Shiftable Double where
+    shift = (+)
+    rebaseTime = undefined
+
 main1 :: IO ()
 main1 = 
     do inSessionFromArgs $ do          
-         spike <- events "spike" ()
+         spike <- map fst `fmap` events "spike" ()
          running <- durations "running" ()
          ps <- io $ do
-           let lh = (manyLikeOver running likelihood spike)
+           let lh = manyLikeOver running likelihood spike
            let bayfun = bayesMetLog proposal [manyLikeOver running likelihood spike, priorPDF]
            inits <- fmap head $ runSamplerIO priorSampler
            let baymarkov = Mrkv bayfun inits id

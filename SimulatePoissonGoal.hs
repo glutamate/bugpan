@@ -25,15 +25,17 @@ trialRateSD = 20
 --tau = 0.2
 --t0 = 5
 
-main = forM_ [0..9] $ \i -> inApproxSession ("new:poisson"++show i) $ do          
-         sessRate <- sample1 $ gauss poprate popratesd
-         ntrials <- sample1 $ oneOf [20..100]
-         simspikes <- useFile "SimulatePoissonSpikes" [("maxRate", realT)] []
-         times ntrials $ do 
-           trialRate <- sample1 $ gauss sessRate trialRateSD
-           determine simspikes [("maxRate", always $ NumV $ NReal trialRate)]
-         sd <- sessionDur
-         storeAs "sessionRate" $ tag sessRate sd
-         return ()
+main = forM_ [0..9] $ \i -> do
+         deleteSessionIfExists $ "poisson"++show i
+         inApproxSession ("new:poisson"++show i) $ do          
+                              sessRate <- sample1 $ gauss poprate popratesd
+                              ntrials <- sample1 $ oneOf [20..100]
+                              simspikes <- useFile "SimulatePoissonSpikes" [("maxRate", realT)] []
+                              times ntrials $ do 
+                                trialRate <- sample1 $ gauss sessRate trialRateSD
+                                determine simspikes [("maxRate", always $ NumV $ NReal trialRate)]
+                              sd <- sessionDur
+                              storeAs "sessionRate" $ tag sessRate sd
+                              return ()
 
 

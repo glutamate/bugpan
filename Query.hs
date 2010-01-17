@@ -274,6 +274,13 @@ inEverySession_ sma = do
     inSessionNamed snm sma
     --liftIO $ print $ snm++" done "
 
+deleteSessionIfExists :: String -> IO ()
+deleteSessionIfExists nm = 
+    whenM (existsSession nm "/var/bugpan/sessions/") $ 
+      loadApproxSession "/var/bugpan/sessions/" nm >>= deleteSession
+
+
+
 loopM :: Monad m => ((a, b) -> m (a, c)) -> a -> [b] -> m [c] 
 loopM f x0 [] = return []
 loopM f x0 (y:ys) = do (x1, z) <- f (x0,y)

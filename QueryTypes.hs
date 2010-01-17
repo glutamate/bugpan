@@ -362,6 +362,10 @@ instance ChopByDur [Duration a] where
 instance (ChopByDur a, ChopByDur b) => ChopByDur (a,b) where
     chopByDur durs (xs, ys) = zip (chopByDur durs xs) (chopByDur durs ys)
 
+instance ChopByDur [Double] where --list of times
+    chopByDur durs dbls = map (\((t1,t2),_)->filter ((\t->t>t1 && t<t2 )) dbls) durs
+
+
 chopAndReset :: (ChopByDur a, Shiftable a) => [Duration b] -> a -> [a]
 chopAndReset durs evs = map (\(xs, ((t1,t2),v))-> shift (negate t1) xs) $ zip (chopByDur durs evs) durs
 
