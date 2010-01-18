@@ -10,11 +10,11 @@ import Control.Monad
 import Math.Probably.FoldingStats
 
 main = do
-  nm:restArgs <- getArgs
+  nm:chain:restArgs <- getArgs
   nfiles <- (length . filter (nm `isPrefixOf`)) `fmap` getDirectoryContents "."
   let (lo, hi) = (safeHead restArgs >>= safeRead) `orJust` (0,nfiles)
   xs <- forM [lo..hi] $ \fnum-> do 
-          let file =  (nm++show fnum++".mcmc")
+          let file =  (nm++"_chain"++chain++"_file"++show fnum++".mcmc")
           ifM (doesFileExist file ) 
              (Just `fmap` loadBinary file)
              (return Nothing)

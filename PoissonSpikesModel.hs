@@ -24,6 +24,7 @@ import QueryUtils hiding (groupBy)
 import Database
 import Data.Array.Vector 
 import Data.Binary
+import GHC.Conc
 
 priorSampler = 
     do rate <- uniform 0 300
@@ -62,7 +63,7 @@ writeInChunks = writeInChunks' 0
     where writeInChunks' _ _ _ [] = return ()
           writeInChunks' counter fnm chsize xs = do
             let (out, rest) = splitAt chsize xs
-            saveBinary (fnm++(show counter)++".mcmc") out
+            saveBinary (fnm++"_file"++(show counter)++".mcmc") out
             writeInChunks' (counter+1) fnm chsize rest
     
 
@@ -197,21 +198,24 @@ main = do
   let lh = manyLikeH segs likelihoodH $ toU spikes
   --let bayfin = bayesMetLog 
   --mapM print sess
-  inits <- fmap head $ runSamplerIO $ priorSamplerH (length sess) (map (length . (`during` running) . (:[])) sess)
-  putStrLn $ "inits "++show (lh inits, fst4 inits)
+  let nthreads = numCapabilities
+  putStrLn $ "splitting into nthreads="++show nthreads
+  inits <- fmap (take nthreads) $ runSamplerIO $ priorSamplerH (length sess) (map (length . (`during` running) . (:[])) sess)
+  --putStrLn $ "inits "++show (lh inits, fst4 inits)
   --putStrLn "segs"
   --print segs
-  let bayfun = bayesMetLog (mutGauss 0.0005) [hyperPriorPDF, sessPriorPDF, trialPriorPDF, lh]
-  let baymarkov = Mrkv bayfun inits id
-  ps <- take count `fmap` runMarkovIO baymarkov
-  let ofInterest ((poprate, popRateSD, trialRateSD), (tau, baseline, t0), _, _) = 
-          [poprate, popRateSD, trialRateSD, tau, baseline, t0]
   writeFile "poisson_parnames.mcmc" $ show ["poprate", "popRateSD", "trialRateSD", "tau", "baseline", "t0"]
-  writeInChunks "poisson" 20000 $ map ofInterest ps
+  inPar nthreads $ \threadn-> do
+    let bayfun = bayesMetLog (mutGauss 0.0005) [hyperPriorPDF, sessPriorPDF, trialPriorPDF, lh]
+    let baymarkov = Mrkv bayfun (inits!!threadn) id
+    ps <- take count `fmap` runMarkovIO baymarkov
+    let ofInterest ((poprate, popRateSD, trialRateSD), (tau, baseline, t0), _, _) = 
+            [poprate, popRateSD, trialRateSD, tau, baseline, t0] 
+    writeInChunks ("poisson_chain"++show threadn) 20000 $ map ofInterest ps
 
 
   {-let noburn = drop dropn ps
-
+ 
   let plotWith nm f =  (nm, Lines $ zip [(0::Double)..] $ map f ps)
               
   putStrLn $ "poprate "++ show (meanSDF `runStat` map (fst3 . fst4)  noburn) 
@@ -225,7 +229,25 @@ main = do
                      (plotWith "baseline" (snd3 . snd4) :||: plotWith "trialratesd" (trd3 . fst4)) 
 -}
   --mapM print $ map (\p-> (lh p, fst4 p, snd4 p)) $ lastn 20 noburn 
-  return ()
+  --return ()
+
+inPar :: Int -> (Int -> IO ()) -> IO ()
+inPar 0 ma = return ()
+inPar 1 ma = ma 0
+inPar n ma = do
+  tids <- forM [0..n-1] $ \i -> forkIO (ma i)
+  loop tids
+    where loop tds = do
+               threadDelay $ 200000
+               tss <- mapM threadStatus tds
+               if all (okStatus) tss
+                  then return ()
+                  else loop tds
+          okStatus ThreadFinished = True
+          okStatus ThreadDied = True
+          okStatus _ = False
+
+  
 
 instance Shiftable Double where
     shift = (+)
