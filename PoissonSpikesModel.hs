@@ -1,5 +1,5 @@
-{-# LANGUAGE ViewPatterns, NoMonomorphismRestriction #-}
-
+{-# LANGUAGE ViewPatterns, NoMonomorphismRestriction, FlexibleInstances #-}
+{-# OPTIONS_GHC -fvia-c -optc-O3 #-}
 module Main where
 
 import HaskSyntaxUntyped
@@ -22,7 +22,8 @@ import PlotGnuplot
 import QueryPlots
 import QueryUtils hiding (groupBy)
 import Database
-
+import Data.Array.Vector 
+import Data.Binary
 
 priorSampler = 
     do rate <- uniform 0 300
@@ -39,7 +40,7 @@ priorSamplerH nsess ntrialsPerSess=
        baseline <- uniform 0.09 0.11
        t0 <- uniform 4.95 5.05
        sessrates <- times nsess $ gauss poprate popratesd
-       trrates <- forM (zip ntrialsPerSess sessrates) $ \(ntrs, sr) -> times ntrs $ gauss sr trRateSD
+       trrates <- forM (zip ntrialsPerSess sessrates) $ \(ntrs, sr) -> (times ntrs $ gauss sr trRateSD)
        return ((poprate,popratesd, trRateSD), (tau, baseline, t0), sessrates, trrates)
 
 
@@ -51,23 +52,35 @@ priorPDF (rate, tau, baseline, t0) | between 0 300 rate && between 0.01 0.3 tau 
 hyperPriorPDF ((poprate, popRateSD, trialRateSD), (tau, baseline, t0), _, _) 
     | between 0 300 poprate && between 0.01 0.3 tau &&
       between 0 1 baseline && between 4.5 5.5 t0 && 
-      between 0 60 trialRateSD && between 0 60 popRateSD =  0
+      between 0 60 trialRateSD && between 0 60 popRateSD =  lrsq popRateSD + lrsq trialRateSD
     | otherwise = - 1e20
+    where lrsq = log . recip . (\x-> x*x)
+
+
+writeInChunks :: Binary a => String -> Int -> [a] -> IO ()
+writeInChunks = writeInChunks' 0
+    where writeInChunks' _ _ _ [] = return ()
+          writeInChunks' counter fnm chsize xs = do
+            let (out, rest) = splitAt chsize xs
+            saveBinary (fnm++(show counter)++".mcmc") out
+            writeInChunks' (counter+1) fnm chsize rest
     
 
 bigSigma :: Num b =>  [a] -> (a->b)-> b
 bigSigma xs f = sum $ map f xs
 
 sessPriorPDF ((poprate, popratesd, _), _, sessRates, _) =
-    sum $ map (log . P.gauss poprate popratesd) sessRates
+    sum $ map (log . P.gaussD poprate popratesd) sessRates
 
 trialPriorPDF ((_, _, trialRateSD), _, sessRates, trialRates) =
-    sum $ map (\(sr, trRates) -> sum $ map (log . P.gauss sr trialRateSD) trRates) $ zip sessRates trialRates
+    sum $ map (\(sr, trRates) -> sum $ map (log . P.gaussD sr trialRateSD) trRates) $ zip sessRates trialRates
     
+calcPars [session, trial] (_, (tau, baseline, t0), sessRates, trialRates) =
+    (trialRates!!session!!trial, tau, baseline, t0)
 
-likelihoodH [session, trial] spikes (_, (tau, baseline, t0), sessRates, trialRates) =
-    let pars = (trialRates!!session!!trial, tau, baseline, t0) in
-    ((sum $ (map (log . r pars) spikes))- integralR pars 6  )
+likelihoodH st@[session, trial] spikes bigp@(_, (tau, baseline, t0), sessRates, trialRates) =
+    let pars = ((trialRates!!session)!!trial, tau, baseline, t0) in 
+    ((sumU $ (mapU (log . r pars) spikes))- integralR pars 6  )
 
 likelihood pars@(rate, tau, baseline, t0) spikes =
     ((sum $ (map (log . r pars) spikes))- integralR pars 6  )
@@ -97,7 +110,7 @@ relabelWithin long short = concatMap (f . (:[])) long
 --distinctWithin :: [Duration a] -> [Duration [Int]]
 --distinctWithin durs = map (\((t1t2,_),n)->(t1t2,[n])) $ zip durs [0..]
 
-
+r :: (Double, Double, Double,Double) -> Double -> Double
 r (rate, tau, baseline, t0) t 
     | t < t0 = ((-(t-t0)/tau)*exp(1+(t-t0)/tau))*(rate-baseline)+baseline
     | otherwise = baseline
@@ -130,12 +143,19 @@ proposalH = --(poprate, popratesd, trialRateSD, tau, baseline, t0, sessRates, tr
 
 class MutateGaussian a where
     mutGauss :: Double -> a -> Sampler a
+    mutGaussMany :: Double -> [a] -> Sampler [a]
+    mutGaussMany cv = mapM (mutGauss cv) 
 
 instance MutateGaussian Double where
     mutGauss cv x = gauss x (cv*x)
+    mutGaussMany cv xs = gaussMany (map (\x-> (x,cv*x)) xs)
 
 instance MutateGaussian a => MutateGaussian [a] where
-    mutGauss cv xs = mapM (mutGauss cv) xs
+    mutGauss cv xs = mutGaussMany cv xs 
+
+instance MutateGaussian (UArr Double) where
+    mutGauss cv xs = toU `fmap` mutGaussMany cv (fromU xs)
+
 
 instance (MutateGaussian a, MutateGaussian b) => MutateGaussian (a,b) where
     mutGauss cv (x,y) = liftM2 (,) (mutGauss cv x) (mutGauss cv y)
@@ -152,11 +172,18 @@ eq = nearly 1e-8
 eqpar (rate, tau, baseline, t0) (rate1, tau1, baseline1, t01) =
     eq rate rate1 && eq tau tau1 && eq baseline baseline1 && eq t0 t01 
 
+instance ChopByDur (UArr Double) where
+    chopByDur durs arr = map (\((t1,t2),_)->filterU (\t->t>t1 && t<t2 ) arr) durs
+
+instance Shiftable (UArr Double) where
+    shift ts = mapU (+ts)
+    rebaseTime = undefined
+
 main :: IO ()
 main = do
   (read -> count) : _  <- getArgs 
-  let dropn = (count*3) `div` 4
-  putStrLn $ "droping "++show dropn
+  --let dropn = (count*3) `div` 4
+  --putStrLn $ "droping "++show dropn
   (concat -> spikes, concat -> running, concat -> sess) <- fmap unzip3 $ manySessionData $ do
            spikes <-  map fst `fmap` events "spike" ()
            running <- durations "running" ()
@@ -167,17 +194,23 @@ main = do
 --  (spikes, running, sess) <- inApproxSession "poisson0" $ do
                                
   let segs = (distinct running) `within` (distinct sess)
-  let lh = manyLikeH segs likelihoodH spikes
+  let lh = manyLikeH segs likelihoodH $ toU spikes
   --let bayfin = bayesMetLog 
   --mapM print sess
   inits <- fmap head $ runSamplerIO $ priorSamplerH (length sess) (map (length . (`during` running) . (:[])) sess)
   putStrLn $ "inits "++show (lh inits, fst4 inits)
   --putStrLn "segs"
   --print segs
-  let bayfun = bayesMetLog (mutGauss 0.001) [hyperPriorPDF, sessPriorPDF, trialPriorPDF, lh]
+  let bayfun = bayesMetLog (mutGauss 0.0005) [hyperPriorPDF, sessPriorPDF, trialPriorPDF, lh]
   let baymarkov = Mrkv bayfun inits id
   ps <- take count `fmap` runMarkovIO baymarkov
-  let noburn = drop dropn ps
+  let ofInterest ((poprate, popRateSD, trialRateSD), (tau, baseline, t0), _, _) = 
+          [poprate, popRateSD, trialRateSD, tau, baseline, t0]
+  writeFile "poisson_parnames.mcmc" $ show ["poprate", "popRateSD", "trialRateSD", "tau", "baseline", "t0"]
+  writeInChunks "poisson" 20000 $ map ofInterest ps
+
+
+  {-let noburn = drop dropn ps
 
   let plotWith nm f =  (nm, Lines $ zip [(0::Double)..] $ map f ps)
               
@@ -189,8 +222,8 @@ main = do
   putStrLn $ "t0 "++ show (meanSDF `runStat` map (trd3 . snd4) noburn)
 
   gnuplotOnScreen $ (plotWith "poprate" (fst3 . fst4)  :||: plotWith "popratesd" (snd3 . fst4)) :==: 
-                      (plotWith "baseline" (snd3 . snd4) :||: plotWith "trialratesd" (trd3 . fst4)) 
-
+                     (plotWith "baseline" (snd3 . snd4) :||: plotWith "trialratesd" (trd3 . fst4)) 
+-}
   --mapM print $ map (\p-> (lh p, fst4 p, snd4 p)) $ lastn 20 noburn 
   return ()
 
@@ -224,8 +257,8 @@ main1 =
            let plotWith nm f =  (nm, Lines $ zip [(0::Double)..] $ map f ps)
            --putStrLn $ "true lh: "++show (lh (200, 0.2, 0.1, 5))
            --putStrLn $ "off lh: "++show (lh (201, 0.22, 0.09, 5.3))
-           gnuplotOnScreen $ (plotWith "rate" fst4  :||: plotWith "tau" snd4) :==: 
-                               (plotWith "baseline" trd4 :||: plotWith "t0" fth4) 
+           --gnuplotOnScreen $ (plotWith "rate" fst4  :||: plotWith "tau" snd4) :==: 
+           --                    (plotWith "baseline" trd4 :||: plotWith "t0" fth4) 
 
            let meanLen = meanF `runStat` (map (realToFrac . length) $ groupBy eqpar noburn )
            putStrLn $ "mean length unchanging "++show meanLen
