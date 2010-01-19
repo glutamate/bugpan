@@ -111,8 +111,8 @@ instance Shiftable (UArr Double) where
 
 jumpProbBy :: (a -> a -> Bool) -> [a] -> Double
 jumpProbBy eqf xs = jPB xs 0 0 
-    where jPB (x:xs@(y:_)) js tots | eqf x y = jPB xs (js+1) (tots+1)
-                                   | otherwise = jPB xs js (tots+1)
+    where jPB (x:xs@(y:_)) js tots | eqf x y = jPB xs js (tots+1)
+                                   | otherwise = jPB xs (js+1) (tots+1)
           jPB _ jumps total = realToFrac jumps / realToFrac total
 
 inPar :: Int -> (Int -> IO ()) -> IO ()

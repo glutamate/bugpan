@@ -127,7 +127,7 @@ main = do
   inits <- fmap (take nthreads) $ runSamplerIO $ priorSamplerH (length sess) (map (length . (`during` running) . (:[])) sess)
   writeFile "poisson_parnames.mcmc" $ show ["poprate", "popRateSD", "trialRateSD", "tau", "baseline", "t0"]
   inPar nthreads $ \threadn-> do
-    let bayfun = bayesMetLog (mutGauss 0.001) [hyperPriorPDF, sessPriorPDF, trialPriorPDF, lh]
+    let bayfun = bayesMetLog (mutGauss 0.0003) [hyperPriorPDF, sessPriorPDF, trialPriorPDF, lh]
     let baymarkov = Mrkv bayfun (inits!!threadn) id
     ps <- take count `fmap` runMarkovIO baymarkov
     let ofInterest ((poprate, popRateSD, trialRateSD), (tau, baseline, t0), _, _) = 
