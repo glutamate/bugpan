@@ -16,7 +16,7 @@ import qualified Data.StorableVector as SV
 import Control.Monad.State.Lazy
 import TNUtils
 import System.Directory
-import System.Posix.Files
+--import System.Posix.Files
 import PlotGnuplot
 import Foreign.Storable
 import Data.Maybe

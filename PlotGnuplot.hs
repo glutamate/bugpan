@@ -14,7 +14,7 @@ import Data.List
 import Control.Monad.Trans
 import TNUtils
 import System.Directory
-import System.Posix.Files
+--import System.Posix.Files
 import Data.Array.Unboxed
 import System.Random
 

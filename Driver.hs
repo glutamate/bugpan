@@ -14,7 +14,7 @@ import Transform
 import System.Time
 import Data.Maybe
 import EvalM
-import System.Posix.Files
+--import System.Posix.Files
 import System.Directory
 import Statement
 import Parse
@@ -66,7 +66,7 @@ cmdFile (DS (sess) dpmv rmv prg)= oneTrailingSlash(baseDir sess)++"/program.bug"
 catchForever l = forever $ catch l (\e-> putStrLn $ "error in main loop: "++show e)
 
 loop ds@(DS (sess) dpmv rmv prg) = do
-  ifM (not `fmap` fileExist (cmdFile ds))
+  ifM (not `fmap` doesFileExist (cmdFile ds))
       (threadDelay 100000)
       (do prg'' <- reads `fmap` readFile (cmdFile ds) --fileDecls (cmdFile ds) []
           case prg'' of

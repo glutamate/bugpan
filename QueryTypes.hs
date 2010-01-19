@@ -46,7 +46,7 @@ import ValueIO
 --import Array
 import qualified Data.StorableVector as SV
 import Foreign.Storable
-import System.Posix.Files
+--import System.Posix.Files
 import PlotGnuplot
 import Text.Regex.Posix
 import Text.Printf
