@@ -55,7 +55,7 @@ double :: Double
 double = undefined
 
 #ifdef MINGW32
-bugpanRootDir = "c:/bugpan/" 
+bugpanRootDir = "c:/bugdir/" 
 #else
 bugpanRootDir = "/var/bugpan/" 
 #endif

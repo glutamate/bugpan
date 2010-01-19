@@ -3,8 +3,12 @@ $ cat > Setup.lhs
 
 > import Distribution.Simple
 > import System.Cmd
+> import System.Directory
+>
 > main = defaultMainWithHooks $ simpleUserHooks {postInst = postInstall}
 
 > postInstall _ _ _ _ = do
->   system "rm -rf /var/bugpan/queryCache/*"
+>   if os == "mingw32" 
+>      then removeDirectoryRecursive "c:/bugdir/queryCache"
+>      else removeDirectoryRecursive "/var/bugpan/queryCache"
 >   return ()
