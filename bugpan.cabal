@@ -11,20 +11,38 @@ build-type:          Custom
 
 Library
    Exposed-modules:  Query, QueryTypes, QueryUtils, Numbers, PlotGnuplot, EvalM, Database, HaskShapes, RandomSources, QueryPlots, Expr, ValueIO, HaskSyntaxUntyped, NewSignal
-   ghc-options:      -O2
+   if os(linux)
+     ghc-options:        -O2 -threaded -lcomedi
+   else
+     if os(mingw32)
+       ghc-options:        -O2 -threaded -DNODAQ -DMINGW32
+     else
+       ghc-options:        -O2 -threaded -DNODAQ
    other-modules:    Parse, Types,Eval, Traverse, Transform, PrettyPrint, BNFC.LexBugpan, BNFC.ParBugpan, BNFC.SkelBugpan,BNFC.PrintBugpan,BNFC.LayoutBugpan ,BNFC.ErrM,UnitTesting, BNFC.AbsBugpan,BuiltIn, TypeCheck, CompiledSrcsSinks
    Build-depends:    tnutils, probably, process, directory, regex-posix, random, base, bytestring, binary, old-time, storablevector, mtl, data-binary-ieee754, uuid, mersenne-random, storable-tuple
 
 
 Executable bugsess   
    Main-Is:          BugSess.hs
-   ghc-options:      -O2
+   if os(linux)
+     ghc-options:        -O2 -threaded -lcomedi
+   else
+     if os(mingw32)
+       ghc-options:        -O2 -threaded -DNODAQ -DMINGW32
+     else
+       ghc-options:        -O2 -threaded -DNODAQ
    other-modules:    EvalM, Parse, Types,Database,Eval,Expr, Traverse, Transform, HaskSyntaxUntyped, ValueIO, PrettyPrint, BNFC.LexBugpan, BNFC.ParBugpan, BNFC.SkelBugpan,BNFC.PrintBugpan,BNFC.LayoutBugpan ,BNFC.ErrM,UnitTesting, BNFC.AbsBugpan,BuiltIn, TypeCheck
    Build-depends:    array, tnutils, probably, haskell98, process, directory, regex-posix, random, base, bytestring, binary, old-time, storablevector, mtl, data-binary-ieee754, uuid, hint, SHA, mersenne-random, storable-tuple
 
 Executable buganal   
    Main-Is:          BugAnal.hs
-   ghc-options:      -O2
+   if os(linux)
+     ghc-options:        -O2 -threaded -lcomedi
+   else
+     if os(mingw32)
+       ghc-options:        -O2 -threaded -DNODAQ -DMINGW32
+     else
+       ghc-options:        -O2 -threaded -DNODAQ
    other-modules:    EvalM, Parse, Types,Database,Eval,Expr, Traverse, Transform, HaskSyntaxUntyped, ValueIO, PrettyPrint, BNFC.LexBugpan, BNFC.ParBugpan, BNFC.SkelBugpan,BNFC.PrintBugpan,BNFC.LayoutBugpan ,BNFC.ErrM,UnitTesting, BNFC.AbsBugpan,BuiltIn, TypeCheck
    Build-depends:    array, tnutils, probably, haskell98, process, directory, regex-posix, random, base, bytestring, binary, old-time, storablevector, mtl, data-binary-ieee754, uuid, hint, SHA, mersenne-random, storable-tuple
 
@@ -33,7 +51,10 @@ Executable bugdriver
    if os(linux)
      ghc-options:        -O2 -threaded -lcomedi
    else
-     ghc-options:        -O2 -threaded -DNODAQ
+     if os(mingw32)
+       ghc-options:        -O2 -threaded -DNODAQ -DMINGW32
+     else
+       ghc-options:        -O2 -threaded -DNODAQ
 --   extra-libraries:    comedi
 --   extra-include-dirs
 --   extra-lib-dirs:     /usr/lib
@@ -54,7 +75,10 @@ Executable runbugpan
    if os(linux)
      ghc-options:        -O2 -threaded -lcomedi
    else
-     ghc-options:        -O2 -threaded -DNODAQ
+     if os(mingw32)
+       ghc-options:        -O2 -threaded -DNODAQ -DMINGW32
+     else
+       ghc-options:        -O2 -threaded -DNODAQ
 --   ghc-options:      -O2 -threaded -lcomedi Comedi/comedi_hs_helper.o
 
    Build-depends:    array, tnutils, probably, haskell98, process, directory, regex-posix, 

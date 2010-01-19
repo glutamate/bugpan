@@ -16,6 +16,7 @@ import Parse
 import Data.Maybe
 import TNUtils
 import EvalM
+import Query (bugpanRootDir)
 --forget about sinks, sources apart from store
 
 
@@ -85,7 +86,7 @@ readParam ((nm,ty), idx) = [nm++" = unsafePerformIO $ do",
 allSrcImports ds = let snms = [nm | ReadSource _ (nm, _) <- ds]
                    in concatMap (\s-> map ("import "++) $ srcImpModule s) . catMaybes $ map lookupSrc snms
 
-rootDir = "/var/bugpan/sessions"
+rootDir = bugpanRootDir ./ "sessions"
 
 headErr _ (x:_) = x
 headErr s _ = error s

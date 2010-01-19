@@ -23,6 +23,7 @@ import System.IO
 import System.Environment
 import TNUtils
 import Control.Monad.Trans
+import Query (bugpanRootDir)
 
 data DriverState = DS {
       dsSession :: Session,
@@ -35,7 +36,7 @@ main = do
   args <- getArgs
   runningMv <- newEmptyMVar
   dispPullMv <- newEmptyMVar
-  sess <- lastSession "/var/bugpan/sessions/"
+  sess <- lastSession $ bugpanRootDir./"sessions/"
   print sess
   let redirect = not $ "-nr" `elem` args
   when redirect $ do

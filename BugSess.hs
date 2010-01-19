@@ -70,12 +70,12 @@ dispatch opts ("ask1":sessNm:queryStr':_) = do
        fail $ "cannot validate query string"
   let sha = take 50 . showDigest . sha512 . BS.pack $ map c2w queryStr
   --putStrLn sha
-  whenM (not `fmap` doesFileExist ("/var/bugpan/queryCache/"++sha)) 
+  whenM (not `fmap` doesFileExist (bugpanRootDir./"queryCache/"++sha)) 
         (compileQuery opts sha queryStr)
   longSessNm <- resolveApproxSession root sessNm
   if ("-p" `elem` opts)
-     then system $ "/var/bugpan/queryCache/"++sha++" "++ longSessNm++" "++(intercalate " " opts)++" +RTS -p"
-     else system $ "/var/bugpan/queryCache/"++sha++" "++ longSessNm++" "++(intercalate " " opts)
+     then system $ bugpanRootDir./"queryCache/"++sha++" "++ longSessNm++" "++(intercalate " " opts)++" +RTS -p"
+     else system $ bugpanRootDir./"queryCache/"++sha++" "++ longSessNm++" "++(intercalate " " opts)
   
 
   return ()
@@ -195,7 +195,7 @@ dispatch opts ("filter":rest) = do
 
 dispatch opts ("filter1":queryStr':_) = do
   sesns <- getSessionInRootDir root
-  setCurrentDirectory "/var/bugpan/"
+  setCurrentDirectory bugpanRootDir
   queryStr <- if "-f" `elem` opts 
                  then preprocessQuery `fmap` readFile queryStr'
                  else return $ preprocessQuery queryStr'
@@ -203,12 +203,12 @@ dispatch opts ("filter1":queryStr':_) = do
        fail $ "cannot validate filter string"
   let sha = take 50 . showDigest . sha512 . BS.pack $ map c2w queryStr
   --putStrLn sha
-  whenM (not `fmap` doesFileExist ("/var/bugpan/queryCache/"++sha)) 
+  whenM (not `fmap` doesFileExist (bugpanRootDir./"queryCache/"++sha)) 
         (compileQuery opts sha queryStr)
   --longSessNm <- resolveApproxSession root sessNm
   forM_ sesns $ \sNm -> do
     longSessNm <- resolveApproxSession root sNm
-    system $ "/var/bugpan/queryCache/"++sha++" "++ longSessNm++" "++(intercalate " " (("-filter"):opts))
+    system $ bugpanRootDir./"queryCache/"++sha++" "++ longSessNm++" "++(intercalate " " (("-filter"):opts))
   
 
   return ()
@@ -234,12 +234,12 @@ dispatch opts ("show":sessNm:_) = do
 
 dispatch opts ("mvevs":sessNm:oldNm:newNm:_) = do
   longSessNm <- resolveApproxSession root sessNm
-  renameDirectory ("/var/bugpan/sessions/" ./ longSessNm ./ "events" ./ oldNm) 
-                  ("/var/bugpan/sessions/" ./ longSessNm ./ "events" ./ newNm)
+  renameDirectory (bugpanRootDir./"sessions" ./ longSessNm ./ "events" ./ oldNm) 
+                  (bugpanRootDir./"sessions" ./ longSessNm ./ "events" ./ newNm)
   return ()
 
 dispatch opts ("lnsess":newDir:_) = do
-  ifM (doesDirectoryExist $ "/var/bugpan/"++newDir)
+  ifM (doesDirectoryExist $ bugpanRootDir./newDir)
       (do system "rm /var/bugpan/sessions"
           system $ "ln -s /var/bugpan/"++newDir++" /var/bugpan/sessions"
           return ())

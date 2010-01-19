@@ -109,15 +109,6 @@ indentOf = length . takeWhile (==' ')
 
 indentMoreThan n = (>n) . indentOf
 
---todo:
--- stats?
---later:
--- filter
--- >> to not include query in output
--- running goals ?
-
---root = "/var/bugpan/sessions/"
-
 
 allNmsTypes = do
   sesns <- getSessionInRootDir root

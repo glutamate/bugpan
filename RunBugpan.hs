@@ -18,6 +18,7 @@ import PrettyPrint
 import HaskellBackend
 import System.Exit
 import System.Cmd
+import Query (bugpanRootDir)
 
 {-chainM :: Monad m => (s -> [a] -> m s)  -> [a] -> s -> m (s, [a])
 chainM f [] s = return (s, [])
@@ -51,12 +52,12 @@ main = do
     else dispatch (RS [] Nothing Nothing Nothing Nothing) args
 
 dispatch rst ("-n":args) = do 
-  s <- newSession "/var/bugpan/sessions/" 
+  s <- newSession $ bugpanRootDir./"sessions/" 
   dispatch (rst {rstSess = Just s}) args
 
 
 dispatch rst ("-c":args) = do 
-  s <- lastSession "/var/bugpan/sessions/" 
+  s <- lastSession $ bugpanRootDir./"sessions/" 
   dispatch (rst {rstSess = Just s}) args
 
 dispatch rst ("-d":dts:args) = dispatch (rst {rstDt = Just $ read dts}) args

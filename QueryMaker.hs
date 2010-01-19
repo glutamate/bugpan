@@ -4,7 +4,7 @@ import Control.Monad.Writer.Lazy
 import Database
 import Query
 import System.Environment
-import TNUtils (unCap, spliceFirst, for, whenM, lookupMany)
+import TNUtils (unCap, spliceFirst, for, whenM, lookupMany, (./))
 import EvalM
 import Data.List
 import Data.Maybe
@@ -41,7 +41,7 @@ getNamesAndTypes sesns = do
                                               _ -> Nothing --excludes ambiguous
   return nmtys
 
-root = "/var/bugpan/sessions/"
+root = bugpanRootDir ./ "sessions/"
 
 
 typeToKind :: T -> String
@@ -70,9 +70,9 @@ compileQuery opts sha q = do
   --putStrLn $ "compiling query "++q
   sesns <- getSessionInRootDir root
   nmtys <- getNamesAndTypes sesns
-  whenM (not `fmap` doesDirectoryExist "/var/bugpan/queryCache/") 
-        (createDirectory "/var/bugpan/queryCache/") 
-  setCurrentDirectory "/var/bugpan/queryCache/"
+  whenM (not `fmap` doesDirectoryExist (bugpanRootDir./"queryCache")) 
+        (createDirectory (bugpanRootDir./"queryCache")) 
+  setCurrentDirectory (bugpanRootDir./"queryCache")
   let initModule = unlines $ "module Main where":(map ("import "++) ["Prelude","Query", "QueryTypes", "QueryPlots", 
                                                                     "QueryUtils", "Numbers",
                                                                     "System.Environment","Data.List", "TNUtils",

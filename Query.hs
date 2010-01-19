@@ -1,4 +1,4 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving, FlexibleContexts, UndecidableInstances, NoMonomorphismRestriction #-} 
+{-# LANGUAGE GeneralizedNewtypeDeriving, FlexibleContexts, UndecidableInstances, NoMonomorphismRestriction, CPP #-} 
 
 module Query where
 
@@ -54,7 +54,14 @@ import NewSignal
 double :: Double
 double = undefined
 
- 
+#ifdef MINGW32
+bugpanRootDir = "c:/bugpan/" 
+#else
+bugpanRootDir = "/var/bugpan/" 
+#endif
+
+sessionsRootDir = bugpanRootDir./"sessions/"
+
 --change these to loadUntyped
 signals :: (MonadIO m, Reify (Signal a)) => String -> a-> StateT QState m [Signal a]
 signals nm _ = do
@@ -216,7 +223,7 @@ ttest1 getvls = do
 
 inLastSession :: (MonadIO m, Functor m) => StateT QState m a -> m a
 inLastSession sma = do
-  s <- liftIO $ lastSession "/var/bugpan/sessions/"
+  s <- liftIO $ lastSession sessionsRootDir
   inSession s sma
   --fst `fmap`  (runStateT sma $ QState s 0 0 True)
 
@@ -229,46 +236,46 @@ inSession s sma =  do args <- liftIO $ getArgs
 inSessionFromArgs :: (MonadIO m, Functor m) => StateT QState m a -> m a
 inSessionFromArgs sma = do allargs <- liftIO $ getArgs
                            let (opts, nm:args) = partition beginsWithHyphen allargs
-                           sess <- liftIO $ loadApproxSession "/var/bugpan/sessions/" nm
+                           sess <- liftIO $ loadApproxSession sessionsRootDir nm
                            gen <- liftIO $ getStdGen
                            rnds <- liftIO $ randoms gen
                            fst `fmap`  (runStateT sma $ QState sess 0 0 True (opts++args) Nothing rnds False False 0)
 
 
 inNewSession :: (MonadIO m, Functor m) => StateT QState m a -> m a
-inNewSession sma = do sess <- liftIO $ newSession "/var/bugpan/sessions/"
+inNewSession sma = do sess <- liftIO $ newSession sessionsRootDir
                       inSession sess sma
 
 inNewSessionWith :: (MonadIO m, Functor m) => String -> ClockTime -> StateT QState m a -> m a
-inNewSessionWith nm t0 sma = do sess <- liftIO $ createSession "/var/bugpan/sessions/" t0 nm
+inNewSessionWith nm t0 sma = do sess <- liftIO $ createSession sessionsRootDir t0 nm
                                 inSession sess sma
 
 inTemporarySession :: (MonadIO m, Functor m) => StateT QState m a -> m a
-inTemporarySession sma = do sess <- liftIO $ newSession "/var/bugpan/sessions/"
+inTemporarySession sma = do sess <- liftIO $ newSession sessionsRootDir
                             res <- inSession sess sma
                             liftIO $ deleteSession sess
                             return res
 
 inSessionNamed :: (MonadIO m, Functor m) => String -> StateT QState m a -> m a
-inSessionNamed nm sma = do sess <- liftIO $ loadExactSession $ "/var/bugpan/sessions/"++nm
+inSessionNamed nm sma = do sess <- liftIO $ loadExactSession $ sessionsRootDir++nm
                            inSession sess sma
 
 
 inApproxSession :: (MonadIO m, Functor m) => String -> StateT QState m a -> m a
-inApproxSession nm sma = do sess <- liftIO $ loadApproxSession "/var/bugpan/sessions/" nm
+inApproxSession nm sma = do sess <- liftIO $ loadApproxSession sessionsRootDir nm
                             inSession sess sma
 
 inEverySession :: (MonadIO m, Functor m) => StateT QState m a -> m [a]
 inEverySession sma = do
-  sessNms <- liftIO $ getSessionInRootDir "/var/bugpan/sessions/"
-  sessns <- liftIO $ mapM (loadExactSession . ("/var/bugpan/sessions/"++)) sessNms
+  sessNms <- liftIO $ getSessionInRootDir sessionsRootDir
+  sessns <- liftIO $ mapM (loadExactSession . (sessionsRootDir++)) sessNms
   forM sessns $ \s -> inSession s sma
 
 inEverySession_ :: (MonadIO m, Functor m) => StateT QState m a -> m ()
 inEverySession_ sma = do
-  sessNms <- liftIO $ getSessionInRootDir "/var/bugpan/sessions/"
+  sessNms <- liftIO $ getSessionInRootDir sessionsRootDir
   --liftIO $ mapM print sessNms
---  sessns <- liftIO $ mapM (loadExactSession . ("/var/bugpan/sessions/"++)) sessNms
+--  sessns <- liftIO $ mapM (loadExactSession . (sessionsRootDir++)) sessNms
   forM_ sessNms $ \snm -> do 
     --ftIO $ print $ snm++" start"
     inSessionNamed snm sma
@@ -276,8 +283,8 @@ inEverySession_ sma = do
 
 deleteSessionIfExists :: String -> IO ()
 deleteSessionIfExists nm = 
-    whenM (existsSession nm "/var/bugpan/sessions/") $ 
-      loadApproxSession "/var/bugpan/sessions/" nm >>= deleteSession
+    whenM (existsSession nm sessionsRootDir) $ 
+      loadApproxSession sessionsRootDir nm >>= deleteSession
 
 
 
@@ -293,8 +300,8 @@ whenMaybe False =  const (return Nothing)
 
 manySessionData :: (MonadIO m, Functor m) => StateT QState m (Maybe a) -> m [a]
 manySessionData sma = do -- catMaybes `fmap` inEverySession (setup >> ma)
-  sessNms <- liftIO $ getSessionInRootDir "/var/bugpan/sessions/"
-  --sessns <- liftIO $ mapM (loadExactSession . ("/var/bugpan/sessions/"++)) sessNms
+  sessNms <- liftIO $ getSessionInRootDir sessionsRootDir
+  --sessns <- liftIO $ mapM (loadExactSession . (sessionsRootDir++)) sessNms
   ress <- loopM setup 0 sessNms -- no, here increment lastTStop
   return $ catMaybes ress
     where setup (lastTStop, sNm) = inSessionNamed sNm $ do
@@ -319,8 +326,8 @@ oneDur durs = (runStat (before minF fst `both` before maxF snd) $ map fst durs, 
 
 inEverySessionWhere :: (MonadIO m, Functor m) => StateT QState m Bool -> StateT QState m a -> m [a]
 inEverySessionWhere mfilt sma = do
-  sessNms <- liftIO $ getSessionInRootDir "/var/bugpan/sessions/"
-  sessns <- liftIO $ mapM (loadExactSession . ("/var/bugpan/sessions/"++)) sessNms
+  sessNms <- liftIO $ getSessionInRootDir sessionsRootDir
+  sessns <- liftIO $ mapM (loadExactSession . (sessionsRootDir++)) sessNms
   res <- forM sessns $ \s -> inSession s $ do
                                   b<- mfilt 
                                   if b then Just `fmap` sma else return Nothing
@@ -415,7 +422,7 @@ valsToGraph vs = foldl1 (<+>) $ map vToPlot vs
 
 -}
 
-{-testQ = do s <- lastSession "/var/bugpan/sessions/"
+{-testQ = do s <- lastSession sessionsRootDir
            print s
            qres <- runAskM s $ signals "vm"
            mapM plotWithR qres

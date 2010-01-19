@@ -79,13 +79,13 @@ compile ds params = do
   let dsTrans = snd $ runTravM ds [] transform
   curDir <- liftIO $ getCurrentDirectory
   --liftIO $ mapM_ (putStrLn . ppDecl) dsTrans
-  liftIO $ createDirectoryIfMissing False "/var/bugpan/queryCache/"
-  liftIO $ whenM (not `fmap` doesFileExist ("/var/bugpan/queryCache/"++sha)) 
-                 (do setCurrentDirectory "/var/bugpan/queryCache/"
+  liftIO $ createDirectoryIfMissing False (bugpanRootDir./"queryCache/")
+  liftIO $ whenM (not `fmap` doesFileExist (bugpanRootDir./"queryCache/"./sha))
+                 (do setCurrentDirectory (bugpanRootDir./"queryCache/")
                      compileToHask (sha++".hs") dt trun dsTrans params
                      system $ "ghc -O2 --make "++sha -- -prof -auto-all
                      return ())
-  liftIO $ whenM (not `fmap` doesFileExist ("/var/bugpan/queryCache/"++sha)) 
+  liftIO $ whenM (not `fmap` doesFileExist (bugpanRootDir./"queryCache/"./sha)) 
              (fail "could not compile")
   --hash declares, look in cache
   liftIO $ setCurrentDirectory curDir
@@ -106,7 +106,7 @@ invoke (Left (sha, tmax,pars)) vals= do
                else t0
   Session sessNm _ <- getSession
   let valargs = intercalate " " $ map (ppVal . snd) vals --ideally check ordering
-  let cmdStr = "time /var/bugpan/queryCache/"++sha++" "++(last $ splitBy '/' sessNm)++" "++show t0' ++" "++valargs
+  let cmdStr = bugpanRootDir./"queryCache"./sha++" "++(last $ splitBy '/' sessNm)++" "++show t0' ++" "++valargs
   liftIO . putStrLn $ cmdStr
   liftIO $ putStrLn ""
   liftIO $ system $ cmdStr -- ++" +RTS -p"
