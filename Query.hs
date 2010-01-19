@@ -50,15 +50,15 @@ import Math.Probably.Student
 import Math.Probably.FoldingStats
 import Text.Printf
 import NewSignal
+import System.Info
  
 double :: Double
 double = undefined
 
-#ifdef MINGW32
-bugpanRootDir = "c:/bugdir/" 
-#else
-bugpanRootDir = "/var/bugpan/" 
-#endif
+
+bugpanRootDir = if os == "mingw32"
+                   then "c:/bugdir/" 
+                   else "/var/bugpan/" 
 
 sessionsRootDir = bugpanRootDir./"sessions/"
 

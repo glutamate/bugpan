@@ -79,15 +79,15 @@ compile ds params = do
   let dsTrans = snd $ runTravM ds [] transform
   curDir <- liftIO $ getCurrentDirectory
   --liftIO $ mapM_ (putStrLn . ppDecl) dsTrans
+  let exefile = if os =="mingw32"
+                   then (bugpanRootDir./"queryCache/"./sha++".exe")
+                   else (bugpanRootDir./"queryCache/"./sha)
   liftIO $ createDirectoryIfMissing False (bugpanRootDir./"queryCache/")
-  liftIO $ whenM (not `fmap` doesFileExist (bugpanRootDir./"queryCache/"./sha))
+  liftIO $ whenM (not `fmap` doesFileExist exefile)
                  (do setCurrentDirectory (bugpanRootDir./"queryCache/")
                      compileToHask (sha++".hs") dt trun dsTrans params
                      system $ "ghc -O2 --make "++sha -- -prof -auto-all
                      return ())
-  let exefile = if os =="mingw32"
-                   then (bugpanRootDir./"queryCache/"./sha++".exe")
-                   else (bugpanRootDir./"queryCache/"./sha)
   liftIO $ whenM (not `fmap` doesFileExist exefile) 
              (fail "could not compile")
   --hash declares, look in cache
