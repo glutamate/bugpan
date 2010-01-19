@@ -288,7 +288,7 @@ instance LoadDirectly [(Double,())] where
     loadDirectly fp = do
       h <- openBinaryFile fp ReadMode
       (n,tytag) <- readN'TT h
-      print2 fp (n,tytag)
+      --print2 fp (n,tytag)
       arr <- SV.hGet h n
       hClose h
       return $ zip (SV.unpack arr) $ repeat ()
@@ -297,7 +297,7 @@ instance LoadDirectly [(Double,Double)] where
     loadDirectly fp = do
       h <- openBinaryFile fp ReadMode
       (n,tytag) <- readN'TT h
-      print2 fp (n,tytag)
+      --print2 fp (n,tytag)
       arr <- SV.hGet h (n*2)
       hClose h
       return $ listToListOfPairs (SV.unpack arr)
@@ -306,7 +306,7 @@ instance LoadDirectly [((Double,Double),())] where
     loadDirectly fp = do
       h <- openBinaryFile fp ReadMode
       (n,tytag) <- readN'TT h
-      print2 fp (n,tytag)
+      --print2 fp (n,tytag)
       arr <- SV.hGet h (n*2)
       hClose h
       return $ zip (listToListOfPairs (SV.unpack arr)) $ repeat ()
@@ -315,7 +315,7 @@ instance LoadDirectly [((Double,Double),Double)] where
     loadDirectly fp = do
       h <- openBinaryFile fp ReadMode
       (n,tytag) <- readN'TT h
-      print2 fp (n,tytag)
+      --print2 fp (n,tytag)
       arr <- SV.hGet h (n*3)
       hClose h
       return $ (funny (SV.unpack arr))

@@ -2,10 +2,10 @@
 {-# OPTIONS_GHC -fvia-c -optc-O3 #-}
 module StatsModel where
 
-import HaskSyntaxUntyped
-import Expr
-import EvalM
-import Numbers
+--import HaskSyntaxUntyped
+--import Expr
+--import EvalM
+--import Numbers
 import System.Environment
 import Data.Char
 import Data.List
@@ -18,7 +18,7 @@ import Math.Probably.MCMC
 import qualified Math.Probably.PDF as P
 import QueryTypes
 import Math.Probably.FoldingStats
-import PlotGnuplot
+--import PlotGnuplot
 import QueryPlots
 import QueryUtils hiding (groupBy)
 import Database
@@ -77,8 +77,8 @@ class MutateGaussian a where
     nearlyEq :: Double -> a -> a -> Bool
 
 instance MutateGaussian Double where
-    mutGauss cv x = gauss x (cv*x)
-    mutGaussMany cv xs = gaussMany (map (\x-> (x,cv*x)) xs)
+    mutGauss cv x = gaussD x (cv*x)
+    mutGaussMany cv xs = gaussManyD (map (\x-> (x,cv*x)) xs)
     nearlyEq tol x y = abs(x-y)<tol  
 
 instance MutateGaussian a => MutateGaussian [a] where
@@ -96,7 +96,6 @@ instance (MutateGaussian a, MutateGaussian b) => MutateGaussian (a,b) where
 instance (MutateGaussian a, MutateGaussian b, MutateGaussian c) => MutateGaussian (a,b,c) where
     mutGauss cv (x,y,z) = liftM3 (,,) (mutGauss cv x) (mutGauss cv y) (mutGauss cv z)
     nearlyEq t (x,y, z) (x1,y1, z1) = nearlyEq t x x1 && nearlyEq t y y1 && nearlyEq t z z1
-
 
 instance (MutateGaussian a, MutateGaussian b, MutateGaussian c, MutateGaussian d) => MutateGaussian (a,b,c,d) where
     mutGauss cv (x,y,z,w) = liftM4 (,,,) (mutGauss cv x) (mutGauss cv y) (mutGauss cv z) (mutGauss cv w)

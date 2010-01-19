@@ -2,12 +2,12 @@
 {-# OPTIONS_GHC -fvia-c -optc-O3 #-}
 module Main where
 
-import HaskSyntaxUntyped
-import Expr
+--import HaskSyntaxUntyped
+--import Expr
 import EvalM
-import Numbers
+--import Numbers
 import System.Environment
-import Data.Char
+--import Data.Char
 import Data.List
 import TNUtils
 import Query 
@@ -23,16 +23,10 @@ import QueryPlots
 import QueryUtils hiding (groupBy)
 import Database
 import Data.Array.Vector 
+import qualified Data.Array.Vector.UArr as UA
 import Data.Binary
 import GHC.Conc
 import StatsModel
-
-priorSampler = 
-    do rate <- uniform 0 300
-       tau <- uniform 0.19 0.21
-       baseline <- uniform 0 1
-       t0 <- uniform 4.5 5.5
-       return (rate, tau, baseline, t0)
 
 priorSamplerH nsess ntrialsPerSess= 
     do poprate <- uniform 199 201
@@ -42,14 +36,9 @@ priorSamplerH nsess ntrialsPerSess=
        baseline <- uniform 0.09 0.11
        t0 <- uniform 4.95 5.05
        sessrates <- times nsess $ gauss poprate popratesd
-       trrates <- forM (zip ntrialsPerSess sessrates) $ \(ntrs, sr) -> (times ntrs $ gauss sr trRateSD)
+       trrates <- forM (zip ntrialsPerSess sessrates) $ \(ntrs, sr) -> toU `fmap` (times ntrs $ gauss sr trRateSD)
        return ((poprate,popratesd, trRateSD), (tau, baseline, t0), sessrates, trrates)
 
-
-priorPDF (rate, tau, baseline, t0) | between 0 300 rate && between 0.01 0.3 tau &&
-                                       between 0 1 baseline && between 4.5 5.5 t0 =  0
-                                   | otherwise = - 1e20
-    where between l u x = x > l && x < u
 
 hyperPriorPDF ((poprate, popRateSD, trialRateSD), (tau, baseline, t0), _, _) 
     | between 0 300 poprate && between 0.01 0.3 tau &&
@@ -63,17 +52,14 @@ sessPriorPDF ((poprate, popratesd, _), _, sessRates, _) =
     sum $ map (log . P.gaussD poprate popratesd) sessRates
 
 trialPriorPDF ((_, _, trialRateSD), _, sessRates, trialRates) =
-    sum $ map (\(sr, trRates) -> sum $ map (log . P.gaussD sr trialRateSD) trRates) $ zip sessRates trialRates
+    sum $ map (\(sr, trRates) -> sumU $ mapU (log . P.gaussD sr trialRateSD) trRates) $ zip sessRates trialRates
     
-calcPars [session, trial] (_, (tau, baseline, t0), sessRates, trialRates) =
-    (trialRates!!session!!trial, tau, baseline, t0)
+{-calcPars [session, trial] (_, (tau, baseline, t0), sessRates, trialRates) =
+    (trialRates!!session!!trial, (tau, baseline, t0)-}
 
 likelihoodH st@[session, trial] spikes bigp@(_, (tau, baseline, t0), sessRates, trialRates) =
-    let pars = ((trialRates!!session)!!trial, tau, baseline, t0) in 
-    ((sumU $ (mapU (log . r pars) spikes))- integralR pars 6  )
-
-likelihood pars@(rate, tau, baseline, t0) spikes =
-    ((sum $ (map (log . r pars) spikes))- integralR pars 6  )
+    let pars = ((trialRates!!session) `UA.indexU` trial, tau, baseline, t0) in 
+    (sumU $ (mapU (log . r pars) spikes))- integralR pars 6
 
 
 r :: (Double, Double, Double,Double) -> Double -> Double
@@ -83,26 +69,15 @@ r (rate, tau, baseline, t0) t
 
 --http://integrals.wolfram.com/index.jsp?expr=(-(x-z)%2Ft)*Exp[1%2B(x-z)%2Ft]*(r-b)%2Bb&random=false
 
+integralR :: (Double, Double, Double, Double) -> Double -> Double
 integralR pars@(rate, tau, baseline, t0) t 
     | t>t0 = integralR pars t0 + baseline * t
     | otherwise = (baseline - rate)*exp((tau+t-t0)/tau)*(-tau+t-t0)+baseline*t
 
 
-proposal (rate, tau, baseline, t0) =
-    do nrate <- gauss rate 0.1
-       ntau <- gauss tau 0.0005
-       nbaseline <- gauss baseline 0.001
-       nt0 <- gauss t0 0.005
-       return (nrate, ntau, nbaseline, nt0)
-
 
 proposalH =mutGauss 0.001 
 
-
-eq = nearly 1e-8
-
-eqpar (rate, tau, baseline, t0) (rate1, tau1, baseline1, t01) =
-    eq rate rate1 && eq tau tau1 && eq baseline baseline1 && eq t0 t01 
 
 
 
@@ -120,6 +95,8 @@ main = do
                      return (spikes, running, sess) 
 --  (spikes, running, sess) <- inApproxSession "poisson0" $ do
                                
+  --print $ length $ spikes
+  --print $ (meanSDF `runStat` spikes)
   let segs = (distinct running) `within` (distinct sess)
   let lh = manyLikeH segs likelihoodH $ toU spikes
   let nthreads = numCapabilities
@@ -153,7 +130,7 @@ main = do
   --return ()
 
 
-main1 :: IO ()
+{-main1 :: IO ()
 main1 = 
     do inSessionFromArgs $ do          
          spike <- map fst `fmap` events "spike" ()
@@ -191,9 +168,41 @@ main1 =
          
          
          return ()
+likelihood pars@(rate, tau, baseline, t0) spikes =
+    ((sum $ (map (log . r pars) spikes))- integralR pars 6  )
+
+
+
+priorSampler = 
+    do rate <- uniform 0 300
+       tau <- uniform 0.19 0.21
+       baseline <- uniform 0 1
+       t0 <- uniform 4.5 5.5
+       return (rate, tau, baseline, t0)
+
+
+priorPDF (rate, tau, baseline, t0) | between 0 300 rate && between 0.01 0.3 tau &&
+                                       between 0 1 baseline && between 4.5 5.5 t0 =  0
+                                   | otherwise = - 1e20
+    where between l u x = x > l && x < u
+
+proposal (rate, tau, baseline, t0) =
+    do nrate <- gauss rate 0.1
+       ntau <- gauss tau 0.0005
+       nbaseline <- gauss baseline 0.001
+       nt0 <- gauss t0 0.005
+       return (nrate, ntau, nbaseline, nt0)
+
+
+eq = nearly 1e-8
+
+eqpar (rate, tau, baseline, t0) (rate1, tau1, baseline1, t01) =
+    eq rate rate1 && eq tau tau1 && eq baseline baseline1 && eq t0 t01 
+
 
 --between l u x = x > l && x < u
 
 
 --mapIdx :: (Int -> b) -> [a] -> [b]
 --mapIdx f xs = map f [0..length xs-1]
+-}
