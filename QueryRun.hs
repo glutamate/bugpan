@@ -41,7 +41,7 @@ import HaskellBackend
 import ValueIO
 import Data.Monoid
 import Control.Applicative hiding (Const)
-
+import System.Info
 
 simulatedTime :: MonadIO m => StateT QState m ()
 simulatedTime = do qs <- get
@@ -85,7 +85,10 @@ compile ds params = do
                      compileToHask (sha++".hs") dt trun dsTrans params
                      system $ "ghc -O2 --make "++sha -- -prof -auto-all
                      return ())
-  liftIO $ whenM (not `fmap` doesFileExist (bugpanRootDir./"queryCache/"./sha)) 
+  let exefile = if os =="mingw32"
+                   then (bugpanRootDir./"queryCache/"./sha++".exe")
+                   else (bugpanRootDir./"queryCache/"./sha)
+  liftIO $ whenM (not `fmap` doesFileExist exefile) 
              (fail "could not compile")
   --hash declares, look in cache
   liftIO $ setCurrentDirectory curDir
