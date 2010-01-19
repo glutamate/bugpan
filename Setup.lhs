@@ -5,11 +5,21 @@ $ cat > Setup.lhs
 > import System.Cmd
 > import System.Directory
 > import System.Info
+> import Control.Monad
 >
 > main = defaultMainWithHooks $ simpleUserHooks {postInst = postInstall}
 
+> basedir = if os == "mingw32" 
+>             then  "c:/bugdir/"
+>             else  "/var/bugpan/"
+
+> qcDir = basedir++"queryCache"
+
 > postInstall _ _ _ _ = do
->   if os == "mingw32" 
->      then removeDirectoryRecursive "c:/bugdir/queryCache"
->      else removeDirectoryRecursive "/var/bugpan/queryCache"
+>   bex <- doesDirectoryExist basedir
+>   qcex <- doesDirectoryExist qcDir
+>   when (not bex ) $ do
+>         createDirectory basedir
+>   when (qcex) $ do
+>         removeDirectoryRecursive qcDir
 >   return ()
