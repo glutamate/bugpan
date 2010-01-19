@@ -4,6 +4,7 @@ $ cat > Setup.lhs
 > import Distribution.Simple
 > import System.Cmd
 > import System.Directory
+> import System.Info
 >
 > main = defaultMainWithHooks $ simpleUserHooks {postInst = postInstall}
 
