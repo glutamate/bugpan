@@ -58,13 +58,15 @@ trialPriorPDF ((_, _, trialRateSD), _, sessRates, trialRates) =
     (trialRates!!session!!trial, (tau, baseline, t0)-}
 
 likelihoodH st@[session, trial] spikes bigp@(_, (tau, baseline, t0), sessRates, trialRates) =
-    let pars = ((trialRates!!session) `UA.indexU` trial, tau, baseline, t0) in 
-    (sumU $ (mapU (log . r pars) spikes))- integralR pars 6
+    let rate = (trialRates!!session) `UA.indexU` trial
+        pars = (rate, tau, baseline, t0) in 
+    (sumU $ (mapU (log . r rate tau baseline t0) spikes))- integralR pars 6
 
 
-r :: (Double, Double, Double,Double) -> Double -> Double
-r (rate, tau, baseline, t0) t 
-    | t < t0 = ((-(t-t0)/tau)*exp(1+(t-t0)/tau))*(rate-baseline)+baseline
+r :: Double -> Double -> Double -> Double -> Double -> Double
+r rate tau baseline t0 t 
+    | t < t0 = let t' = (t-t0)/tau 
+               in (negate t')*exp(1+t')*(rate-baseline)+baseline
     | otherwise = baseline
 
 --http://integrals.wolfram.com/index.jsp?expr=(-(x-z)%2Ft)*Exp[1%2B(x-z)%2Ft]*(r-b)%2Bb&random=false
