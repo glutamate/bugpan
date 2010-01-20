@@ -43,7 +43,7 @@ main = do
   let Just parIdx = fmap snd $ find ((==parnm) . fst) $ zip (read parstr) [0..]
   files <- (catMaybes . map (parseFileName nm) . filter (nm `isPrefixOf`)) `fmap` getDirectoryContents "."
   let chains = nub . fst $ unzip files
-  mapM print files
+  --mapM print files
   cs <- forM chains $ \c-> do
           let fls = sort $ lookupMany c files
           fmap concat $ forM fls $ \fl-> do

@@ -26,10 +26,19 @@ import Data.Array.Vector
 import Data.Binary
 import GHC.Conc
 
+writeInChunksK :: (Show a, Binary b) => String -> Int ->  (a->b) -> [a] -> IO ()
+writeInChunksK = writeInChunks' 0
+    where writeInChunks' _ _ _  k [] = return ()
+          writeInChunks' counter fnm chsize k xs = do
+            let (out, rest) = splitAt chsize xs
+            saveBinary (fnm++"_file"++(show counter)++".mcmc") $ map k out
+            if null rest
+               then writeFile (fnm++"lastpar.mcmc") $ show $ last out
+               else writeInChunks' (counter+1) fnm chsize k rest
 
-writeInChunks :: Binary a => String -> Int -> [a] -> IO ()
+writeInChunks :: (Binary a) => String -> Int ->   [a] -> IO ()
 writeInChunks = writeInChunks' 0
-    where writeInChunks' _ _ _ [] = return ()
+    where writeInChunks' _ _ _  [] = return ()
           writeInChunks' counter fnm chsize xs = do
             let (out, rest) = splitAt chsize xs
             saveBinary (fnm++"_file"++(show counter)++".mcmc") out

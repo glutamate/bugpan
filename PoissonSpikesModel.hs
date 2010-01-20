@@ -110,9 +110,10 @@ main = do
     let baymarkov = Mrkv bayfun (inits!!threadn) id
     ps <- take count `fmap` runMarkovIO baymarkov
     let ofInterest ((poprate, popRateSD, trialRateSD), (tau, baseline, t0), _, _) = 
-            [poprate, popRateSD, trialRateSD, tau, baseline, t0] 
-    writeInChunks ("poisson_chain"++show threadn) 20000 $ map ofInterest ps
-
+            [poprate, popRateSD, trialRateSD, tau, baseline, t0]  
+    writeInChunksK ("poisson_chain"++show threadn) 2000 ofInterest ps
+    --writeFile ("poisson_chain"++show threadn++"lastpar.mcmc") $ show $ last ps
+  
 
   {-let noburn = drop dropn ps
  
