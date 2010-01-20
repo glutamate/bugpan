@@ -18,7 +18,7 @@ main = do
           let file =  (nm++"_chain"++chain++"_file"++show fnum++".mcmc")
           print file
           ifM (doesFileExist file ) 
-             (Just `fmap` loadBinary file)
+             (fmap Just $ safeLoad file)             
              (return Nothing)
   let bigList = (concat $ catMaybes xs) :: [[Double]]
   when ("-j" `elem`restArgs) $ do

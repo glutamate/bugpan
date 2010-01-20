@@ -29,12 +29,12 @@ import GHC.Conc
 import StatsModel
 
 priorSamplerH nsess ntrialsPerSess= 
-    do poprate <- uniform 199 201
-       popratesd <- uniform 19 21
-       trRateSD <- uniform 29 31
-       tau <- uniform 0.19 0.21
-       baseline <- uniform 0.09 0.11
-       t0 <- uniform 4.95 5.05
+    do poprate <- uniform 100 300
+       popratesd <- uniform 2 40
+       trRateSD <- uniform 2 40
+       tau <- uniform 0.05 0.4
+       baseline <- uniform 0 1
+       t0 <- uniform 4.5 5.5
        sessrates <- times nsess $ gauss poprate popratesd
        trrates <- forM (zip ntrialsPerSess sessrates) $ \(ntrs, sr) -> toU `fmap` (times ntrs $ gauss sr trRateSD)
        return ((poprate,popratesd, trRateSD), (tau, baseline, t0), sessrates, trrates)

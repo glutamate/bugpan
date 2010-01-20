@@ -25,6 +25,11 @@ import Database
 import Data.Array.Vector 
 import Data.Binary
 import GHC.Conc
+import qualified Control.Exception as C
+
+safeLoad :: Binary a => String -> IO [a]
+safeLoad file = C.catch (loadBinary file)
+                        (\e->return $ const [] (e::C.SomeException))
 
 writeInChunksK :: (Show a, Binary b) => String -> Int ->  (a->b) -> [a] -> IO ()
 writeInChunksK = writeInChunks' 0

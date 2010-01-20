@@ -47,7 +47,7 @@ main = do
   cs <- forM chains $ \c-> do
           let fls = sort $ lookupMany c files
           fmap concat $ forM fls $ \fl-> do
-             fmap (map (!!parIdx) . thin 10) $ loadBinary (unparseFileName nm c fl)
+             fmap (map (!!parIdx) . thin 10) $ safeLoad (unparseFileName nm c fl)
 
   gnuplotOnScreen $ map GnuplotBox $ map (zip [(0::Double), 10..] . isLstDbls) cs
   {-let (lo, hi) = (safeHead restArgs >>= safeRead) `orJust` (0,nfiles)
