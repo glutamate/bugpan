@@ -1,5 +1,4 @@
 {-# LANGUAGE ViewPatterns, NoMonomorphismRestriction, FlexibleInstances #-}
-{-# OPTIONS_GHC -fvia-c -optc-O3 #-}
 module Main where
 
 --import HaskSyntaxUntyped
@@ -28,97 +27,101 @@ import Data.Binary
 import GHC.Conc
 import StatsModel
 
-priorSamplerH nsess ntrialsPerSess= 
-    do poprate <- uniform 100 300
-       popratesd <- uniform 2 40
-       trRateSD <- uniform 2 40
-       tau <- uniform 0.05 0.4
-       baseline <- uniform 0 1
-       t0 <- uniform 4.5 5.5
-       sessrates <- times nsess $ gauss poprate popratesd
-       trrates <- forM (zip ntrialsPerSess sessrates) $ \(ntrs, sr) -> toU `fmap` (times ntrs $ gauss sr trRateSD)
-       return ((poprate,popratesd, trRateSD), (tau, baseline, t0), sessrates, trrates)
+priorSamplerH nsess ntrialsPerSess = 
+    do nmax <- round `fmap` uniform 5 30
+       np <- uniform 0.01 0.99 
+       qmean <- uniform 0 40
+       qsd <- uniform 0 10
+       pmean <- uniform 0.01 0.99
+       psd <- uniform 0.1 0.4
+       pupmean <- uniform 1 4
+       pupsd <- uniform 0.1 0.7
+       pdownmean <- uniform 1 4
+       pdownsd <- uniform 0.1 0.7
+       cv <- uniform 0 1
+       sessns <- times nsess $ binomial nmax np
+       sessps <- times nsess $ gauss pmean psd
+       sessqs <- times nsess $ gauss qmean qsd
+       sesspup <- times nsess $ gauss pupmean pupsd
+       sesspdown <- times nsess $ gauss pdownmean pdownsd
+       trnrels <- forM (zip3 ntrialsPerSess sessns sessps) $ \(ntrs, nsess, psess) -> toU `fmap` (times ntrs $ binomial nsess psess)
+       return (((nmax,np), (qmean, qsd), (pmean, psd), cv), 
+               (pupmean, pupsd, pdownmean, pdownsd), 
+               (sessns, sessps, sessqs, (sesspup, sesspdown)), trnrels)
 
 
-hyperPriorPDF ((poprate, popRateSD, trialRateSD), (tau, baseline, t0), _, _) 
-    | between 0 300 poprate && between 0.01 0.3 tau &&
-      between 0 1 baseline && between 4.5 5.5 t0 && 
-      between 0 60 trialRateSD && between 0 60 popRateSD =  lrsq popRateSD + lrsq trialRateSD
-    | otherwise = - 1e20
+hyperPriorPDF (((nmax,np), (qmean, qsd), (pmean, psd), cv), 
+               (pupmean, pupsd, pdownmean, pdownsd), 
+               (sessns, sessps, sessqs, (sesspup, sesspdown)), trnrels) 
+    =  sum $ map lrsq [qsd,  psd, qsd, pupsd, pdownsd]
     where lrsq = log . recip . (\x-> x*x)
 
 
-sessPriorPDF ((poprate, popratesd, _), _, sessRates, _) =
-    sum $ map (log . P.gaussD poprate popratesd) sessRates
-
-trialPriorPDF ((_, _, trialRateSD), _, sessRates, trialRates) =
-    sum $ map (\(sr, trRates) -> sumU $ mapU (log . P.gaussD sr trialRateSD) trRates) $ zip sessRates trialRates
+sessPriorPDF (((nmax,np), (qmean, qsd), (pmean, psd), cv), 
+               (pupmean, pupsd, pdownmean, pdownsd), 
+               (sessns, sessps, sessqs, (sesspup, sesspdown)), trnrels) =
+    (sum $ map (log . P.gaussD qmean qsd) sessqs) +
+    (sum $ map (log . P.gaussD pmean psd) sessps) +
+    (sum $ map (log . P.gaussD pupmean pupsd) sesspup) +
+    (sum $ map (log . P.gaussD pdownmean pdownsd) sesspdown) +
+    (sum $ map (log . P.binomial nmax np) sessns) -- may not be correct to use prob mass function here 
     
-{-calcPars [session, trial] (_, (tau, baseline, t0), sessRates, trialRates) =
-    (trialRates!!session!!trial, (tau, baseline, t0)-}
+trialPriorPDF (((nmax,np), (qmean, qsd), (pmean, psd), cv), 
+               (pupmean, pupsd, pdownmean, pdownsd), 
+               (sessns, sessps, sessqs, (sesspup, sesspdown)), trnrels) =
+    sum $ map (\(sn, sp, nrels) -> sumU $ mapU (log . P.binomial sn sp) nrels) $ zip3 sessns sessps trnrels
 
-likelihoodH st@[session, trial] spikes bigp@(_, (tau, baseline, t0), sessRates, trialRates) =
-    let rate = (trialRates!!session) `UA.indexU` trial
-        pars = (rate, tau, baseline, t0) in 
-    (sumU $ (mapU (log . r rate tau baseline t0) spikes))- integralR pars 6
-
-
-r :: Double -> Double -> Double -> Double -> Double -> Double
-r rate tau baseline t0 t 
-    | t < t0 = let t' = (t-t0)/tau 
-               in (negate t')*exp(1+t')*(rate-baseline)+baseline
-    | otherwise = baseline
-
---http://integrals.wolfram.com/index.jsp?expr=(-(x-z)%2Ft)*Exp[1%2B(x-z)%2Ft]*(r-b)%2Bb&random=false
-
-integralR :: (Double, Double, Double, Double) -> Double -> Double
-integralR pars@(rate, tau, baseline, t0) t 
-    | t>t0 = integralR pars t0 + baseline * t
-    | otherwise = (baseline - rate)*exp((tau+t-t0)/tau)*(-tau+t-t0)+baseline*t
-
-
+--http://mathworld.wolfram.com/NormalSumDistribution.html
+likelihoodH st@[session, trial] ((t1t2,epsc):_) (((nmax,np), (qmean, qsd), (pmean, psd), cv), 
+                                       (pupmean, pupsd, pdownmean, pdownsd), 
+                                       (sessns, sessps, sessqs, (sesspup, sesspdown)), trnrels) 
+    = let nrel = (trnrels!!session) `UA.indexU` trial 
+          p = sessps!!session
+          q = sessqs!!session
+          var = (q*cv)*(q*cv)
+      in  log $ P.gaussD (realToFrac nrel*q) (sqrt (realToFrac nrel*var)) epsc
 
 proposalH =mutGauss 0.001 
-
-
-
 
 main :: IO ()
 main = do
   (read -> count) : _  <- getArgs 
   --let dropn = (count*3) `div` 4
   --putStrLn $ "droping "++show dropn
-  (concat -> spikes, concat -> running, concat -> sess) <- fmap unzip3 $ manySessionData $ do
-           spikes <-  map fst `fmap` events "spike" ()
+  (concat -> epscs, concat -> running, concat -> sess) <- fmap unzip3 $ manySessionData $ do
+           epscs <- durations "epsc" (1::Double)
            running <- durations "running" ()
            modNm <- durations "moduleName" "foo"
            sess <- sessionDur
-           whenMaybe (not . null $ (=="simulatePoissonSpikes")//modNm) $ 
-                     return (spikes, running, sess) 
+           whenMaybe (not . null $ (=="simulateQuantalSyns")//modNm) $ 
+                     return (epscs, running, sess) 
 --  (spikes, running, sess) <- inApproxSession "poisson0" $ do
                                
   --print $ length $ spikes
   --print $ (meanSDF `runStat` spikes)
   let segs = (distinct running) `within` (distinct sess)
-  let lh = manyLikeH segs likelihoodH $ toU spikes
+  let lh = manyLikeH segs likelihoodH epscs
   let nthreads = numCapabilities
+  let foo = undefined `asTypeOf` hyperPriorPDF `asTypeOf` sessPriorPDF `asTypeOf` trialPriorPDF `asTypeOf` lh
   putStrLn $ "splitting into nthreads="++show nthreads
   inits <- fmap (take nthreads) $ runSamplerIO $ priorSamplerH (length sess) (map (length . (`during` running) . (:[])) sess)
-  writeFile "poisson_parnames.mcmc" $ show ["poprate", "popRateSD", "trialRateSD", "tau", "baseline", "t0"]
+  writeFile "poisson_parnames.mcmc" $ show ["nmax", "np", "qmean", "qsd", "pmean", "psd", "cv"]
   inPar nthreads $ \threadn-> do
     let bayfun = bayesMetLog (mutGauss 0.0003) [hyperPriorPDF, sessPriorPDF, trialPriorPDF, lh]
     let baymarkov = Mrkv bayfun (inits!!threadn) id
     ps <- take count `fmap` runMarkovIO baymarkov
-    let ofInterest ((poprate, popRateSD, trialRateSD), (tau, baseline, t0), _, _) = 
-            [poprate, popRateSD, trialRateSD, tau, baseline, t0]  
+    let ofInterest (((nmax,np), (qmean, qsd), (pmean, psd), cv), 
+               (pupmean, pupsd, pdownmean, pdownsd), 
+               (sessns, sessps, sessqs, (sesspup, sesspdown)), trnrels) = 
+            [realToFrac nmax, np, qmean, qsd, pmean, psd, cv]  
     writeInChunks ("poisson_chain"++show threadn) 20000 $ map ofInterest ps
     --writeFile ("poisson_chain"++show threadn++"lastpar.mcmc") $ show $ last ps
-  
+    
 
   {-let noburn = drop dropn ps
- 
+
   let plotWith nm f =  (nm, Lines $ zip [(0::Double)..] $ map f ps)
-              
+
   putStrLn $ "poprate "++ show (meanSDF `runStat` map (fst3 . fst4)  noburn) 
   putStrLn $ "popratesd "++ show (meanSDF  `runStat` map (snd3 . fst4)  noburn) 
   putStrLn $ "trialRateSD "++ show (meanSDF `runStat` map (trd3 . fst4)  noburn) 

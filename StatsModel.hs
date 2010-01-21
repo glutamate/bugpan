@@ -95,11 +95,15 @@ instance MutateGaussian Double where
     mutGaussMany cv xs = gaussManyD (map (\x-> (x,cv*x)) xs)
     nearlyEq tol x y = abs(x-y)<tol  
 
+instance MutateGaussian Int where
+    mutGauss cv x = round `fmap` gaussD (realToFrac x) (cv*realToFrac x)
+    nearlyEq tol x y = x==y 
+
 instance MutateGaussian a => MutateGaussian [a] where
     mutGauss cv xs = mutGaussMany cv xs 
     nearlyEq tol xs ys = length xs == length ys && (all (uncurry $ nearlyEq tol) $ zip xs ys )
 
-instance MutateGaussian (UArr Double) where
+instance (MutateGaussian a, UA a )=> MutateGaussian (UArr a) where
     mutGauss cv xs = toU `fmap` mutGaussMany cv (fromU xs)
     nearlyEq tol xs ys = lengthU xs == lengthU ys && (allU (uncurryS $ nearlyEq tol) $ zipU xs ys )
 
