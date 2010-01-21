@@ -72,14 +72,19 @@ trialPriorPDF (((nmax,np), (qmean, qsd), (pmean, psd), cv),
     sum $ map (\(sn, sp, nrels) -> sumU $ mapU (log . P.binomial sn sp) nrels) $ zip3 sessns sessps trnrels
 
 --http://mathworld.wolfram.com/NormalSumDistribution.html
-likelihoodH st@[session, trial] ((t1t2,epsc):_) (((nmax,np), (qmean, qsd), (pmean, psd), cv), 
-                                       (pupmean, pupsd, pdownmean, pdownsd), 
-                                       (sessns, sessps, sessqs, (sesspup, sesspdown)), trnrels) 
+likelihoodH st@[session, calevel, trial] ((t1t2,epsc):_) 
+                (((nmax,np), (qmean, qsd), (pmean, psd), cv), 
+                 (pupmean, pupsd, pdownmean, pdownsd), 
+                 (sessns, sessps, sessqs, (sesspup, sesspdown)), trnrels) 
     = let nrel = (trnrels!!session) `UA.indexU` trial 
-          p = sessps!!session
+          p = case calevel of
+                0 -> sessps!!session
+                1 -> (sessps!!session)*(sesspup !!session)
+                2 -> (sessps!!session)/(sesspdown!!session)
           q = sessqs!!session
           var = (q*cv)*(q*cv)
       in  log $ P.gaussD (realToFrac nrel*q) (sqrt (realToFrac nrel*var)) epsc
+likelihoodH st epdur theta = error $ "lhH with :"++show (st,epdur,theta)
 
 proposalH =mutGauss 0.001 
 
@@ -88,24 +93,32 @@ main = do
   (read -> count) : _  <- getArgs 
   --let dropn = (count*3) `div` 4
   --putStrLn $ "droping "++show dropn
-  (concat -> epscs, concat -> running, concat -> sess) <- fmap unzip3 $ manySessionData $ do
+  (concat -> epscs, 
+   concat -> running, 
+   concat -> sess,
+   concat -> calevels) <- fmap unzip4 $ manySessionData $ do
            epscs <- durations "epsc" (1::Double)
            running <- durations "running" ()
            modNm <- durations "moduleName" "foo"
            sess <- sessionDur
+           -- unitDurationsStrict "running" >>= (io . print)
+           let pnormalDur = oneDur $ take 20 running
+           let phighDur = oneDur $ take 20 $ drop 20 running
+           let plowDur = oneDur $ take 20 $ drop 40 running
            whenMaybe (not . null $ (=="simulateQuantalSyns")//modNm) $ 
-                     return (epscs, running, sess) 
+                     return (epscs, running, sess, pnormalDur++phighDur++plowDur) 
 --  (spikes, running, sess) <- inApproxSession "poisson0" $ do
                                
   --print $ length $ spikes
   --print $ (meanSDF `runStat` spikes)
-  let segs = (distinct running) `within` (distinct sess)
+  let segs = (distinct running) `within` ((distinct calevels) `within` (distinct sess))
+  --print $ zip (take 10 segs) (take 10 epscs)
   let lh = manyLikeH segs likelihoodH epscs
   let nthreads = numCapabilities
   let foo = undefined `asTypeOf` hyperPriorPDF `asTypeOf` sessPriorPDF `asTypeOf` trialPriorPDF `asTypeOf` lh
   putStrLn $ "splitting into nthreads="++show nthreads
   inits <- fmap (take nthreads) $ runSamplerIO $ priorSamplerH (length sess) (map (length . (`during` running) . (:[])) sess)
-  writeFile "poisson_parnames.mcmc" $ show ["nmax", "np", "qmean", "qsd", "pmean", "psd", "cv"]
+  writeFile "quantal_parnames.mcmc" $ show ["nmax", "np", "qmean", "qsd", "pmean", "psd", "cv"]
   inPar nthreads $ \threadn-> do
     let bayfun = bayesMetLog (mutGauss 0.0003) [hyperPriorPDF, sessPriorPDF, trialPriorPDF, lh]
     let baymarkov = Mrkv bayfun (inits!!threadn) id
@@ -114,7 +127,7 @@ main = do
                (pupmean, pupsd, pdownmean, pdownsd), 
                (sessns, sessps, sessqs, (sesspup, sesspdown)), trnrels) = 
             [realToFrac nmax, np, qmean, qsd, pmean, psd, cv]  
-    writeInChunks ("poisson_chain"++show threadn) 20000 $ map ofInterest ps
+    writeInChunks ("quantal_chain"++show threadn) 20000 $ map ofInterest ps
     --writeFile ("poisson_chain"++show threadn++"lastpar.mcmc") $ show $ last ps
     
 

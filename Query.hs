@@ -128,6 +128,18 @@ unitDurations nm = do
       (return [])            
       where reifyIt (PairV (PairV t1 t2) v) = ((unsafeReify t1, unsafeReify t2), ())
 
+unitDurationsStrict :: MonadIO m => String -> StateT QState m [Duration ()]
+unitDurationsStrict nm = do
+  Session bdir t0 <- getSession
+  tshift <- loadShift `fmap` get
+  ifM (liftIO (doesDirectoryExist (bdir++"/durations/"++nm)))
+      (do fnms <- getSortedDirContents $ bdir++"/durations/"++nm
+          eps <- forM fnms $ \fn-> liftIO $ loadBinaryStrict $ bdir++"/durations/"++nm++"/"++fn
+          return $ shift tshift $ map reifyIt $ concat eps)
+      (return [])            
+      where reifyIt (PairV (PairV t1 t2) v) = ((unsafeReify t1, unsafeReify t2), ())
+
+
 durationsDirect :: (MonadIO m, LoadDirectly [(Double,a)]) => String -> a-> StateT QState m [Event a]
 durationsDirect nm _ = do
   Session bdir t0 <- getSession

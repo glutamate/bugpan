@@ -36,7 +36,7 @@ cv1 = 0.2
 main = forM_ [0..9] $ \i -> do
          deleteSessionIfExists $ "quantal"++show i
          inApproxSession ("new:quantal"++show i) $ do                                        
-                              ntrials <- sampleN 3 $ oneOf [20..100]
+                              ntrials <- return [20, 20, 20] -- sampleN 3 $ oneOf [20..100]
                               simsyns <- useFile "SimulateQuantalSyns" [] []
                               nsess <- sample1 $ binomial nmax np
                               psess <- sample1 $ gaussD pmean psd
@@ -44,7 +44,7 @@ main = forM_ [0..9] $ \i -> do
                               pupsess <- sample1 $ gauss pupfactormean pupfactorsd
                               pdownsess <- sample1 $ gauss pdownfactormean pdownfactorsd
                               let doTrial pseg = do 
-                                           determine simsyns []
+                                           invoke simsyns []
                                            nrel <- sample1 $ binomial nsess pseg
                                            qs <- sampleN nrel (gaussD qsess (cv1*qsess))
                                            inLast $ "epsc" := ( sum qs )
