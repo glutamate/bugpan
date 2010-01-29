@@ -26,19 +26,20 @@ import qualified Data.Array.Vector.UArr as UA
 import Data.Binary
 import GHC.Conc
 import StatsModel
+import Debug.Trace
 
 priorSamplerH nsess ntrialsPerSess = 
-    do nmax <- round `fmap` uniform 5 30
-       np <- uniform 0.01 0.99 
-       qmean <- uniform 0 40
-       qsd <- uniform 0 10
-       pmean <- uniform 0.01 0.99
+    do nmax <- round `fmap` uniform 15 25
+       np <- uniform 0.1 0.3 
+       qmean <- uniform 15 30
+       qsd <- uniform 2 6
+       pmean <- uniform 0.2 0.8
        psd <- uniform 0.1 0.4
-       pupmean <- uniform 1 4
-       pupsd <- uniform 0.1 0.7
-       pdownmean <- uniform 1 4
-       pdownsd <- uniform 0.1 0.7
-       cv <- uniform 0 1
+       pupmean <- uniform 1.5 3
+       pupsd <- uniform 0.1 0.5
+       pdownmean <- uniform 1.5 3
+       pdownsd <- uniform 0.1 0.5
+       cv <- uniform 0.1 0.4
        sessns <- times nsess $ binomial nmax np
        sessps <- times nsess $ gauss pmean psd
        sessqs <- times nsess $ gauss qmean qsd
@@ -72,7 +73,14 @@ trialPriorPDF (((nmax,np), (qmean, qsd), (pmean, psd), cv),
     sum $ map (\(sn, sp, nrels) -> sumU $ mapU (log . P.binomial sn sp) nrels) $ zip3 sessns sessps trnrels
 
 --http://mathworld.wolfram.com/NormalSumDistribution.html
-likelihoodH st@[session, calevel, trial] ((t1t2,epsc):_) 
+likelihoodH :: [Int]
+     -> [((Double, Double), Double)]
+     -> (((Int, Double), (Double, Double), (Double, Double), Double),
+         (Double, Double, Double, Double),
+         ([Int], [Double], [Double], ([Double], [Double])),
+         [UArr Int])
+     -> Double
+likelihoodH st@[session, calevel, trial] [(t1t2,epsc)]
                 (((nmax,np), (qmean, qsd), (pmean, psd), cv), 
                  (pupmean, pupsd, pdownmean, pdownsd), 
                  (sessns, sessps, sessqs, (sesspup, sesspdown)), trnrels) 
@@ -90,7 +98,7 @@ proposalH =mutGauss 0.001
 
 main :: IO ()
 main = do
-  (read -> count) : _  <- getArgs 
+  --(read -> count) : _  <- getArgs 
   --let dropn = (count*3) `div` 4
   --putStrLn $ "droping "++show dropn
   (concat -> epscs, 
@@ -113,14 +121,16 @@ main = do
   --print $ (meanSDF `runStat` spikes)
   let segs = (distinct running) `within` ((distinct calevels) `within` (distinct sess))
   --print $ zip (take 10 segs) (take 10 epscs)
-  let lh = manyLikeH segs likelihoodH epscs
+  let lh = manyLikeH (take 2 segs) likelihoodH epscs
   let nthreads = numCapabilities
   let foo = undefined `asTypeOf` hyperPriorPDF `asTypeOf` sessPriorPDF `asTypeOf` trialPriorPDF `asTypeOf` lh
   putStrLn $ "splitting into nthreads="++show nthreads
   inits <- fmap (take nthreads) $ runSamplerIO $ priorSamplerH (length sess) (map (length . (`during` running) . (:[])) sess)
   writeFile "quantal_parnames.mcmc" $ show ["nmax", "np", "qmean", "qsd", "pmean", "psd", "cv"]
   inPar nthreads $ \threadn-> do
-    let bayfun = bayesMetLog (mutGauss 0.0003) [hyperPriorPDF, sessPriorPDF, trialPriorPDF, lh]
+    print $ lh $ inits!!threadn
+    print $ likelihoodH (snd $ head segs) (take 1 epscs) $ inits!!threadn
+    {-let bayfun = bayesMetLog (mutGauss 0.0003) [hyperPriorPDF, sessPriorPDF, trialPriorPDF, lh]
     let baymarkov = Mrkv bayfun (inits!!threadn) id
     ps <- take count `fmap` runMarkovIO baymarkov
     let ofInterest (((nmax,np), (qmean, qsd), (pmean, psd), cv), 
@@ -129,7 +139,7 @@ main = do
             [realToFrac nmax, np, qmean, qsd, pmean, psd, cv]  
     writeInChunks ("quantal_chain"++show threadn) 20000 $ map ofInterest ps
     --writeFile ("poisson_chain"++show threadn++"lastpar.mcmc") $ show $ last ps
-    
+    -}
 
   {-let noburn = drop dropn ps
 

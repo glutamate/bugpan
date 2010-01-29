@@ -57,7 +57,7 @@ trialPriorPDF ((_, _, trialRateSD), _, sessRates, trialRates) =
 {-calcPars [session, trial] (_, (tau, baseline, t0), sessRates, trialRates) =
     (trialRates!!session!!trial, (tau, baseline, t0)-}
 
-likelihoodH st@[session, trial] spikes bigp@(_, (tau, baseline, t0), sessRates, trialRates) =
+likelihoodH st@[session, trial] spikes bigp@(_, (tau, baseline, t0), _, trialRates) =
     let rate = (trialRates!!session) `UA.indexU` trial
         pars = (rate, tau, baseline, t0) in 
     (sumU $ (mapU (log . r rate tau baseline t0) spikes))- integralR pars 6
@@ -106,8 +106,8 @@ main = do
   inits <- fmap (take nthreads) $ runSamplerIO $ priorSamplerH (length sess) (map (length . (`during` running) . (:[])) sess)
   writeFile "poisson_parnames.mcmc" $ show ["poprate", "popRateSD", "trialRateSD", "tau", "baseline", "t0"]
   inPar nthreads $ \threadn-> do
-    let bayfun = bayesMetLog (mutGauss 0.0003) [hyperPriorPDF, sessPriorPDF, trialPriorPDF, lh]
-    let baymarkov = Mrkv bayfun (inits!!threadn) id
+    let baymarkov = bayesMetLog (mutGauss 0.0003) [hyperPriorPDF, sessPriorPDF, trialPriorPDF, lh] (inits!!threadn) 
+--    let baymarkov = Mrkv bayfun (inits!!threadn) id
     ps <- take count `fmap` runMarkovIO baymarkov
     let ofInterest ((poprate, popRateSD, trialRateSD), (tau, baseline, t0), _, _) = 
             [poprate, popRateSD, trialRateSD, tau, baseline, t0]  

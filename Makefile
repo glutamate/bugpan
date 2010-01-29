@@ -63,3 +63,8 @@ comedi_helper:
 clean: 
 	rm *.o *.hi
 	rm Comedi/*.o
+
+poissonprof:
+	ghc --make -O2 -prof -auto-all PoissonSpikesModel.hs -fexcess-precision
+poissonnoprof:
+	ghc --make -O2 PoissonSpikesModel.hs -threaded -fexcess-precision
