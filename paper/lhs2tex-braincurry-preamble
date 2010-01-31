@@ -1,0 +1,32 @@
+%include polycode.fmt
+%format ...  = "\ldots"
+
+%format >->   = "\succ\!\!\!\!\rightarrow"
+%format >>->> = "\succ\!\!\!\!\succ\!\!\!\!\!\rightarrow\!\!\!\!\!\!\!\rightarrow"
+%format forall = "\forall"
+%format quantifierdot = "."
+%format alpha = "\alpha"
+%format beta = "\beta"
+%format times = "\!\!\times\!\!"
+%format Real = "\mathbb{R}"
+%format sopen = "\{\!:\!"
+%format sclose = "\!:\!\}"
+%format <: = "\langle:"
+%format :> = ":\rangle"
+
+%format <* = "\,<\!\!\!*\,\,"
+%format *> = "\,\,*\!\!\!>\,"
+
+%format ~> = "\leadsto"
+%format xthresh = "x_{th}"
+%format vth = "v_{th}"
+%format v_rest = "v_{rest}"
+%format v_m = "V_m"
+%format refrac_end = "end_{refrac}"
+%%format ?? = "\,\text{?`}\!\text{?}"
+%format ?? = "\,??\,"
+%format msdelay= "0.002"
+
+%format zhit = "z_{hit}"
+%format thit = "t_{hit}"
+%format zscreen = "z_{screen}"
