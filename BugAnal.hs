@@ -321,6 +321,7 @@ writer s = do
   modimport "NewSignal"
   modimport "Control.Monad"
   modimport "FitGnuplot"
+  modimport "Math.Probably.FoldingStats"
   tell "main = do"
   indent 3
   when (('\\'/=) $ head $ head $ s) $

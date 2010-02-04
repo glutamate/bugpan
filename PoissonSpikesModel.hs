@@ -47,11 +47,11 @@ hyperPriorPDF ((poprate, popRateSD, trialRateSD), (tau, baseline, t0), _, _)
     | otherwise = - 1e20
     where lrsq = log . recip . (\x-> x*x)
 
-
+ 
 sessPriorPDF ((poprate, popratesd, _), _, sessRates, _) =
     sum $ map (log . P.gaussD poprate popratesd) sessRates
 
-trialPriorPDF ((_, _, trialRateSD), _, sessRates, trialRates) =
+trialPriorPDF ((_, _, trialRateSD), _, sessRates, trialRates) = 
     sum $ map (\(sr, trRates) -> sumU $ mapU (log . P.gaussD sr trialRateSD) trRates) $ zip sessRates trialRates
     
 {-calcPars [session, trial] (_, (tau, baseline, t0), sessRates, trialRates) =

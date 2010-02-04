@@ -175,6 +175,8 @@ the approach velocity. The definitions of these experiments and the
 data analysis procedure is contained within the main sections of this
 paper in a handful of equations.
 
+\section*{Introduction, take II}
+
 
 \section*{Methods}
 
@@ -515,7 +517,7 @@ ms^{-1}$. From these fits, it appears that the x is related... y is
 inversely related etc. We thus replace $mu_{rate}$ by a constant of
 proportionality  $alpha_{rate}$ etc.
 
-Finally, any of these parameters may vary across a individuals in a
+Finally, any of these parameters may vary across individuals in a
 population of locusts. We add an additional layer to the hierarchical
 model for the parameters for the population distribution from which
 individual-level parameters are drawn. The population parameters form
@@ -535,6 +537,9 @@ Interaction displacement and speed.
 say something about Accuracy/speed tradeoff.
 
 bias
+
+
+
 
 \section*{Discussion}
 

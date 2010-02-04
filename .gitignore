@@ -28,3 +28,6 @@ TestGain
 AnalyseLoom
 IntFireFullOut
 HaskellBackend_with_local_params.hs
+*.mcmc
+latpic*
+*.aux

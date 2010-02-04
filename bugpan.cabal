@@ -10,7 +10,7 @@ build-type:          Custom
 --Extra-Include-Dirs:  /usr/include, /usr/local/include, .
 
 Library
-   Exposed-modules:  Query, QueryTypes, QueryUtils, Numbers, PlotGnuplot, EvalM, Database, HaskShapes, RandomSources, QueryPlots, Expr, ValueIO, HaskSyntaxUntyped, NewSignal
+   Exposed-modules:  Query, QueryTypes, QueryUtils, Numbers, PlotGnuplot, EvalM, Database, HaskShapes, RandomSources, QueryPlots, Expr, ValueIO, HaskSyntaxUntyped, NewSignal, FitGnuplot
    if os(linux)
      ghc-options:        -O2 -threaded -lcomedi
    else
