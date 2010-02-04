@@ -67,4 +67,5 @@ clean:
 poissonprof:
 	ghc --make -O2 -prof -auto-all PoissonSpikesModel.hs -fexcess-precision
 poissonnoprof:
-	ghc --make -O2 PoissonSpikesModel.hs -threaded -fexcess-precision
+	gcc -c -g -o poisson.o poisson.c
+	ghc --make -O2 PoissonSpikesModel.hs -threaded -fexcess-precision poisson.o

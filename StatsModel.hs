@@ -26,6 +26,9 @@ import Data.Array.Vector
 import Data.Binary
 import GHC.Conc
 import qualified Control.Exception as C
+import qualified Data.StorableVector as SV
+import qualified Data.StorableVector.Base as SVB
+import Foreign.Storable
 
 safeLoad :: Binary a => String -> IO [a]
 safeLoad file = C.catch (loadBinary file)
@@ -107,6 +110,10 @@ instance (MutateGaussian a, UA a )=> MutateGaussian (UArr a) where
     mutGauss cv xs = toU `fmap` mutGaussMany cv (fromU xs)
     nearlyEq tol xs ys = lengthU xs == lengthU ys && (allU (uncurryS $ nearlyEq tol) $ zipU xs ys )
 
+instance (MutateGaussian a, Storable a )=> MutateGaussian (SV.Vector a) where
+    mutGauss cv xs = SV.pack `fmap` mutGaussMany cv (SV.unpack xs)
+    nearlyEq tol xs ys = SV.length xs == SV.length ys && (all (uncurry $ nearlyEq tol) $ SV.zip xs ys )
+
 instance (MutateGaussian a, MutateGaussian b) => MutateGaussian (a,b) where
     mutGauss cv (x,y) = liftM2 (,) (mutGauss cv x) (mutGauss cv y)
     nearlyEq t (x,y) (x1,y1) = nearlyEq t x x1 && nearlyEq t y y1
@@ -122,9 +129,18 @@ instance (MutateGaussian a, MutateGaussian b, MutateGaussian c, MutateGaussian d
 instance ChopByDur (UArr Double) where
     chopByDur durs arr = map (\((t1,t2),_)->filterU (\t->t>t1 && t<t2 ) arr) durs
 
+instance ChopByDur (SV.Vector Double) where
+    chopByDur durs arr = map (\((t1,t2),_)->SV.filter (\t->t>t1 && t<t2 ) arr) durs
+
+
 instance Shiftable (UArr Double) where
     shift ts = mapU (+ts)
     rebaseTime = undefined
+
+instance Shiftable (SV.Vector Double) where
+    shift ts = SV.map (+ts)
+    rebaseTime = undefined
+
 
 jumpProbBy :: (a -> a -> Bool) -> [a] -> Double
 jumpProbBy eqf xs = jPB xs 0 0 

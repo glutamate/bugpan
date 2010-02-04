@@ -1,5 +1,9 @@
-{-# LANGUAGE ViewPatterns, NoMonomorphismRestriction, FlexibleInstances #-}
+{-# LANGUAGE ViewPatterns, NoMonomorphismRestriction, FlexibleInstances, ForeignFunctionInterface #-}
 {-# OPTIONS_GHC -fvia-c -optc-O3 #-}
+{-# INCLUDE "poisson.h" #-}
+{-# INCLUDE "poisson.c" #-}
+{-# CFILES poisson.c #-}
+
 module Main where
 
 --import HaskSyntaxUntyped
@@ -27,6 +31,16 @@ import qualified Data.Array.Vector.UArr as UA
 import Data.Binary
 import GHC.Conc
 import StatsModel
+import qualified Data.StorableVector as SV
+import qualified Data.StorableVector.Base as SVB
+import Foreign.Storable
+import Foreign.C
+import Foreign.ForeignPtr
+import Foreign.Ptr
+
+
+foreign import ccall safe "poisson.h test_sum"
+        test_sum :: Ptr CDouble -> CInt -> CDouble
 
 priorSamplerH nsess ntrialsPerSess= 
     do poprate <- uniform 100 300
@@ -61,7 +75,7 @@ likelihoodH st@[session, trial] spikes bigp@(_, (tau, baseline, t0), _, trialRat
     let rate = (trialRates!!session) `UA.indexU` trial
         pars = (rate, tau, baseline, t0) in 
     (sumU $ (mapU (log . r rate tau baseline t0) spikes))- integralR pars 6
-
+--    (foldU (\sm sp->sm+log(r rate tau baseline t0 sp)) 0 spikes)- integralR pars 6
 
 r :: Double -> Double -> Double -> Double -> Double -> Double
 r rate tau baseline t0 t 
@@ -99,6 +113,11 @@ main = do
                                
   --print $ length $ spikes
   --print $ (meanSDF `runStat` spikes)
+  let arr = SV.pack [1,2,3]
+  --let (fp, n1, n2) = SVB.toForeignPtr arr
+  SVB.withStartPtr arr $ \p n -> do
+    print $ test_sum p $ fromIntegral n
+
   let segs = (distinct running) `within` (distinct sess)
   let lh = manyLikeH segs likelihoodH $ toU spikes
   let nthreads = numCapabilities
