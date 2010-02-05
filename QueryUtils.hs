@@ -472,7 +472,12 @@ spikeHistOver' (d@((t1, t2),_):durs) dt es = (hist (during [d] es)) + spikeHistO
     where hist [] = ConstSig 0
           hist evs = let hlist= map (/dt) $ histListFixed t1 t2 dt $ map fst evs
                      in Signal 0 (t2-t1) dt (SV.pack hlist) Eq
-          
+        
+histManyOver :: [Duration a] -> Double -> [Event b] -> [Signal Double]
+histManyOver durs dt es = map h durs
+    where h d@((t1,t2),_) = hist (during [d] es)
+              where hist evs = let hlist= map (/dt) $ histListFixed t1 t2 dt $ map fst evs
+                               in Signal t1 t2 dt (SV.pack hlist) Eq
 
 integralOfSig s@(Signal t1 t2 dt _ _) =
     let sm = sum $ sigToList s

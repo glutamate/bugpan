@@ -10,14 +10,25 @@
 >> everywhere nspikes = realcountDuring (approachLoV) spikes
 >> everywhere stdDur = (extendDur 1 $ during (speed 40) $ during longStop notDisplaced)
 >> everywhere shist lov = spikeHistOver (extendDur 1 $ during (speed lov) $ during longStop notDisplaced) 0.05 spikes
->> everywhere peakrate lov = sigStat maxF $ shist lov
+>> everywhere shistMany  = histManyOver (extendDur 1 $ during longStop notDisplaced) 0.05 spikes
+>> everywhere peakrate  = sigStat maxF $ shistMany 
+>> everywhere lovStr lov = "$\\frac{L}{V}=$" ++show lov ++ " ms$^{-1}$"
 
 %> inSessionsWhere zStopDist  & spikes & notDisplaced
-> openSession 0eb8
  
-> plot $ ((("voltage", take 1 $ during stdDur normV) :+: 
->         ("spikes", tag 16 $ during (take 1 stdDur) spikes) :+:
->         ("threshold", take 1 $ during stdDur spikeThreshold)) :||:
->        (("L/V=40", shist 40) :+: ("L/V=20", shist 20) :+: ("L/V=10", shist 10))) :==:
->        ((scatter $ zipD (during longNotDisplaced approachLoV) nspikes) :||: 
->         (scatter $ zipD (during longNotDisplaced approachLoV) nspikes))
+
+>> openSession 0eb8
+
+>> plot $ (A (("voltage", take 1 $ during stdDur normV) :+: 
+>>         ("spikes", tag 16 $ during (take 1 stdDur) spikes) :+:
+>>         ("threshold", take 1 $ during stdDur spikeThreshold)) :||:
+>>        (B $ (lovStr 40, shist 40) :+: (lovStr 20, shist 20) :+: (lovStr 10, shist 10))) :==:
+>>        (C (scatter $ zipD (during longNotDisplaced approachLoV) nspikes) :||: 
+>>         D (scatter $ zipD (during longNotDisplaced approachLoV) peakrate))
+
+\textbf{Figure 2}. A, recorded extracellular voltage, spike detection
+threshold and detected spikes. B, Spike event histogram for approaches
+with $\frac{L}{V}$ of 10, 20 and 40 ms$^{-1}$. C, Scatter plot of
+number of counted spikes against approach $\frac{L}{V}$ for individual
+trials. D, Scatter plot of the maximum rate of spike histograms
+against approach $\frac{L}{V}$ for individual trials.

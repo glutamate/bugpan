@@ -45,6 +45,8 @@ modimport s = tell $ "import "++s
 chomp :: String -> String
 chomp s = dropWhile (==' ') s
 
+dropInitAngle = dropWhile (=='>')
+
 
 mkAnal :: [String] -> CodeWriterT IO ()
 mkAnal [] = return ()
@@ -55,7 +57,7 @@ mkAnal (('>':q):ss) =
         q1 = if writeQ then q else tail q
         ind = indentOf q1
         (tablines, rest) = span (\ln-> not (justText ln) && 
-                                                   indentMoreThan ind (tail ln)) ss
+                                                   indentMoreThan ind (dropInitAngle ln)) ss
     in cond [("table" `isPrefixOf` (chomp q1), do
                 procTable (words q1) tablines
                 mkAnal rest), 
@@ -80,7 +82,7 @@ mkAnal (('>':q):ss) =
                                                          runGoal ("new:"++sessNm) goal ntimes
                   _ -> return ()
                 mkAnal rest)] $  do 
-                     procQ writeQ $ unlines $ chomp q1 : map (tail) tablines
+                     procQ writeQ $ unlines $ chomp q1 : map (dropInitAngle) tablines
                      mkAnal rest
 
 mkAnal ("":ss) = mkAnal ss
@@ -262,7 +264,7 @@ procQ writeQ s
            in do tell $ "inApproxSession "++show sessnm++" $ do"
                  indent 3
                  tellNmsTys              
-                 tellPrintCode $ "openSession "++sessnm
+                 when writeQ $ tellPrintCode $ "openSession "++sessnm
     | s =~ "^\\s*importHs\\s*(.+)" = 
            let [[all, modnm]] = (s =~ "^\\s*importHs\\s*(.+)")::[[String]]
            in modimport modnm
@@ -284,7 +286,7 @@ procQ writeQ s
                        tellBeginCode
                        tellPrint s 
                        tellEndCode
-                       tellPrintNoLn "| => |"
+--                       tellPrintNoLn "| => |"
                      tell $ "askForLiterate $ "++(concat $ map chomp $ lines s)
                      
 

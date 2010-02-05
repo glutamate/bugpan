@@ -59,11 +59,13 @@ bigSigma xs f = sum $ map f xs
 
 manyLikeH :: (ChopByDur obs,Shiftable obs) => 
              [Duration [Int]] -> 
-            ([Int] -> obs -> P.PDF theta) -> 
+            ([Int] -> obs -> P.PDF theta1) -> 
+            (theta -> theta1) -> 
             (obs -> P.PDF theta)
-manyLikeH durs lh1 obs = 
+manyLikeH durs lh1 thetaf obs  = 
     let z = zip (chopAndReset durs obs) durs
-    in \theta-> sum $ map (\(obs, (_,ints)) -> lh1 ints obs theta) $ z
+    in \theta-> let theta' = thetaf theta in
+                sum $ map (\(obs, (_,ints)) -> lh1 ints obs theta') $ z
 
 within :: [Duration [Int]] -> [Duration [Int]] -> [Duration [Int]]
 within short long = concatMap f $ relabelWithin long short 

@@ -1,8 +1,8 @@
 {-# LANGUAGE ViewPatterns, NoMonomorphismRestriction, FlexibleInstances, ForeignFunctionInterface #-}
 {-# OPTIONS_GHC -fvia-c -optc-O3 #-}
-{-# INCLUDE "poisson.h" #-}
-{-# INCLUDE "poisson.c" #-}
-{-# CFILES poisson.c #-}
+{- INCLUDE "poisson.h" #-}
+{- INCLUDE "poisson.c" #-}
+{- CFILES poisson.c #-}
 
 module Main where
 
@@ -39,8 +39,12 @@ import Foreign.ForeignPtr
 import Foreign.Ptr
 
 
-foreign import ccall safe "poisson.h test_sum"
+{-foreign import ccall safe "poisson.h test_sum"
         test_sum :: Ptr CDouble -> CInt -> CDouble
+
+foreign import ccall safe "poisson.h likelihood"
+        likelihood :: CDouble -> CDouble ->CDouble ->CDouble ->Ptr CDouble -> CInt -> CDouble
+-}
 
 priorSamplerH nsess ntrialsPerSess= 
     do poprate <- uniform 100 300
@@ -71,9 +75,12 @@ trialPriorPDF ((_, _, trialRateSD), _, sessRates, trialRates) =
 {-calcPars [session, trial] (_, (tau, baseline, t0), sessRates, trialRates) =
     (trialRates!!session!!trial, (tau, baseline, t0)-}
 
+--thetaf (_, (tau, baseline, t0), _, trialRates) = ((realToFrac tau, realToFrac baseline,
+
 likelihoodH st@[session, trial] spikes bigp@(_, (tau, baseline, t0), _, trialRates) =
     let rate = (trialRates!!session) `UA.indexU` trial
         pars = (rate, tau, baseline, t0) in 
+--    likelihood (realToFrac rate) (realToFrac tau) (realToFrac baseline) (realToFrac t0) 
     (sumU $ (mapU (log . r rate tau baseline t0) spikes))- integralR pars 6
 --    (foldU (\sm sp->sm+log(r rate tau baseline t0 sp)) 0 spikes)- integralR pars 6
 
@@ -113,13 +120,13 @@ main = do
                                
   --print $ length $ spikes
   --print $ (meanSDF `runStat` spikes)
-  let arr = SV.pack [1,2,3]
+  --let arr = SV.pack [1,2,3]
   --let (fp, n1, n2) = SVB.toForeignPtr arr
-  SVB.withStartPtr arr $ \p n -> do
-    print $ test_sum p $ fromIntegral n
+  --SVB.withStartPtr arr $ \p n -> do
+  --  print $ test_sum p $ fromIntegral n
 
   let segs = (distinct running) `within` (distinct sess)
-  let lh = manyLikeH segs likelihoodH $ toU spikes
+  let lh = manyLikeH segs likelihoodH id (toU spikes)
   let nthreads = numCapabilities
   putStrLn $ "splitting into nthreads="++show nthreads
   inits <- fmap (take nthreads) $ runSamplerIO $ priorSamplerH (length sess) (map (length . (`during` running) . (:[])) sess)

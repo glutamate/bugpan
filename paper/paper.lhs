@@ -1,36 +1,39 @@
-\documentclass[11pt,titlepage]{article}
+\documentclass[11pt]{article}
 %include polycode.fmt
 %include lhs2tex-braincurry-preamble
 \usepackage{amsmath, amsthm, amssymb}
 \usepackage{setspace} 
 \onehalfspacing
-\title{A functional calculus of physiological evidence}
-%Functional reactivity as a basis for inference in physiology.
-%Structure and Interpretation of Neural Physiology
-%Functional reactivity as a calculus of physiological evidence
-%a calculus of physiological evidence
-%structure and interpretation of physiological evidence
+\title{A calculus of physiological evidence}
 \author{Thomas A. Nielsen et al}
 \begin{document}
 
 \maketitle
 
-\section*{Introduction}
+\subsection*{Alternative titles}
+\begin{description}
+\item Functional reactivity as a basis for inference in physiology.
+\item Structure and Interpretation of Neural Physiology
+\item Functional reactivity as a calculus of physiological evidence
+\item A functional calculus of physiological evidence
+\item Structure and interpretation of physiological evidence
+\end{description}
+\section*{Introduction, take 1}
 
 Gottfried Leibniz was possibly the first person to suggest that
 mechanized reasoning removes ambiguity and thus allows ideas to be
 formulated and communicated efficiently and for inferences to be
 scrutinized. He imagined that a formalism for reasoning rests on two
 pillars: a language for describing entities and a set of rules for
-calculating with them. Since then, formal notations have had a
+calculating with them. Since then, formal languages have had a
 profound impact on mathematical methods and the theoretical and
 statistical analysis of the natural sciences. As examples we point to
 Leibniz's own infinitesimals, vector notation in electromagnetism and
 the proliferation of logical formalisms in the 20th century stating
-with Frege's first-order logic and the Principia Mathematica.
+with Frege's first-order logic and the \emph{Principia Mathematica}.
 
-These languages are useful because they allow us to calculate - to
-re-arrange, isolate and substitute terms - and by doing so, to prove
+These languages are useful because they allow us to calculate --- to
+re-arrange, isolate and substitute terms --- and by doing so, to prove
 general theorems. This type of symbolic calculation is possible
 because terms can be replaced by terms with identical meaning without
 changing the meaning of the context. For instance, no matter what $w$
@@ -39,8 +42,7 @@ substituted by $2w$. This property, which is called referential
 transparency, is shared by all 'mathematical' notations. 
 
 Unfortunately, this happy state of affairs does not extend to
-scientific experimentation, for which there is currently little formal
-notation. A more explicit approach to experimentation could lead to a
+scientific inference. A more explicit approach to experimentation could lead to a
 clearer formulation of what constitutes good scientific practices,
 facilitate replication and a better understanding of apparent
 inconsistencies between studies. Statistics adresses some of these
@@ -119,7 +121,7 @@ Event alpha = [Time times alpha]
 \end{code}
 
 
-In some variants of FRP, signals and events or signal transformers can
+In some variants of FRP, signals and events or signal transformers are
 be first-class: they can be assigned to variables and consumed and
 created by functions, just as signal producers and consumers, or
 indeed any other function, are first-class. (But see (yampa ref) for
@@ -175,8 +177,98 @@ the approach velocity. The definitions of these experiments and the
 data analysis procedure is contained within the main sections of this
 paper in a handful of equations.
 
-\section*{Introduction, take II}
+\section*{Introduction, take 2}
 
+Gottfried Leibniz suggested that mechanized reasoning removes
+ambiguity and thus allows ideas to be formulated and communicated
+efficiently and for inferences to be scrutinized. He imagined that a
+formalism for reasoning rests on two pillars: a language for
+describing entities and a set of rules for calculating with
+them. Since then, formal languages have had a profound impact both on
+pure mathematics and on and the modelling and statistical analysis
+of the natural sciences. As examples we point to Leibniz's own
+infinitesimals, vector notation in electromagnetism and the
+proliferation of logical formalisms in the 20th century stating with
+Frege's first-order logic and the \emph{Principia Mathematica}.
+
+These language fall short of Leibniz's goal of understanding all of
+human reasoning. In particular, although they can describe
+quantitative scientific models, they do not describe how we interact
+with reality and thus how evidence for or against these models is
+obtained and evaluated. Essentially, we do not have a satisfactory
+language to describe experimentation and analysis. An endevour to
+extend Leibniz's program into this domain would probably have to give
+precise answers to some very fundamental questions:
+
+\begin{itemize}
+  \item What kinds of things are there? In other words, what are the
+    relevant \emph{types} whose values are observed?
+
+  \item How do we construct, observe, and transform values in these
+    types?
+
+  \item What does the observation of these typed values impel us to
+    do, or believe (ref:royall)?
+\end{itemize}
+
+It may be unlikely that one set of answers can address all of the
+natural sciences. A more achievable aim is to account for a single (or
+part of) scientific field. Thus one way of defining a field is to ask
+what its constituent types are.
+
+There are many ways of writing down a definition of an experiment or
+an analysis, some of which are easier to reason about than others. For
+instance, given a description of an experiment and a set of observed
+outcome values, we may want to verify certain statements about the
+experiment, for instance that particular variables were randomly
+controlled and not observed; that outcomes have not gained correlation
+due to the analysis procedure; that missing data is accounted for by
+the statistical model; correct propagation of errors and consistent
+use of units of measure; the absense of ``double dipping.'' Making
+these judgements require us to calculate --- to re-arrange, isolate
+and substitute terms. These manipulations are are much easier in a
+language in which a term can be replaced by terms with identical
+meaning without changing the meaning of the context. For instance, no
+matter what $w$ refers to or where it appears, it is always true that
+$w+w$ can be substituted by $2w$. This property, which is called
+referential transparency, is shared by all 'mathematical' notations,
+but \emph{not} by conventional (imperative) programming languages.
+
+Here, we present a language and a calculus for physiological
+evidence. The language is based on an abstract notion of signals and
+events, and the calculus consists of a referentially transparent
+computational framework for relating these types and a flexible
+statistical framework for specifying and evaluating models. This
+frameworks does not concern so much what there is in nature, as the
+objects that play a role in evidence. Therefore, there are no concepts
+of cells, proteins or organs; instead it allows experiments, analyses,
+simulations and models to be defined equationally and concisely.
+
+Our framework is derived from the efforts to describe input and output
+in referentially transparent programming languages such as the lambda
+calculus. ... stuff from take 1 until fontana and buss. Although the
+pure lambda calculus does not have any constructs for interacting with
+the real world, there are many elegant solutions for doing so while
+retaining referential transparency. FRP from take 1... 
+
+Link with hierarchical regression, inference
+with bayes methods.
+
+We use the calculus of physiological evidence to perform a non-trivial
+experiment in \emph{in vivo} insect neurophysiology. The desert locust
+Schistocerca gregaria, like many other (neoptera) insects, has a
+specialised circuit in the optic lobe for detecting approaching
+objects. This system projects to descending ganglia via the DCMD
+neuron which is accessible to recording. The DCMD response is
+sensitive to a variety of parameters including the stimulus contrast,
+approach speed and size. However, few studies have have addressed
+whether the locust looming detection system is an efficient in that it
+can discriminate objects that are on collision course from those that
+are on a non-intercepting trajectory. We show that this is the
+case and that the precision of the looming detector is influenced by
+the approach velocity. The definitions of these experiments and the
+data analysis procedure is contained within the main sections of this
+paper in a handful of equations.
 
 \section*{Methods}
 
