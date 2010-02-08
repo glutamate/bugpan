@@ -13,15 +13,33 @@
 >> everywhere shistMany  = histManyOver (extendDur 1 $ during longStop notDisplaced) 0.05 spikes
 >> everywhere peakrate  = sigStat maxF $ shistMany 
 >> everywhere lovStr lov = "$\\frac{L}{V}=$" ++show lov ++ " ms$^{-1}$"
+>> everywhere oneStdDur = take 1 stdDur
+>> everywhere aroundHit = fromto 4.5 5.5
 
 %> inSessionsWhere zStopDist  & spikes & notDisplaced
- 
+
+>> openSession loomsig
+
+>> plot $ (A zpos :||: (B $ (during aroundHit $ rebase running zpos) :+: 
+>>         (during aroundHit $ rebase running zreal) :+: 
+>>         (during aroundHit $ rebase running $ tag 0 collision) :+: 
+>>         (during aroundHit $ rebase running $ tag 0 hitScreen)) :==:
+>>        ((C $ rebase running visangle :+: rebase running dvisangle) :||: (D $ rebase running lumin))) 
+
+\textbf{Figure 1}. A, Diagram of experiment (placeholder image). B,
+Distance to object with linear motion (solid) and with arrested image
+(dotted) with the time of screen intersection and animal collision. C, 
+
+> close
+
+> break
+
 
 >> openSession 0eb8
 
->> plot $ (A (("voltage", take 1 $ during stdDur normV) :+: 
->>         ("spikes", tag 16 $ during (take 1 stdDur) spikes) :+:
->>         ("threshold", take 1 $ during stdDur spikeThreshold)) :||:
+>> plot $ (A (("voltage", rebase oneStdDur normV) :+: 
+>>         ("spikes", tag 16 $ rebase oneStdDur spikes) :+:
+>>         ("threshold", rebase oneStdDur spikeThreshold)) :||:
 >>        (B $ (lovStr 40, shist 40) :+: (lovStr 20, shist 20) :+: (lovStr 10, shist 10))) :==:
 >>        (C (scatter $ zipD (during longNotDisplaced approachLoV) nspikes) :||: 
 >>         D (scatter $ zipD (during longNotDisplaced approachLoV) peakrate))
@@ -32,3 +50,8 @@ with $\frac{L}{V}$ of 10, 20 and 40 ms$^{-1}$. C, Scatter plot of
 number of counted spikes against approach $\frac{L}{V}$ for individual
 trials. D, Scatter plot of the maximum rate of spike histograms
 against approach $\frac{L}{V}$ for individual trials.
+
+> close
+
+> break
+

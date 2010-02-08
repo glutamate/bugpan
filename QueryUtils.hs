@@ -100,6 +100,9 @@ tag tg = map (`setTag` tg)
 tagd :: Tagged t =>  Double -> [t a] -> [t Double]
 tagd = tag
 
+rebase :: (ChopByDur [t], Shiftable [t]) => [Duration b] -> [t] -> [t]
+rebase durs evs = concatMap f durs
+    where f dur@((t1,_),_) = shift (negate t1) $ concat $ chopByDur [dur] evs
 
 freqDuring :: [Duration a] -> [Event b] -> [Duration Double]
 freqDuring durs evs = map (freqDuring' evs) durs
@@ -238,6 +241,9 @@ dur x = [((minBound, maxBound), x)]
 
 durd :: Double -> [Duration Double]
 durd = dur
+
+fromto :: Double -> Double -> [Duration ()]
+fromto t1 t2 = [((t1, t2),())]
 
 -- <**> :: [Duration (a->b)] -> [Duration a] -> [Duration b]
 

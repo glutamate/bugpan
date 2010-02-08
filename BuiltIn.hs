@@ -22,6 +22,10 @@ nstep t dt = roundNum (t/dt)
 bivs = [ 
  BiV "round" (realT .->. realT) (LamV $ \(NumV n)->return . NumV $ roundNum n),
  BiV "sin" (realT .->. realT) (LamV $ \(NumV n)->return . NumV $ sin n),
+ BiV "exp" (realT .->. realT) (LamV $ \(NumV n)->return . NumV $ exp n),
+ BiV "log" (realT .->. realT) (LamV $ \(NumV n)->return . NumV $ log n),
+ BiV "atan" (realT .->. realT) (LamV $ \(NumV n)->return . NumV $ atan n),
+ BiV "tan" (realT .->. realT) (LamV $ \(NumV n)->return . NumV $ tan n),
  BiV "cos" (realT .->. realT) (LamV $ \(NumV n)->return . NumV $ cos n),
  BiV "floor" (realT .->. realT) (LamV $ \(NumV n)->return . NumV $ floorNum n),
  BiV "enowAux" (anyNumT .->. (anyNumT .->. (eventsT AnyT .->. eventsT AnyT)))
