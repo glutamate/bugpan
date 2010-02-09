@@ -3,6 +3,7 @@
 %include lhs2tex-braincurry-preamble
 \usepackage{amsmath, amsthm, amssymb}
 \usepackage{setspace} 
+\usepackage{verbatim} 
 \onehalfspacing
 \title{A calculus of physiological evidence}
 \author{Thomas A. Nielsen et al}
@@ -30,23 +31,179 @@ Leibniz's own infinitesimals, vector notation in electromagnetism and
 the proliferation of logical formalisms in the 20th century stating
 with Frege's first-order logic and the \emph{Principia Mathematica}.
 
+These languages are useful because they allow us to calculate --- to
+re-arrange, isolate and substitute terms --- and by doing so, to prove
+general theorems. This type of symbolic calculation is possible
+because terms can be replaced by terms with identical meaning without
+changing the meaning of the context. For instance, no matter what $w$
+refers to or where it appears, it is always true that $w+w$ can be
+substituted by $2w$. This property, which is called referential
+transparency, is shared by all ``mathematical'' notations. 
+
 Although we can describe quantitative scientific models, we do not
 have a satisfactory language to describe experimentation. Thus, how
 evidence for or against these models is obtained and evaluated is not
-formalised. For instance, given a description of an experiment and a
-collection of observed outcomes, we may want to verify certain
-statements about the experiment, for instance that particular
-variables were randomly controlled and not observed; that outcomes
-have not gained correlation due to the analysis procedure; that
-missing data is accounted for by the statistical model; correct
-propagation of errors and consistent units of measure; the
-absense of ``double dipping.'' Statistics adresses some of these
-issues in relating atomic observations to parameter estimation and
-hypothesis testing. But what we have in mind here is more
-comprehensive than statistics: a language that would describe an
-experiment such that it can be unambigorously replicated and and be
-inspected to certify whether assumptions inherent in statistical tests
-are met.
+formalised. A more explicit approach to experimentation could lead to
+a clearer formulation of what constitutes good scientific practices,
+facilitate replication and a better understanding of apparent
+inconsistencies between studies. For instance, given a description of
+an experiment and a collection of observed outcomes, we may want to
+verify certain statements about the experiment, for instance that
+particular variables were randomly controlled and not observed; that
+outcomes have not gained correlation due to the analysis procedure;
+that missing data is accounted for by the statistical model; correct
+propagation of errors and consistent units of measure; the absense of
+``double dipping.'' Statistics adresses some of these issues in
+relating atomic observations to parameter estimation and hypothesis
+testing. Here, we introduce a calculus of evidence more comprehensive
+than statistics alone: a language that can describe an experiment such
+that it can be unambigorously replicated and be inspected to certify
+whether assumptions inherent in statistical procedures are met.
+
+What is an experiment? Whether they are carried out by humans or by
+automated equipment, experiments can be seen as repeatable programs
+that manipulate and observe the real world. One could construct a
+standardized notation for experimentation based on an conventional
+programming language involving step-by-step instructions and procedure
+calls. But such a language is not referentially transparent and would
+be very difficult to read and reason about; its benefits would solely
+be to communicate the precise experiment carried out to an automaton
+with identical capabilities. For instance, it would be very difficult
+to extract from an experiment description a definition of an observed
+value, when these can be defined by conditional variable mutation.
+
+%% When trying to create a
+%% fundamental notation for these programs, we hit an obstacle: such a
+%%language must by necessity interact with the real world in perturbing
+%%the system under investigation and recording its response. How can a
+%%referentially transparent language that uses only functions cause
+%%these effects? 
+
+We are on much safer ground with a referentially transparent language
+such as the lambda calculus, a general framework for computation based
+entirely on evaluating functions in the purely mathematical sense,
+i.e. as maps between sets. The lambda calculus allows the use of
+functions as first class entities: that is, they can be referenced by
+variables and passed as arguments to other functions (which then
+become higher-order functions). These properties together mean that
+the lambda calculus combines verifiable correctness with a high level
+of abstraction, leading to programs that are in practice more concise
+(ref). The lambda calculus or variants thereof has been used as a
+general framework for the foundation of mathematics (Martin-lof),
+classical (wisdom \& sussman) and quantum mechanics (Karczmarczuk
+2003), microprocessor design (Grundy), evolutionary biochemistry
+(fontana \& buss 1994). In the \emph{typed} lambda calculus, values
+inhabit base types such as integers, real numbers, or compound types
+such as vectors, lists, functions or pairs.
+
+Although the pure lambda calculus does not have any constructs for
+interacting with the real world, there are many elegant solutions for
+doing so while retaining referential transparency. Here we highlight
+one approach that seems to be well suited for physiology. Functional
+Reactive Programming (FRP; ref) recognizes the essential role time
+plays in certain computer programs, including animations, robotics and
+physical simulations. FRP augments the lambda calculus with two
+fundamental concepts to place information in a temporal concepts:
+Signals, which represent continuously varying quantities, and events
+representing discrete occurances. Both signals and events are
+higher-order types, that is they are type constructors that can be
+instantiated with any basic type. Thus, for any type |alpha|, a signal
+of |alpha| can be thought of as a function from time to a value in
+|alpha|, which we write as
+\begin{code}
+Signal alpha = Time -> alpha
+\end{code}
+
+example of signal.
+
+Likewise, an event of |alpha|'s is a list of pairs of time values and a values:
+
+\begin{code}
+Event alpha = [Time times alpha]
+\end{code}
+
+Here, we add a third higher-order type to accommodate information about periods of time:
+\begin{code}
+Duration alpha = [Time times Time times alpha]
+\end{code}
+
+
+
+In some variants of FRP, signals and events or signal transformers are
+be first-class: they can be assigned to variables and consumed and
+created by functions, just as signal producers and consumers, or
+indeed any other function, are first-class. (But see (yampa ref) for
+an example of FRP without first-class signals.) 
+
+To what extent can these concepts describe scientific experimentation?
+That almost certainly depends on the role time plays in the particular
+field. Here, we argue that in physiology, time indeed fulfills a
+crucial role and that the notions of signals and events capture many
+aspects of physiological evidence. Firstly, many directly observable
+and inferred quantities can be expressed as signals and events, for
+instance: 
+\vskip1ex
+\begin{tabular}{l  l}
+\hline
+  Quantity & Type \\ 
+\hline
+  Membrane Voltage & |Signal Real| \\
+  Animal location & |Signal (Real times Real)| \\
+  Spike & |Event ()| \\
+  Spike waveforms & |Event (Signal Real)| \\
+  EPSC Amplitude & |Event Real| \\
+%%  Drug present & |Duration ()| \\
+  Visual stimulus & |Signal Shape| \\
+\hline
+\end{tabular}
+\vskip1ex
+Secondly, by virtue of its basis in the lambda calculus, FRP provides
+the transformation facilities needed for data analysis. Thus we can
+process events and signals, create new events from signals, filter
+data and apply point estimators as necessary. But we also find that
+new analysis methods become feasible; for instance, having functions
+as first class entities makes it much simpler to directly represent
+probability distributions. We show how hierarchical probabilistic
+modelling can incorporate the reactive entities here introduced, such
+that model parameter can be estimated and hypotheses tested taking
+into account all the information observed.
+
+
+We use the calculus of physiological evidence to perform a non-trivial
+experiment in in vivo insect neurophysiology. The desert locust
+Schistocerca gregaria, like many other neoptera insects (?), has a
+specialised circuit in the optic lobe for detecting approaching
+objects. This system projects to descending ganglia via the DCMD
+neuron which is accessible to recording. The DCMD response is
+sensitive to a variety of parameters including the stimulus contrast,
+approach speed and size. However, few studies have have addressed
+whether the locust looming detection system is an efficient in that it
+can discriminate objects that are on collision course from those that
+are on a non-intercepting trajectory. We show that this is the case
+and that the precision of the looming detector is influenced by the
+approach velocity. The definitions of these experiments and the data
+analysis procedure is contained within the main sections of this paper
+in a handful of equations.
+
+\begin{comment}
+\pagebreak
+
+\section*{Introduction, take 2}
+
+Gottfried Leibniz was possibly the first person to suggest that
+mechanized reasoning removes ambiguity and thus allows ideas to be
+formulated and communicated efficiently and for inferences to be
+scrutinized. He imagined that a formalism for reasoning rests on two
+pillars: a language for describing entities and a set of rules for
+calculating with them. Since then, formal languages have had a
+profound impact on mathematical methods and the theoretical and
+statistical analysis of the natural sciences. As examples we point to
+Leibniz's own infinitesimals, vector notation in electromagnetism and
+the proliferation of logical formalisms in the 20th century stating
+with Frege's first-order logic and the \emph{Principia Mathematica}.
+
+Unfortunately, this clarity does not extend fully to scientific
+inference. ... 
 
 An endevour to extend mechanical reasoning into this domain would have
 to give precise answers to some fundamental questions:
@@ -113,9 +270,14 @@ framework for the foundation of mathematics (Martin-lof), classical
 (wisdom \& sussman) and quantum mechanics (Karczmarczuk 2003),
 microprocessor design (Grundy), chemistry (fontana \& buss 1994).
 
-Although the pure lambda calculus does not have any constructs for
-interacting with the real world, there are many elegant solutions for
-doing so while retaining referential transparency. Here we highlight
+But the pure lambda-calculus has
+no constructs for interacting with the real world and therefore cannot
+be used to describe experiments.
+
+Fortunately, it is possible to interact with the real world in a
+manner that maintains referentially transparency. 
+
+Here we highlight
 one approach to effects that seems to be well suited for
 physiology. Functional Reactive Programming (FRP; ref) recognizes the
 essential role time plays in certain computer programs, including
@@ -142,167 +304,8 @@ and that the precision of the looming detector is influenced by the
 approach velocity. The definitions of these experiments and the data
 analysis procedure is contained within the main sections of this paper
 in a handful of equations.
+\end{comment}
 
-\pagebreak
-
-\section*{Introduction, take 2}
-
-Gottfried Leibniz was possibly the first person to suggest that
-mechanized reasoning removes ambiguity and thus allows ideas to be
-formulated and communicated efficiently and for inferences to be
-scrutinized. He imagined that a formalism for reasoning rests on two
-pillars: a language for describing entities and a set of rules for
-calculating with them. Since then, formal languages have had a
-profound impact on mathematical methods and the theoretical and
-statistical analysis of the natural sciences. As examples we point to
-Leibniz's own infinitesimals, vector notation in electromagnetism and
-the proliferation of logical formalisms in the 20th century stating
-with Frege's first-order logic and the \emph{Principia Mathematica}.
-
-These languages are useful because they allow us to calculate --- to
-re-arrange, isolate and substitute terms --- and by doing so, to prove
-general theorems. This type of symbolic calculation is possible
-because terms can be replaced by terms with identical meaning without
-changing the meaning of the context. For instance, no matter what $w$
-refers to or where it appears, it is always true that $w+w$ can be
-substituted by $2w$. This property, which is called referential
-transparency, is shared by all 'mathematical' notations. 
-
-Unfortunately, this happy state of affairs does not extend to
-scientific inference. A more explicit approach to experimentation could lead to a
-clearer formulation of what constitutes good scientific practices,
-facilitate replication and a better understanding of apparent
-inconsistencies between studies. Statistics adresses some of these
-issues in relating atomic observations to parameter estimation and
-hypothesis testing. But what we have in mind here is more
-comprehensive than statistics: a language that would describe an
-experiment such that it can be unambigorously replicated and and be
-inspected to test whether assumptions inherent in statistical tests
-are met.
-
-What is an experiment? Whether they are carried out by humans or by
-automated equipment, experiments can be seen as repeatable programs
-that manipulate and observe the real world. One could construct a
-standardized notation for experimentation based on an conventional
-programming language involving step-by-step instructions and procedure
-calls. But such a language is not referentially transparent and would
-be very difficult to read and reason about; its benefits would solely
-be to communicate the precise experiment carried out to an automaton
-with identical capabilities. For instance, it would be very difficult
-to estimate the loss of information and independence in data
-transformation carried out during or after the experiment.
-
-
-
-%% When trying to create a
-%% fundamental notation for these programs, we hit an obstacle: such a
-%%language must by necessity interact with the real world in perturbing
-%%the system under investigation and recording its response. How can a
-%%referentially transparent language that uses only functions cause
-%%these effects? 
-
-We are on much safer ground with a referentially transparent language
-such as the lambda calculus, a general framework for computation based
-entirely on evaluating functions in the purely mathematical sense,
-i.e. as maps between sets. The lambda calculus allows both recursive
-functions and the use of functions as first class entities: that is,
-they can be referenced by variables and passed as arguments to other
-functions (which then become higher-order functions). These properties
-together mean that the lambda calculus combines verifiable correctness
-with a high level of abstraction, leading to programs that are in
-practice more concise (ref). The lambda calculus or variants thereof
-has been used as a general framework for the foundation of mathematics
-(Martin-lof), classical (wisdom \& sussman) and quantum mechanics
-(Karczmarczuk 2003), microprocessor design (Grundy), chemistry
-(fontana \& buss 1994). But the pure lambda-calculus has no constructs
-for interacting with the real world and therefore cannot be used to
-describe experiments.
-
-Fortunately, it is possible to interact with the real world in a
-manner that maintains referentially transparency. There are many
-elegant solutions to this problem, and it is not clear that one of
-those is suitable for describing all experiments; here we highlight
-one approach to effects that seems to be well suited for
-physiology. Functional Reactive Programming (FRP; ref) recognizes the
-essential role time plays in certain computer programs, including
-animations, robotics and physical simulations. FRP augments the lambda
-calculus with two fundamental concepts to place information in a
-temporal concepts: Signals, which represent continuously varying
-quantities, and events representing discrete occurances. We assume
-that there exists several basic types of objects, such as integers,
-real numbers, and means of combining types such as vectors, lists and
-pairs. Both signals and events are higher-order types, that is they
-are type constructors that can be instantiated with any basic
-type. Thus, for any type |alpha|, a signal of |alpha| can be thought of
-as a function from time to a value in |alpha|, which we write as
-\begin{code}
-Signal alpha = Time -> alpha
-\end{code}
-
-example of signal.
-
-Likewise, an event of |alpha|'s is a list of pairs of time values and a values:
-
-\begin{code}
-Event alpha = [Time times alpha]
-\end{code}
-
-
-In some variants of FRP, signals and events or signal transformers are
-be first-class: they can be assigned to variables and consumed and
-created by functions, just as signal producers and consumers, or
-indeed any other function, are first-class. (But see (yampa ref) for
-an example of FRP without first-class signals.) 
-
-To what extent can these concepts describe scientific experimentation?
-That almost certainly depends on the role time plays in the particular
-field. Here, we argue that in physiology, time indeed fulfills a
-crucial role and that the notions of signals and events capture many
-aspects of physiological evidence. Firstly, many directly observable
-and inferred quantities can be expressed as signals and events, for
-instance: 
-\vskip1ex
-\begin{tabular}{l  l}
-\hline
-  Quantity & Type \\ 
-\hline
-  Membrane Voltage & |Signal Real| \\
-  Animal location & |Signal (Real times Real)| \\
-  Spike & |Event ()| \\
-  Spike waveforms & |Event (Signal Real)| \\
-  EPSC Amplitude & |Event Real| \\
-%%  Drug present & |Duration ()| \\
-  Visual stimulus & |Signal Shape| \\
-\hline
-\end{tabular}
-\vskip1ex
-Secondly, by virtue of its basis in the lambda calculus, FRP provides
-the transformation facilities needed for data analysis. Thus we can
-process events and signals, create new events from signals, filter
-data and apply point estimators as necessary. But we also find that
-new analysis methods become feasible; for instance, having functions
-as first class entities makes it much simpler to directly represent
-probability distributions. We show how hierarchical probabilistic
-modelling can incorporate the reactive entities here introduced, such
-that model parameter can be estimated and hypotheses tested taking
-into account all the information observed.
-
-
-Here, we use a new implementation of FRP to perform a non-trivial
-experiment in in vivo insect neurophysiology. The desert locust
-Schistocerca gregaria, like many other neoptera insects (?), has a
-specialised circuit in the optic lobe for detecting approaching
-objects. This system projects to descending ganglia via the DCMD
-neuron which is accessible to recording. The DCMD response is
-sensitive to a variety of parameters including the stimulus contrast,
-approach speed and size. However, few studies have have addressed
-whether the locust looming detection system is an efficient in that it
-can discriminate objects that are on collision course from those that
-are on a non-intercepting trajectory. We show that this is the
-case and that the precision of the looming detector is influenced by
-the approach velocity. The definitions of these experiments and the
-data analysis procedure is contained within the main sections of this
-paper in a handful of equations.
 
 \section*{Methods}
 
@@ -428,24 +431,19 @@ are entirely polymorphic containers, they can carry not just numeric
 values but also shapes if we have a suitable data representation for
 them. (in fact, FRP was invented to compose reactive animations). Say
 that the function
-
 \begin{code}
 cube l
 \end{code}
-
 constructs a value of the shape type representing a cube located at
 the origin with the side length |l|,
-
 \begin{code}
 translate (x,y,z) shp 
 \end{code}
-
 denotes the shape that results from translating the shape shp by the
 vector |(x,y,z)| and
 \begin{code}
 colour (r,g,b) shp
 \end{code}
-
 the shape identical to shp except with the colour intensity red r,
 green g and blue b. Additional constructors can be introduced for more
 complex stimuli, but these are sufficient for the experiments reported

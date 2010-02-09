@@ -9,12 +9,14 @@
 >> everywhere speed lov = (eq $ lov/1000)//approachLoV
 >> everywhere nspikes = realcountDuring (approachLoV) spikes
 >> everywhere stdDur = (extendDur 1 $ during (speed 40) $ during longStop notDisplaced)
->> everywhere shist lov = spikeHistOver (extendDur 1 $ during (speed lov) $ during longStop notDisplaced) 0.05 spikes
+>> everywhere shist lov = head $ spikeHistOver (extendDur 1 $ during (speed lov) $ during longStop notDisplaced) 0.05 spikes
 >> everywhere shistMany  = histManyOver (extendDur 1 $ during longStop notDisplaced) 0.05 spikes
 >> everywhere peakrate  = sigStat maxF $ shistMany 
 >> everywhere lovStr lov = "$\\frac{L}{V}=$" ++show lov ++ " ms$^{-1}$"
 >> everywhere oneStdDur = take 1 stdDur
 >> everywhere aroundHit = fromto 4.5 5.5
+>> everywhere pos x = if x >0 then x else 0
+>> everywhere fitf1 [t0, tau, amp, bl] x = pos(-((x-t0)/tau) * amp * exp(1 + (x-t0)/tau))+bl
 
 %> inSessionsWhere zStopDist  & spikes & notDisplaced
 
@@ -40,7 +42,7 @@ Distance to object with linear motion (solid) and with arrested image
 >> plot $ (A (("voltage", rebase oneStdDur normV) :+: 
 >>         ("spikes", tag 16 $ rebase oneStdDur spikes) :+:
 >>         ("threshold", rebase oneStdDur spikeThreshold)) :||:
->>        (B $ (lovStr 40, shist 40) :+: (lovStr 20, shist 20) :+: (lovStr 10, shist 10))) :==:
+>>        (B $ (lovStr 40, [shist 40]) :+: (lovStr 20, [shist 20]) :+: (lovStr 10, [shist 10]))) :==:
 >>        (C (scatter $ zipD (during longNotDisplaced approachLoV) nspikes) :||: 
 >>         D (scatter $ zipD (during longNotDisplaced approachLoV) peakrate))
 
@@ -50,6 +52,14 @@ with $\frac{L}{V}$ of 10, 20 and 40 ms$^{-1}$. C, Scatter plot of
 number of counted spikes against approach $\frac{L}{V}$ for individual
 trials. D, Scatter plot of the maximum rate of spike histograms
 against approach $\frac{L}{V}$ for individual trials.
+
+> break
+
+> plot $ FitG fitf1 [5, 100, 1, 0.1] $ shist 10
+%> Fit "pos(-((x-t0)/tau) * A * exp(1 + (x-t0)/tau))+bl" [("t0",5),("A",100),("tau", 1), ("bl", 0.1)] $ shist 10
+%> Fit "pos(-((x-t0)/tau) * A * exp(1 + (x-t0)/tau))+bl" [("t0",5),("A",100),("tau", 1), ("bl", 0.1)] $ shist 20
+%> Fit "pos(-((x-t0)/tau) * A * exp(1 + (x-t0)/tau))+bl" [("t0",5),("A",100),("tau", 1), ("bl", 0.1)] $ shist 40
+
 
 > close
 
