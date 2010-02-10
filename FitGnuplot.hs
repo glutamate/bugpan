@@ -54,6 +54,18 @@ fitG f inits sig@(Signal t1 t2 dt arr Eq) =
    in fst $ minimize NMSimplex2 1E-4 500 (map (/10) inits) g inits
 fitG f inits sig = fitG f inits $ forceSigEq sig
 
+fitS :: ([Double] -> Double -> Double) -> [Double] -> [Signal Double] -> [Signal Double]
+fitS f inits sigs = map (fitS' f inits . forceSigEq) sigs
+    where fitS' ::([Double] -> Double -> Double) -> [Double] -> Signal Double -> Signal Double
+          fitS' f inits sig@(Signal t1 t2 dt arr Eq) = 
+              let n = SV.length arr 
+                  square x = x*x
+                  predarr arg = SV.sample n (\i->f arg ((t1+) $ realToFrac i*dt))
+                  g arg = SV.foldl1' (+) $ SV.zipWith (\x y -> square(x-y)) (predarr arg) arr
+                  soln = fst $ minimize NMSimplex2 1E-5 500 (map (/10) inits) g inits
+              in Signal t1 t2 dt (predarr soln) Eq
+
+
 instance PlotWithGnuplot FitG where
     getGnuplotCmd (FitG f inits sig@(Signal t1 t2 dt _ _)) = 
         let soln = fitG f inits sig

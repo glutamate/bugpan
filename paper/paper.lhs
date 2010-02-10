@@ -4,6 +4,8 @@
 \usepackage{amsmath, amsthm, amssymb}
 \usepackage{setspace} 
 \usepackage{verbatim} 
+\usepackage[final]{pdfpages}
+\usepackage{natbib}
 \onehalfspacing
 \title{A calculus of physiological evidence}
 \author{Thomas A. Nielsen et al}
@@ -24,11 +26,11 @@ Mechanized reasoning removes ambiguity and thus allows ideas to be
 formulated and communicated efficiently and for inferences to be
 scrutinized. Leibniz argued that such reasoning rests on two pillars:
 a language for describing entities and a set of rules for calculating
-with them. Since then, formal languages and calculi have had a
+with them. Subsequently, formal languages and calculi have had a
 profound impact both on pure mathematics and on modelling and
 statistical analysis in the natural sciences. As examples we point to
 Leibniz's own infinitesimals, vector notation in electromagnetism and
-the proliferation of logical formalisms in the 20th century stating
+the proliferation of logical formalisms in the 20th century starting
 with Frege's first-order logic and the \emph{Principia Mathematica}.
 
 These languages are useful because they allow us to calculate --- to
@@ -38,24 +40,25 @@ because terms can be replaced by terms with identical meaning without
 changing the meaning of the context. For instance, no matter what $w$
 refers to or where it appears, it is always true that $w+w$ can be
 substituted by $2w$. This property, which is called referential
-transparency, is shared by all ``mathematical'' notations. 
+transparency (ref), is shared by all ``mathematical'' notations. 
 
 Although we can describe quantitative scientific models, we do not
-have a satisfactory language to describe experimentation. Thus, how
-evidence for or against these models is obtained and evaluated is not
-formalised. A more explicit approach to experimentation could lead to
-a clearer formulation of what constitutes good scientific practices,
-facilitate replication and a better understanding of apparent
-inconsistencies between studies. For instance, given a description of
-an experiment and a collection of observed outcomes, we may want to
-verify certain statements about the experiment, for instance that
-particular variables were randomly controlled and not observed; that
-outcomes have not gained correlation due to the analysis procedure;
-that missing data is accounted for by the statistical model; correct
-propagation of errors and consistent units of measure; the absense of
-``double dipping.'' Statistics adresses some of these issues in
+have a satisfactory language to describe how evidence for or against
+these models is obtained and evaluated. A more explicit approach to
+experimentation could facilitate replication, permit a better
+understanding of apparent inconsistencies between studies and a
+clearer formulation of what constitutes good scientific practices. For
+instance, given a description of an experiment and a collection of
+observed outcomes, we may want to verify certain statements about the
+experiment, for instance that particular variables were randomly
+controlled and not observed; that outcomes have not gained correlation
+due to the analysis procedure; that missing data is accounted for by
+the statistical model \citep{Gelman2003}; correct propagation of
+errors \citep{Taylor1997} and consistent units of measure
+\citep{Kennedy1997}; the absense of ``double dipping''
+\citep{Kriegeskorte2009}. Statistics adresses some of these issues in
 relating atomic observations to parameter estimation and hypothesis
-testing. Here, we introduce a calculus of evidence more comprehensive
+testing. Here, we propose a calculus of evidence more comprehensive
 than statistics alone: a language that can describe an experiment such
 that it can be unambigorously replicated and be inspected to certify
 whether assumptions inherent in statistical procedures are met.
@@ -79,111 +82,110 @@ value, when these can be defined by conditional variable mutation.
 %%referentially transparent language that uses only functions cause
 %%these effects? 
 
-We are on much safer ground with a referentially transparent language
-such as the lambda calculus, a general framework for computation based
-entirely on evaluating functions in the purely mathematical sense,
-i.e. as maps between sets. The lambda calculus allows the use of
-functions as first class entities: that is, they can be referenced by
-variables and passed as arguments to other functions (which then
-become higher-order functions). These properties together mean that
-the lambda calculus combines verifiable correctness with a high level
-of abstraction, leading to programs that are in practice more concise
-(ref). The lambda calculus or variants thereof has been used as a
-general framework for the foundation of mathematics (Martin-lof),
-classical (wisdom \& sussman) and quantum mechanics (Karczmarczuk
-2003), microprocessor design (Grundy), evolutionary biochemistry
-(fontana \& buss 1994). In the \emph{typed} lambda calculus, values
-inhabit base types such as integers, real numbers, or compound types
-such as vectors, lists, functions or pairs.
+In this paper, we apply mechanised reasoning to unambiguously defined
+physiological experiments. This framework does not describe the
+physical components of an organism; there are no concepts of organ
+systems, cells or proteins. Instead it describes observation and
+calculation of the mathematical objects that play a role in
+physiological evidence. This calculus is based on the lambda calculus
+\citep{Church1941}, a referentially transparent framework for
+computation based entirely on evaluating functions in the purely
+mathematical sense, i.e. as maps between sets. The lambda calculus
+allows the use of functions as first class entities: that is, they can
+be referenced by variables and passed as arguments to other functions
+(which then become higher-order functions). These properties together
+mean that the lambda calculus combines verifiable correctness with a
+high level of abstraction, leading to programs that are in practice
+more concise (ref). The lambda calculus or variants thereof has been
+used as foundation for mathematics \citep{Martin-Lof1985}, classical
+\citep{Sussman2001} and quantum mechanics \citep{Karczmarczuk2003},
+evolutionary biochemistry \citep{Fontana1994} and hardware design
+\citep{Grundy2006}. In the \emph{typed} lambda calculus, values inhabit base
+types such as integers, real numbers, or compound types such as
+vectors, lists, functions or pairs.
 
 Although the pure lambda calculus does not have any constructs for
 interacting with the real world, there are many elegant solutions for
 doing so while retaining referential transparency. Here we highlight
 one approach that seems to be well suited for physiology. Functional
-Reactive Programming (FRP; ref) recognizes the essential role time
-plays in certain computer programs, including animations, robotics and
-physical simulations. FRP augments the lambda calculus with two
-fundamental concepts to place information in a temporal concepts:
-Signals, which represent continuously varying quantities, and events
-representing discrete occurances. Both signals and events are
-higher-order types, that is they are type constructors that can be
-instantiated with any basic type. Thus, for any type |alpha|, a signal
-of |alpha| can be thought of as a function from time to a value in
-|alpha|, which we write as
+Reactive Programming \citep[FRP;][]{Elliott1997, Nilsson2002}
+recognizes the essential role time plays in certain computer programs,
+including animations, robotics and physical simulations. FRP augments
+the lambda calculus with two fundamental concepts to place information
+in a temporal context: Signals, which represent continuously varying
+quantities, and events representing discrete occurances. Both signals
+and events are higher-order types, that is they are type constructors
+that can be instantiated with any type. Thus, for any type |alpha|, a
+signal of |alpha| can be defined as as a function from time to a value
+in |alpha|, which we write as
 \begin{code}
 Signal alpha = Time -> alpha
 \end{code}
 
 example of signal.
 
-Likewise, an event of |alpha|'s is a list of pairs of time values and a values:
+Likewise, an event of |alpha|'s is a list of pairs of time values and
+a values:
 
 \begin{code}
 Event alpha = [Time times alpha]
 \end{code}
 
-Here, we add a third higher-order type to accommodate information about periods of time:
+Here, we add a third higher-order type to accommodate information
+about periods of time:
 \begin{code}
 Duration alpha = [Time times Time times alpha]
 \end{code}
 
-
-
-In some variants of FRP, signals and events or signal transformers are
-be first-class: they can be assigned to variables and consumed and
-created by functions, just as signal producers and consumers, or
-indeed any other function, are first-class. (But see (yampa ref) for
-an example of FRP without first-class signals.) 
-
-To what extent can these concepts describe scientific experimentation?
-That almost certainly depends on the role time plays in the particular
-field. Here, we argue that in physiology, time indeed fulfills a
-crucial role and that the notions of signals and events capture many
-aspects of physiological evidence. Firstly, many directly observable
-and inferred quantities can be expressed as signals and events, for
-instance: 
+Similarly, time plays a crucial role in physiology, and here we show
+that a language based on FRP can capture many aspects of
+experimentation and analysis. These simple, yet flexible, types
+suffice to represent many directly observed and inferred quantities:
 \vskip1ex
 \begin{tabular}{l  l}
 \hline
   Quantity & Type \\ 
 \hline
-  Membrane Voltage & |Signal Real| \\
+  Voltage across the cell mebrane & |Signal Real| \\
   Animal location & |Signal (Real times Real)| \\
-  Spike & |Event ()| \\
-  Spike waveforms & |Event (Signal Real)| \\
-  EPSC Amplitude & |Event Real| \\
-%%  Drug present & |Duration ()| \\
+  Action potential & |Event ()| \\
+  Action potential waveforms & |Event (Signal Real)| \\
+  Synaptic potential amplitude & |Event Real| \\
+  Drug present & |Duration ()| \\
+  Trial with parameter |alpha| & |Duration alpha| \\
   Visual stimulus & |Signal Shape| \\
 \hline
 \end{tabular}
-\vskip1ex
-Secondly, by virtue of its basis in the lambda calculus, FRP provides
-the transformation facilities needed for data analysis. Thus we can
-process events and signals, create new events from signals, filter
-data and apply point estimators as necessary. But we also find that
-new analysis methods become feasible; for instance, having functions
-as first class entities makes it much simpler to directly represent
-probability distributions. We show how hierarchical probabilistic
-modelling can incorporate the reactive entities here introduced, such
-that model parameter can be estimated and hypotheses tested taking
-into account all the information observed.
+\vskip1ex In addition, by virtue of its basis in the lambda calculus,
+FRP provides the transformation facilities needed for data
+analysis. Thus it is possible process events and signals, create new
+events from signals, filter data and apply point estimators as
+necessary. But we also find that new analysis methods become feasible;
+for instance, having functions as first class entities makes it much
+simpler to directly represent probability distributions. We show how
+hierarchical Bayesian modelling \citep{Gelman2003} can incorporate the
+reactive entities here introduced, such that model parameter
+estimation and hypothesss testing takes into account all the
+information observed.
 
 
-We use the calculus of physiological evidence to perform a non-trivial
-experiment in in vivo insect neurophysiology. The desert locust
-Schistocerca gregaria, like many other neoptera insects (?), has a
-specialised circuit in the optic lobe for detecting approaching
-objects. This system projects to descending ganglia via the DCMD
-neuron which is accessible to recording. The DCMD response is
-sensitive to a variety of parameters including the stimulus contrast,
-approach speed and size. However, few studies have have addressed
-whether the locust looming detection system is an efficient in that it
-can discriminate objects that are on collision course from those that
-are on a non-intercepting trajectory. We show that this is the case
-and that the precision of the looming detector is influenced by the
-approach velocity. The definitions of these experiments and the data
-analysis procedure is contained within the main sections of this paper
-in a handful of equations.
+We use a calculus of physiological evidence based on FRP to perform a
+non-trivial experiment in \emph{in vivo} insect neurophysiology. The
+desert locust \emph{Schistocerca gregaria}, like many other winged
+insects, has a specialised circuit in the optic lobe for detecting
+approaching objects \citep{Rowell1976, Hatsopoulos1995}. This system
+projects to descending ganglia via the descending contralateral
+movement detector (DCMD) neuron which is accessible to recording. The
+DCMD response is sensitive to a variety of parameters including the
+stimulus contrast, approach speed and size
+\citep{Gabbiani2001}. However, few studies have addressed whether the
+locust looming detection system is efficient in discriminating objects
+that are on collision course from those that are on a non-intercepting
+trajectory. We show that this is the case and that the precision of
+the looming detector is influenced by the approach velocity. The
+definitions of these experiments and the data analysis procedure is
+contained within the main sections of this paper in a handful of
+equations.
 
 \begin{comment}
 \pagebreak
@@ -541,10 +543,12 @@ spike events to include only those that occur within that temporal
 extent, take the length of the resulting list, and pair it with the
 start and end point of the duration.
 \begin{code}
-nspikes = map counter running
-   where counter  ((t1,t2),_) = 
-                  ((t1,t2),length (filter  (between t1 t2 . fst) 
-                                           spikes)))
+nspikes = countDuring running spikes
+
+countDuring ds evs = map count ds
+   where count = \  ((t1,t2),_) -> 
+                    ((t1,t2),length (filter  (between t1 t2 . fst) 
+                                             evs))
 \end{code}
 which requires a single non-standard utility function
 
@@ -672,18 +676,21 @@ NO HISTOGRAMS!
 
 \subsection*{What is bugpan}
 
--practical tool
--description is a necessary step in automation
--framework for reasoning about experimentation
--ontology, linguistic framework
--calculus of physiological evidence.
+\begin{itemize}
+\item practical tool
+\item description is a necessary step in automation
+\item framework for reasoning about experimentation
+\item ontology, linguistic framework
+\item calculus of physiological evidence.
+\end{itemize}
 
--no fancy analysis — not the point.
+no fancy analysis; not the point.
  
 
 \subsection*{relation to semantic web ontologies}
 
--completely orthogonal
+completely orthogonal
+
 related work
 
 \subsection*{Representing scientific knowledge}
@@ -710,8 +717,17 @@ type or, for a less typed approach, a string.
 experiment description languages, and the reification of experimental
 observations into values of concrete types, form basis for inference.
 
+\bibliographystyle{apalike}
+\bibliography{paper}
+
+\includepdf[pages=-]{Figure.pdf}
+
+
+
 \end{document}
  
+
+
 
 \begin{comment}
 --rest of intro

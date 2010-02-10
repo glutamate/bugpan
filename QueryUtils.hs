@@ -180,9 +180,20 @@ align evs sigs = map align' sigs
               in shift (negate ts) sig
           distFrom x y = abs(x-y)
 
+
+
 alignBy :: ([Signal a] -> [Event b]) -> [Signal a] -> [Signal a]
 alignBy f = concatMap g
     where g sig = align (f [sig]) [sig]
+
+sigStart :: [Signal a] -> [Event ()]
+sigStart = map f
+    where f sig@(Signal t1 t2 dt sf _) = (t1,())
+
+sigStop :: [Signal a] -> [Event ()]
+sigStop = map f
+    where f sig@(Signal t1 t2 dt sf _) = (t2,())
+
 
 inout :: [Event a] -> [Event b] -> [Duration (a,b)]
 inout [] _ = []
@@ -402,6 +413,8 @@ averageSigs :: (Floating a, Storable a) => [Signal a] -> [Signal a]
 averageSigs sigs = let (mu, sem) = runStat meanSEMF sigs
                    in [mu,mu+sem, mu-sem]
 
+varianceSigs :: (Floating a, Storable a) => [Signal a] -> [Signal a]
+varianceSigs sigs = [runStat varF sigs]
 
 tagMany :: Tagged t => [a] -> [t b] -> [t a]
 tagMany [] _ = []
@@ -526,3 +539,15 @@ burst' (Nothing) tmax ((t1,v1):res@((t2,v2):es)) | dist t1 t2 < tmax = burst' (J
 nearly epsilon x y = abs (x - y) < epsilon 
 
 between x1 x2 x = x<max x1 x2 && x> min x1 x2
+
+simulateInhomogeneousPoisson :: Int -> [a] -> (a -> Signal Double) -> [[Event ()]]
+simulateInhomogeneousPoisson n pars condRate = 
+    let sam = do
+          par <- oneOf pars
+          rate@(Signal t1 t2 dt _ _) <- return $ condRate par
+          fmap catMaybes $ forM (sigTimePoints rate) $ \t-> do
+                u <- unitSample
+                if u<rate `readSig` t 
+                   then return $ Just (t,())
+                   else return Nothing          
+    in sampleN n sam

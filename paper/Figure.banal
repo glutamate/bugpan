@@ -9,7 +9,8 @@
 >> everywhere speed lov = (eq $ lov/1000)//approachLoV
 >> everywhere nspikes = realcountDuring (approachLoV) spikes
 >> everywhere stdDur = (extendDur 1 $ during (speed 40) $ during longStop notDisplaced)
->> everywhere shist lov = head $ spikeHistOver (extendDur 1 $ during (speed lov) $ during longStop notDisplaced) 0.05 spikes
+>> everywhere stdDur20 = (extendDur 1 $ during (speed 20) $ during longStop notDisplaced)
+>> everywhere shist lov =  spikeHistOver (extendDur 1 $ during (speed lov) $ during longStop notDisplaced) 0.05 spikes
 >> everywhere shistMany  = histManyOver (extendDur 1 $ during longStop notDisplaced) 0.05 spikes
 >> everywhere peakrate  = sigStat maxF $ shistMany 
 >> everywhere lovStr lov = "$\\frac{L}{V}=$" ++show lov ++ " ms$^{-1}$"
@@ -30,19 +31,20 @@
 
 \textbf{Figure 1}. A, Diagram of experiment (placeholder image). B,
 Distance to object with linear motion (solid) and with arrested image
-(dotted) with the time of screen intersection and animal collision. C, 
+(dotted) with the time of screen intersection and animal collision. C,
+Angle subtending the object on the retina and derivative of this
+angle. D, Relative luminance (not correct).
 
 > close
 
 > break
-
 
 >> openSession 0eb8
 
 >> plot $ (A (("voltage", rebase oneStdDur normV) :+: 
 >>         ("spikes", tag 16 $ rebase oneStdDur spikes) :+:
 >>         ("threshold", rebase oneStdDur spikeThreshold)) :||:
->>        (B $ (lovStr 40, [shist 40]) :+: (lovStr 20, [shist 20]) :+: (lovStr 10, [shist 10]))) :==:
+>>        (B $ (lovStr 40, shist 40) :+: (lovStr 20, shist 20) :+: (lovStr 10, shist 10))) :==:
 >>        (C (scatter $ zipD (during longNotDisplaced approachLoV) nspikes) :||: 
 >>         D (scatter $ zipD (during longNotDisplaced approachLoV) peakrate))
 
@@ -55,11 +57,19 @@ against approach $\frac{L}{V}$ for individual trials.
 
 > break
 
-> plot $ FitG fitf1 [5, 100, 1, 0.1] $ shist 10
-%> Fit "pos(-((x-t0)/tau) * A * exp(1 + (x-t0)/tau))+bl" [("t0",5),("A",100),("tau", 1), ("bl", 0.1)] $ shist 10
-%> Fit "pos(-((x-t0)/tau) * A * exp(1 + (x-t0)/tau))+bl" [("t0",5),("A",100),("tau", 1), ("bl", 0.1)] $ shist 20
-%> Fit "pos(-((x-t0)/tau) * A * exp(1 + (x-t0)/tau))+bl" [("t0",5),("A",100),("tau", 1), ("bl", 0.1)] $ shist 40
+>> fitinit = [5, 0.3, 100, 0.1]
+>> thefit = fitS fitf1 fitinit $ shist 40
 
+
+>> plot $ (A $ shist 40 :+: 
+>>        (fitS fitf1 fitinit $ shist 40))  :||:
+>>        (B $ (varianceSigs $ alignBy sigStart $ during stdDur shistMany) :+: thefit) :==:
+>>        ((C $ fitS fitf1 fitinit $  alignBy sigStart $ during stdDur shistMany) :||:
+>>         (D $ alignBy sigStart $ during stdDur shistMany))
+
+\textbf{Figure 3}. A, Average spike time histogram and fit of equation
+(X). B, Actual (solid) and predicted (dotted) variance of spike time
+histograms from individual trials for fixed-parameter model. C, Individual fits to spike time histograms D. 
 
 > close
 
