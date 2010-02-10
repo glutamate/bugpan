@@ -540,14 +540,15 @@ nearly epsilon x y = abs (x - y) < epsilon
 
 between x1 x2 x = x<max x1 x2 && x> min x1 x2
 
-simulateInhomogeneousPoisson :: Int -> [a] -> (a -> Signal Double) -> [[Event ()]]
+simulateInhomogeneousPoisson :: Int -> [a] -> (a -> Signal Double) -> [Signal Double]
 simulateInhomogeneousPoisson n pars condRate = 
     let sam = do
           par <- oneOf pars
           rate@(Signal t1 t2 dt _ _) <- return $ condRate par
-          fmap catMaybes $ forM (sigTimePoints rate) $ \t-> do
+          es <- fmap catMaybes $ forM (sigTimePoints rate) $ \t-> do
                 u <- unitSample
                 if u<rate `readSig` t 
                    then return $ Just (t,())
                    else return Nothing          
+          return $ head $ histManyOver [((t1, t2), ())] dt es
     in sampleN n sam
