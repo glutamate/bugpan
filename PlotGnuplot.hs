@@ -269,12 +269,14 @@ gnuplotManyLatex opts nmbxs = do
   let start = "set datafile missing \"NaN\"\n"
   let h = optVal 'h' 480 opts
   let w = optVal 'w' 640 opts
-  let term = "set terminal latex\n" -- size "++ show w++","++show h++" crop\n"
+  let term = "set terminal postscript eps enhanced color\n" -- size "++ show w++","++show h++" crop\n"
   let cmds = start++term ++concatMap plotOne nmcmds
   execGP cmds
-  forM_ nmcmds $ \(_,cmd) -> cleanupCmds $ map snd cmd
+  forM_ nmcmds $ \(nm,cmd) -> do
+    system $ "epstopdf "++nm++".eps"
+    cleanupCmds $ map snd cmd
   return ()
-    where plotOne (fp, plines) = "set output '"++fp++"'\n"++
+    where plotOne (fp, plines) = "set output '"++fp++".eps'\n"++
                                  (showMultiPlot plines)
  
 
@@ -331,6 +333,38 @@ subLabSplit (SubNum n x) = (show n, x)
 newtype Lines a = Lines {unLines :: a }
 newtype Dashed a = Dashed {unDashed :: a }
 newtype Boxes a = Boxes {unBoxes :: a }
+
+data Style a = Style [StyleOpt] a
+
+data StyleOpt = LineWidth Double 
+              | LineType Int
+              | LineColor String
+              | PointType Int
+              | PointSize Double
+
+styleOptsToString :: [StyleOpt] -> String
+styleOptsToString = intercalate " " . map g
+    where g (LineType lt) = "lt "++show lt
+          g (LineWidth lt) = "lw "++show lt
+          g (LineColor lc) = "lc "++lc
+          g (PointType lt) = "pt "++show lt
+          g (PointSize lt) = "ps "++show lt
+
+instance PlotWithGnuplot a => PlotWithGnuplot (Style a) where
+    multiPlot r (Style sos x) = do
+      px <- multiPlot r x
+      let wstr = styleOptsToString sos
+      return $ map (\(r', pls) -> (r', setWith wstr pls)) px
+    getGnuplotCmd (Style sos x) = do
+      px <- getGnuplotCmd x
+      let wstr = styleOptsToString sos
+      return $ setWith wstr px
+
+color col = Style [LineColor col]
+lineWidth w = Style [LineWidth w]
+lineType t = Style [LineType t]
+pointSize t = Style [PointSize t]
+pointType t = Style [PointType t]
 
 instance PlotWithGnuplot a => PlotWithGnuplot (Boxes a) where
     multiPlot r (Boxes x) = do

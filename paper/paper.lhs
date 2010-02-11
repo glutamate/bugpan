@@ -6,6 +6,8 @@
 \usepackage{verbatim} 
 \usepackage[final]{pdfpages}
 \usepackage{natbib}
+\usepackage{graphicx}
+%\usepackage{epsfig}
 \onehalfspacing
 \title{A calculus of physiological evidence}
 \author{Thomas A. Nielsen et al}
@@ -147,9 +149,10 @@ suffice to represent many directly observed and inferred quantities:
   Quantity & Type \\ 
 \hline
   Voltage across the cell mebrane & |Signal Real| \\
-  Animal location & |Signal (Real times Real)| \\
+  Animal location in 2D & |Signal (Real times Real)| \\
   Action potential & |Event ()| \\
   Action potential waveforms & |Event (Signal Real)| \\
+  Spike detection threshold & |Duration Real| \\
   Synaptic potential amplitude & |Event Real| \\
   Drug present & |Duration ()| \\
   Trial with parameter |alpha| & |Duration alpha| \\
@@ -311,18 +314,20 @@ in a handful of equations.
 
 \section*{Methods}
 
-\subsection*{Language implementation} Although Bugpan is intended to present a
-single language for experimentation, simulation and analysis, we have
-used two different implementation strategies for reasons of rapid
-development and execution efficiency. For purposes of experimentation
-and simulation, we have implemented a prototype compiler that can
-execute some Bugpan programs that contain signals and events that are
-defined by mutual recursion, as is necessary for many of the
-simulations and experiments in this paper. For
-post-acquisition/simulation analysis, where one often merely wishes to
-calculate a new value from existing observations, we have implemtented
-Bugpan as an domain-specific language embedded in the purely
-functional programming language Haskell.  OpenGL and Comedi.
+\subsection*{Language implementation} 
+
+Although Bugpan is intended to present a single language for
+experimentation, simulation and analysis, we have used two different
+implementation strategies for reasons of rapid development and
+execution efficiency. For purposes of experimentation and simulation,
+we have implemented a prototype compiler that can execute some Bugpan
+programs that contain signals and events that are defined by mutual
+recursion, as is necessary for many of the simulations and experiments
+in this paper. For post-acquisition/simulation analysis, where one
+often merely wishes to calculate a new value from existing
+observations, we have implemtented Bugpan as an domain-specific
+language embedded in the purely functional programming language
+Haskell.  OpenGL and Comedi.
 
 \subsection*{Locust experiments}
 
@@ -375,7 +380,8 @@ we bind the signal yielded by the signal source to the variable
 denoted by \emph{identifier}. This variable will hold the whole signal
 observed during the course of the experiment.
 
-The signal source binding construct allows us to formulate a simple experiment:
+The signal source binding construct allows us to formulate a simple
+experiment:
 \begin{code}
 rawVoltage <* ADC (0, 20000, 6)
 \end{code}
@@ -390,10 +396,10 @@ instantaneous value allows us to build signal transformers. Let the
 construct |sopen e sclose| create a signal with the value of the
 expression e at every time point, and |<: s :>| yield the current
 value of the signal s in the temporal context created by the
-surrounding |sopen ... sclose| braces. As in the lambda calculus, functions are
-first class and can be passed as arguments to other functions; |\x->M|
-denotes the function with argument |x| and body |M|. For instance,
-the function smap defined as
+surrounding |sopen ... sclose| braces. As in the lambda calculus,
+functions are first class and can be passed as arguments to other
+functions; |\x->M| denotes the function with argument |x| and body
+|M|. For instance, the function smap defined as
 \begin{code}
 smap = \f -> \s -> sopen f <: s :> sclose
 \end{code}
@@ -717,11 +723,13 @@ type or, for a less typed approach, a string.
 experiment description languages, and the reification of experimental
 observations into values of concrete types, form basis for inference.
 
+much easier with principle of likelihood: no need to represent the
+intention of the experimenter. 
+
 \bibliographystyle{apalike}
 \bibliography{paper}
 
 \includepdf[pages=-]{Figure.pdf}
-
 
 
 \end{document}

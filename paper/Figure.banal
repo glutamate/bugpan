@@ -8,22 +8,24 @@
 >> everywhere longNotDisplaced = during longStop notDisplaced     
 >> everywhere speed lov = (eq $ lov/1000)//approachLoV
 >> everywhere nspikes = realcountDuring (approachLoV) spikes
->> everywhere stdDur = (extendDur 1 $ during (speed 40) $ during longStop notDisplaced)
->> everywhere stdDur20 = (extendDur 1 $ during (speed 20) $ during longStop notDisplaced)
->> everywhere shist lov =  spikeHistOver (extendDur 1 $ during (speed lov) $ during longStop notDisplaced) 0.05 spikes
->> everywhere shistMany  = histManyOver (extendDur 1 $ during longStop notDisplaced) 0.05 spikes
+>> everywhere stdDur = (extendDur 1 $ during (speed 40) $ contains spikes $ during longStop notDisplaced)
+>> everywhere stdDur20 = (extendDur 1 $ during (speed 20) $ contains spikes $ during longStop notDisplaced)
+>> everywhere shist lov =  spikeHistOver (extendDur 1 $ during (speed lov) $ contains spikes $ during longStop notDisplaced) 0.05 spikes
+>> everywhere shistMany  = histManyOver (extendDur 1 $ contains spikes $ during longStop notDisplaced) 0.05 spikes
 >> everywhere peakrate  = sigStat maxF $ shistMany 
 >> everywhere lovStr lov = "$\\frac{L}{V}=$" ++show lov ++ " ms$^{-1}$"
->> everywhere oneStdDur = take 1 stdDur
+>> everywhere oneStdDur = take 1 $ drop 1 stdDur
 >> everywhere aroundHit = fromto 4.5 5.5
 >> everywhere pos x = if x >0 then x else 0
->> everywhere fitf1 [t0, tau, amp, bl] x = pos(-((x-t0)/tau) * amp * exp(1 + (x-t0)/tau))+bl
+>> everywhere fitfalpha [t0, tau, amp, bl] x = pos(-((x-t0)/tau) * amp * exp(1 + (x-t0)/tau))+bl
+>> everywhere fitf1 [t0, amp, t1, t2, t3, pslow, bl] t = let x = -(t-t0) in pos(amp*(1-exp(-x/t1))*((1-pslow)*exp(-x/t2)+pslow*exp(-x/t3)))+bl
+>> everywhere rateSig pars = fillSig 0 6 0.001 $ fitf1 pars
 
 %> inSessionsWhere zStopDist  & spikes & notDisplaced
 
 >> openSession loomsig
 
->> plot $ (A zpos :||: (B $ (during aroundHit $ rebase running zpos) :+: 
+>> plot $ (A (rebase running gabbiani) :||: (B $ (during aroundHit $ rebase running zpos) :+: 
 >>         (during aroundHit $ rebase running zreal) :+: 
 >>         (during aroundHit $ rebase running $ tag 0 collision) :+: 
 >>         (during aroundHit $ rebase running $ tag 0 hitScreen)) :==:
@@ -39,14 +41,20 @@ angle. D, Relative luminance (not correct).
 
 > break
 
->> openSession 0eb8
+>> openSession 302
+
+>> dur35 = [((4,5.1),())]
+>> fitinit = [5, 100, 0.1, 0.5, 2, 0.1, 0.1]
+>> thefit = \lov -> during dur35 $ fitS fitf1 fitinit $ shist lov
 
 >> plot $ (A (("voltage", rebase oneStdDur normV) :+: 
 >>         ("spikes", tag 16 $ rebase oneStdDur spikes) :+:
 >>         ("threshold", rebase oneStdDur spikeThreshold)) :||:
 >>        (B $ (lovStr 40, shist 40) :+: (lovStr 20, shist 20) :+: (lovStr 10, shist 10))) :==:
->>        (C (scatter $ zipD (during longNotDisplaced approachLoV) nspikes) :||: 
->>         D (scatter $ zipD (during longNotDisplaced approachLoV) peakrate))
+>>        (C (scatter $ zipD (contains spikes $ during longNotDisplaced approachLoV) nspikes) :||: 
+>>         D (scatter $ zipD (contains spikes $ during longNotDisplaced approachLoV) peakrate))
+
+>> plot $ (lovStr 40, during dur35 $ shist 40) :+: (lovStr 20, during dur35 $shist 20) :+: (lovStr 10, during dur35 $shist 10) :+: thefit 10 :+: thefit 20 :+: thefit 40
 
 \textbf{Figure 2}. A, recorded extracellular voltage, spike detection
 threshold and detected spikes. B, Spike event histogram for approaches
@@ -57,19 +65,25 @@ against approach $\frac{L}{V}$ for individual trials.
 
 > break
 
->> fitinit = [5, 0.3, 100, 0.1]
+%>> fitinit = [5, 0.3, 100, 0.1]
+>> fitinit = [5, 100, 0.1, 0.5, 2, 0.1, 0.1]
 >> thefit = fitS fitf1 fitinit $ shist 40
-
+>> fitpars = map (fitG fitf1 fitinit) $ alignBy sigStart $ during stdDur shistMany
+>> simhists = simulateInhomogeneousPoisson 10 fitpars rateSig
+>> simvar = varianceSigs simhists
 
 >> plot $ (A $ shist 40 :+: 
 >>        (fitS fitf1 fitinit $ shist 40))  :||:
 >>        (B $ (varianceSigs $ alignBy sigStart $ during stdDur shistMany) :+: thefit) :==:
->>        ((C $ fitS fitf1 fitinit $  alignBy sigStart $ during stdDur shistMany) :||:
->>         (D $ alignBy sigStart $ during stdDur shistMany))
+>>        ((C $ fitS fitf1 fitinit $ alignBy sigStart $ during stdDur shistMany) :||:
+>>         (D $ simvar))
+
+>> plot $ [rateSig $ fitinit]
 
 \textbf{Figure 3}. A, Average spike time histogram and fit of equation
 (X). B, Actual (solid) and predicted (dotted) variance of spike time
-histograms from individual trials for fixed-parameter model. C, Individual fits to spike time histograms D. 
+histograms from individual trials for fixed-parameter model. C,
+Individual fits to spike time histograms. D, Predicted variance by resampling fitted rate functions.
 
 > close
 

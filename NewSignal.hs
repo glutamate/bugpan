@@ -51,6 +51,9 @@ sigVPnts (SigV t1 t2 dt sf ) = round $ (t2-t1)/dt
 sigTimePoints s@(Signal t1 t2 dt _ _) = let n = realToFrac $ sigPnts s
                                         in map ((+t1) . (*dt)) [0..n-1]
 
+timePointsFromT1T2Dt t1 t2 dt = let n = round $ (t2-t1)/dt
+                                in map ((+t1) . (*dt) . realToFrac) [0..n-1]
+
 sigVTimePoints (SigV t1 t2 dt _) = let n = (t2-t1)/dt
                                    in map ((+t1) . (*dt)) [0..n-1]
 
@@ -298,3 +301,7 @@ showItx' nm (Signal t1 t2 dt arr Eq) =
 
    return(a0*mu*mu2+a1*mu2+a2*mu+a3);
 -}
+
+fillSig :: Storable a => Double -> Double -> Double -> (Double -> a) -> Signal a
+fillSig t1 t2 dt f = let vls = map f $ timePointsFromT1T2Dt t1 t2 dt
+                     in Signal t1 t2 dt (SV.pack vls) Eq

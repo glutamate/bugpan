@@ -304,6 +304,7 @@ initHtml =
             "</head><body>"] -}
     ["\\documentclass[a4paper]{article}",
      "%include polycode.fmt",
+     "\\usepackage{graphicx}",
      "\\begin{document}"]
 
 endHtml = 
