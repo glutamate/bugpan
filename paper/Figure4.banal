@@ -1,0 +1,40 @@
+%> importHs Math.Probably.FoldingStats
+
+>> everywhere eq = nearly 1e-8 
+>> everywhere notDisplaced = (eq 0)//displacedAngle
+>> everywhere displaced = (not . eq 0)//displacedAngle
+>> everywhere shortStop = (eq $ -0.50)//zStopDist
+
+>> everywhere longStop = notDuring shortStop running
+
+>> everywhere longNotDisplaced = during longStop notDisplaced   
+
+>> everywhere displacedBetween x y lov = extendDur 1 $ during (speed lov) $ contains spikes $ notDuring shortStop $ (between x y . abs)//displacedAngle
+  
+>> everywhere speed lov = (eq $ lov/1000)//approachLoV
+>> everywhere nspikes = realcountDuring (approachLoV) spikes
+>> everywhere stdDur = (extendDur 1 $ during (speed 40) $ contains spikes $ during longStop notDisplaced)
+>> everywhere stdDur20 = (extendDur 1 $ during (speed 20) $ contains spikes $ during longStop notDisplaced)
+>> everywhere spikeHist dur = spikeHistOver dur 0.05 spikes
+>> everywhere shist lov =  spikeHist (extendDur 1 $ during (speed lov) $ contains spikes $ during longStop notDisplaced) 
+>> everywhere shistMany  = histManyOver (extendDur 1 $ contains spikes $ during longStop notDisplaced) 0.05 spikes
+>> everywhere peakrate  = sigStat maxF $ shistMany 
+>> everywhere lovStr lov = "$\\frac{L}{V}=$" ++show lov ++ " ms$^{-1}$"
+>> everywhere oneStdDur = take 1 $ drop 1 stdDur
+>> everywhere aroundHit = fromto 4.5 5.5
+>> everywhere pos x = if x >0 then x else 0
+>> everywhere fitfalpha [t0, tau, amp, bl] x = pos(-((x-t0)/tau) * amp * exp(1 + (x-t0)/tau))+bl
+>> everywhere fitf1 [t0, amp, t1, t2, t3, pslow, bl] t = let x = -(t-t0) in pos(amp*(1-exp(-x/t1))*((1-pslow)*exp(-x/t2)+pslow*exp(-x/t3)))+bl
+>> everywhere rateSig pars = fillSig 0 6 0.001 $ fitf1 pars
+
+
+>> fitinit = [5, 100, 0.1, 0.5, 2, 0.1, 0.1]
+
+> table where displacedAngle & spikes 
+>    tagRange displacedAngle
+>    length displacedAngle
+>    morph
+
+> inSessionsWhere displacedAngle & spikes 
+
+> plot $ spikeHist (displacedBetween 0 0.01 20)

@@ -45,14 +45,18 @@ fit eqn initVals sig@(Signal t1 t2 dt _ _) = do
 
     where x++^y = x++show y
 
-fitG :: ([Double] -> Double -> Double) -> [Double] -> (Signal Double) -> [Double]
-fitG f inits sig@(Signal t1 t2 dt arr Eq) = 
+fitG :: ([Double] -> Double -> Double) -> [Double] -> [Signal Double] -> [Duration [Double]]
+fitG f inits sigs = map g sigs
+    where g sig@(Signal t1 t2 _ _ _) = ((t1,t2), fitG' f inits sig)
+
+fitG' :: ([Double] -> Double -> Double) -> [Double] -> (Signal Double) -> [Double]
+fitG' f inits sig@(Signal t1 t2 dt arr Eq) = 
    let n = SV.length arr 
        square x = x*x
        g arg = let predarr = SV.sample n (\i->f arg ((t1+) $ realToFrac i*dt))
                in SV.foldl1' (+) $ SV.zipWith (\x y -> square(x-y)) predarr arr
    in fst $ minimize NMSimplex2 1E-4 500 (map (/10) inits) g inits
-fitG f inits sig = fitG f inits $ forceSigEq sig
+fitG' f inits sig = fitG' f inits $ forceSigEq sig
 
 fitS :: ([Double] -> Double -> Double) -> [Double] -> [Signal Double] -> [Signal Double]
 fitS f inits sigs = map (fitS' f inits . forceSigEq) sigs
@@ -60,7 +64,7 @@ fitS f inits sigs = map (fitS' f inits . forceSigEq) sigs
           fitS' f inits sig@(Signal t1 t2 dt arr Eq) = 
               let n = SV.length arr 
                   square x = x*x
-                  predarr arg = SV.sample n (\i->f arg ((t1+) $ realToFrac i*dt))
+                  predarr arg = SV.sample n (\i->f arg (realToFrac i*dt))
                   g arg = SV.foldl1' (+) $ SV.zipWith (\x y -> square(x-y)) (predarr arg) arr
                   soln = fst $ minimize NMSimplex2 1E-5 500 (map (/10) inits) g inits
               in Signal t1 t2 dt (predarr soln) Eq
@@ -68,16 +72,16 @@ fitS f inits sigs = map (fitS' f inits . forceSigEq) sigs
 
 instance PlotWithGnuplot FitG where
     getGnuplotCmd (FitG f inits sig@(Signal t1 t2 dt _ _)) = 
-        let soln = fitG f inits sig
+        let soln = fitG' f inits sig
         in getGnuplotCmd $ FunSeg t1 t2 $ f soln
        
                      
 instance QueryResult FitG where
     qFilterSuccess _ = True
     qReply (FitG eqn initVals sig) _ = do
-                            let sol = fitG eqn initVals sig
+                            let sol = fitG' eqn initVals sig
                             return $ show sol
  
 
 mainTest = fit "a*x*x+b*x+c" [("a", 1), ("b", 2), ("c", 3)] sineSig
-mainTest1 = fitG (\[a,b,c] x-> a*x*x+b*x+c) [1,2,3] sineSig
+mainTest1 = fitG' (\[a,b,c] x-> a*x*x+b*x+c) [1,2,3] sineSig

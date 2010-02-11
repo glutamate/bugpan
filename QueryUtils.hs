@@ -81,6 +81,10 @@ infixl 3 &
 [] & _ = []
 _ & ys = ys
 
+notD :: [a] -> [()]
+notD [] = [()]
+notD _ = []
+
 -- (=58) session 
 -- x = [] & []
 
@@ -555,6 +559,11 @@ simulateInhomogeneousPoisson n pars condRate =
           return $ head $ histManyOver [((t1, t2), ())] 0.05 es
     in sampleN n sam
 
-contains :: ChopByDur [t] => [t] -> [Duration a] -> [Duration a]
+contains :: (ChopByDur [a]) => [a] -> [Duration b] -> [Duration b]
 contains evs durs = filter p durs
     where p dur = not . null $ concat $ chopByDur [dur] evs
+
+notDuring :: ChopByDur [t] => [Duration a] ->  [t] -> [t]
+notDuring durs evs = filter p evs
+    where p e = null $ concat $ chopByDur durs [e]
+

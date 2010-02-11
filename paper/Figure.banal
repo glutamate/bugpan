@@ -68,7 +68,7 @@ against approach $\frac{L}{V}$ for individual trials.
 %>> fitinit = [5, 0.3, 100, 0.1]
 >> fitinit = [5, 100, 0.1, 0.5, 2, 0.1, 0.1]
 >> thefit = fitS fitf1 fitinit $ shist 40
->> fitpars = map (fitG fitf1 fitinit) $ alignBy sigStart $ during stdDur shistMany
+>> fitpars = fitG fitf1 fitinit $ during stdDur shistMany
 >> simhists = simulateInhomogeneousPoisson 10 fitpars rateSig
 >> simvar = varianceSigs simhists
 
