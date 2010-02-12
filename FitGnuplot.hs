@@ -61,6 +61,8 @@ fitG' f initsam sig@(Signal t1 t2 dt arr Eq) =
           return $ fitG1 f inits sig
         manyRes = catMaybes $ sampleN 10 fitsam
     in minimumBy (comparing trd3) manyRes
+fitG' _ _ (ConstSig _) = error $ "fitG': constsig"
+fitG' f inits sig = fitG' f inits $ forceSigEq sig
 
 fitG1 :: ([Double] -> Double -> Double) -> [Double] -> Signal Double -> Maybe ([Double], Signal Double, Double)
 fitG1 f inits sig@(Signal t1 t2 dt arr Eq) = 

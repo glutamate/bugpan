@@ -26,27 +26,41 @@
 >> everywhere fitfalpha [t0, tau, amp, bl] x = pos(-((x-t0)/tau) * amp * exp(1 + (x-t0)/tau))+bl
 >> everywhere fitf1 [t0, amp, t1, t2, t3, pslow, bl] t = let x = -(t-t0) in pos(amp*(1-exp(-x/t1))*((1-pslow)*exp(-x/t2)+pslow*exp(-x/t3)))+bl
 >> everywhere rateSig pars = fillSig 0 6 0.001 $ fitf1 pars
-
+>> everywhere dispFrom lo = displacedBetween lo (lo+0.02) 20 
 >> fitinit = uniform 0.1 1 >>= \t1 -> return [5, 100, t1, 0.5, 1, 0.1, 0.1]
 
 > table where displacedAngle & spikes & displacedBetween 0.09 0.1 20
->    displacedBy ~ show $ tagRange displacedAngle
+>    displacedBy ~ accushow $ tagRange displacedAngle
 >    ndisplaced ~ length displacedAngle
->    nfardispalced ~ length $ displacedBetween 0.08 0.1 20
+>    ndisp1 ~ length $ dispFrom 0.0
+>    ndisp2 ~ length $ dispFrom 0.02
+>    ndisp3 ~ length $ dispFrom 0.04
+>    ndisp4 ~ length $ dispFrom 0.06
+>    ndisp5 ~ length $ dispFrom 0.08
 
 > close 
 
-> inSessionsWhere displacedAngle & spikes & displacedBetween 0.08 0.1 20
+> inSessionsWhere displacedAngle & spikes & displacedBetween 0.08 0.1 20 
 
 %> openSession 6f4dd
 
->> s1 = spikeHist (displacedBetween 0.0 0.02 20) 
->> s2 = spikeHist (displacedBetween 0.08 0.1 20) 
+>> s = \fr ->  spikeHist (dispFrom fr) 
+>> fp1 = fst3 $ fitG' fitf1 fitinit $ head $ s 0.00
+>> startvs = map (/100) [0,2,4,6,8] 
+>> fps = (fp1:) $ map (fst3 . fitG' fitf1 fitinit . head . s) $ tail startvs
+>> fprel = transpose $ map (\pars -> zipWith (\n o-> log(n/o)) pars fp1) fps  
+>> normVals = map (zip startvs) fprel
 
->> plot $ s1 :+: fitS fitf1 fitinit s1 :+: s2 :+: fitS fitf1 fitinit s2
+%>> fp1 = fst3 $ fitG' fitf1 fitinit $ head $ s 0.00
+%>> fp1 = fst3 $ fitG' fitf1 fitinit $ head $ s 0.00
+%>> fp1 = fst3 $ fitG' fitf1 fitinit $ head 
+%>> fp1 = fst3 $ fitG' fitf1 fitinit $ head s1
 
-> FitG fitf1 fitinit $ head s1
-> FitG fitf1 fitinit $ head s2
+>> plot $ (s 0.02 :+: fitS fitf1 fitinit (s 0.02) :+: s 0.08 :+: fitS fitf1 fitinit (s 0.08)) :||:
+>>        (("t0",normVals!!0) :+: ("amp",normVals!!1) :+: ("t1",normVals!!2) :+: ("t2",normVals!!3) :+: 
+>>        ("t3",normVals!!4) :+: ("pslow", normVals!!5))
+
+> show fprel
 
 %>>        spikeHist (displacedBetween 0.02 0.04 20) :+:
 %>>        spikeHist (displacedBetween 0.04 0.06 20) :+:
