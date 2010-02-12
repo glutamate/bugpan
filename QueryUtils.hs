@@ -546,18 +546,20 @@ between x1 x2 x = x<max x1 x2 && x> min x1 x2
 
 --contains arbitrary dt for histogram
 
-simulateInhomogeneousPoisson :: Int -> [a] -> (a -> Signal Double) -> [Signal Double]
-simulateInhomogeneousPoisson n pars condRate = 
-    let sam = do
-          par <- oneOf pars
-          rate@(Signal t1 t2 dt _ _) <- return $ condRate par
-          es <- fmap catMaybes $ forM (sigTimePoints rate) $ \t-> do
-                u <- unitSample
-                if u<(rate `readSig` t) * dt
-                   then return $ Just (t,())
-                   else return Nothing          
-          return $ head $ histManyOver [((t1, t2), ())] 0.05 es
-    in sampleN n sam
+simulateInhomogeneousPoisson ::[Duration a] -> (a -> Signal Double) -> [Event ()]
+simulateInhomogeneousPoisson durpars condRate = 
+    let bigsam = fmap concat $ forM durpars $ \((t1d, t2d),p)-> do
+                    evs <- sIPevSam condRate p
+                    return $ shift t1d evs
+    in head $ sampleNsr 1 $ bigsam
+
+sIPevSam condRateSig par = do
+  rate@(Signal t1 t2 dt _ _) <- return $ condRateSig par
+  fmap catMaybes $ forM (sigTimePoints rate) $ \t-> do
+                          u <- unitSample
+                          if u<(rate `readSig` t) * dt
+                             then return $ Just (t,())
+                             else return Nothing  
 
 contains :: (ChopByDur [a]) => [a] -> [Duration b] -> [Duration b]
 contains evs durs = filter p durs
@@ -567,3 +569,4 @@ notDuring :: ChopByDur [t] => [Duration a] ->  [t] -> [t]
 notDuring durs evs = filter p evs
     where p e = null $ concat $ chopByDur durs [e]
 
+test = simulateInhomogeneousPoisson [((10,13), 11), ((20,23), 20)] (\x-> x*sineSig)

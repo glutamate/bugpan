@@ -677,8 +677,8 @@ bias
 
 \section*{Discussion}
 
-NO HISTOGRAMS!
-
+No histograms, point estimators, data/meta-data distinction, workflow
+engines.
 
 \subsection*{What is bugpan}
 

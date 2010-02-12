@@ -388,6 +388,7 @@ downSample' n sig@(Signal t1 t2 dt _ _) =
      in if npw>n 
            then (Signal t1 t2 ((t2-t1)./.(nChunks*2))  narr Eq)
            else sig
+downSample' n s = error $ "querytypes.downSample': " ++ show s
 
 downsample n = map (downsample' n)
 downsample' :: (Bounded a, Num a, Storable a, Fractional a) => Int -> Signal a -> Signal a

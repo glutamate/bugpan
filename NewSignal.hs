@@ -48,8 +48,8 @@ sigPnts :: Signal a -> Int
 sigPnts (Signal t1 t2 dt arr _) = SV.length arr
 sigVPnts (SigV t1 t2 dt sf ) = round $ (t2-t1)/dt
 
-sigTimePoints s@(Signal t1 t2 dt _ _) = let n = realToFrac $ sigPnts s
-                                        in map ((+t1) . (*dt)) [0..n-1]
+sigTimePoints s@(Signal t1 t2 dt _ _) = let n = sigPnts s
+                                        in map ((+t1) . (*dt) . realToFrac) [0..n-1]
 
 timePointsFromT1T2Dt t1 t2 dt = let n = round $ (t2-t1)/dt
                                 in map ((+t1) . (*dt) . realToFrac) [0..n-1]

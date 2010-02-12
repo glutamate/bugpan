@@ -1,6 +1,6 @@
 %> importHs Math.Probably.FoldingStats
 
->> everywhere eq = nearly 1e-8 
+>> eq = nearly 1e-8 
 >> everywhere notDisplaced = (eq 0)//displacedAngle
 >> everywhere displaced = (not . eq 0)//displacedAngle
 >> everywhere longStop = (eq $ -0.17)//zStopDist
@@ -13,13 +13,17 @@
 >> everywhere shist lov =  spikeHistOver (extendDur 1 $ during (speed lov) $ contains spikes $ during longStop notDisplaced) 0.05 spikes
 >> everywhere shistMany  = histManyOver (extendDur 1 $ contains spikes $ during longStop notDisplaced) 0.05 spikes
 >> everywhere peakrate  = sigStat maxF $ shistMany 
->> everywhere lovStr lov = "$\\frac{L}{V}=$" ++show lov ++ " ms$^{-1}$"
+>> lovStr = \lov -> "$\\frac{L}{V}=$" ++show lov ++ " ms$^{-1}$"
 >> everywhere oneStdDur = take 1 $ drop 1 stdDur
->> everywhere aroundHit = fromto 4.5 5.5
->> everywhere pos x = if x >0 then x else 0
+>> aroundHit = fromto 4.5 5.5
+>> pos = \x -> if x >0 then x else 0
 >> everywhere fitfalpha [t0, tau, amp, bl] x = pos(-((x-t0)/tau) * amp * exp(1 + (x-t0)/tau))+bl
 >> everywhere fitf1 [t0, amp, t1, t2, t3, pslow, bl] t = let x = -(t-t0) in pos(amp*(1-exp(-x/t1))*((1-pslow)*exp(-x/t2)+pslow*exp(-x/t3)))+bl
->> everywhere rateSig pars = fillSig 0 6 0.001 $ fitf1 pars
+
+>> everywhere rateSig pars = fillSig 0 6 0.0005 $ fitf1 pars
+
+>> fitinit = uniform 0.1 1 >>= \t1 -> return [5, 100, t1, 0.5, 2, 0.1, 0.1]
+
 
 %> inSessionsWhere zStopDist  & spikes & notDisplaced
 
@@ -44,11 +48,10 @@ angle. D, Relative luminance (not correct).
 >> openSession 302
 
 >> dur35 = [((4,5.1),())]
->> fitinit = [5, 100, 0.1, 0.5, 2, 0.1, 0.1]
 >> thefit = \lov -> during dur35 $ fitS fitf1 fitinit $ shist lov
 
 >> plot $ (A (("voltage", rebase oneStdDur normV) :+: 
->>         ("spikes", tag 16 $ rebase oneStdDur spikes) :+:
+>>         ("spikes", tag 10 $ rebase oneStdDur spikes) :+:
 >>         ("threshold", rebase oneStdDur spikeThreshold)) :||:
 >>        (B $ (lovStr 40, shist 40) :+: (lovStr 20, shist 20) :+: (lovStr 10, shist 10))) :==:
 >>        (C (scatter $ zipD (contains spikes $ during longNotDisplaced approachLoV) nspikes) :||: 
@@ -65,20 +68,25 @@ against approach $\frac{L}{V}$ for individual trials.
 
 > break
 
-%>> fitinit = [5, 0.3, 100, 0.1]
->> fitinit = [5, 100, 0.1, 0.5, 2, 0.1, 0.1]
 >> thefit = fitS fitf1 fitinit $ shist 40
 >> fitpars = fitG fitf1 fitinit $ during stdDur shistMany
->> simhists = simulateInhomogeneousPoisson 10 fitpars rateSig
->> simvar = varianceSigs simhists
+>> simEvents = simulateInhomogeneousPoisson fitpars rateSig
+>> simhists = histManyOver fitpars 0.05 simEvents
+>> simvar = varianceSigs $ alignBy sigStart simhists
 
->> plot $ (A $ shist 40 :+: 
->>        (fitS fitf1 fitinit $ shist 40))  :||:
+%> show simvar
+
+>> plot $ (A $ shist 40 :+: thefit)  :||:
 >>        (B $ (varianceSigs $ alignBy sigStart $ during stdDur shistMany) :+: thefit) :==:
->>        ((C $ fitS fitf1 fitinit $ alignBy sigStart $ during stdDur shistMany) :||:
+>>        ((C $ fitS fitf1 fitinit $ alignBy sigStart $  during stdDur shistMany) :||:
 >>         (D $ simvar))
 
->> plot $ [rateSig $ fitinit]
+%> plot [rateSig $ snd . head $ fitpars]
+%> show fitpars
+%> show simEvents
+%> show simhists
+
+%>> plot $ [rateSig $ fitinit]
 
 \textbf{Figure 3}. A, Average spike time histogram and fit of equation
 (X). B, Actual (solid) and predicted (dotted) variance of spike time

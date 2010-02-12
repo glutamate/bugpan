@@ -32,7 +32,7 @@ Executable bugsess
      else
        ghc-options:        -O2 -threaded -DNODAQ
    other-modules:    EvalM, Parse, Types,Database,Eval,Expr, Traverse, Transform, HaskSyntaxUntyped, ValueIO, PrettyPrint, BNFC.LexBugpan, BNFC.ParBugpan, BNFC.SkelBugpan,BNFC.PrintBugpan,BNFC.LayoutBugpan ,BNFC.ErrM,UnitTesting, BNFC.AbsBugpan,BuiltIn, TypeCheck
-   Build-depends:    array, tnutils, probably, haskell98, process, directory, regex-posix, random, base, bytestring, binary, old-time, storablevector, mtl, data-binary-ieee754, uuid, hint, SHA, mersenne-random, storable-tuple
+   Build-depends:    array, tnutils, probably, haskell98, process, directory, regex-posix, random, base>4.0, bytestring, binary, old-time, storablevector, mtl, data-binary-ieee754, uuid, hint, SHA, mersenne-random, storable-tuple, syb
 
 Executable buganal   
    Main-Is:          BugAnal.hs
@@ -44,7 +44,7 @@ Executable buganal
      else
        ghc-options:        -O2 -threaded -DNODAQ
    other-modules:    EvalM, Parse, Types,Database,Eval,Expr, Traverse, Transform, HaskSyntaxUntyped, ValueIO, PrettyPrint, BNFC.LexBugpan, BNFC.ParBugpan, BNFC.SkelBugpan,BNFC.PrintBugpan,BNFC.LayoutBugpan ,BNFC.ErrM,UnitTesting, BNFC.AbsBugpan,BuiltIn, TypeCheck
-   Build-depends:    array, tnutils, probably, haskell98, process, directory, regex-posix, random, base, bytestring, binary, old-time, storablevector, mtl, data-binary-ieee754, uuid, hint, SHA, mersenne-random, storable-tuple
+   Build-depends:    array, tnutils, probably, haskell98, process, directory, regex-posix, random, base>4, bytestring, binary, old-time, storablevector, mtl, data-binary-ieee754, uuid, hint, SHA, mersenne-random, storable-tuple, syb
 
 Executable bugdriver   
    Main-Is:            Driver.hs
@@ -59,8 +59,8 @@ Executable bugdriver
 --   extra-include-dirs
 --   extra-lib-dirs:     /usr/lib
    Build-depends:      array, tnutils, probably, haskell98, process, directory, regex-posix, 
-                       utility-ht, random, base, bytestring, binary, old-time, storablevector, 
-                       mtl, data-binary-ieee754, uuid, GLFW>0.3, stm, OpenGL<2.4, storable-tuple
+                       utility-ht, random, base>4, bytestring, binary, old-time, storablevector, 
+                       mtl, data-binary-ieee754, uuid, GLFW>0.3, stm, OpenGL<2.4, storable-tuple, syb
    if os(linux)
      c-sources:          Comedi/comedi_hs_helper.c
 --   ghc-options:      -O2 -threaded -lcomedi Comedi/comedi_hs_helper.o
@@ -82,8 +82,8 @@ Executable runbugpan
 --   ghc-options:      -O2 -threaded -lcomedi Comedi/comedi_hs_helper.o
 
    Build-depends:    array, tnutils, probably, haskell98, process, directory, regex-posix, 
-                     utility-ht, random, base, bytestring, binary, old-time, storablevector, 
-                     mtl, data-binary-ieee754, uuid, GLFW>0.3, stm, OpenGL<2.4, 
+                     utility-ht, random, base>4, bytestring, binary, old-time, storablevector, 
+                     mtl, data-binary-ieee754, uuid, GLFW>0.3, stm, OpenGL<2.4, syb, 
                      storable-tuple
    if os(linux)
      c-sources:          Comedi/comedi_hs_helper.c
