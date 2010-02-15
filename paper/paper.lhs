@@ -24,125 +24,102 @@
 \end{description}
 \section*{Introduction, take 1}
 
-Mechanized reasoning removes ambiguity and thus allows ideas to be
+Mechanical reasoning removes ambiguity and thus allows ideas to be
 formulated and communicated efficiently and for inferences to be
-scrutinized. Leibniz argued that such reasoning rests on two pillars:
-a language for describing entities and a set of rules for calculating
-with them. Subsequently, formal languages and calculi have had a
-profound impact both on pure mathematics and on modelling and
-statistical analysis in the natural sciences. As examples we point to
-Leibniz's own infinitesimals, vector notation in electromagnetism and
-the proliferation of logical formalisms in the 20th century starting
-with Frege's first-order logic and the \emph{Principia Mathematica}.
+scrutinized. Consequently, formal languages and calculi have had a
+profound impact both on mathematics and the natural sciences. As
+examples we point to Leibniz's infinitesimals, vector notation in
+electromagnetism Frege's first-order logic. These languages are useful
+because they allow us to calculate --- to re-arrange, isolate and
+substitute terms --- and by doing so, to prove general theorems. These
+symbolic calculations are possible because terms can be replaced by
+terms with identical meaning without changing the meaning of the
+context. For instance, no matter what $w$ refers to or where it
+appears, $w+w$ can always be substituted by $2w$. This property, which
+is called referential transparency \citep{Whitehead1927}, is shared
+by all ``matheatical'' notations but not by conventional programming
+languages.
 
-These languages are useful because they allow us to calculate --- to
-re-arrange, isolate and substitute terms --- and by doing so, to prove
-general theorems. This type of symbolic calculation is possible
-because terms can be replaced by terms with identical meaning without
-changing the meaning of the context. For instance, no matter what $w$
-refers to or where it appears, it is always true that $w+w$ can be
-substituted by $2w$. This property, which is called referential
-transparency (ref), is shared by all ``mathematical'' notations. 
-
-Although we can describe quantitative scientific models, we do not
-have a satisfactory language to describe how evidence for or against
-these models is obtained and evaluated. A more explicit approach to
-experimentation could facilitate replication, permit a better
+Although we can describe quantitative scientific models, there are few
+formalisms to describe how evidence for or against these models is
+obtained and evaluated. A more explicit approach to experimentation
+could facilitate replication and meta-analysis, permit a better
 understanding of apparent inconsistencies between studies and a
-clearer formulation of what constitutes good scientific practices. For
-instance, given a description of an experiment and a collection of
-observed outcomes, we may want to verify certain statements about the
-experiment, for instance that particular variables were randomly
-controlled and not observed; that outcomes have not gained correlation
-due to the analysis procedure; that missing data is accounted for by
-the statistical model \citep{Gelman2003}; correct propagation of
-errors \citep{Taylor1997} and consistent units of measure
-\citep{Kennedy1997}; the absense of ``double dipping''
-\citep{Kriegeskorte2009}. Statistics adresses some of these issues in
-relating atomic observations to parameter estimation and hypothesis
-testing. Here, we propose a calculus of evidence more comprehensive
-than statistics alone: a language that can describe an experiment such
-that it can be unambigorously replicated and be inspected to certify
-whether assumptions inherent in statistical procedures are met.
+clearer formulation of what constitutes sound scientific practices. It
+will also permit the verification of statements about experiments, for
+instance that particular variables were randomly controlled and not
+observed; outcomes have not gained correlation due to the analysis
+procedure; missing data is accounted for by the statistical model
+\citep{Gelman2003}; correct propagation of errors \citep{Taylor1997}
+and consistent units of measure \citep{Kennedy1997}; the absense of
+``double dipping'' \citep{Kriegeskorte2009}. Statistics adresses some
+of these issues in relating atomic observations to parameter
+estimation and hypothesis testing, but not how those observations are
+obtained. Here, we propose a calculus of physiological evidence that
+can describe an experiment such that it can be unambigorously
+replicated and be inspected to certify whether statistical procedures
+are applicable. This framework does not describe the physical
+components of an animal; there are no concepts of organ systems, cells
+or proteins. Instead it describes observation and calculation of the
+mathematical objects that play a role in physiological evidence.
 
 What is an experiment? Whether they are carried out by humans or by
-automated equipment, experiments can be seen as repeatable programs
-that manipulate and observe the real world. One could construct a
-standardized notation for experimentation based on an conventional
-programming language involving step-by-step instructions and procedure
-calls. But such a language is not referentially transparent and would
-be very difficult to read and reason about; its benefits would solely
-be to communicate the precise experiment carried out to an automaton
-with identical capabilities. For instance, it would be very difficult
-to extract from an experiment description a definition of an observed
-value, when these can be defined by conditional variable mutation.
-
+automated equipment, experiments can be seen as \emph{programs} that
+manipulate and observe the real world. This definition suggests that
+experiement definitions must resemble programming languages. 
+%, and if we are to calculate with them, referentially transparent
+%ones.
+%One could construct a standardized notation for experimentation based
+%on an conventional programming language involving step-by-step
+%instructions and procedure calls. But such a language is not
+%referentially transparent and would be very difficult to read and
+%reason about; its benefits would solely be to communicate the precise
+%experiment carried out to an automaton with identical
+%capabilities. For instance, it would be very difficult to extract from
+%an experiment description a definition of an observed value, when
+%these can be defined by conditional variable mutation.
 %% When trying to create a
 %% fundamental notation for these programs, we hit an obstacle: such a
 %%language must by necessity interact with the real world in perturbing
 %%the system under investigation and recording its response. How can a
 %%referentially transparent language that uses only functions cause
-%%these effects? 
-
-In this paper, we apply mechanised reasoning to unambiguously defined
-physiological experiments. This framework does not describe the
-physical components of an organism; there are no concepts of organ
-systems, cells or proteins. Instead it describes observation and
-calculation of the mathematical objects that play a role in
-physiological evidence. This calculus is based on the lambda calculus
-\citep{Church1941}, a referentially transparent framework for
-computation based entirely on evaluating functions in the purely
-mathematical sense, i.e. as maps between sets. The lambda calculus
-allows the use of functions as first class entities: that is, they can
-be referenced by variables and passed as arguments to other functions
-(which then become higher-order functions). These properties together
-mean that the lambda calculus combines verifiable correctness with a
-high level of abstraction, leading to programs that are in practice
-more concise (ref). The lambda calculus or variants thereof has been
-used as foundation for mathematics \citep{Martin-Lof1985}, classical
-\citep{Sussman2001} and quantum mechanics \citep{Karczmarczuk2003},
-evolutionary biochemistry \citep{Fontana1994} and hardware design
-\citep{Grundy2006}. In the \emph{typed} lambda calculus, values inhabit base
-types such as integers, real numbers, or compound types such as
+%%these effects?  The best understood referentially 
+The lambda calculus \citep{Church1941} is the best understood
+framework for referentially transparent computation, based entirely on
+evaluating functions in the purely mathematical sense, i.e. as maps
+between sets. The lambda calculus allows the use of functions as first
+class entities: that is, they can be referenced by variables and
+passed as arguments to other functions (which then become higher-order
+functions). These properties together mean that the lambda calculus
+combines verifiable correctness with a high level of abstraction,
+leading to programs that are in practice more concise (ref). The
+lambda calculus or variants thereof has been used as foundation for
+mathematics \citep{Martin-Lof1985}, classical \citep{Sussman2001} and
+quantum mechanics \citep{Karczmarczuk2003}, evolutionary biochemistry
+\citep{Fontana1994} and functional programming languages
+(ref:mccarthy?). In the \emph{typed} lambda calculus, values inhabit
+base types such as integers, real numbers, or compound types such as
 vectors, lists, functions or pairs.
 
-Although the pure lambda calculus does not have any constructs for
-interacting with the real world, there are many elegant solutions for
-doing so while retaining referential transparency. Here we highlight
-one approach that seems to be well suited for physiology. Functional
-Reactive Programming \citep[FRP;][]{Elliott1997, Nilsson2002}
-recognizes the essential role time plays in certain computer programs,
-including animations, robotics and physical simulations. FRP augments
-the lambda calculus with two fundamental concepts to place information
-in a temporal context: Signals, which represent continuously varying
-quantities, and events representing discrete occurances. Both signals
-and events are higher-order types, that is they are type constructors
-that can be instantiated with any type. Thus, for any type |alpha|, a
-signal of |alpha| can be defined as as a function from time to a value
-in |alpha|, which we write as
-\begin{code}
-Signal alpha = Time -> alpha
-\end{code}
+Although the pure lambda calculus cannot interact with the physical
+world, there are many elegant solutions for doing so while retaining
+referential transparency. Functional Reactive Programming
+\citep[FRP;][]{Elliott1997, Nilsson2002} recognizes the essential role
+time plays in certain computer programs, including animations,
+robotics and physical simulations. FRP augments the lambda calculus
+with two fundamental concepts to place information in a temporal
+context: Signals, which represent continuously varying quantities, and
+events representing distinct occurances. Both signals and events are
+higher-order types, that is they are type constructors that can be
+instantiated with any type. For instance, the output of a differential
+voltage amplifier might be captured in a |Signal Real|. Here, we add a
+third higher-order type for information pertaining to a duration of
+time with a start and an end time.
 
-example of signal.
-
-Likewise, an event of |alpha|'s is a list of pairs of time values and
-a values:
-
-\begin{code}
-Event alpha = [Time times alpha]
-\end{code}
-
-Here, we add a third higher-order type to accommodate information
-about periods of time:
-\begin{code}
-Duration alpha = [Time times Time times alpha]
-\end{code}
-
-Similarly, time plays a crucial role in physiology, and here we show
-that a language based on FRP can capture many aspects of
-experimentation and analysis. These simple, yet flexible, types
-suffice to represent many directly observed and inferred quantities:
+Time also plays a crucial role in physiology, and here we show that a
+language based on FRP can capture many aspects of experimentation and
+analysis. These simple, yet flexible, types suffice to represent many
+directly observed and inferred quantities: 
 \vskip1ex
 \begin{tabular}{l  l}
 \hline
@@ -153,6 +130,7 @@ suffice to represent many directly observed and inferred quantities:
   Action potential & |Event ()| \\
   Action potential waveforms & |Event (Signal Real)| \\
   Spike detection threshold & |Duration Real| \\
+  Spike interval & |Duration ()| \\
   Synaptic potential amplitude & |Event Real| \\
   Drug present & |Duration ()| \\
   Trial with parameter |alpha| & |Duration alpha| \\
@@ -168,9 +146,8 @@ for instance, having functions as first class entities makes it much
 simpler to directly represent probability distributions. We show how
 hierarchical Bayesian modelling \citep{Gelman2003} can incorporate the
 reactive entities here introduced, such that model parameter
-estimation and hypothesss testing takes into account all the
+estimation and hypothesis testing takes into account all the
 information observed.
-
 
 We use a calculus of physiological evidence based on FRP to perform a
 non-trivial experiment in \emph{in vivo} insect neurophysiology. The

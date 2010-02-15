@@ -1,0 +1,54 @@
+%> importHs Math.Probably.FoldingStats
+%> importHs SpikeDetect
+%> importHs Math.Probably.StochFu
+
+>> everywhere eq = nearly 1e-8 
+>> everywhere notDisplaced = (eq 0)//displacedAngle
+>> everywhere displaced = (not . eq 0)//displacedAngle
+>> everywhere shortStop = (eq $ -0.50)//zStopDist
+>> everywhere speed lov = (eq $ lov/1000)//approachLoV
+>> everywhere running = displacedLoom
+>> everywhere spks = minInterval 0.001 spikes
+>> everywhere binsize = 0.1
+
+>> everywhere longStop = notDuring shortStop running
+
+>> everywhere longNotDisplaced = during longStop notDisplaced   
+
+>> everywhere displacedBetween x y lov = extendDur 1 $ during (speed lov) $ contains spikes $ notDuring shortStop $ (between x y . abs)//displacedAngle
+  
+>> everywhere nspikes = realcountDuring (approachLoV) spikes
+>> everywhere stdDur = (extendDur 1 $ during (speed 40) $ contains spikes $ during longStop notDisplaced)
+>> everywhere stdDur20 = (extendDur 1 $ during (speed 20) $ contains spikes $ during longStop notDisplaced)
+>> everywhere spikeHist dur = spikeHistOver dur binsize spikes
+>> everywhere shist lov =  spikeHist (extendDur 1 $ during (speed lov) $ contains spikes $ during longStop notDisplaced) 
+>> everywhere shistMany  = histManyOver (extendDur 1 $ contains spikes $ during longStop displacedAngle) binsize spikes
+>> everywhere peakrate  = sigStat maxF $ shistMany 
+>> everywhere lovStr lov = "$\\frac{L}{V}=$" ++show lov ++ " ms$^{-1}$"
+>> everywhere oneStdDur = take 1 $ drop 1 stdDur
+>> everywhere aroundHit = fromto 4.5 5.5
+>> everywhere pos x = if x >0 then x else 0
+>> everywhere fitfalpha [t0, tau, amp, bl] x = pos(-((x-t0)/tau) * amp * exp(1 + (x-t0)/tau))+bl
+>> everywhere fitf1 [t0, amp, t1, t2, t3, pslow, bl] t = let x = -(t-t0) in pos(amp*(1-exp(-x/t1))*((1-pslow)*exp(-x/t2)+pslow*exp(-x/t3)))+bl
+>> everywhere rateSig pars = fillSig 0 6 0.001 $ fitf1 pars
+>> everywhere dispFrom lo = displacedBetween lo (lo+0.02) 20 
+>> fitinit = uniform 0.1 1 >>= \t1 -> return [5, 100, t1, 0.5, 1, 0.1, 0.1]
+
+>> everywhere scat lov = scatter $ zipD (during (speed lov) displacedAngle) $ realcountDuring running spks
+>> everywhere scatP lov = scatter $ zipD (during (speed lov) displacedAngle) $ peakrate 
+%>> everywhere scatP lov = peakrate 
+
+%> table where displacedAngle & spikes & displacedBetween 0.09 0.1 20
+%>   cOM 10 ~ centreOfMassScatter $ filter ((<0.02). abs . fst) $ scat 10
+%>   cOM 20 ~ centreOfMassScatter $ filter ((<0.02). abs . fst) $ scat 20
+%>   cOM 40 ~ centreOfMassScatter $ filter ((<0.02). abs . fst) $ scat 40
+
+%> close 
+
+> inSessionsWhere displacedAngle & spikes & displacedBetween 0.08 0.1 20 
+
+> plot $ ("40", scat 40) :+: ("20", scat 20) :+: ("10", scat 10) 
+
+> plot $ ("40P", scatP 40) :+: ("20P", scatP 20) :+: ("10P", scatP 10) 
+
+> close
