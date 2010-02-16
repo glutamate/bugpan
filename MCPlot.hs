@@ -26,30 +26,29 @@ unparseFileName setnm cnum fnum = setnm++"_chain"++show cnum++"_file"++show fnum
 tst :: Bool
 tst =  "foo_bar" =~ "foo_bar" 
        
-thin :: Int -> [a] -> [a]
-thin n [] = []
-thin 0 xs  = xs
-thin n xs = let (x:_, ys) = splitAt (n+1) xs
-            in x : thin n ys
-            
 
 
 isLstDbls :: [Double] -> [Double]
 isLstDbls = id
-                         
+
+idx2 ix1 ix2 xs = (xs!!ix1, xs!!ix2)
+
 main = do
-  nm:parnm:restArgs <- getArgs
+  nm:parnm1:parnm2:restArgs <- getArgs
   parstr <- readFile (nm++"_parnames.mcmc") 
-  let Just parIdx = fmap snd $ find ((==parnm) . fst) $ zip (read parstr) [0..]
+  let Just parIdx1 = fmap snd $ find ((==parnm1) . fst) $ zip (read parstr) [0..]
+  let Just parIdx2 = fmap snd $ find ((==parnm2) . fst) $ zip (read parstr) [0..]
   files <- (catMaybes . map (parseFileName nm) . filter (nm `isPrefixOf`)) `fmap` getDirectoryContents "."
   let chains = nub . fst $ unzip files
   --mapM print files
   cs <- forM chains $ \c-> do
-          let fls = sort $ lookupMany c files
+          let fls = take 100 $ sort $ lookupMany c files
           fmap concat $ forM fls $ \fl-> do
-             fmap (map (!!parIdx) . thin 10) $ safeLoad (unparseFileName nm c fl)
+--             fmap (map (!!parIdx) . thin 100) $ safeLoad (unparseFileName nm c fl)
+            fmap (map (idx2 parIdx1 parIdx2) . thin 10000) $ safeLoad (unparseFileName nm c fl)
 
-  gnuplotOnScreen $ map GnuplotBox $ map (zip [(0::Double), 10..] . isLstDbls) cs
+  let initvs = map (take 1) cs
+  gnuplotOnScreen $ map GnuplotBox $ ((cs++initvs)::[[(Double,Double)]])
   {-let (lo, hi) = (safeHead restArgs >>= safeRead) `orJust` (0,nfiles)
   xs <- forM [0..hi] $ \fnum-> do 
           let file =  (nm++"_chain"++chain++"_file"++show fnum++".mcmc")
