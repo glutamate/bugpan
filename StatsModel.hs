@@ -91,12 +91,15 @@ manyLikeOver durs lh1 = \obs-> \theta-> sum $ map (lh1 theta) $ chopAndReset dur
 
 class MutateGaussian a where
     mutGauss :: Double -> a -> Sampler a
+    mutGaussAbs :: a -> Double -> a -> Sampler a
+    mutGaussAbs _ = mutGauss
     mutGaussMany :: Double -> [a] -> Sampler [a]
     mutGaussMany cv = mapM (mutGauss cv) 
     nearlyEq :: Double -> a -> a -> Bool
 
 instance MutateGaussian Double where
     mutGauss cv x = gaussD x (cv*x)
+    mutGaussAbs x0 cv x = gaussD x (cv*x0)
     mutGaussMany cv xs = gaussManyD (map (\x-> (x,cv*x)) xs)
     nearlyEq tol x y = abs(x-y)<tol  
 
@@ -106,26 +109,34 @@ instance MutateGaussian Int where
 
 instance MutateGaussian a => MutateGaussian [a] where
     mutGauss cv xs = mutGaussMany cv xs 
+    mutGaussAbs xs0 cv xs =  mapM (\(x0,x)-> mutGaussAbs x0 cv x) $ zip xs0 xs
     nearlyEq tol xs ys = length xs == length ys && (all (uncurry $ nearlyEq tol) $ zip xs ys )
 
 instance (MutateGaussian a, UA a )=> MutateGaussian (UArr a) where
     mutGauss cv xs = toU `fmap` mutGaussMany cv (fromU xs)
+    mutGaussAbs x0 cv xs = toU `fmap` mutGaussAbs (fromU x0) cv (fromU xs)
     nearlyEq tol xs ys = lengthU xs == lengthU ys && (allU (uncurryS $ nearlyEq tol) $ zipU xs ys )
 
 instance (MutateGaussian a, Storable a )=> MutateGaussian (SV.Vector a) where
     mutGauss cv xs = SV.pack `fmap` mutGaussMany cv (SV.unpack xs)
+    mutGaussAbs x0 cv xs = SV.pack `fmap` mutGaussAbs (SV.unpack x0) cv (SV.unpack xs)
     nearlyEq tol xs ys = SV.length xs == SV.length ys && (all (uncurry $ nearlyEq tol) $ SV.zip xs ys )
 
 instance (MutateGaussian a, MutateGaussian b) => MutateGaussian (a,b) where
     mutGauss cv (x,y) = liftM2 (,) (mutGauss cv x) (mutGauss cv y)
+    mutGaussAbs (x0, y0) cv (x,y) = liftM2 (,) (mutGaussAbs x0 cv x) (mutGaussAbs y0 cv y)
     nearlyEq t (x,y) (x1,y1) = nearlyEq t x x1 && nearlyEq t y y1
 
 instance (MutateGaussian a, MutateGaussian b, MutateGaussian c) => MutateGaussian (a,b,c) where
     mutGauss cv (x,y,z) = liftM3 (,,) (mutGauss cv x) (mutGauss cv y) (mutGauss cv z)
+    mutGaussAbs (x0, y0, z0) cv (x,y,z) = 
+        liftM3 (,,) (mutGaussAbs x0 cv x) (mutGaussAbs y0 cv y) (mutGaussAbs z0 cv z)
     nearlyEq t (x,y, z) (x1,y1, z1) = nearlyEq t x x1 && nearlyEq t y y1 && nearlyEq t z z1
 
 instance (MutateGaussian a, MutateGaussian b, MutateGaussian c, MutateGaussian d) => MutateGaussian (a,b,c,d) where
     mutGauss cv (x,y,z,w) = liftM4 (,,,) (mutGauss cv x) (mutGauss cv y) (mutGauss cv z) (mutGauss cv w)
+    mutGaussAbs (x0, y0, z0, w0) cv (x,y,z,w) = 
+        liftM4 (,,,) (mutGaussAbs x0 cv x) (mutGaussAbs y0 cv y) (mutGaussAbs z0 cv z) (mutGaussAbs w0 cv w)
     nearlyEq t (x,y, z, w) (x1,y1, z1, w1) = nearlyEq t x x1 && nearlyEq t y y1 && nearlyEq t z z1 && nearlyEq t w w1
 
 instance ChopByDur (UArr Double) where

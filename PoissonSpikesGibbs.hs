@@ -35,14 +35,8 @@ import Foreign.Storable
 import Foreign.C
 import Foreign.ForeignPtr
 import Foreign.Ptr
+import Control.Arrow
 
-
-{-foreign import ccall safe "poisson.h test_sum"
-        test_sum :: Ptr CDouble -> CInt -> CDouble
-
-foreign import ccall safe "poisson.h likelihood"
-        likelihood :: CDouble -> CDouble ->CDouble ->CDouble ->Ptr CDouble -> CInt -> CDouble
--}
 
 sampleMany :: [Sampler a] -> Sampler [a]
 sampleMany = sequence
@@ -50,55 +44,65 @@ sampleMany = sequence
 sampleMany2 :: [[Sampler a]] -> Sampler [[a]]
 sampleMany2 = sequence . map sequence
 
-forIdx :: (Int ->  b) -> [a] -> [b]
-forIdx f xss = map (f . snd) $ zip xss [0..]
+forIdx ::  [a] -> (Int ->  b) ->[b]
+forIdx xss f = map (f . snd) $ zip xss [0..]
 
-forIdx2 :: (Int -> Int -> b) -> [[a]] -> [[b]]
-forIdx2 f xss = map g $ zip xss [0..]
+forIdx2 :: [[a]] -> (Int -> Int -> b) -> [[b]]
+forIdx2 xss f = map g $ zip xss [0..]
     where g (xs, i) = map  (f i . snd) $ zip xs [0..]
 
+metSample = metSample1 (mutGauss 0.05)
 
-up_trial ((poprate, popRateSD, trialRateSD), (tau, baseline, t0), sessRates, trialRates) = do
-  newtrialRates <- sampleMany2 $ forIdx2 (\i j-> metSample1 (\r-> likelihoodH1 [i,j] 
-  return ()
+tst = fmap (take 100) $ runSamplerIO $ metSample (log . P.gaussD 0 1) 0.1
 
-priorSamplerH nsess ntrialsPerSess= 
-    do poprate <- uniform 100 300
-       popratesd <- uniform 2 40
-       trRateSD <- uniform 2 40
-       tau <- uniform 0.05 0.4
-       baseline <- uniform 0 1
-       t0 <- uniform 4.5 5.5
-       sessrates <- times nsess $ gauss poprate popratesd
-       trrates <- forM (zip ntrialsPerSess sessrates) $ \(ntrs, sr) -> toU `fmap` (times ntrs $ gauss sr trRateSD)
-       return ((poprate,popratesd, trRateSD), (tau, baseline, t0), sessrates, trrates)
+up_trial thedata p@(poppars, taus@(tau, baseline, t0), sessRates, trialRates) = do
+  newtrialRates <- sampleMany2 $ forIdx2 trialRates $ \i j-> metSample (\r-> 
+                      likelihoodH1 [i,j] (thedata!!i!!j) taus r + p_ij_i (sessRates!!i) poppars r) (trialRates!!i!!j)
+  return (poppars, (tau, baseline, t0), sessRates, newtrialRates)
 
+up_session (poppars, (tau, baseline, t0), sessRates, trialRates) = do
+  newsessRates <- sampleMany $ forIdx sessRates $ \i -> 
+                     metSample (\sr-> 
+                       (sum $ for (trialRates!!i) $ p_ij_i sr poppars) + 
+                       p_i_pop poppars sr) (sessRates!!i)
+  return (poppars, (tau, baseline, t0), newsessRates, trialRates)
 
-hyperPriorPDF ((poprate, popRateSD, trialRateSD), (tau, baseline, t0), _, _) 
-    | between 0 300 poprate && between 0.01 0.3 tau &&
-      between 0 1 baseline && between 4.5 5.5 t0 && 
-      between 0 60 trialRateSD && between 0 60 popRateSD =  lrsq popRateSD + lrsq trialRateSD
-    | otherwise = - 1e20
-    where lrsq = log . recip . (\x-> x*x)
+up_pop p@((poprate, popRateSD, trialRateSD), taus@(tau, baseline, t0), sessRates, trialRates) = do
+  (newpoprate, newpopsd) <- metSample (\(pr, psd)-> (sum $ for sessRates $ p_i_pop (pr,psd, undefined)) + 
+                                             p_pop pr psd) (poprate, popRateSD)
+  return ((newpoprate, newpopsd, trialRateSD), (tau, baseline, t0), sessRates, trialRates)
 
- 
-sessPriorPDF ((poprate, popratesd, _), _, sessRates, _) =
-    sum $ map (log . P.gaussD poprate popratesd) sessRates
+p_ij_i sr (_,_,sd) =  log . P.gaussD sr sd
 
-trialPriorPDF ((_, _, trialRateSD), _, sessRates, trialRates) = 
-    sum $ map (\(sr, trRates) -> sumU $ mapU (log . P.gaussD sr trialRateSD) trRates) $ zip sessRates trialRates
-    
-{-calcPars [session, trial] (_, (tau, baseline, t0), sessRates, trialRates) =
-    (trialRates!!session!!trial, (tau, baseline, t0)-}
+p_i_pop (mu,sd,_) = log . P.gaussD mu sd
 
---thetaf (_, (tau, baseline, t0), _, trialRates) = ((realToFrac tau, realToFrac baseline,
+p_pop _ sd = lrsq sd
 
-likelihoodH st@[session, trial] spikes bigp@(_, (tau, baseline, t0), _, trialRates) =
-    let rate = (trialRates!!session) `UA.indexU` trial
-        pars = (rate, tau, baseline, t0) in 
+likelihoodH1 st@[session, trial] spikes (tau, baseline, t0) rate =
+    let pars = (rate, tau, baseline, t0) in 
 --    likelihood (realToFrac rate) (realToFrac tau) (realToFrac baseline) (realToFrac t0) 
     (sumU $ (mapU (log . r rate tau baseline t0) spikes))- integralR pars 6
---    (foldU (\sm sp->sm+log(r rate tau baseline t0 sp)) 0 spikes)- integralR pars 6
+
+gibbsSF thedata = condSampler (up_trial thedata) >>> condSampler up_session >>> condSampler up_pop
+
+
+priorSamplerG nsess ntrialsPerSess= 
+    do poprate <- uniform 100 300
+       popratesd <- uniform 2 40
+       trRateSD <- return 20
+       tau <- return 0.2
+       baseline <- return 0.1
+       t0 <- return 5
+       sessrates <- times nsess $ gauss poprate popratesd
+       trrates <- forM ntrialsPerSess $ \ntrs -> {-toU `fmap`-} (times ntrs $ gauss poprate trRateSD)
+       return ((poprate,popratesd, trRateSD), (tau, baseline, t0), sessrates, trrates)
+
+chopData2 :: (ChopByDur obs,Shiftable obs) => [Duration [Int]] -> obs -> [[obs]]
+chopData2 durs allspikes = 
+    let sessInts = nub $ map (head . snd) durs
+    in for sessInts $ \i-> chopAndReset ((!!1) <$$> (((==i) .head)//durs)) allspikes
+
+lrsq = log . recip . (\x-> x*x)
 
 r :: Double -> Double -> Double -> Double -> Double -> Double
 r rate tau baseline t0 t 
@@ -112,13 +116,6 @@ integralR :: (Double, Double, Double, Double) -> Double -> Double
 integralR pars@(rate, tau, baseline, t0) t 
     | t>t0 = integralR pars t0 + baseline * t
     | otherwise = (baseline - rate)*exp((tau+t-t0)/tau)*(-tau+t-t0)+baseline*t
-
-
-
-proposalH =mutGauss 0.001 
-
-
-
 
 main :: IO ()
 main = do
@@ -142,20 +139,23 @@ main = do
   --  print $ test_sum p $ fromIntegral n
 
   let segs = (distinct running) `within` (distinct sess)
-  let lh = manyLikeH segs likelihoodH id (toU spikes)
+  --let lh = undefined -- manyLikeH segs likelihoodH id (toU spikes)
   let nthreads = numCapabilities
   putStrLn $ "splitting into nthreads="++show nthreads
-  inits <- fmap (take nthreads) $ runSamplerIO $ priorSamplerH (length sess) (map (length . (`during` running) . (:[])) sess)
-  writeFile "poisson_parnames.mcmc" $ show ["poprate", "popRateSD", "trialRateSD", "tau", "baseline", "t0"]
+  inits <- fmap (take nthreads) $ runSamplerIO $ priorSamplerG (length sess) (map (length . (`during` running) . (:[])) sess)
+  let thespikes = chopData2 segs (toU spikes)
+  writeFile "poissong_parnames.mcmc" $ show ["poprate", "popRateSD"] -- , "trialRateSD", "tau", "baseline", "t0"]
   inPar nthreads $ \threadn-> do
-    let baymarkov = bayesMetLog (mutGauss 0.0003) [hyperPriorPDF, sessPriorPDF, trialPriorPDF, lh] (inits!!threadn) 
---    let baymarkov = Mrkv bayfun (inits!!threadn) id
-    ps <- take count `fmap` runMarkovIO baymarkov
+    let baymarkov = Mrkv (gibbsSF thespikes) (inits!!threadn) id
     let ofInterest ((poprate, popRateSD, trialRateSD), (tau, baseline, t0), _, _) = 
-            [poprate, popRateSD, trialRateSD, tau, baseline, t0]  
-    writeInChunks ("poisson_chain"++show threadn) 20000 $ map ofInterest ps
+            [poprate, popRateSD] --, trialRateSD, tau, baseline, t0]  
+    print $ ofInterest (inits!!threadn) 
+    ps <- take count `fmap` runMarkovIO baymarkov
+
+    writeInChunks ("poissong_chain"++show threadn) 20000 $ map ofInterest ps
     --writeFile ("poisson_chain"++show threadn++"lastpar.mcmc") $ show $ last ps
-  
+    --mapM print $ map ofInterest ps
+    return ()
 
   {-let noburn = drop dropn ps
  
@@ -174,80 +174,3 @@ main = do
   --mapM print $ map (\p-> (lh p, fst4 p, snd4 p)) $ lastn 20 noburn 
   --return ()
 
-
-{-main1 :: IO ()
-main1 = 
-    do inSessionFromArgs $ do          
-         spike <- map fst `fmap` events "spike" ()
-         running <- durations "running" ()
-         ps <- io $ do
-           let lh = manyLikeOver running likelihood spike
-           let bayfun = bayesMetLog proposal [manyLikeOver running likelihood spike, priorPDF]
-           inits <- fmap head $ runSamplerIO priorSampler
-           let baymarkov = Mrkv bayfun inits id
-           ps <- (take 8000) `fmap` runMarkovIO baymarkov
-         --bsam <- io $ bayes 100000 (manyLikeOver running likelihood spike) priorSampler
-         --ps <- take 10000 `fmap` (io $ runSamplerIO bsam)
-           putStrLn $ "inits "++show (lh inits, priorPDF inits, inits)
-           let noburn = drop 2000 ps
-           
-           putStrLn $ "rate "++ show ((meanSDF `both` nSumSumSqr) `runStat` map fst4 noburn) 
-           putStrLn $ "tau "++ show ((meanSDF `both` nSumSumSqr) `runStat` map snd4 noburn)
-           putStrLn $ "baseline "++ show ((meanSDF `both` nSumSumSqr) `runStat` map trd4 noburn)
-           putStrLn $ "t0 "++ show ((meanSDF `both` nSumSumSqr) `runStat` map fth4 noburn)
-           
-           --print $ (manyLikeOver running likelihood spike) inits
-
-           let plotWith nm f =  (nm, Lines $ zip [(0::Double)..] $ map f ps)
-           --putStrLn $ "true lh: "++show (lh (200, 0.2, 0.1, 5))
-           --putStrLn $ "off lh: "++show (lh (201, 0.22, 0.09, 5.3))
-           --gnuplotOnScreen $ (plotWith "rate" fst4  :||: plotWith "tau" snd4) :==: 
-           --                    (plotWith "baseline" trd4 :||: plotWith "t0" fth4) 
-
-           let meanLen = meanF `runStat` (map (realToFrac . length) $ groupBy eqpar noburn )
-           putStrLn $ "mean length unchanging "++show meanLen
-           --mapM print $ map (\p-> (lh p, priorPDF p, p)) $ lastn 100 noburn 
-           --tst <- take 10 `fmap` runMarkovIO testMkv
-           --mapM print tst
-           --return ps
-         
-         
-         return ()
-likelihood pars@(rate, tau, baseline, t0) spikes =
-    ((sum $ (map (log . r pars) spikes))- integralR pars 6  )
-
-
-
-priorSampler = 
-    do rate <- uniform 0 300
-       tau <- uniform 0.19 0.21
-       baseline <- uniform 0 1
-       t0 <- uniform 4.5 5.5
-       return (rate, tau, baseline, t0)
-
-
-priorPDF (rate, tau, baseline, t0) | between 0 300 rate && between 0.01 0.3 tau &&
-                                       between 0 1 baseline && between 4.5 5.5 t0 =  0
-                                   | otherwise = - 1e20
-    where between l u x = x > l && x < u
-
-proposal (rate, tau, baseline, t0) =
-    do nrate <- gauss rate 0.1
-       ntau <- gauss tau 0.0005
-       nbaseline <- gauss baseline 0.001
-       nt0 <- gauss t0 0.005
-       return (nrate, ntau, nbaseline, nt0)
-
-
-eq = nearly 1e-8
-
-eqpar (rate, tau, baseline, t0) (rate1, tau1, baseline1, t01) =
-    eq rate rate1 && eq tau tau1 && eq baseline baseline1 && eq t0 t01 
-
-
---between l u x = x > l && x < u
-
-
---mapIdx :: (Int -> b) -> [a] -> [b]
---mapIdx f xs = map f [0..length xs-1]
--}

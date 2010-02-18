@@ -45,10 +45,10 @@ main = do
           let fls = take 100 $ sort $ lookupMany c files
           fmap concat $ forM fls $ \fl-> do
 --             fmap (map (!!parIdx) . thin 100) $ safeLoad (unparseFileName nm c fl)
-            fmap (map (idx2 parIdx1 parIdx2) . thin 10000) $ safeLoad (unparseFileName nm c fl)
+            fmap (map (idx2 parIdx1 parIdx2)) $ safeLoad (unparseFileName nm c fl)
 
-  let initvs = map (take 1) cs
-  gnuplotOnScreen $ map GnuplotBox $ ((cs++initvs)::[[(Double,Double)]])
+  let initvs = map (take 1) (cs::[[(Double,Double)]])
+  gnuplotOnScreen $ map (\c-> GnuplotBox $ AxisLabels parnm1 parnm2 $ Lines c :+: (take 1 c)) cs
   {-let (lo, hi) = (safeHead restArgs >>= safeRead) `orJust` (0,nfiles)
   xs <- forM [0..hi] $ \fnum-> do 
           let file =  (nm++"_chain"++chain++"_file"++show fnum++".mcmc")

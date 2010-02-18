@@ -398,6 +398,15 @@ instance PlotWithGnuplot a => PlotWithGnuplot (SubLabel a) where
       px <- multiPlot r x
       return $ map (\(r', pls) -> (r', mklab:pls)) px
 
+data AxisLabels a = AxisLabels String String a
+
+instance PlotWithGnuplot a => PlotWithGnuplot (AxisLabels a) where
+    multiPlot r (AxisLabels xlab ylab x) = do
+      let mklabs = [TopLevelGnuplotCmd $ "set xlabel "++show xlab, 
+                    TopLevelGnuplotCmd $ "set ylabel "++show ylab]
+      px <- multiPlot r x
+      return $ map (\(r', pls) -> (r', mklabs++pls)) px
+
 
 instance (PlotWithGnuplot a, PlotWithGnuplot b) => PlotWithGnuplot (a :||: b) where
     multiPlot r (xs :||: ys) = multiPlot r (50% xs :|: 50% ys)
