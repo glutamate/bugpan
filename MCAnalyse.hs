@@ -22,8 +22,8 @@ main = do
               (return [])
   let bigList = (concat xs) :: [[Double]]
   when ("-j" `elem`restArgs) $ do
-         putStrLn $ "jump frequency: "++ show (jumpProbBy (nearlyEq 1e-8) bigList)
-       
+    let parIdx = read $ last $ restArgs
+    putStrLn $ "jump frequency: "++ (show $ round $ (100*) $ jumpProbBy (nearlyEq 1e-8) $ map (!!parIdx) bigList)++"%"
   putStrLn $ "#values="++show (length bigList)
   parstr <- readFile (nm++"_parnames.mcmc") 
   let estims = meanSDF `runStatOnMany` bigList

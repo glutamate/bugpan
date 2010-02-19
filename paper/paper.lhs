@@ -45,23 +45,25 @@ formalisms to describe how evidence for or against these models is
 obtained and evaluated. A more explicit approach to experimentation
 could facilitate replication and meta-analysis, permit a better
 understanding of apparent inconsistencies between studies and a
-clearer formulation of what constitutes sound scientific practices. It
-will also permit the verification of statements about experiments, for
-instance that particular variables were randomly controlled and not
-observed; outcomes have not gained correlation due to the analysis
+clearer formulation of what constitutes sound scientific practices. 
+\begin{comment}It will also permit the verification of statements about experiments,
+for instance that particular variables were randomly controlled and
+not observed; outcomes have not gained correlation due to the analysis
 procedure; missing data is accounted for by the statistical model
 \citep{Gelman2003}; correct propagation of errors \citep{Taylor1997}
 and consistent units of measure \citep{Kennedy1997}; the absense of
 ``double dipping'' \citep{Kriegeskorte2009}. Statistics adresses some
 of these issues in relating atomic observations to parameter
 estimation and hypothesis testing, but not how those observations are
-obtained. Here, we propose a calculus of physiological evidence that
-can describe an experiment such that it can be unambigorously
-replicated and be inspected to certify whether statistical procedures
-are applicable. This framework does not describe the physical
-components of an animal; there are no concepts of organ systems, cells
-or proteins. Instead it describes observation and calculation of the
-mathematical objects that play a role in physiological evidence.
+obtained.\end{comment} 
+Here, we propose a calculus of physiological
+evidence that can describe an experiment such that it can be
+unambigorously replicated and be inspected to certify whether
+statistical procedures are applicable. This framework does not
+describe the physical components of an animal; there are no concepts
+of organ systems, cells or proteins. Instead it describes observation
+and calculation of the mathematical objects that play a role in
+physiological evidence.
 
 What is an experiment? Whether they are carried out by humans or by
 automated equipment, experiments can be seen as \emph{programs} that
@@ -338,18 +340,20 @@ generalise this notion such that for \emph{any} type |alpha|, a signal of
 |alpha| is defined as a function from time to a value in
 |alpha|.
 
-We must be able to build/construct signals in at least a few different
-ways:
+In order to define inputs, outputs and analyses of a physiological
+experiement, at least the following operations on signals are
+necessary:
 \begin{enumerate}
-\item Signals can be directly observed from electrodes or amplifiers
-\item We may want to build new signals by giving an arithmetic
-expression for the value at every time point.
-\item Signals can result from applying signal transformations to
-existing signals
+\item Directly observation of signals from electrodes or amplifiers
+\item Construction of signals for stimulation
+\item Application of signal transformations to existing signals
 \end{enumerate}
+
 To handle the first case we introduce the notion of signal sources,
 which represent the unprocessed/raw observations available in an
-experiment. Using the construct
+experiment. 
+
+Using the construct
 \begin{code}
 identifier <* signal source
 \end{code}

@@ -117,10 +117,11 @@ data PlotLine = PL {plotData :: String,
                     plotTitle :: String,
                     plotWith :: String,
                     cleanUp :: IO () }
-              | TopLevelGnuplotCmd String
+              | TopLevelGnuplotCmd String String
 
 plOnly pls = [pl | pl@(PL _ _ _ _) <- pls]
-tlOnly pls = [s | pl@(TopLevelGnuplotCmd s) <- pls]
+tlOnlyUnset pls = [s2 | pl@(TopLevelGnuplotCmd s1 s2) <- pls]
+tlOnly pls = [s1 | pl@(TopLevelGnuplotCmd s1 s2) <- pls]
 
 cleanupCmds :: [GnuplotCmd] -> IO ()
 cleanupCmds cmds = forM_ cmds $ \plines -> sequence_ $ map cleanUp $ plOnly plines
@@ -132,14 +133,18 @@ setWith sty = map f
 
 showPlotCmd :: GnuplotCmd -> String
 showPlotCmd [] = ""
-showPlotCmd plines = tls++"\nplot "++(intercalate ", " $ map s $ plOnly $ plines)++"\n"
-    where s (PL dat tit wth _) = dat++title tit++" with "++wth
+showPlotCmd [TopLevelGnuplotCmd s _] = s
+showPlotCmd plines = tls++"\nplot "++(intercalate ", " $ map s $ plOnly $ plines)++"\n"++untls
+    where s (PL dat tit wth _) = dat++title tit++withStr wth
           title "" = " notitle"
           title tit = " title '"++tit++"'"
+          withStr "" = ""
+          withStr s = " with "++s 
           tls = unlines $ tlOnly plines
+          untls = unlines $ tlOnly plines
 
 showMultiPlot :: [(Rectangle, GnuplotCmd)] -> String
-showMultiPlot rpls = "set multiplot\n" ++ concatMap pl rpls ++"unset multiplot\n"
+showMultiPlot rpls = "set multiplot\n" ++ concatMap pl rpls ++"\nunset multiplot\n"
     where pl (r@(Rect (x0,y0) (x1,y1)), plines)=concat ["#"++show r++"\n",
                                                         "set origin ", 
                                                         show x0, ",", show y0, "\n",
@@ -165,7 +170,7 @@ data GnuplotBox = forall a. PlotWithGnuplot a => GnuplotBox a
 data Noplot = Noplot
 
 instance PlotWithGnuplot Noplot where
-    getGnuplotCmd _ = return []
+    getGnuplotCmd _ = return [PL "x" "" "" (return () )]
 
 instance PlotWithGnuplot GnuplotBox where
     getGnuplotCmd (GnuplotBox x) = getGnuplotCmd x
@@ -182,7 +187,7 @@ gnuplotOnScreen x = do
                        
   writeFile "/tmp/gnuplotCmds" cmdLines
   system "gnuplot -persist /tmp/gnuplotCmds"
-  removeFile "/tmp/gnuplotCmds"
+  --removeFile "/tmp/gnuplotCmds"
   cleanupCmds $ map snd plines
   return ()
 
@@ -394,16 +399,27 @@ instance PlotWithGnuplot a => PlotWithGnuplot (SubLabel a) where
     multiPlot r sl = do
       let (lab, x ) = subLabSplit sl
           (xpos, ypos) = rectTopLeft r
-      let mklab = TopLevelGnuplotCmd $ "set label "++show lab++" at screen "++show xpos++","++show ypos++" front"
+      let mklab = TopLevelGnuplotCmd ("set label "++show lab++" at screen "++show xpos++","++show ypos++" front") 
+                                     "unset label"
       px <- multiPlot r x
       return $ map (\(r', pls) -> (r', mklab:pls)) px
+
+data CentreLabel = CentreLabel String
+
+instance PlotWithGnuplot CentreLabel where
+    multiPlot r (CentreLabel str)  = do      
+      let mklab = TopLevelGnuplotCmd ("set label "++show str++" at graph 0.5,0.5 center") "unset label"
+      nop::[GnuplotCmd] <- fmap (map snd) $ multiPlot r Noplot
+
+      return [(r, mklab:concat nop)]
+
 
 data AxisLabels a = AxisLabels String String a
 
 instance PlotWithGnuplot a => PlotWithGnuplot (AxisLabels a) where
     multiPlot r (AxisLabels xlab ylab x) = do
-      let mklabs = [TopLevelGnuplotCmd $ "set xlabel "++show xlab, 
-                    TopLevelGnuplotCmd $ "set ylabel "++show ylab]
+      let mklabs = [TopLevelGnuplotCmd ("set xlabel "++show xlab) "unset xlabel", 
+                    TopLevelGnuplotCmd ("set ylabel "++show ylab) "unset ylabel"]
       px <- multiPlot r x
       return $ map (\(r', pls) -> (r', mklabs++pls)) px
 
@@ -483,6 +499,8 @@ tilePlots n ps = let nps = (length ps)
                      allps = ensureLength (nfinal) Noplot ps
                  in Vplots $ map Hplots $ map (map (\(p,i) -> SubNum i p)) $ groupsOf n (zip allps [0..])
 
+gridPlot :: [[GnuplotBox]] -> Vplots (Hplots GnuplotBox)
+gridPlot plots = Vplots $ map Hplots plots
 
 groupsOf n [] = []
 groupsOf n xs = let (mine, rest) = splitAt n xs

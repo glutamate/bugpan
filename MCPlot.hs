@@ -1,3 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Main where
 
 import System.Environment
@@ -34,7 +36,54 @@ isLstDbls = id
 idx2 ix1 ix2 xs = (xs!!ix1, xs!!ix2)
 
 main = do
-  nm:parnm1:parnm2:restArgs <- getArgs
+  args <- getArgs
+  case length args of
+    0 -> help
+    1 -> main0
+    2 -> main1
+    3 -> main2
+
+help = do
+  putStrLn "MCPlot {chain name}"
+  putStrLn "MCPlot {chain name} {parameter name}"
+  putStrLn "MCPlot {chain name} {parameter name} {parameter name}" 
+
+main0 = do
+  nm:_ <- getArgs
+  parnms::[String] <- read `fmap` readFile (nm++"_parnames.mcmc") 
+  files <- (catMaybes . map (parseFileName nm) . filter (nm `isPrefixOf`)) `fmap` getDirectoryContents "."
+  let chains = nub . fst $ unzip files
+  let npars = length parnms
+  cs:: [[[Double]]] <- forM chains $ \c-> do
+          let fls = take 100 $ sort $ lookupMany c files
+          fmap concat $ forM fls $ \fl-> do
+             safeLoad (unparseFileName nm c fl)
+  print parnms
+  let plotpair i j | i>j = GnuplotBox Noplot
+                   | i==j = GnuplotBox $ CentreLabel (parnms!!i)
+                   | i<j = GnuplotBox $ for cs $ \c-> GnuplotBox $ zip (map (!!i) c) (map (!!j) $ thin 100 c)
+  let plots = for [0..npars-1] $ \i-> for [0..npars-1] $ plotpair i
+  gnuplotOnScreen $ gridPlot plots
+  return ()
+
+main1 = do
+  nm:parnm1:_ <- getArgs
+  parstr <- readFile (nm++"_parnames.mcmc") 
+  let Just parIdx1 = fmap snd $ find ((==parnm1) . fst) $ zip (read parstr) [0..]
+  files <- (catMaybes . map (parseFileName nm) . filter (nm `isPrefixOf`)) `fmap` getDirectoryContents "."
+  let chains = nub . fst $ unzip files
+  --mapM print files
+  cs <- forM chains $ \c-> do
+          let fls = take 100 $ sort $ lookupMany c files
+          fmap concat $ forM fls $ \fl-> do
+--             fmap (map (!!parIdx) . thin 100) $ safeLoad (unparseFileName nm c fl)
+            fmap (map (!!parIdx1)) $ safeLoad (unparseFileName nm c fl)
+
+  let initvs = map (take 1) (cs::[[Double]])
+  gnuplotOnScreen $ map (\c-> GnuplotBox $ AxisLabels "iteration" parnm1 $ Lines $  zip [(0::Double)..] c) cs
+
+main2 = do
+  nm:parnm1:parnm2:_ <- getArgs
   parstr <- readFile (nm++"_parnames.mcmc") 
   let Just parIdx1 = fmap snd $ find ((==parnm1) . fst) $ zip (read parstr) [0..]
   let Just parIdx2 = fmap snd $ find ((==parnm2) . fst) $ zip (read parstr) [0..]
