@@ -65,7 +65,7 @@ main0 = do
   let plots = for [0..npars-1] $ \i-> for [0..npars-1] $ plotpair i
   gnuplotOnScreen $ gridPlot plots
   return ()
-
+ 
 main1 = do
   nm:parnm1:_ <- getArgs
   parstr <- readFile (nm++"_parnames.mcmc") 

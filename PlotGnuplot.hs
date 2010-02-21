@@ -133,7 +133,7 @@ setWith sty = map f
 
 showPlotCmd :: GnuplotCmd -> String
 showPlotCmd [] = ""
-showPlotCmd [TopLevelGnuplotCmd s _] = s
+showPlotCmd [TopLevelGnuplotCmd s s2] = s ++ "\n"++ s2
 showPlotCmd plines = tls++"\nplot "++(intercalate ", " $ map s $ plOnly $ plines)++"\n"++untls
     where s (PL dat tit wth _) = dat++title tit++withStr wth
           title "" = " notitle"
@@ -141,7 +141,7 @@ showPlotCmd plines = tls++"\nplot "++(intercalate ", " $ map s $ plOnly $ plines
           withStr "" = ""
           withStr s = " with "++s 
           tls = unlines $ tlOnly plines
-          untls = unlines $ tlOnly plines
+          untls = unlines $ tlOnlyUnset plines
 
 showMultiPlot :: [(Rectangle, GnuplotCmd)] -> String
 showMultiPlot rpls = "set multiplot\n" ++ concatMap pl rpls ++"\nunset multiplot\n"
@@ -170,7 +170,8 @@ data GnuplotBox = forall a. PlotWithGnuplot a => GnuplotBox a
 data Noplot = Noplot
 
 instance PlotWithGnuplot Noplot where
-    getGnuplotCmd _ = return [PL "x" "" "" (return () )]
+    getGnuplotCmd _ = return [PL "x" "" "lines lc rgb \"white\"" (return () ),
+                             TopLevelGnuplotCmd "unset border; unset tics" "set border; set tics"]
 
 instance PlotWithGnuplot GnuplotBox where
     getGnuplotCmd (GnuplotBox x) = getGnuplotCmd x
@@ -408,7 +409,7 @@ data CentreLabel = CentreLabel String
 
 instance PlotWithGnuplot CentreLabel where
     multiPlot r (CentreLabel str)  = do      
-      let mklab = TopLevelGnuplotCmd ("set label "++show str++" at graph 0.5,0.5 center") "unset label"
+      let mklab = TopLevelGnuplotCmd ("set label "++show str++" at graph 0.5,0.5 center front") "unset label"
       nop::[GnuplotCmd] <- fmap (map snd) $ multiPlot r Noplot
 
       return [(r, mklab:concat nop)]

@@ -70,7 +70,7 @@ up_session (poppars, (tau, baseline, t0), sessRates, trialRates) = do
 up_pop thedata p@((poprate, popRateSD, trialRateSD), taus, sessRates, trialRates) = do
   (newpoprate, newpopsd) <- metSample (200,20) (\(pr, psd)-> (sum $ for sessRates $ p_i_pop (pr,psd, undefined)) + 
                                              p_pop pr psd) (poprate, popRateSD)
-  newtaus <- metSample (0.005,0.002,0.1) (\ts-> sum $ map sum $ forIdx2 trialRates $ \i j->
+  newtaus <- metSample (0.001,0.0005,0.03) (\ts-> sum $ map sum $ forIdx2 trialRates $ \i j->
                                        likelihoodH1 (thedata!!i!!j) ts (trialRates!!i!!j) --prior is uniform
                                    ) taus
   return ((newpoprate, newpopsd, trialRateSD), newtaus, sessRates, trialRates)
@@ -93,7 +93,7 @@ priorSamplerG nsess ntrialsPerSess=
        popratesd <- uniform 2 40
        trRateSD <- return 20
        tau <- uniform 0.05 0.4
-       baseline <- uniform 0 1
+       baseline <- uniform 0 0.3
        t0 <- uniform 4.5 5.5
        sessrates <- times nsess $ gauss poprate popratesd
        trrates <- forM ntrialsPerSess $ \ntrs -> {-toU `fmap`-} (times ntrs $ gauss poprate trRateSD)
