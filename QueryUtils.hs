@@ -370,6 +370,20 @@ crossCorrelateOver dur e1 e2 = concatMap f $ zip (chopByDur dur e1) (chopByDur d
           g evs2 (t0,_) = map (\(t2,_)->(t2,t2-t0)) evs2
 
 
+jitterDbls :: Double -> [Double] -> [Double]
+jitterDbls rng xs = 
+    let sam = forM xs $ \x-> uniform (x-rng/2) (x+rng/2)               
+    in head $ sampleN 1 sam
+
+jitterxs :: Double -> [(Double, a)] -> [(Double, a)]
+jitterxs rng es = let xs = map fst es
+                      ys = map snd es
+                  in zip (jitterDbls rnd xs) ys
+
+jitterys :: Double -> [(a, Double)] -> [(a, Double)]
+jitterys rng es = let xs = map fst es
+                      ys = map snd es
+                  in zip xs (jitterDbls rnd ys)
 
 crossCorrelateOverControl :: [Duration a] -> [Event b] -> [Event c] -> [Event Double]
 crossCorrelateOverControl dur e1 e2 = 
