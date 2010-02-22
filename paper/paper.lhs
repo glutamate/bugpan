@@ -45,25 +45,14 @@ formalisms to describe how evidence for or against these models is
 obtained and evaluated. A more explicit approach to experimentation
 could facilitate replication and meta-analysis, permit a better
 understanding of apparent inconsistencies between studies and a
-clearer formulation of what constitutes sound scientific practices. 
-\begin{comment}It will also permit the verification of statements about experiments,
-for instance that particular variables were randomly controlled and
-not observed; outcomes have not gained correlation due to the analysis
-procedure; missing data is accounted for by the statistical model
-\citep{Gelman2003}; correct propagation of errors \citep{Taylor1997}
-and consistent units of measure \citep{Kennedy1997}; the absense of
-``double dipping'' \citep{Kriegeskorte2009}. Statistics adresses some
-of these issues in relating atomic observations to parameter
-estimation and hypothesis testing, but not how those observations are
-obtained.\end{comment} 
-Here, we propose a calculus of physiological
-evidence that can describe an experiment such that it can be
-unambigorously replicated and be inspected to certify whether
-statistical procedures are applicable. This framework does not
-describe the physical components of an animal; there are no concepts
-of organ systems, cells or proteins. Instead it describes observation
-and calculation of the mathematical objects that play a role in
-physiological evidence.
+clearer formulation of what constitutes sound scientific practices.
+Here, we propose a calculus of physiological evidence that can
+describe an experiment such that it can be unambigorously replicated
+and be inspected to certify whether statistical procedures are
+applicable. This framework does not describe the physical components
+of an animal; there are no concepts of organ systems, cells or
+proteins. Instead it describes observation and calculation of the
+mathematical objects that play a role in physiological evidence.
 
 What is an experiment? Whether they are carried out by humans or by
 automated equipment, experiments can be seen as \emph{programs} that
@@ -325,7 +314,7 @@ computer.
 
 \subsection*{Statistical analysis}
 
-metropolis sampler, proposal: gaussian tuned to 25\% acceptance
+metropolis-within-gibbs sampler, proposal: gaussian tuned to 25\% acceptance
 rate. non-informative improper priors.
 
 \section*{Results}
@@ -706,6 +695,17 @@ observations into values of concrete types, form basis for inference.
 
 much easier with principle of likelihood: no need to represent the
 intention of the experimenter. 
+
+It will also permit the verification of statements about experiments,
+for instance that particular variables were randomly controlled and
+not observed; outcomes have not gained correlation due to the analysis
+procedure; missing data is accounted for by the statistical model
+\citep{Gelman2003}; correct propagation of errors \citep{Taylor1997}
+and consistent units of measure \citep{Kennedy1997}; the absense of
+``double dipping'' \citep{Kriegeskorte2009}. Statistics adresses some
+of these issues in relating atomic observations to parameter
+estimation and hypothesis testing, but not how those observations are
+obtained.
 
 \bibliographystyle{apalike}
 \bibliography{paper}

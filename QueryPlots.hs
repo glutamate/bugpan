@@ -64,7 +64,7 @@ data FunSeg = FunSeg Double Double (Double -> Double )
 instance PlotWithGnuplot FunSeg where
     getGnuplotCmd (FunSeg t1 t2 f) = let dx = (t2-t1)/1000 
                                          xs = map (\p-> p*dx+t1) [0..999] in 
-                                     getGnuplotCmd $ Dashed $ zip xs $ map f xs
+                                     getGnuplotCmd $ Lines [LineStyle 0] $ zip xs $ map f xs
 
 
 instance QueryResult [GnuplotBox] where
@@ -219,7 +219,7 @@ webSpark opts isHist xs= do
   let fnm = "/var/bugpan/www/"./resdir./"spark"++u++".png" 
   if isHist 
      then gnuplotToSparklinePNG fnm (Boxes vls)
-     else gnuplotToSparklinePNG fnm (Lines vls)
+     else gnuplotToSparklinePNG fnm (Lines [] vls)
 --  make so vls >>= savePngFile fnm
   system $ "chmod 777 /var/bugpan/www/"++resdir./"/* 2>/dev/null"
   return $ "<img src=\""++fnm++"\" />"

@@ -232,11 +232,11 @@ gnuplotToPDF fp x = do
   system $ "ps2pdf "++fp
   return ()
 
-gnuplotToPS:: PlotWithGnuplot a => String -> a -> IO ()
-gnuplotToPS fp x = do
+gnuplotToPS:: PlotWithGnuplot a => String-> a -> IO ()
+gnuplotToPS fp  x = do
   plines <- multiPlot unitRect x
   let cmdLines = "set datafile missing \"NaN\"\n"++
-                 "set terminal postscript\n"++
+                 "set terminal postscript eps enhanced color \"Helvetica\" 8\n"++
                  "set output '"++fp++"'\n"++
                   (showMultiPlot plines)
                        
@@ -336,14 +336,16 @@ subLabSplit (Diii x) = ("Diii",x)
 subLabSplit (E x) = ("E",x)
 subLabSplit (SubNum n x) = (show n, x)
 
-newtype Lines a = Lines {unLines :: a }
-newtype Dashed a = Dashed {unDashed :: a }
+--newtype Lines a = Lines {unLines :: a }
+--newtype Dashed a = Dashed {unDashed :: a }
 newtype Boxes a = Boxes {unBoxes :: a }
 
-data Style a = Style [StyleOpt] a
+data Lines a = Lines [StyleOpt] a
+data Points a = Points [StyleOpt] a
 
 data StyleOpt = LineWidth Double 
               | LineType Int
+              | LineStyle Int
               | LineColor String
               | PointType Int
               | PointSize Double
@@ -352,49 +354,54 @@ styleOptsToString :: [StyleOpt] -> String
 styleOptsToString = intercalate " " . map g
     where g (LineType lt) = "lt "++show lt
           g (LineWidth lt) = "lw "++show lt
+          g (LineStyle lt) = "ls "++show lt
           g (LineColor lc) = "lc "++lc
           g (PointType lt) = "pt "++show lt
           g (PointSize lt) = "ps "++show lt
 
-instance PlotWithGnuplot a => PlotWithGnuplot (Style a) where
-    multiPlot r (Style sos x) = do
+
+
+instance PlotWithGnuplot a => PlotWithGnuplot (Lines a) where
+    multiPlot r (Lines sos x) = do
       px <- multiPlot r x
       let wstr = styleOptsToString sos
-      return $ map (\(r', pls) -> (r', setWith wstr pls)) px
-    getGnuplotCmd (Style sos x) = do
-      px <- getGnuplotCmd x
-      let wstr = styleOptsToString sos
-      return $ setWith wstr px
+      return $ map (\(r', pls) -> (r', setWith ("lines "++wstr) pls)) px
 
-color col = Style [LineColor col]
-lineWidth w = Style [LineWidth w]
-lineType t = Style [LineType t]
-pointSize t = Style [PointSize t]
-pointType t = Style [PointType t]
+instance PlotWithGnuplot a => PlotWithGnuplot (Points a) where
+    multiPlot r (Points sos x) = do
+      px <- multiPlot r x
+      let wstr = styleOptsToString sos
+      return $ map (\(r', pls) -> (r', setWith ("points "++wstr) pls)) px
 
 instance PlotWithGnuplot a => PlotWithGnuplot (Boxes a) where
     multiPlot r (Boxes x) = do
       px <- multiPlot r x
       return $ map (\(r', pls) -> (r', setWith "boxes" pls)) px
-    getGnuplotCmd (Boxes x) = do
-      px <- getGnuplotCmd x
-      return $ setWith "boxes" px
 
-instance PlotWithGnuplot a => PlotWithGnuplot (Dashed a) where
-    multiPlot r (Dashed x) = do
-      px <- multiPlot r x
-      return $ map (\(r', pls) -> (r', setWith "lines ls 0" pls)) px
-    getGnuplotCmd (Dashed x) = do
-      px <- getGnuplotCmd x
-      return $ setWith "lines" px
+data Margin a = Margin Double Double Double Double a
 
-instance PlotWithGnuplot a => PlotWithGnuplot (Lines a) where
-    multiPlot r (Lines x) = do
+
+setMargin (Margin b t l r _) = unlines ["set bmargin "++show b,
+                                        "set lmargin "++show l,
+                                        "set rmargin "++show r,
+                                        "set tmargin "++show t]
+                               
+
+unsetMargin = unlines ["unset bmargin ",
+                       "unset lmargin ",
+                       "unset rmargin ",
+                       "unset tmargin "]
+instance PlotWithGnuplot a => PlotWithGnuplot (Margin a) where
+    multiPlot r m@(Margin _ _ _ _ x) = do
       px <- multiPlot r x
-      return $ map (\(r', pls) -> (r', setWith "lines" pls)) px
-    getGnuplotCmd (Lines x) = do
-      px <- getGnuplotCmd x
-      return $ setWith "lines" px
+      let setit = setMargin m
+      return $ map (\(r', pls) -> (r', (TopLevelGnuplotCmd setit unsetMargin):pls)) px
+
+lineWidth w = Lines [LineWidth w]
+lineType t = Lines [LineType t]
+pointSize t = Points [PointSize t]
+pointType t = Points [PointType t]
+
 
 instance PlotWithGnuplot a => PlotWithGnuplot (SubLabel a) where
     multiPlot r sl = do

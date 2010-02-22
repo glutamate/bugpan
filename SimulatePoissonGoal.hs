@@ -16,26 +16,26 @@ import Control.Monad.Trans
 import QueryUtils
 
 sample1 :: MonadIO m => Sampler a -> m a
-sample1 sam = liftM head $ (io $ runSamplerIO sam)
+sample1 sam = liftM head (io $ runSamplerIO sam)
 
-poprate = 200
-popratesd = 10
 trialRateSD = 20
---baseline = 0.1
---tau = 0.2
---t0 = 5
 
-main = forM_ [0..9] $ \i -> do
-         deleteSessionIfExists $ "poisson"++show i
-         inApproxSession ("new:poisson"++show i) $ do          
-                              sessRate <- sample1 $ gauss poprate popratesd
-                              ntrials <- sample1 $ oneOf [20..100]
-                              simspikes <- useFile "SimulatePoissonSpikes" [("maxRate", realT)] []
-                              times ntrials $ do 
-                                trialRate <- sample1 $ gauss sessRate trialRateSD
-                                determine simspikes [("maxRate", always $ NumV $ NReal trialRate)]
-                              sd <- sessionDur
-                              storeAs "sessionRate" $ tag sessRate sd
-                              return ()
+amptrialsd = 20
+ampsessmean = 200
+ampsesssd = 200
+baselinemean = 0.2
+baselinesd = 0.1
+adbl = always . NumV . NReal 
 
+main = 
+    forM_ [0..9] $ \i -> do
+      deleteSessionIfExists $ "poisson"++show i
+      inApproxSession ("new:poisson"++show i) $ do          
+            amptrialmean <- sample1 $ gauss ampsessmean ampsesssd
+            ntrials <- sample1 $ oneOf [20..100]
+            simspikes <- useFile "SimulatePoissonSpikes" [("maxRate", realT)] []
+            times ntrials $ do 
+               amp <- sample1 $ gauss amptrialmean amptrialsd
+               determine simspikes [("amp", adbl amp)]
+            
 

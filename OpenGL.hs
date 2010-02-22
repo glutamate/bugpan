@@ -147,7 +147,8 @@ display dispPull = do
  --threadDelay $ 300*1000
  swapBuffers
 
-unRealNum = id
+unRealNum ::  RealNum-> GLdouble
+unRealNum = realToFrac
 
 fromPair3v (PairV (PairV x y) z) = (fromRational . toRational . unsafeVToDbl $ x, unsafeVToDbl $ y, unsafeVToDbl $ z)
 
