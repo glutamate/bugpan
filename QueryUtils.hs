@@ -378,12 +378,12 @@ jitterDbls rng xs =
 jitterxs :: Double -> [(Double, a)] -> [(Double, a)]
 jitterxs rng es = let xs = map fst es
                       ys = map snd es
-                  in zip (jitterDbls rnd xs) ys
+                  in zip (jitterDbls rng xs) ys
 
 jitterys :: Double -> [(a, Double)] -> [(a, Double)]
 jitterys rng es = let xs = map fst es
                       ys = map snd es
-                  in zip xs (jitterDbls rnd ys)
+                  in zip xs (jitterDbls rng ys)
 
 crossCorrelateOverControl :: [Duration a] -> [Event b] -> [Event c] -> [Event Double]
 crossCorrelateOverControl dur e1 e2 = 

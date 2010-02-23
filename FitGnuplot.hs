@@ -70,7 +70,7 @@ fitG1 f inits sig@(Signal t1 t2 dt arr Eq) =
        square x = x*x
        predarr arg = SV.sample n (\i->f arg (realToFrac i*dt))
        g arg = SV.foldl1' (+) $ SV.zipWith (\x y -> square(x-y)) (predarr arg) arr
-       soln = unsafePerformIO $ C.catch (return $ Just $ minimize NMSimplex2 1E-5 500 (map (/10) inits) g inits)
+       soln = unsafePerformIO $ C.catch (return $ Just $ minimize NMSimplex2 2E-5 300 (map (/10) inits) g inits)
                                         (\e-> const (return Nothing) (e::C.SomeException))
        --soln = Just $ minimize NMSimplex2 1E-5 500 (map (/10) inits) g inits
    in case soln of

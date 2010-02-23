@@ -22,6 +22,7 @@ import Control.Monad.State.Strict
 import EvalM 
 import SrcSinks
 import Numbers
+import System.Environment
 
 --import Allegro.Vector
 --import qualified Data.Map as M
@@ -92,16 +93,31 @@ takeOutTV p tv = atomically $ do vls <- readTVar tv
 
 initGlScreen full dispFunMVar runningMVar = do
   initialize
+  args <- getArgs
+  when ("-aa" `elem` args) $ do
+    openWindowHint $= (FSAASamples, 1)
+  let scrMode = if ("-full" `elem` args || full) then FullScreen else Window
   openWindow (Size 640 480) [
                   DisplayRGBBits 8 8 8,
                   DisplayAlphaBits 8,
                   DisplayDepthBits 24,
                   DisplayStencilBits 0
-                 ] (if full then FullScreen else Window)
+                 ] scrMode
   windowTitle $= "Bugpan screen"
   swapInterval $= 1
   clearColor $= Color4 0 0.23 0 0
   clear [ColorBuffer]
+  when ("-aa" `elem` args) $ do
+    lineSmooth $= Enabled
+    polygonSmooth $= Enabled
+    hint PolygonSmooth $= Nicest
+    hint LineSmooth $= Nicest
+    hint PointSmooth $= Nicest
+    --blend $= Enabled 
+    --cullFace $= Just Back
+    blendFunc $= (SrcAlphaSaturate, One)
+  when ("-ms" `elem` args) $ do
+    multisample $= Enabled
   swapBuffers
   waitLoop dispFunMVar runningMVar
 

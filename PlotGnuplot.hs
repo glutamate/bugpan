@@ -275,14 +275,14 @@ gnuplotManyLatex opts nmbxs = do
   let start = "set datafile missing \"NaN\"\n"
   let h = optVal 'h' 480 opts
   let w = optVal 'w' 640 opts
-  let term = "set terminal postscript eps enhanced color\n" -- size "++ show w++","++show h++" crop\n"
+  let term = "set terminal epslatex color\n" -- size "++ show w++","++show h++" crop\n"
   let cmds = start++term ++concatMap plotOne nmcmds
   execGP cmds
   forM_ nmcmds $ \(nm,cmd) -> do
     system $ "epstopdf "++nm++".eps"
     cleanupCmds $ map snd cmd
   return ()
-    where plotOne (fp, plines) = "set output '"++fp++".eps'\n"++
+    where plotOne (fp, plines) = "set output '"++fp++".tex'\n"++
                                  (showMultiPlot plines)
  
 
@@ -355,7 +355,7 @@ styleOptsToString = intercalate " " . map g
     where g (LineType lt) = "lt "++show lt
           g (LineWidth lt) = "lw "++show lt
           g (LineStyle lt) = "ls "++show lt
-          g (LineColor lc) = "lc "++lc
+          g (LineColor lc) = "lc rgb "++show lc
           g (PointType lt) = "pt "++show lt
           g (PointSize lt) = "ps "++show lt
 
@@ -379,7 +379,13 @@ instance PlotWithGnuplot a => PlotWithGnuplot (Boxes a) where
       return $ map (\(r', pls) -> (r', setWith "boxes" pls)) px
 
 data Margin a = Margin Double Double Double Double a
+data XRange a = XRange Double Double a
+data YRange a = YRange Double Double a
 
+data XTics a = XTics [Double] a
+data YTics a = YTics [Double] a
+
+data Noaxis a = Noaxis a
 
 setMargin (Margin b t l r _) = unlines ["set bmargin "++show b,
                                         "set lmargin "++show l,
@@ -396,6 +402,39 @@ instance PlotWithGnuplot a => PlotWithGnuplot (Margin a) where
       px <- multiPlot r x
       let setit = setMargin m
       return $ map (\(r', pls) -> (r', (TopLevelGnuplotCmd setit unsetMargin):pls)) px
+
+instance PlotWithGnuplot a => PlotWithGnuplot (XRange a) where
+    multiPlot r m@(XRange lo hi x) = do
+      px <- multiPlot r x
+      let setit = "set xrange ["++show lo++":"++show hi++"]\n"
+      return $ map (\(r', pls) -> (r', (TopLevelGnuplotCmd setit "set xrange [*:*]"):pls)) px
+
+instance PlotWithGnuplot a => PlotWithGnuplot (Noaxis a) where
+    multiPlot r m@(Noaxis x) = do
+      px <- multiPlot r x
+      let cmd = TopLevelGnuplotCmd "unset border; unset tics" "set border; set tics"
+      return $ map (\(r', pls) -> (r', cmd:pls)) px
+
+instance PlotWithGnuplot a => PlotWithGnuplot (XTics a) where
+    multiPlot r m@(XTics tics x) = do
+      px <- multiPlot r x
+      let setit = "set xtics "++ (intercalate ", " $ map show tics) ++"\n"
+      return $ map (\(r', pls) -> (r', (TopLevelGnuplotCmd setit "set xtics autofreq"):pls)) px
+
+
+instance PlotWithGnuplot a => PlotWithGnuplot (YTics a) where
+    multiPlot r m@(YTics tics x) = do
+      px <- multiPlot r x
+      let setit = "set ytics "++ (intercalate ", " $ map show tics) ++"\n"
+      return $ map (\(r', pls) -> (r', (TopLevelGnuplotCmd setit "set xtics autofreq"):pls)) px
+
+
+instance PlotWithGnuplot a => PlotWithGnuplot (YRange a) where
+    multiPlot r m@(YRange lo hi x) = do
+      px <- multiPlot r x
+      let setit = "set yrange ["++show lo++":"++show hi++"]\n"
+      return $ map (\(r', pls) -> (r', (TopLevelGnuplotCmd setit "set yrange [*:*]"):pls)) px
+
 
 lineWidth w = Lines [LineWidth w]
 lineType t = Lines [LineType t]

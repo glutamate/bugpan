@@ -60,7 +60,7 @@
 >>        (("t0",normVals!!0) :+: ("amp",normVals!!1) :+: ("t1",normVals!!2) :+: ("t2",normVals!!3) :+: 
 >>        ("t3",normVals!!4) :+: ("pslow", normVals!!5))
 
-> show fprel
+%> show fprel
 
 %>>        spikeHist (displacedBetween 0.02 0.04 20) :+:
 %>>        spikeHist (displacedBetween 0.04 0.06 20) :+:

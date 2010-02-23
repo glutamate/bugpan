@@ -19,6 +19,7 @@ import HaskellBackend
 import System.Exit
 import System.Cmd
 import Query (bugpanRootDir)
+import Graphics.UI.GLFW
 
 {-chainM :: Monad m => (s -> [a] -> m s)  -> [a] -> s -> m (s, [a])
 chainM f [] s = return (s, [])
@@ -82,7 +83,7 @@ dispatch rst (file:args) | head file /= '-' = do
   ds <- fileDecls file []
   dispatch (rst {rstDecls = rstDecls rst ++ ds}) args
 
-dispatch rst [] = go rst
+dispatch rst unknown = go rst
 
 go rs@(RS [] _ _ _ _) = return ()
 
@@ -93,7 +94,8 @@ go rs@(RS ds Nothing mdt mtmax Nothing) = do
   ress <- execInStages prg dt tmax return
   mapM_ print ress
   mapM_ showSig ress
-  
+  putStrLn "done"
+  closeWindow
 
 go rs@(RS ds (Just sess) mdt mtmax Nothing) = do
   --get t0 from db
@@ -103,6 +105,7 @@ go rs@(RS ds (Just sess) mdt mtmax Nothing) = do
   runOnce dt t0 tmax ds sess
   print "done running"
   return ()
+  closeWindow
 
 go rs@(RS ds (Just sess) mdt mtmax (Just outNm)) = do
   let prg = getPrg rs
