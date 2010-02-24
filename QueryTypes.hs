@@ -70,8 +70,8 @@ data QState = QState { qsSess:: Session,
 
 type QueryM = StateT QState IO
 
-{-sampleN :: Int -> Sampler a -> QueryM [a]
-sampleN n sf = do
+sampleNQ :: MonadIO m => Int -> Sampler a -> StateT QState m [a]
+sampleNQ n sf = do
   rans <- rnds `fmap` get
   modify $ \s-> s {rnds = []}
   let (vls, rans') = sam n rans sf []
@@ -81,12 +81,13 @@ sampleN n sf = do
           sam n rs s@(Sam sf) xs = let (x, rs') = sf rs 
                                    in sam (n-1) rs' s (x:xs)
 
-sample :: Sampler a -> QueryM a
-sample (Sam sf) = do
+sampleQ :: MonadIO m => Sampler a -> StateT QState m a
+sampleQ (Sam sf) = do
   rans <- rnds `fmap` get
   let (x, rans') = sf rans
   modify $ \s-> s {rnds = rans'}
-  return $ x -}
+  return $ x 
+
  
 getSession = qsSess `fmap` get
 getSessionName = do Session bdir _ <- getSession

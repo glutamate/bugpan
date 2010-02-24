@@ -51,21 +51,37 @@ forIdx2 :: [[a]] -> (Int -> Int -> b) -> [[b]]
 forIdx2 xss f = map g $ zip xss [0..]
     where g (xs, i) = map  (f i . snd) $ zip xs [0..]
 
+for2 :: [[a]] -> (a->b) -> [[b]]
+for2 xss f = map (map f) xss 
+
 metSample x0 = metSample1 (mutGaussAbs x0 0.05)
 
 --tst = fmap (take 100) $ runSamplerIO $ metSample (log . P.gaussD 0 1) 0.1
 
-up_trial thedata p@(poppars, taus@(tau, baseline, t0), sessRates, trialRates) = do
-  newtrialRates <- sampleMany2 $ forIdx2 trialRates $ \i j-> metSample 200 (\r-> 
-                      likelihoodH1 (thedata!!i!!j) taus r + p_ij_i (sessRates!!i) poppars r) (trialRates!!i!!j)
-  return (poppars, (tau, baseline, t0), sessRates, newtrialRates)
+type AllTrialPars = [[TrialPar]]
+type TrialPar = [Double]
+type TrialSDs = TrialPar
+type SessMeans = [TrialPar]
+--type SessSDs = [TrialPar]
+type PopMeans = TrialPar
+type PopSDs = TrialPar
 
-up_session (poppars, (tau, baseline, t0), sessRates, trialRates) = do
-  newsessRates <- sampleMany $ forIdx sessRates $ \i -> 
-                     metSample 200 (\sr-> 
-                       (sum $ for (trialRates!!i) $ p_ij_i sr poppars) + 
-                       p_i_pop poppars sr) (sessRates!!i)
-  return (poppars, (tau, baseline, t0), newsessRates, trialRates)
+--[amp, t0, tau1, tau2, tau3, pslow, baseline]
+fixPars = [200, 5, 0.3, 0.5,0.3,0.1,0.1]
+
+--up_trial thedata p@(poppars, taus@(tau, baseline, t0), sessRates, trialRates) = do
+up_trial thedata ((popmeans, popsds, trialsds), sessmeans, trialPars) = do
+  newtrialPars <- sampleMany2 $ forIdx2 trialPars $ \sess tr-> metSample fixPars (\trPar-> 
+                      likelihoodH1 (thedata!!sess!!tr) trPar +
+                      p_ij_i (sessmeans!!sess)  trialsds trPar) (trialPars!!sess!!tr)
+  return ((popmeans, popsds, trialsds), sessmeans, newtrialPars)
+
+up_session ((popmeans, popsds, trialsds), sessmeans, trialPars) = do
+  newsessmeans <- sampleMany $ forIdx sessmeans $ \sess -> 
+                     metSample fixPar (\sessmean-> 
+                       p_ij_i sessmean trialsds trialPars + 
+                       p_i_pop popmeans popsds sessmean) (sessmeans!!sess)
+  return ((popmeans, popsds, trialsds), newsessmeans, trialPars)
 
 up_pop thedata p@((poprate, popRateSD, trialRateSD), taus, sessRates, trialRates) = do
   (newpoprate, newpopsd) <- metSample (200,20) (\(pr, psd)-> (sum $ for sessRates $ p_i_pop (pr,psd, undefined)) + 
@@ -75,16 +91,15 @@ up_pop thedata p@((poprate, popRateSD, trialRateSD), taus, sessRates, trialRates
                                    ) taus
   return ((newpoprate, newpopsd, trialRateSD), newtaus, sessRates, trialRates)
 
-p_ij_i sr (_,_,sd) =  log . P.gaussD sr sd
+p_ij_i means sds pars =  sum $ map (\(mu, sd, x) -> log $ P.gaussD mu sd x) $ zip3 means sds pars
 
-p_i_pop (mu,sd,_) = log . P.gaussD mu sd
+p_i_pop = p_ij_i
 
 p_pop _ sd = lrsq sd
 
-likelihoodH1 spikes (tau, baseline, t0) rate =
-    let pars = (rate, tau, baseline, t0) in 
+likelihoodH1 spikes pars@[amp, t0, tau1, tau2, tau3, pslow, baseline] =
 --    likelihood (realToFrac rate) (realToFrac tau) (realToFrac baseline) (realToFrac t0) 
-    (sumU $ (mapU (log . r rate tau baseline t0) spikes))- integralR pars 6
+    (sumU $ (mapU (log . r amp t0 tau1 tau2 tau3 pslow baseline) spikes))- (integralR pars 6 - integralR pars 0)
 
 gibbsSF thedata = condSampler (up_trial thedata) >>> condSampler up_session >>> condSampler (up_pop thedata )
 
@@ -106,18 +121,27 @@ chopData2 durs allspikes =
 
 lrsq = log . recip . (\x-> x*x)
 
-r :: Double -> Double -> Double -> Double -> Double -> Double
-r rate tau baseline t0 t 
-    | t < t0 = let t' = (t-t0)/tau 
-               in (negate t')*exp(1+t')*(rate-baseline)+baseline
+r :: Double -> Double -> Double -> Double -> Double -> Double -> Double -> Double -> Double
+r amp t0 tau1 tau2 tau3 pslow baseline t 
+    | t < t0 = let x = -(t-t0) in 
+               amp*(1-exp(-x/tau1))*((1-pslow)*exp(-x/tau2)+pslow*exp(-x/tau3)) + baseline
     | otherwise = baseline
 
 --http://integrals.wolfram.com/index.jsp?expr=(-(x-z)%2Ft)*Exp[1%2B(x-z)%2Ft]*(r-b)%2Bb&random=false
 
-integralR :: (Double, Double, Double, Double) -> Double -> Double
-integralR pars@(rate, tau, baseline, t0) t 
+--integralR :: (Double, Double, Double, Double) -> Double -> Double
+--integralR pars@(rate, tau, baseline, t0) t 
+--    | t>t0 = integralR pars t0 + baseline * t
+--    | otherwise = (baseline - rate)*exp((tau+t-t0)/tau)*(-tau+t-t0)+baseline*t
+
+--http://www.wolframalpha.com/input/?i=a*(1-Exp[(x-t0)/t1])*((1-p)*Exp[(x-t0)/t2]%2Bp*Exp[(x-t0)/t3])
+integralR :: [Double]-> Double -> Double
+integralR pars@[amp, t0, tau1, tau2, tau3, pslow, baseline] t 
     | t>t0 = integralR pars t0 + baseline * t
-    | otherwise = (baseline - rate)*exp((tau+t-t0)/tau)*(-tau+t-t0)+baseline*t
+    | otherwise = let bigterm tau = tau * exp ((tau1*t - t0*(tau1+tau)) /(tau1*tau)) * 
+                                    ((tau1+tau)* exp (t0/tau1) - tau1 * exp (t/tau1)) / (tau1+tau) 
+		  in amp * (pslow * bigterm tau3 - (pslow-1) * bigterm tau2) + baseline * t
+
 
 main :: IO ()
 main = do

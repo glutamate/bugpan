@@ -28,7 +28,7 @@ only_pos x = if x > 0 then x else 0
 
 --rate x = only_pos((-(x-t0)/tau)*exp(1+(x-t0)/tau))*(maxRate-baseline)+baseline
 
-let x = -(t-t0) in only_pos(amp*(1-exp(-x/t1))*((1-pslow)*exp(-x/t2)+pslow*exp(-x/t3)))+bl
+let x = -(t-t0) in only_pos(amp*(1-exp(-x/tau1))*((1-pslow)*exp(-x/tau2)+pslow*exp(-x/tau3)))+bl
 
 rateSig = smap rate seconds
 

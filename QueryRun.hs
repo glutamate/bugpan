@@ -42,6 +42,8 @@ import ValueIO
 import Data.Monoid
 import Control.Applicative hiding (Const)
 import System.Info
+import qualified Math.Probably.Sampler as S
+
 
 simulatedTime :: MonadIO m => StateT QState m ()
 simulatedTime = do qs <- get
@@ -227,6 +229,12 @@ pick (Range f) = do
 determine :: MonadIO m => CompiledToken -> [(String, Range V)] -> StateT QState m ()
 determine tok rngs = do
   vals <- forM rngs $ \(nm, rng) -> liftM ((,) nm) (liftIO $ pick rng)
+  invoke tok vals
+  return ()
+
+determineS :: MonadIO m => CompiledToken -> [(String, S.Sampler Double)] -> StateT QState m ()
+determineS tok sams = do
+  vals <- forM sams $ \(nm, sam) -> liftM ((,) nm) (fmap (NumV . NReal) $ sampleQ sam)
   invoke tok vals
   return ()
   

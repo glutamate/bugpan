@@ -47,6 +47,8 @@ chomp s = dropWhile (==' ') s
 
 dropInitAngle = dropWhile (=='>')
 
+ensurePostfix ext s | ext `isSuffixOf` s = s
+                    | otherwise = s++ext
 
 mkAnal :: [String] -> CodeWriterT IO ()
 mkAnal [] = return ()
@@ -61,6 +63,10 @@ mkAnal (('>':q):ss) =
     in cond [("table" `isPrefixOf` (chomp q1), do
                 procTable (words q1) tablines
                 mkAnal rest), 
+             ("importBanal" `isPrefixOf` (chomp q1), do
+                let fnm = ensurePostfix ".banal" $ (words q1)!!1
+                lines <- fmap lines $ liftIO $ readFile fnm
+                mkAnal $ lines ++ rest),
              ("t-test" `isPrefixOf` (chomp q1), do
                 procTtest (words q1) tablines
                 mkAnal rest),
