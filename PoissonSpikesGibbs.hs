@@ -1,4 +1,4 @@
-{-# LANGUAGE ViewPatterns, NoMonomorphismRestriction, FlexibleInstances, ForeignFunctionInterface #-}
+{-# LANGUAGE ViewPatterns, NoMonomorphismRestriction, FlexibleInstances, ForeignFunctionInterface, ScopedTypeVariables #-}
 {-# OPTIONS_GHC -fvia-c -optc-O3 #-}
 {- INCLUDE "poisson.h" #-}
 {- INCLUDE "poisson.c" #-}
@@ -66,36 +66,44 @@ type SessMeans = [TrialPar]
 type PopMeans = TrialPar
 type PopSDs = TrialPar
 
+type BigPar = ((PopMeans, PopSDs, TrialSDs), SessMeans, AllTrialPars) 
+
 --[amp, t0, tau1, tau2, tau3, pslow, baseline]
 fixPars = [200, 5, 0.3, 0.5,0.3,0.1,0.1]
+fixPopSds = [20, 0.1, 0.05, 0.05, 0.03, 0.03, 0.01]
 
 --up_trial thedata p@(poppars, taus@(tau, baseline, t0), sessRates, trialRates) = do
+up_trial :: [[UArr Double]]-> BigPar -> Sampler BigPar
 up_trial thedata ((popmeans, popsds, trialsds), sessmeans, trialPars) = do
   newtrialPars <- sampleMany2 $ forIdx2 trialPars $ \sess tr-> metSample fixPars (\trPar-> 
                       likelihoodH1 (thedata!!sess!!tr) trPar +
                       p_ij_i (sessmeans!!sess)  trialsds trPar) (trialPars!!sess!!tr)
   return ((popmeans, popsds, trialsds), sessmeans, newtrialPars)
 
+up_session :: BigPar -> Sampler BigPar
 up_session ((popmeans, popsds, trialsds), sessmeans, trialPars) = do
   newsessmeans <- sampleMany $ forIdx sessmeans $ \sess -> 
-                     metSample fixPar (\sessmean-> 
-                       p_ij_i sessmean trialsds trialPars + 
+                     metSample fixPars (\sessmean-> 
+                       (sum $ for (trialPars!!sess ) $ p_ij_i (sessmean) trialsds) +
                        p_i_pop popmeans popsds sessmean) (sessmeans!!sess)
   return ((popmeans, popsds, trialsds), newsessmeans, trialPars)
 
-up_pop thedata p@((poprate, popRateSD, trialRateSD), taus, sessRates, trialRates) = do
-  (newpoprate, newpopsd) <- metSample (200,20) (\(pr, psd)-> (sum $ for sessRates $ p_i_pop (pr,psd, undefined)) + 
-                                             p_pop pr psd) (poprate, popRateSD)
-  newtaus <- metSample (0.001,0.0005,0.03) (\ts-> sum $ map sum $ forIdx2 trialRates $ \i j->
-                                       likelihoodH1 (thedata!!i!!j) ts (trialRates!!i!!j) --prior is uniform
-                                   ) taus
-  return ((newpoprate, newpopsd, trialRateSD), newtaus, sessRates, trialRates)
+up_pop :: [[UArr Double]]-> BigPar -> Sampler BigPar
+up_pop thedata ((popmeans, popsds, trialsds), sessmeans, trialPars) = do
+  (newpopmeans, newpopsds) <- metSample (fixPars,fixPopSds) (\(pmean, psd)-> -- what length
+                                                  (sum $ for sessmeans $ p_i_pop pmean psd ) + 
+                                                  p_pop pmean psd ) (popmeans, popsds)
+  newtrialsds <- metSample fixPopSds (\trsds-> sum $ map sum $ forIdx2 trialPars $ \sess tr->
+                                       p_ij_i (sessmeans!!sess) trialsds (trialPars!!sess!!tr) +
+                                       (sum $ map lrsq trialsds)
+                                   ) trialsds
+  return ((newpopmeans, newpopsds, newtrialsds), sessmeans, trialPars)
 
 p_ij_i means sds pars =  sum $ map (\(mu, sd, x) -> log $ P.gaussD mu sd x) $ zip3 means sds pars
 
 p_i_pop = p_ij_i
 
-p_pop _ sd = lrsq sd
+p_pop _ sds = sum $ map lrsq sds
 
 likelihoodH1 spikes pars@[amp, t0, tau1, tau2, tau3, pslow, baseline] =
 --    likelihood (realToFrac rate) (realToFrac tau) (realToFrac baseline) (realToFrac t0) 
@@ -103,16 +111,18 @@ likelihoodH1 spikes pars@[amp, t0, tau1, tau2, tau3, pslow, baseline] =
 
 gibbsSF thedata = condSampler (up_trial thedata) >>> condSampler up_session >>> condSampler (up_pop thedata )
 
+mapM2 :: Monad m => (a -> b -> m c) -> [a] -> [b] -> m [c]
+mapM2 f xs ys = mapM (uncurry f) $ zip xs ys
+
+--[amp, t0, tau1, tau2, tau3, pslow, baseline]
+priorSamplerG :: Int -> [Int] -> Sampler BigPar
 priorSamplerG nsess ntrialsPerSess= 
-    do poprate <- uniform 50 400
-       popratesd <- uniform 2 40
-       trRateSD <- return 20
-       tau <- uniform 0.05 0.4
-       baseline <- uniform 0 0.3
-       t0 <- uniform 4.5 5.5
-       sessrates <- times nsess $ gauss poprate popratesd
-       trrates <- forM ntrialsPerSess $ \ntrs -> {-toU `fmap`-} (times ntrs $ gauss poprate trRateSD)
-       return ((poprate,popratesd, trRateSD), (tau, baseline, t0), sessrates, trrates)
+    do popmeans <- mapM2  uniform  (map (/10) fixPars) (map (*2) fixPars)
+       popsds <- mapM2 uniform (map (/10) fixPopSds) (map (*2) fixPopSds)
+       trialsds <- mapM2 uniform (map (/10) fixPopSds) (map (*2) fixPopSds)
+       sessmeans <- times nsess $ mapM2 gauss popmeans popsds
+       trialpars <- forM ntrialsPerSess $ \ntrs -> (times ntrs $ mapM2 gauss popmeans popsds)
+       return ((popmeans, popsds, trialsds), sessmeans, trialpars)
 
 chopData2 :: (ChopByDur obs,Shiftable obs) => [Duration [Int]] -> obs -> [[obs]]
 chopData2 durs allspikes = 
@@ -145,7 +155,7 @@ integralR pars@[amp, t0, tau1, tau2, tau3, pslow, baseline] t
 
 main :: IO ()
 main = do
-  (read -> count) : filenm : _  <- getArgs 
+  (read -> count::Int) : filenm : _  <- getArgs 
   --let dropn = (count*3) `div` 4
   --putStrLn $ "droping "++show dropn
   (concat -> spikes, concat -> running, concat -> sess) <- fmap unzip3 $ manySessionData $ do
@@ -174,15 +184,15 @@ main = do
                             -- , "trialRateSD", "tau", "baseline", "t0"]
   inPar nthreads $ \threadn-> do
     let baymarkov = Mrkv (gibbsSF thespikes) (inits!!threadn) id
-    let ofInterest ((poprate, popRateSD, trialRateSD), (tau, baseline, t0), _, _) = 
-            [poprate, popRateSD, tau, baseline, t0]--, trialRateSD, tau, baseline, t0]  
+    let ofInterest ((popmeans, popsds, trialsds), _, _) = 
+            popmeans++popsds++trialsds
     print $ ofInterest (inits!!threadn) 
     ps <- take count `fmap` runMarkovIO baymarkov
 
     writeInChunks (filenm++"_chain"++show threadn) 20000 $ map ofInterest ps
     --writeFile ("poisson_chain"++show threadn++"lastpar.mcmc") $ show $ last ps
     --mapM print $ map ofInterest ps
-    return ()
+    return () 
 
   {-let noburn = drop dropn ps
  

@@ -53,7 +53,7 @@ main = forM_ [0..9] $ \i -> do
     simspikes <- useFile "SimulatePoissonSpikes" 
                          (realTs "amp t0 tau1 tau2 tau3 pslow baseline lov") []
 
-    amptrialmean <- sampleQ $ gauss amppopmean amppopsd
+    ampsessmean <- sampleQ $ gauss amppopmean amppopsd
     baseline <- sampleQ $ gauss baselinemean baselinesd
     tau1mean <- sampleQ $ gauss tau1popmean tau1popsd
     tau2mean <- sampleQ $ gauss tau2popmean tau2popsd
@@ -66,7 +66,7 @@ main = forM_ [0..9] $ \i -> do
 
     times ntrials $ do 
       determineS simspikes 
-                 [("amp", gauss amptrialmean amptrialsd),
+                 [("amp", gauss ampsessmean amptrialsd),
                   ("tau1", gauss tau1mean tau1sd),
                   ("tau2", gauss tau2mean tau2sd),
                   ("tau3", gauss tau3mean tau3sd),
