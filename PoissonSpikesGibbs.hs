@@ -133,7 +133,7 @@ lrsq = log . recip . (\x-> x*x)
 
 r :: Double -> Double -> Double -> Double -> Double -> Double -> Double -> Double -> Double
 r amp t0 tau1 tau2 tau3 pslow baseline t 
-    | t < t0 = let x = -(t-t0) in 
+    | t < t0 = let x = (-t-t0) in 
                amp*(1-exp(-x/tau1))*((1-pslow)*exp(-x/tau2)+pslow*exp(-x/tau3)) + baseline
     | otherwise = baseline
 
@@ -180,12 +180,12 @@ main = do
   putStrLn $ "splitting into nthreads="++show nthreads
   inits <- fmap (take nthreads) $ runSamplerIO $ priorSamplerG (length sess) (map (length . (`during` running) . (:[])) sess)
   let thespikes = chopData2 segs (toU spikes)
-  writeFile (filenm++"_parnames.mcmc") $ show ["poprate", "popRateSD", "tau", "baseline", "t0"]
+  writeFile (filenm++"_parnames.mcmc") $ show $ words "amp t0 tau1 tau2 tau3 pslow baseline"
                             -- , "trialRateSD", "tau", "baseline", "t0"]
   inPar nthreads $ \threadn-> do
     let baymarkov = Mrkv (gibbsSF thespikes) (inits!!threadn) id
     let ofInterest ((popmeans, popsds, trialsds), _, _) = 
-            popmeans++popsds++trialsds
+            popmeans -- ++popsds -- ++trialsds
     print $ ofInterest (inits!!threadn) 
     ps <- take count `fmap` runMarkovIO baymarkov
 

@@ -113,8 +113,8 @@ invoke (Left (sha, tmax,pars)) vals= do
   Session sessNm _ <- getSession
   let valargs = intercalate " " $ map (ppVal . snd) vals --ideally check ordering
   let cmdStr = bugpanRootDir./"queryCache"./sha++" "++(last $ splitBy '/' sessNm)++" "++show t0' ++" "++valargs
-  --liftIO . putStrLn $ cmdStr
-  --liftIO $ putStrLn ""
+  liftIO . putStrLn $ cmdStr
+  liftIO $ putStrLn ""
   liftIO $ system $ cmdStr -- ++" +RTS -p"
   put $ s { lastTStart = t0',
             lastTStop = t0' + tmax}

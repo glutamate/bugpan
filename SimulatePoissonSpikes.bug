@@ -18,6 +18,9 @@ lov = 0.01
 approachLoV = [(0,5,lov)]
 approachLoV *> store ""
 
+t0Dur = [(0,5,t0)]
+t0Dur *> store ""
+
 
 _tmax = 6
 _dt = 0.001
@@ -28,10 +31,12 @@ only_pos x = if x > 0 then x else 0
 
 --rate x = only_pos((-(x-t0)/tau)*exp(1+(x-t0)/tau))*(maxRate-baseline)+baseline
 
-let x = -(t-t0) in only_pos(amp*(1-exp(-x/tau1))*((1-pslow)*exp(-x/tau2)+pslow*exp(-x/tau3)))+bl
+rate t = let x = (-t-t0) in only_pos(amp*(1-exp(-x/tau1))*((1-pslow)*exp(-x/tau2)+pslow*exp(-x/tau3)))+baseline
 
 rateSig = smap rate seconds
 
 spike = eventIf (<: unifs :> < (rate <: seconds :> * dt ))
+
+rateSig *> store ""
 
 spike *> store ""

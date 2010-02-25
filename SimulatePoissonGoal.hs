@@ -18,29 +18,29 @@ import QueryTypes
 
 amptrialsd = 20
 amppopmean = 200
-amppopsd = 200
+amppopsd = 20
 
 baselinemean = 0.2
 baselinesd = 0.1
 
 tau1sd = 0.1
 tau2sd = 0.1
-tau3sd = 0.1
+tau3sd = 0.05
 
 tau1popmean = 0.3
-tau1popsd = 0.3
+tau1popsd = 0.05
 
 tau2popmean = 0.5
-tau2popsd = 0.5
+tau2popsd = 0.1
 
 tau3popmean = 0.2
-tau3popsd = 0.2
+tau3popsd = 0.02
 
-t0sd = 0.05
+t0sd = 0.01
 pslowsd = 0.01
 
 t0popmean = 5
-t0popsd = 0.05
+t0popsd = 0.01
 
 pslowpopmean = 0.1
 pslowpopsd = 0.02
@@ -51,7 +51,7 @@ main = forM_ [0..9] $ \i -> do
  deleteSessionIfExists $ "poisson"++show i
  inApproxSession ("new:poisson"++show i) $ do          
     simspikes <- useFile "SimulatePoissonSpikes" 
-                         (realTs "amp t0 tau1 tau2 tau3 pslow baseline lov") []
+                         (realTs "amp t0 tau1 tau2 tau3 pslow baseline") []
 
     ampsessmean <- sampleQ $ gauss amppopmean amppopsd
     baseline <- sampleQ $ gauss baselinemean baselinesd
@@ -67,10 +67,10 @@ main = forM_ [0..9] $ \i -> do
     times ntrials $ do 
       determineS simspikes 
                  [("amp", gauss ampsessmean amptrialsd),
+                  ("t0", gauss t0mean t0sd),
                   ("tau1", gauss tau1mean tau1sd),
                   ("tau2", gauss tau2mean tau2sd),
                   ("tau3", gauss tau3mean tau3sd),
-                  ("t0", gauss t0mean t0sd),
                   ("pslow", gauss pslowmean pslowsd),
                   ("baseline", return baseline)]
             
