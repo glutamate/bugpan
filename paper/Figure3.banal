@@ -1,0 +1,27 @@
+>> importBanal FigurePrelude
+ >> thefit = fitS fitf1 fitinit $ shist 40
+>> fitpars = fitG fitf1 fitinit $ during stdDur shistMany
+>> simEvents = simulateInhomogeneousPoisson fitpars rateSig
+>> simhists = histManyOver fitpars 0.05 simEvents
+>> simvar = varianceSigs $ alignBy sigStart simhists
+
+%> show simvar
+
+>> plot $ (A $ shist 40 :+: thefit)  :||:
+>>        (B $ (varianceSigs $ alignBy sigStart $ during stdDur shistMany) :+: thefit) :==:
+>>        ((C $ fitS fitf1 fitinit $ alignBy sigStart $  during stdDur shistMany) :||:
+>>         (D $ simvar))
+
+%> plot [rateSig $ snd . head $ fitpars]
+%> show fitpars
+%> show simEvents
+%> show simhists
+
+%>> plot $ [rateSig $ fitinit]
+
+\textbf{Figure 3}. A, Average spike time histogram and fit of equation
+(X). B, Actual (solid) and predicted (dotted) variance of spike time
+histograms from individual trials for fixed-parameter model. C,
+Individual fits to spike time histograms. D, Predicted variance by resampling fitted rate functions.
+
+> close

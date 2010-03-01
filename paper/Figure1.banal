@@ -1,0 +1,20 @@
+>> importBanal FigurePrelude
+
+%> inSessionsWhere zStopDist  & spikes & notDisplaced
+
+>> openSession loomsig
+
+>> plot $ (A (rebase running gabbiani) :||: (B $ (during aroundHit $ rebase running zpos) :+: 
+>>         (during aroundHit $ rebase running zreal) :+: 
+>>         (during aroundHit $ rebase running $ tag 0 collision) :+: 
+>>         (during aroundHit $ rebase running $ tag 0 hitScreen)) :==:
+>>        ((C $ rebase running visangle :+: rebase running dvisangle) :||: (D $ rebase running lumin))) 
+
+\textbf{Figure 1}. A, Diagram of experiment (placeholder image). B,
+Distance to object with linear motion (solid) and with arrested image
+(dotted) with the time of screen intersection and animal collision. C,
+Angle subtending the object on the retina and derivative of this
+angle. D, Relative luminance (not correct).
+
+> close
+

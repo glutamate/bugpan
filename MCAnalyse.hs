@@ -9,6 +9,7 @@ import Data.Maybe
 import Control.Monad
 import Math.Probably.FoldingStats
 import StatsModel
+import QueryPlots
 
 main = do
   nm:chain:restArgs <- getArgs
@@ -21,15 +22,12 @@ main = do
               (safeLoad file)             
               (return [])
   let bigList = (concat xs) :: [[Double]]
-  when ("-j" `elem`restArgs) $ do
-    let parIdx = read $ last $ restArgs
-    putStrLn $ "jump frequency: "++ (show $ round $ (100*) $ jumpProbBy (nearlyEq 1e-8) $ map (!!parIdx) bigList)++"%"
   putStrLn $ "#values="++show (length bigList)
   parstr <- readFile (nm++"_parnames.mcmc") 
-  let estims = meanSDF `runStatOnMany` bigList
+  let estims = (both meanSDF (jumpFreqByF $nearlyEq 1e-8)) `runStatOnMany` bigList
   forM_ (zip estims (read parstr)) $ \(estim, pnm) -> putStrLn $ padStr 20 (pnm ++ ": ")++showError estim 
 
-showError (mu, sd) = show mu ++ " +/- " ++show sd
+showError ((mu, sd), jf) = "(JF "++accushow (100*jf)++"%) "++accushow mu ++ " +/- " ++accushow sd
 
 padStr n s | n > length s = s ++ replicate (n-length s) ' '
            | otherwise = s
