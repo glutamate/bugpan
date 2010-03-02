@@ -54,7 +54,7 @@ forIdx2 xss f = map g $ zip xss [0..]
 for2 :: [[a]] -> (a->b) -> [[b]]
 for2 xss f = map (map f) xss 
 
-metSample x0 = metSample1 (mutGaussAbs x0 0.003)
+metSample x0 = metSample1 (mutGaussAbs x0 0.02)
 
 --tst = fmap (take 100) $ runSamplerIO $ metSample (log . P.gaussD 0 1) 0.1
 
@@ -77,7 +77,7 @@ allMul x = map (x*)
 --up_trial thedata p@(poppars, taus@(tau, baseline, t0), sessRates, trialRates) = do
 up_trial :: [[UArr Double]]-> BigPar -> Sampler BigPar
 up_trial thedata ((popmeans, popsds, trialsds), sessmeans, trialPars) = do
-  newtrialPars <- sampleMany2 $ forIdx2 trialPars $ \sess tr-> metSample (allMul 0.2 fixPars) (\trPar-> 
+  newtrialPars <- sampleMany2 $ forIdx2 trialPars $ \sess tr-> metSample (allMul 0.1 fixPars) (\trPar-> 
                       likelihoodH1 (thedata!!sess!!tr) trPar +
                       p_ij_i (sessmeans!!sess) trialsds trPar) (trialPars!!sess!!tr)
   return ((popmeans, popsds, trialsds), sessmeans, newtrialPars)
@@ -92,10 +92,10 @@ up_session ((popmeans, popsds, trialsds), sessmeans, trialPars) = do
 
 up_pop :: [[UArr Double]]-> BigPar -> Sampler BigPar
 up_pop thedata ((popmeans, popsds, trialsds), sessmeans, trialPars) = do
-  (newpopmeans, newpopsds) <- metSample (fixPars,fixPopSds) (\(pmean, psd)-> -- what length
+  (newpopmeans, newpopsds) <- metSample (fixPars, allMul 1 fixPopSds) (\(pmean, psd)-> -- what length
                                                   (sum $ for sessmeans $ p_i_pop pmean psd ) + 
                                                   p_pop pmean psd ) (popmeans, popsds)
-  newtrialsds <- metSample (allMul 0.2 fixPopSds) (\trsds-> sum $ map sum $ forIdx2 trialPars $ \sess tr->
+  newtrialsds <- metSample (allMul 0.05 fixPopSds) (\trsds-> sum $ map sum $ forIdx2 trialPars $ \sess tr->
                                        p_ij_i (sessmeans!!sess) trsds (trialPars!!sess!!tr) +
                                        (sum $ map lrsq trsds)
                                    ) trialsds
@@ -160,11 +160,11 @@ integralR pars@[amp, t0, tau1, tau2, tau3, pslow, baseline] t
 
 ofInterest :: BigPar -> [Double]
 ofInterest ((popmeans, popsds, trialsds), sessmeans, trialPars) = 
-    popmeans ++ take 1 trialsds ++ [head $ head sessmeans] ++ [head $ head $ head trialPars] 
+    popmeans ++ take 1 popsds ++ take 1 trialsds ++ [head $ head sessmeans] ++ [head $ head $ head trialPars] 
 
 -- ++popsds -- ++trialsds
 
-parNames = words "amp t0 tau1 tau2 tau3 pslow baseline amptrsd ampsess1 ampsess1tr1"
+parNames = words "amp t0 tau1 tau2 tau3 pslow baseline ampsdpop amptrsd ampsess1 ampsess1tr1"
 
 all2 :: (a->Bool) -> [[a]] -> Bool
 all2 p = and . map (all p)
