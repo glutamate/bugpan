@@ -54,9 +54,11 @@ forIdx2 xss f = map g $ zip xss [0..]
 for2 :: [[a]] -> (a->b) -> [[b]]
 for2 xss f = map (map f) xss 
 
-metSample x0 = metSample1 (mutGaussAbs x0 0.005)
-metSampleP = metSample1P (\w x0-> mutGaussAbs x0 $ w*0.005)
-metSamplePCL = metSample1PCL (\w x0-> mutGaussAbs x0 $ w*0.005)
+--metSample x0 = metSample1 (mutGaussAbs x0 0.005)
+metSampleP = metSample1P depSam
+metSamplePCL = metSample1PCL depSam
+
+depSam w x0 =  mutGaussAbs x0 $ w*0.005
 
 --tst = fmap (take 100) $ runSamplerIO $ metSample (log . P.gaussD 0 1) 0.1
 
@@ -174,6 +176,10 @@ all2 p = and . map (all p)
 zip2d :: [[a]] -> [[b]] -> [(a,b)]
 zip2d xss yss = concat $ zipWith zip xss yss
 
+last3 [x,y,z] = [x,y,z]
+last3 [] = []
+last3 (x:xs) = last3 xs
+
 main :: IO ()
 main = do
   (read -> count::Int) : filenm : _  <- getArgs 
@@ -217,6 +223,8 @@ main = do
     --print $ euler 0.0001 0 6 $ rFromPars fixPars
     --print $ integralR fixPars 6
     writeInChunks (filenm++"_chain"++show threadn) 20000 $ map ofInterest ps
+    --mapM print (map (head . head . trd3) $ last3 ps)
+    
     --writeFile ("poisson_chain"++show threadn++"lastpar.mcmc") $ show $ last ps
     --mapM print $ map ofInterest ps
     return () 
