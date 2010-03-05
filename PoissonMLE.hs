@@ -36,13 +36,9 @@ import Foreign.C
 import Foreign.ForeignPtr
 import Foreign.Ptr
 import Control.Arrow
+import Numeric.GSL.Minimization
 
 
-sampleMany :: [Sampler a] -> Sampler [a]
-sampleMany = sequence
-
-sampleMany2 :: [[Sampler a]] -> Sampler [[a]]
-sampleMany2 = sequence . map sequence
 
 forIdx ::  [a] -> (Int ->  b) ->[b]
 forIdx xss f = map (f . snd) $ zip xss [0..]
@@ -54,25 +50,57 @@ forIdx2 xss f = map g $ zip xss [0..]
 for2 :: [[a]] -> (a->b) -> [[b]]
 for2 xss f = map (map f) xss 
 
-
-metSampleP = metSample1P depSam
-metSamplePx0 x0  = metSample1P (depSamx0 x0)
-metSamplePCL = metSample1PCL depSam
-
-depSam w x0 =  mutGaussAbs x0 $ w*0.005
-depSamx0 x0 w _ =  mutGaussAbs x0 $ w*0.005
-
---tst = fmap (take 100) $ runSamplerIO $ metSample (log . P.gaussD 0 1) 0.1
-
-type AllTrialPars = [[Param TrialPar]]
+type AllTrialPars = [[TrialPar]]
 type TrialPar = [Double]
-type TrialSDs = Param TrialPar
-type SessMeans =  [Param TrialPar]
+type TrialSDs = TrialPar
+type SessMeans =  [TrialPar]
 --type SessSDs = [TrialPar]
-type PopMeansSds = Param (TrialPar, TrialPar)
+type PopMeansSds = (TrialPar, TrialPar)
 --type PopSDs = Param TrialPar
 
 type BigPar = ((PopMeansSds, TrialSDs), SessMeans, AllTrialPars) 
+
+parToDbls :: BigPar -> [Double]
+parToDbls (((popmeans, popsds), trialsds), sessmeans, trialPars) 
+    = popmeans++popsds++trialsds++concat (sessmeans)++concat (concat trialPars)
+
+npars = 7
+
+unconcat :: Int -> [a] -> [[a]]
+unconcat n xs = let (ys, rest) = splitAt n xs
+                in case rest of 
+                     [] -> [ys]
+                     _ -> ys : unconcat n rest
+
+unconcatUneven :: [Int] -> [a] -> [[a]]
+unconcatUneven [] _ = []
+unconcatUneven (n:ns) xs = let (ys, rest) = splitAt n xs
+                           in ys : unconcatUneven ns rest
+
+dblsToPar :: Int -> [Int] ->  [Double] -> BigPar
+dblsToPar nsess nTrPerSess l= 
+    let (popmeans, l1) = splitAt npars l
+        (popsds, l2) = splitAt npars l1
+        (trialsds, l3) = splitAt npars l2
+        (catsessmeans, l4) = splitAt (npars*nsess) l3
+    in (((popmeans, popsds), trialsds), unconcat npars catsessmeans, parseTrPars nsess nTrPerSess l4 )
+
+parseTrPars 0 _ _  = []
+parseTrPars nsess (nTr:nTrs) xs = 
+    let (ys, rest) = splitAt (nTr*npars) xs
+    in unconcat npars ys : parseTrPars (nsess-1) (nTrs) rest
+
+forevery n = for [0..n-1]
+
+lh :: [[UArr Double]]-> Int -> [Int] -> [Double] -> Double
+lh thedata nsess nTrsPerSess parVec = 
+    let (((popmeans, popsds), trialsds), sessmeans, trialPars) = dblsToPar nsess nTrsPerSess parVec 
+    in negate $ (sum $ map sum $ forevery nsess $ \sess -> 
+         forevery (nTrsPerSess!!sess) $ \tr-> 
+          likelihoodH1 (thedata!!sess!!tr) (trialPars!!sess!!tr) + 
+          p_ij_i (sessmeans!!sess) trialsds (trialPars!!sess!!tr)) +
+       (sum $ forevery nsess $ \sess -> p_i_pop popmeans popsds (sessmeans!!sess)) +
+       (sum $ map lrsq trialsds) + (sum $ map lrsq popsds)
 
 --[amp, t0, tau1, tau2, tau3, pslow, baseline]
 fixPars = [200, 5, 0.3, 0.5,0.3,0.1,0.1]
@@ -80,32 +108,7 @@ fixPopSds = [20, 0.01, 0.05, 0.05, 0.03, 0.03, 0.01]
 
 allMul x = map (x*)
 
---up_trial thedata p@(poppars, taus@(tau, baseline, t0), sessRates, trialRates) = do
-up_trial :: [[UArr Double]]-> BigPar -> Sampler BigPar
-up_trial thedata ((popmeanssds, trialsds), sessmeans, trialPars) = do
-  newtrialPars <- sampleMany2 $ forIdx2 trialPars $ \sess tr-> metSamplePCL
-                      (likelihoodH1 (thedata!!sess!!tr))
-                      (p_ij_i (unP $ sessmeans!!sess) (unP trialsds)) (trialPars!!sess!!tr)
-  return ((popmeanssds, trialsds), sessmeans, newtrialPars)
 
-up_session :: BigPar -> Sampler BigPar
-up_session ((popmeanssds, trialsds), sessmeans, trialPars) = do
-  newsessmeans <- sampleMany $ forIdx sessmeans $ \sess -> 
-                     metSampleP (\sessmean-> 
-                       (sum $ for (map unP $ trialPars!!sess) $ p_ij_i (sessmean) (unP trialsds)) +
-                       p_i_pop (fst $ unP popmeanssds) (snd $ unP popmeanssds) sessmean) (sessmeans!!sess)
-  return ((popmeanssds, trialsds), newsessmeans, trialPars)
-
-up_pop :: [[UArr Double]]-> BigPar -> Sampler BigPar
-up_pop thedata ((popmeanssds, trialsds), sessmeans, trialPars) = do
-  (newpopmeanssds) <- metSampleP (\(pmean, psd)-> -- what length
-                                                  (sum $ for sessmeans $ p_i_pop pmean psd . unP ) + 
-                                                  p_pop pmean psd ) popmeanssds
-  newtrialsds <- metSampleP (\trsds-> (sum $ map sum $ forIdx2 trialPars $ \sess tr->
-                                       p_ij_i (unP $ sessmeans!!sess) trsds (unP $ trialPars!!sess!!tr)) +
-                                       (sum $ map lrsq trsds)
-                                   ) trialsds
-  return ((newpopmeanssds, newtrialsds), sessmeans, trialPars)
 
 p_ij_i means sds pars =  sum $ map (\(mu, sd, x) ->  P.logGaussD mu sd x) $ zip3 means sds pars
 
@@ -119,8 +122,8 @@ rFromPars [amp, t0, tau1, tau2, tau3, pslow, baseline] = r amp t0 tau1 tau2 tau3
 likelihoodH1 spikes pars@[amp, t0, tau1, tau2, tau3, pslow, baseline] =
 --    likelihood (realToFrac rate) (realToFrac tau) (realToFrac baseline) (realToFrac t0) 
     (sumU $ (mapU (log . r amp t0 tau1 tau2 tau3 pslow baseline) spikes))- (integralR pars 6 - integralR pars 0)
-
-gibbsSF thedata = condSampler (up_trial thedata) >>> condSampler up_session >>> condSampler (up_pop thedata )
+likelihoodH1 _ pars = error $ "likelihoodH1: got npars= "++show (length pars)
+--gibbsSF thedata = condSampler (up_trial thedata) >>> condSampler up_session >>> condSampler (up_pop thedata )
 
 mapM2 :: Monad m => (a -> b -> m c) -> [a] -> [b] -> m [c]
 mapM2 f xs ys = mapM (uncurry f) $ zip xs ys
@@ -133,7 +136,7 @@ priorSamplerG nsess ntrialsPerSess=
        trialsds <- mapM2 uniform (map (/2) fixPopSds) (map (*2) fixPopSds)
        sessmeans <- times nsess $ mapM2 gauss popmeans popsds
        trialpars <- forM ntrialsPerSess $ \ntrs -> (times ntrs $ mapM2 gauss popmeans popsds)
-       return ((newParam (popmeans, popsds), newParam trialsds), map newParam sessmeans, map (map newParam) trialpars)
+       return (((popmeans, popsds), trialsds), sessmeans,  trialpars)
 
 chopData2 :: (ChopByDur obs,Shiftable obs) => [Duration [Int]] -> obs -> [[obs]]
 chopData2 durs allspikes = 
@@ -166,7 +169,7 @@ integralR pars@[amp, t0, tau1, tau2, tau3, pslow, baseline] t
 
 ofInterest :: BigPar -> [Double]
 ofInterest ((popmeanssds, trialsds), sessmeans, trialPars) = 
-    (fst $ unP popmeanssds) ++ take 1 (snd $ unP popmeanssds) ++ take 1 (unP trialsds) ++ [head $ unP $ head sessmeans] ++ [head $ unP $ head $ head trialPars] 
+    (fst $ popmeanssds) ++ take 1 (snd $ popmeanssds) ++ take 1 ( trialsds) ++ [head $  head sessmeans] ++ [head $ head $ head trialPars] 
 
 -- ++popsds -- ++trialsds
 
@@ -184,7 +187,7 @@ last3 (x:xs) = last3 xs
 
 main :: IO ()
 main = do
-  (read -> count::Int) : filenm : _  <- getArgs 
+  (read -> count::Int) : _  <- getArgs 
   --let dropn = (count*3) `div` 4
   --putStrLn $ "droping "++show dropn
   (concat -> spikes, concat -> running, concat -> sess) <- fmap unzip3 $ manySessionData $ do
@@ -208,27 +211,32 @@ main = do
   let thespikes = chopData2 segs (toU spikes)
   let nthreads = numCapabilities
   putStrLn $ "splitting into nthreads="++show nthreads
-  let acceptInit pars = all notNanInf $ map (uncurry likelihoodH1) $ zip2d thespikes $ map ( map unP ) $ trd3 pars
-  inits <- fmap (filter acceptInit) $ runSamplerIO $ priorSamplerG (length sess) (map (length . (`during` running) . (:[])) sess)
-  writeFile (filenm++"_parnames.mcmc") $ show parNames 
+  let acceptInit pars = all notNanInf $ map (uncurry likelihoodH1) $ zip2d thespikes $ trd3 pars
+  let nTrPerS =  (map (length . (`during` running) . (:[])) sess)
+  inits <- fmap (filter acceptInit) $ runSamplerIO $ priorSamplerG (length sess) nTrPerS
+--  writeFile (filenm++"_parnames.mcmc") $ show parNames 
                             -- , "trialRateSD", "tau", "baseline", "t0"]
   inPar nthreads $ \threadn-> do
-    let baymarkov = Mrkv (gibbsSF thespikes) (inits!!threadn) id
-    print2 "initials: " $ ofInterest (inits!!threadn) 
+    let ini = (inits!!threadn) 
+    let inivec = parToDbls ini
+    print2 "initials: " $ ofInterest ini
+    print2 "initial lh: " $ lh thespikes (length sess) nTrPerS inivec
     --print2 "spikes: " $ thespikes !!0 !!0
     --print2 "pars: " (head $ head $ trd3 $ inits!!threadn)
     --print2 "r(4) = " $ rFromPars (head $ head $ trd3 $ inits!!threadn) 1
     --print2 "L: " $ likelihoodH1 (thespikes!!0!!0) (head $ head $ trd3 $ inits!!threadn)
+    
 
-    ps <- take count `fmap` runMarkovIO baymarkov
+    let soln = minimize NMSimplex2 2E-5 count (map (/10) inivec) (lh thespikes (length sess) nTrPerS) inivec
     --gnuplotOnScreen $ (FunSeg 0 6 $ integralR fixPars) -- (head $ head $ trd3 $ inits!!threadn)
     --print $ euler 0.0001 0 6 $ rFromPars fixPars
     --print $ integralR fixPars 6
-    writeInChunks (filenm++"_chain"++show threadn) 20000 $ map ofInterest ps
-    --mapM print (map (head . head . trd3) $ last3 ps)
-    
+
+    print parNames
+    print $ ofInterest $ dblsToPar (length sess) nTrPerS $ fst soln
     --writeFile ("poisson_chain"++show threadn++"lastpar.mcmc") $ show $ last ps
     --mapM print $ map ofInterest ps
+    print2 "final lh: " $ lh thespikes (length sess) nTrPerS (fst soln)
     return () 
 
   {-let noburn = drop dropn ps
@@ -254,3 +262,4 @@ euler :: Double -> Double -> Double -> (Double -> Double) -> Double
 euler h t1 t2 f = let ts = [t1, t1+h..t2]
                       g acc t =  acc+h*f(t) 
                   in foldl g 0 ts
+

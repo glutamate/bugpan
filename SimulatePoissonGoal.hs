@@ -16,9 +16,9 @@ import Control.Monad.Trans
 import QueryUtils
 import QueryTypes
 
-amptrialsd = 20
-amppopmean = 200
-amppopsd = 20
+amptrialsd = 40
+amppopmean = 800
+amppopsd = 40
 
 baselinemean = 0.2
 baselinesd = 0.1
