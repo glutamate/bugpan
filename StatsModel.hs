@@ -30,6 +30,11 @@ import qualified Control.Exception as C
 import qualified Data.StorableVector as SV
 import qualified Data.StorableVector.Base as SVB
 import Foreign.Storable
+import System.IO
+import qualified Data.ByteString.Lazy as L
+import qualified Data.Binary as B
+
+
 
 safeLoad :: Binary a => String -> IO [a]
 safeLoad file = C.catch (loadBinary file)
@@ -40,10 +45,12 @@ writeInChunksK = writeInChunks' 0
     where writeInChunks' _ _ _  k [] = return ()
           writeInChunks' counter fnm chsize k xs = do
             let (out, rest) = splitAt chsize xs
-            saveBinary (fnm++"_file"++(show counter)++".mcmc") $ map k out
-            if null rest
-               then writeFile (fnm++"lastpar.mcmc") $ show $ last out
-               else writeInChunks' (counter+1) fnm chsize k rest
+            h <- openBinaryFile (fnm++"_file"++(show counter)++".mcmc") WriteMode           
+            writeBinary h $ length out
+            xlast <- mapMretLast (writeBinary h) $ map k out
+            writeBinary h xlast
+            hClose h
+            writeInChunks' (counter+1) fnm chsize k rest
 
 writeInChunks :: (Binary a) => String -> Int ->   [a] -> IO ()
 writeInChunks = writeInChunks' 0
@@ -53,6 +60,18 @@ writeInChunks = writeInChunks' 0
             saveBinary (fnm++"_file"++(show counter)++".mcmc") out
             writeInChunks' (counter+1) fnm chsize rest
     
+instance Binary a => Binary (Param a) where
+    put (Param j t cLH curW ini x) = 
+      put (j,t, cLH, curW, ini, x)
+    get = do
+      (j,t, cLH, curW, ini, x) <- get
+      return $ Param j t cLH curW ini x
+      
+
+
+mapMretLast :: Monad m => (a-> m b) -> [a] -> m a
+mapMretLast f [x] = f x >> return x
+mapMretLast f (x:xs) = f x >> mapMretLast f xs
 
 bigSigma :: Num b =>  [a] -> (a->b)-> b
 bigSigma xs f = sum $ map f xs
