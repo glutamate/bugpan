@@ -27,7 +27,7 @@ import QueryPlots
 import QueryUtils hiding (groupBy)
 import Database
 import Data.Array.Vector 
-import qualified Data.Array.Vector.UArr as UA
+import qualified Data.Vector.Unboxed as U
 import Data.Binary
 import GHC.Conc
 import StatsModel
@@ -75,13 +75,13 @@ type PopMeansSds = Param (TrialPar, TrialPar)
 type BigPar = ((PopMeansSds, TrialSDs), SessMeans, AllTrialPars) 
 
 --[amp, t0, tau1, tau2, tau3, pslow, baseline]
-fixPars = [200, 5, 0.3, 0.5,0.3,0.1,0.1]
-fixPopSds = [20, 0.01, 0.05, 0.05, 0.03, 0.03, 0.01]
+fixPars = [800, 5, 0.3, 0.5,0.3,0.1]
+fixPopSds = [40, 0.01, 0.05, 0.05, 0.03, 0.03]
 
 allMul x = map (x*)
 
 --up_trial thedata p@(poppars, taus@(tau, baseline, t0), sessRates, trialRates) = do
-up_trial :: [[UArr Double]]-> BigPar -> Sampler BigPar
+up_trial :: [[U.Vector Double]]-> BigPar -> Sampler BigPar
 up_trial thedata ((popmeanssds, trialsds), sessmeans, trialPars) = do
   newtrialPars <- sampleMany2 $ forIdx2 trialPars $ \sess tr-> metSamplePCL
                       (likelihoodH1 (thedata!!sess!!tr))
@@ -96,7 +96,7 @@ up_session ((popmeanssds, trialsds), sessmeans, trialPars) = do
                        p_i_pop (fst $ unP popmeanssds) (snd $ unP popmeanssds) sessmean) (sessmeans!!sess)
   return ((popmeanssds, trialsds), newsessmeans, trialPars)
 
-up_pop :: [[UArr Double]]-> BigPar -> Sampler BigPar
+up_pop :: [[U.Vector Double]]-> BigPar -> Sampler BigPar
 up_pop thedata ((popmeanssds, trialsds), sessmeans, trialPars) = do
   (newpopmeanssds) <- metSampleP (\(pmean, psd)-> -- what length
                                                   (sum $ for sessmeans $ p_i_pop pmean psd . unP ) + 
@@ -114,11 +114,11 @@ p_i_pop = p_ij_i
 p_pop _ sds = sum $ map lrsq sds
 
 rFromPars :: TrialPar -> Double -> Double
-rFromPars [amp, t0, tau1, tau2, tau3, pslow, baseline] = r amp t0 tau1 tau2 tau3 pslow baseline
+rFromPars [amp, t0, tau1, tau2, tau3, pslow] = r amp t0 tau1 tau2 tau3 pslow 0.2
 
-likelihoodH1 spikes pars@[amp, t0, tau1, tau2, tau3, pslow, baseline] =
+likelihoodH1 spikes pars@[amp, t0, tau1, tau2, tau3, pslow] =
 --    likelihood (realToFrac rate) (realToFrac tau) (realToFrac baseline) (realToFrac t0) 
-    (sumU $ (mapU (log . r amp t0 tau1 tau2 tau3 pslow baseline) spikes))- (integralR pars 6 - integralR pars 0)
+    (U.sum $ (U.map (log . r amp t0 tau1 tau2 tau3 pslow 0.2) spikes))- (integralR pars 6 - integralR pars 0)
 
 gibbsSF thedata = condSampler (up_trial thedata) >>> condSampler up_session >>> condSampler (up_pop thedata )
 
@@ -128,9 +128,10 @@ mapM2 f xs ys = mapM (uncurry f) $ zip xs ys
 --[amp, t0, tau1, tau2, tau3, pslow, baseline]
 priorSamplerG :: Int -> [Int] -> Sampler BigPar
 priorSamplerG nsess ntrialsPerSess= 
-    do popmeans <- mapM2  uniform  (map (/2) fixPars) (map (*2) fixPars)
-       popsds <- mapM2 uniform (map (/2) fixPopSds) (map (*2) fixPopSds)
-       trialsds <- mapM2 uniform (map (/2) fixPopSds) (map (*2) fixPopSds)
+    let k = 1.3 in 
+    do popmeans <- mapM2  uniform  (map (/k) fixPars) (map (*k) fixPars)
+       popsds <- mapM2 uniform (map (/k) fixPopSds) (map (*k) fixPopSds)
+       trialsds <- mapM2 uniform (map (/k) fixPopSds) (map (*k) fixPopSds)
        sessmeans <- times nsess $ mapM2 gauss popmeans popsds
        trialpars <- forM ntrialsPerSess $ \ntrs -> (times ntrs $ mapM2 gauss popmeans popsds)
        return ((newParam (popmeans, popsds), newParam trialsds), map newParam sessmeans, map (map newParam) trialpars)
@@ -157,20 +158,24 @@ r amp t0 tau1 tau2 tau3 pslow baseline t
 
 --http://www.wolframalpha.com/input/?i=a*(1-Exp[(x-t0)/t1])*((1-p)*Exp[(x-t0)/t2]%2Bp*Exp[(x-t0)/t3])
 integralR :: [Double]-> Double -> Double
-integralR pars@[amp, t0, tau1, tau2, tau3, pslow, baseline] t 
-    | t>t0 = integralR pars t0 + baseline * (t-t0)
+integralR pars@[amp, t0, tau1, tau2, tau3, pslow] t 
+    | t>t0 = integralR pars t0 + 0.2* (t-t0)
     | otherwise = let bigterm tau = tau * exp ((tau1*t - t0*(tau1+tau)) /(tau1*tau)) * 
                                     ((tau1+tau)* exp (t0/tau1) - tau1 * exp (t/tau1)) / (tau1+tau) 
-		  in amp * (pslow * bigterm tau3 - (pslow-1) * bigterm tau2) + baseline * t
+		  in amp * (pslow * bigterm tau3 - (pslow-1) * bigterm tau2) + 0.2 * t
 
 
 ofInterest :: BigPar -> [Double]
 ofInterest ((popmeanssds, trialsds), sessmeans, trialPars) = 
-    (fst $ unP popmeanssds) ++ take 1 (snd $ unP popmeanssds) ++ take 1 (unP trialsds) ++ [head $ unP $ head sessmeans] ++ [head $ unP $ head $ head trialPars] 
+    (fst $ unP popmeanssds) ++ (snd $ unP popmeanssds) ++ (unP trialsds) ++ (unP $ head sessmeans) ++( unP $ head $ head trialPars)
 
 -- ++popsds -- ++trialsds
 
-parNames = words "amp t0 tau1 tau2 tau3 pslow baseline ampsdpop amptrsd ampsess1 ampsess1tr1"
+parNames = words $ "amp t0 tau1 tau2 tau3 pslow "++
+                   "amppopsd t0popsd tau1popsd tau2popsd tau3popsd pslowpopsd "++
+                   "amptrsd t0trsd tau1trsd tau2trsd tau3trsd pslowtrsd "++
+                   "amps1mean t0s1mean tau1s1mean tau2s1mean tau3s1mean pslows1mean "++ 
+                   "amps1tr1 t0s1tr1 tau1s1tr1 tau2s1tr1 tau3s1tr1 pslows1tr1"
 
 all2 :: (a->Bool) -> [[a]] -> Bool
 all2 p = and . map (all p)
@@ -205,7 +210,7 @@ main = do
 
   let segs = (distinct running) `within` (distinct sess)
   --let lh = undefined -- manyLikeH segs likelihoodH id (toU spikes)
-  let thespikes = chopData2 segs (toU spikes)
+  let thespikes = chopData2 segs (U.fromList spikes)
   let nthreads = numCapabilities
   putStrLn $ "splitting into nthreads="++show nthreads
   let acceptInit pars = all notNanInf $ map (uncurry likelihoodH1) $ zip2d thespikes $ map ( map unP ) $ trd3 pars

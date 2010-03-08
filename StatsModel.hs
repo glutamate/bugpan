@@ -23,6 +23,7 @@ import QueryPlots
 import QueryUtils hiding (groupBy)
 import Database
 import Data.Array.Vector 
+import qualified Data.Vector.Unboxed as U
 import Data.Binary
 import GHC.Conc
 import qualified Control.Exception as C
@@ -117,6 +118,12 @@ instance (MutateGaussian a, UA a )=> MutateGaussian (UArr a) where
     mutGaussAbs x0 cv xs = toU `fmap` mutGaussAbs (fromU x0) cv (fromU xs)
     nearlyEq tol xs ys = lengthU xs == lengthU ys && (allU (uncurryS $ nearlyEq tol) $ zipU xs ys )
 
+instance (MutateGaussian a, U.Unbox a )=> MutateGaussian (U.Vector a) where
+    mutGauss cv xs = U.fromList `fmap` mutGaussMany cv (U.toList xs)
+    mutGaussAbs x0 cv xs = U.fromList `fmap` mutGaussAbs (U.toList x0) cv (U.toList xs)
+    nearlyEq tol xs ys = U.length xs == U.length ys && (U.all (uncurry $ nearlyEq tol) $ U.zip xs ys )
+
+
 instance (MutateGaussian a, Storable a )=> MutateGaussian (SV.Vector a) where
     mutGauss cv xs = SV.pack `fmap` mutGaussMany cv (SV.unpack xs)
     mutGaussAbs x0 cv xs = SV.pack `fmap` mutGaussAbs (SV.unpack x0) cv (SV.unpack xs)
@@ -142,6 +149,9 @@ instance (MutateGaussian a, MutateGaussian b, MutateGaussian c, MutateGaussian d
 instance ChopByDur (UArr Double) where
     chopByDur durs arr = map (\((t1,t2),_)->filterU (\t->t>t1 && t<t2 ) arr) durs
 
+instance ChopByDur (U.Vector Double) where
+    chopByDur durs arr = map (\((t1,t2),_)->U.filter (\t->t>t1 && t<t2 ) arr) durs
+
 instance ChopByDur (SV.Vector Double) where
     chopByDur durs arr = map (\((t1,t2),_)->SV.filter (\t->t>t1 && t<t2 ) arr) durs
 
@@ -149,6 +159,11 @@ instance ChopByDur (SV.Vector Double) where
 instance Shiftable (UArr Double) where
     shift ts = mapU (+ts)
     rebaseTime = undefined
+
+instance Shiftable (U.Vector Double) where
+    shift ts = U.map (+ts)
+    rebaseTime = undefined
+
 
 instance Shiftable (SV.Vector Double) where
     shift ts = SV.map (+ts)
