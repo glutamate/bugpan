@@ -66,10 +66,10 @@ depSamx0 x0 w _ =  mutGaussAbs x0 $ w*0.005
 
 type AllTrialPars = [[Param TrialPar]]
 type TrialPar = [Double]
-type TrialSDs = Param TrialPar
+type TrialSDs = [Param Double]
 type SessMeans =  [Param TrialPar]
 --type SessSDs = [TrialPar]
-type PopMeansSds = Param (TrialPar, TrialPar)
+type PopMeansSds = [Param (Double,Double)]
 --type PopSDs = Param TrialPar
 
 type BigPar = ((PopMeansSds, TrialSDs), SessMeans, AllTrialPars) 
@@ -85,26 +85,30 @@ up_trial :: [[U.Vector Double]]-> BigPar -> Sampler BigPar
 up_trial thedata ((popmeanssds, trialsds), sessmeans, trialPars) = do
   newtrialPars <- sampleMany2 $ forIdx2 trialPars $ \sess tr-> metSamplePCL
                       (likelihoodH1 (thedata!!sess!!tr))
-                      (p_ij_i (unP $ sessmeans!!sess) (unP trialsds)) (trialPars!!sess!!tr)
+                      (p_ij_i (unP $ sessmeans!!sess) (map unP trialsds)) (trialPars!!sess!!tr)
   return ((popmeanssds, trialsds), sessmeans, newtrialPars)
 
 up_session :: BigPar -> Sampler BigPar
 up_session ((popmeanssds, trialsds), sessmeans, trialPars) = do
   newsessmeans <- sampleMany $ forIdx sessmeans $ \sess -> 
                      metSampleP (\sessmean-> 
-                       (sum $ for (map unP $ trialPars!!sess) $ p_ij_i (sessmean) (unP trialsds)) +
-                       p_i_pop (fst $ unP popmeanssds) (snd $ unP popmeanssds) sessmean) (sessmeans!!sess)
+                       (sum $ for (map unP $ trialPars!!sess) $ p_ij_i (sessmean) (map unP trialsds)) +
+                       p_i_pop (map ( fst . unP) popmeanssds) (map (snd . unP) popmeanssds) sessmean) (sessmeans!!sess)
   return ((popmeanssds, trialsds), newsessmeans, trialPars)
 
 up_pop :: [[U.Vector Double]]-> BigPar -> Sampler BigPar
 up_pop thedata ((popmeanssds, trialsds), sessmeans, trialPars) = do
-  (newpopmeanssds) <- metSampleP (\(pmean, psd)-> -- what length
-                                                  (sum $ for sessmeans $ p_i_pop pmean psd . unP ) + 
-                                                  p_pop pmean psd ) popmeanssds
-  newtrialsds <- metSampleP (\trsds-> (sum $ map sum $ forIdx2 trialPars $ \sess tr->
+  newpopmeanssds <- sampleMany $ forIdx (popmeanssds) $ \msi->
+                        metSampleP (\(pm, ps)-> let pmean = set msi pm $ map (fst. unP) popmeanssds 
+                                                    psd = set msi pm $ map (snd . unP) popmeanssds  in
+                                                (sum $ for sessmeans $ p_i_pop pmean psd . unP ) + 
+                                                lrsq ps ) $ popmeanssds!!msi
+  newtrialsds <- sampleMany $ forIdx trialsds $ \si -> 
+                        metSampleP (\sd-> (sum $ map sum $ forIdx2 trialPars $ \sess tr->
+                                       let trsds = set si sd $ map unP trialsds in
                                        p_ij_i (unP $ sessmeans!!sess) trsds (unP $ trialPars!!sess!!tr)) +
-                                       (sum $ map lrsq trsds)
-                                   ) trialsds
+                                       (lrsq sd)
+                                   ) (trialsds!!si)
   return ((newpopmeanssds, newtrialsds), sessmeans, trialPars)
 
 p_ij_i means sds pars =  sum $ map (\(mu, sd, x) ->  P.logGaussD mu sd x) $ zip3 means sds pars
@@ -112,6 +116,9 @@ p_ij_i means sds pars =  sum $ map (\(mu, sd, x) ->  P.logGaussD mu sd x) $ zip3
 p_i_pop = p_ij_i
 
 p_pop _ sds = sum $ map lrsq sds
+
+set 0 x (_:ys) = x:ys
+set n x (y:ys) = y : set (n-1) x ys
 
 rFromPars :: TrialPar -> Double -> Double
 rFromPars [amp, t0, tau1, tau2, tau3, pslow] = r amp t0 tau1 tau2 tau3 pslow 0.2
@@ -134,7 +141,7 @@ priorSamplerG nsess ntrialsPerSess=
        trialsds <- mapM2 uniform (map (/k) fixPopSds) (map (*k) fixPopSds)
        sessmeans <- times nsess $ mapM2 gauss popmeans popsds
        trialpars <- forM ntrialsPerSess $ \ntrs -> (times ntrs $ mapM2 gauss popmeans popsds)
-       return ((newParam (popmeans, popsds), newParam trialsds), map newParam sessmeans, map (map newParam) trialpars)
+       return ((map newParam $ zip popmeans popsds, map newParam trialsds), map newParam sessmeans, map (map newParam) trialpars)
 
 chopData2 :: (ChopByDur obs,Shiftable obs) => [Duration [Int]] -> obs -> [[obs]]
 chopData2 durs allspikes = 
@@ -167,7 +174,7 @@ integralR pars@[amp, t0, tau1, tau2, tau3, pslow] t
 
 ofInterest :: BigPar -> [Double]
 ofInterest ((popmeanssds, trialsds), sessmeans, trialPars) = 
-    (fst $ unP popmeanssds) ++ (snd $ unP popmeanssds) ++ (unP trialsds) ++ (unP $ head sessmeans) ++( unP $ head $ head trialPars)
+    (map (fst . unP) popmeanssds) ++ (map (snd . unP) popmeanssds) ++ (map unP trialsds) ++ (unP $ head sessmeans) ++( unP $ head $ head trialPars)
 
 -- ++popsds -- ++trialsds
 
