@@ -1,9 +1,14 @@
 >> importBanal FigurePrelude
- >> thefit = fitS fitf1 fitinit $ shist 40
+
+>> openSession 302
+
+
+>> thefit = fitS fitf1 fitinit $ shist 40
 >> fitpars = fitG fitf1 fitinit $ during stdDur shistMany
 >> simEvents = simulateInhomogeneousPoisson fitpars rateSig
 >> simhists = histManyOver fitpars 0.05 simEvents
 >> simvar = varianceSigs $ alignBy sigStart simhists
+>> fitpars1 = snd . head $ fitG fitf1 fitinit $ shist 40
 
 %> show simvar
 
@@ -13,7 +18,9 @@
 >>         (D $ simvar))
 
 %> plot [rateSig $ snd . head $ fitpars]
-%> show fitpars
+%> show $ take 3 fitpars1
+%> show $ drop 3 fitpars1
+
 %> show simEvents
 %> show simhists
 

@@ -590,3 +590,6 @@ minInterval t [] = []
 minInterval t es@(e:[]) = es
 minInterval t (ts1:res@(ts2:es)) | dist (gettStart ts1) (gettStart ts2) < t = minInterval t (ts1:es)
                                  | otherwise = ts1 : minInterval t res
+
+
+eq4 x y = abs(x-y)<1e-4
