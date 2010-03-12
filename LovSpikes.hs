@@ -154,7 +154,7 @@ rFromPars [amp, t0, tau1, tau2, tau3, pslow] = r amp t0 tau1 tau2 tau3 pslow 0.2
 
 likelihoodH1 spikes pars@[amp, t0, tau1, tau2, tau3, pslow] =
 --    likelihood (realToFrac rate) (realToFrac tau) (realToFrac baseline) (realToFrac t0) 
-    (U.sum $ (U.map (log . r amp t0 tau1 tau2 tau3 pslow 0.2) spikes))- (integralR pars 6 - integralR pars 0)
+    (U.sum $ (U.map (logr amp t0 tau1 tau2 tau3 pslow ) spikes))- (integralR pars 6 - integralR pars 0)
 
 gibbsSF ::TheData -> StochFun BigPar BigPar 
 gibbsSF thedata = condSampler (up_trial thedata) >>> condSampler (up_session thedata) >>> condSampler (up_pop thedata )
@@ -192,6 +192,13 @@ r amp t0 tau1 tau2 tau3 pslow baseline t
                amp*(1-exp(-x/tau1))*((1-pslow)*exp(-x/tau2)+pslow*exp(-x/tau3)) + baseline
     | otherwise = baseline
 
+logr :: Double -> Double -> Double -> Double -> Double -> Double -> Double -> Double -> Double
+logr amp t0 tau1 tau2 tau3 pslow t 
+    | t < t0 = let x = (-t+t0) in 
+               log amp + log (1-exp(-x/tau1)) + log ((1-pslow)*exp(-x/tau2)+pslow*exp(-x/tau3))
+    | otherwise = log 0.02
+
+
 --http://integrals.wolfram.com/index.jsp?expr=(-(x-z)%2Ft)*Exp[1%2B(x-z)%2Ft]*(r-b)%2Bb&random=false
 
 --integralR :: (Double, Double, Double, Double) -> Double -> Double
@@ -202,10 +209,10 @@ r amp t0 tau1 tau2 tau3 pslow baseline t
 --http://www.wolframalpha.com/input/?i=a*(1-Exp[(x-t0)/t1])*((1-p)*Exp[(x-t0)/t2]%2Bp*Exp[(x-t0)/t3])
 integralR :: [Double]-> Double -> Double
 integralR pars@[amp, t0, tau1, tau2, tau3, pslow] t 
-    | t>t0 = integralR pars t0 + 0.2* (t-t0)
+    | t>t0 = integralR pars t0 + 0.02 * (t-t0)
     | otherwise = let bigterm tau = tau * exp ((tau1*t - t0*(tau1+tau)) /(tau1*tau)) * 
                                     ((tau1+tau)* exp (t0/tau1) - tau1 * exp (t/tau1)) / (tau1+tau) 
-		  in amp * (pslow * bigterm tau3 - (pslow-1) * bigterm tau2) + 0.2 * t
+		  in amp * (pslow * bigterm tau3 - (pslow-1) * bigterm tau2) 
 
 
 ofInterest :: BigPar -> [Double]

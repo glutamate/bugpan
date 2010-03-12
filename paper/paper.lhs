@@ -29,16 +29,16 @@ formulated and communicated efficiently and for inferences to be
 scrutinized. Consequently, formal languages and calculi have had a
 profound impact both on mathematics and the natural sciences. As
 examples we point to Leibniz's infinitesimals, vector notation in
-electromagnetism Frege's first-order logic. These languages are useful
-because they allow us to calculate --- to re-arrange, isolate and
-substitute terms --- and by doing so, to prove general theorems. These
-symbolic calculations are possible because terms can be replaced by
-terms with identical meaning without changing the meaning of the
-context. For instance, no matter what $w$ refers to or where it
-appears, $w+w$ can always be substituted by $2w$. This property, which
-is called referential transparency \citep{Whitehead1927}, is shared
-by all ``matheatical'' notations but not by conventional programming
-languages.
+electromagnetism and Frege's first-order logic. These languages are
+useful because they allow us to calculate --- to re-arrange, isolate
+and substitute terms --- and by doing so, to prove general
+theorems. These symbolic calculations are possible because terms can
+be replaced by terms with identical meaning without changing the
+meaning of the context. For instance, no matter what $w$ refers to or
+where it appears, $w+w$ can always be substituted by $2w$. This
+property, which is called referential transparency
+\citep{Whitehead1927}, is shared by all ``matheatical'' notations but
+not by conventional programming languages.
 
 Although we can describe quantitative scientific models, there are few
 formalisms to describe how evidence for or against these models is
@@ -48,7 +48,7 @@ understanding of apparent inconsistencies between studies and a
 clearer formulation of what constitutes sound scientific practices.
 Here, we propose a calculus of physiological evidence that can
 describe an experiment such that it can be unambigorously replicated
-and be inspected to certify whether statistical procedures are
+and be inspected to certify whether analysis procedures are
 applicable. This framework does not describe the physical components
 of an animal; there are no concepts of organ systems, cells or
 proteins. Instead it describes observation and calculation of the
@@ -158,128 +158,6 @@ definitions of these experiments and the data analysis procedure is
 contained within the main sections of this paper in a handful of
 equations.
 
-\begin{comment}
-\pagebreak
-
-\section*{Introduction, take 2}
-
-Gottfried Leibniz was possibly the first person to suggest that
-mechanized reasoning removes ambiguity and thus allows ideas to be
-formulated and communicated efficiently and for inferences to be
-scrutinized. He imagined that a formalism for reasoning rests on two
-pillars: a language for describing entities and a set of rules for
-calculating with them. Since then, formal languages have had a
-profound impact on mathematical methods and the theoretical and
-statistical analysis of the natural sciences. As examples we point to
-Leibniz's own infinitesimals, vector notation in electromagnetism and
-the proliferation of logical formalisms in the 20th century stating
-with Frege's first-order logic and the \emph{Principia Mathematica}.
-
-Unfortunately, this clarity does not extend fully to scientific
-inference. ... 
-
-An endevour to extend mechanical reasoning into this domain would have
-to give precise answers to some fundamental questions:
-
-\begin{itemize}
-  \item What kinds of things are there? From antiquity to the semantic
-    web, we have recognized the importance of a catalogue of
-    existence. In mathematics or any calculational framework, a more
-    fundamental question (the answer to which the feasability of an
-    ontology presupposes) is the catalogue of types, who stand in a
-    one-to-many relation with the objects themselves and which
-    determine which transformations are valid. In developing a
-    calculus of evidence in a scientific field, we must therefore ask:
-    what are the relevant \emph{types} whose values are observed?
-
-  \item How do we construct, observe, and transform values of those
-    types?
-
-  \item What does the observation of these typed values tell us about
-    statistical models? How are statistical models typed?
-\end{itemize}
-
-It may be unlikely that one set of answers can address all of the
-natural sciences. A more achievable aim is to account for part of a
-single scientific field. Thus one way of defining a field is to ask
-what its constituent types are.
-
-There are many ways of writing down a definition of an experiment or
-an analysis, some of which are easier to reason about than
-others. Making judgements about experiments requires us to calculate
---- to re-arrange, isolate and substitute terms. These manipulations
-are are much easier in a language in which a term can be replaced by
-terms with identical meaning without changing the meaning of the
-context. For instance, no matter what $w$ refers to or where it
-appears, it is always true that $w+w$ can be substituted by $2w$. This
-property, which is called referential transparency, is shared by all
-'mathematical' notations, but \emph{not} by conventional (imperative)
-programming languages.
-
-Here, we present a language and a calculus for physiological
-evidence. The language is based on an abstract notion of signals and
-events, and the calculus consists of a referentially transparent
-computational framework for relating these types and a flexible
-statistical framework for specifying and evaluating models. This
-frameworks does not describe the physical components of an organism;
-there are no concepts of organ systems, cells, proteins. Instead it
-describes the mathematical objects that play a role in
-evidence. Therefore, it allows experiments, analyses, simulations and
-models to be defined equationally and concisely.
-
-Our framework is derived from the work in incorporating input and
-output in referentially transparent programming languages. The most
-well-studied of these is the lambda calculus, a general framework for
-computation based entirely on evaluating functions in the purely
-mathematical sense, i.e. as maps between sets. The lambda calculus
-allows both recursive functions and the use of functions as first
-class entities: that is, they can be referenced by variables and
-passed as arguments to other functions (which then become higher-order
-functions). These properties together mean that the lambda calculus
-combines verifiable correctness with a high level of abstraction,
-leading to programs that are in practice more concise (ref). The
-lambda calculus or variants thereof has been used as a general
-framework for the foundation of mathematics (Martin-lof), classical
-(wisdom \& sussman) and quantum mechanics (Karczmarczuk 2003),
-microprocessor design (Grundy), chemistry (fontana \& buss 1994).
-
-But the pure lambda-calculus has
-no constructs for interacting with the real world and therefore cannot
-be used to describe experiments.
-
-Fortunately, it is possible to interact with the real world in a
-manner that maintains referentially transparency. 
-
-Here we highlight
-one approach to effects that seems to be well suited for
-physiology. Functional Reactive Programming (FRP; ref) recognizes the
-essential role time plays in certain computer programs, including
-animations, robotics and physical simulations. FRP augments the lambda
-calculus with two fundamental concepts to place information in a
-temporal concepts: Signals, which represent continuously varying
-quantities, and events representing discrete occurances. These
-concepts are given specific definitions in FRP and in our calculus of
-physiological evidence. Whether directly observed or calculated, they
-form the basis for inference in hierarchical regression models.
-
-We use the calculus of physiological evidence to perform a non-trivial
-experiment in \emph{in vivo} insect neurophysiology. The desert locust
-Schistocerca gregaria, like many other winged insects, has a
-specialised circuit in the optic lobe for detecting approaching
-objects. This system projects to descending ganglia via the DCMD
-neuron which is accessible to recording. The DCMD response is
-sensitive to a variety of parameters including the stimulus contrast,
-approach speed and size (gabbiani). However, few studies have have addressed
-whether the locust looming detection system is an efficient in that it
-can discriminate objects that are on collision course from those that
-are on a non-intercepting trajectory. We show that this is the case
-and that the precision of the looming detector is influenced by the
-approach velocity. The definitions of these experiments and the data
-analysis procedure is contained within the main sections of this paper
-in a handful of equations.
-\end{comment}
-
-
 \section*{Methods}
 
 \subsection*{Language implementation} 
@@ -368,8 +246,8 @@ expression e at every time point, and |<: s :>| yield the current
 value of the signal s in the temporal context created by the
 surrounding |sopen ... sclose| braces. As in the lambda calculus,
 functions are first class and can be passed as arguments to other
-functions; |\x->M| denotes the function with argument |x| and body
-|M|. For instance, the function smap defined as
+functions; |\x->e| denotes the function with argument |x| and body
+|e|. For instance, the function smap defined as
 \begin{code}
 smap = \f -> \s -> sopen f <: s :> sclose
 \end{code}
@@ -630,6 +508,14 @@ parameters (of interest) in the model.
 
 The final model, estimated parameters. 
 
+which correlate? 
+
+show effect on time of peak, amplitude, mean weighted rise.
+
+is the peak before or after collision?
+
+variability wihtin and between animals
+
 Motivate displaced loom experiment. 
 
 show responses, nspikes etc
@@ -641,9 +527,6 @@ Interaction displacement and speed.
 say something about Accuracy/speed tradeoff.
 
 bias
-
-
-
 
 \section*{Discussion}
 
@@ -828,4 +711,126 @@ Locust experiments
 
  
 
+\end{comment}
+
+
+\begin{comment}
+\pagebreak
+
+\section*{Introduction, take 2}
+
+Gottfried Leibniz was possibly the first person to suggest that
+mechanized reasoning removes ambiguity and thus allows ideas to be
+formulated and communicated efficiently and for inferences to be
+scrutinized. He imagined that a formalism for reasoning rests on two
+pillars: a language for describing entities and a set of rules for
+calculating with them. Since then, formal languages have had a
+profound impact on mathematical methods and the theoretical and
+statistical analysis of the natural sciences. As examples we point to
+Leibniz's own infinitesimals, vector notation in electromagnetism and
+the proliferation of logical formalisms in the 20th century stating
+with Frege's first-order logic and the \emph{Principia Mathematica}.
+
+Unfortunately, this clarity does not extend fully to scientific
+inference. ... 
+
+An endevour to extend mechanical reasoning into this domain would have
+to give precise answers to some fundamental questions:
+
+\begin{itemize}
+  \item What kinds of things are there? From antiquity to the semantic
+    web, we have recognized the importance of a catalogue of
+    existence. In mathematics or any calculational framework, a more
+    fundamental question (the answer to which the feasability of an
+    ontology presupposes) is the catalogue of types, who stand in a
+    one-to-many relation with the objects themselves and which
+    determine which transformations are valid. In developing a
+    calculus of evidence in a scientific field, we must therefore ask:
+    what are the relevant \emph{types} whose values are observed?
+
+  \item How do we construct, observe, and transform values of those
+    types?
+
+  \item What does the observation of these typed values tell us about
+    statistical models? How are statistical models typed?
+\end{itemize}
+
+It may be unlikely that one set of answers can address all of the
+natural sciences. A more achievable aim is to account for part of a
+single scientific field. Thus one way of defining a field is to ask
+what its constituent types are.
+
+There are many ways of writing down a definition of an experiment or
+an analysis, some of which are easier to reason about than
+others. Making judgements about experiments requires us to calculate
+--- to re-arrange, isolate and substitute terms. These manipulations
+are are much easier in a language in which a term can be replaced by
+terms with identical meaning without changing the meaning of the
+context. For instance, no matter what $w$ refers to or where it
+appears, it is always true that $w+w$ can be substituted by $2w$. This
+property, which is called referential transparency, is shared by all
+'mathematical' notations, but \emph{not} by conventional (imperative)
+programming languages.
+
+Here, we present a language and a calculus for physiological
+evidence. The language is based on an abstract notion of signals and
+events, and the calculus consists of a referentially transparent
+computational framework for relating these types and a flexible
+statistical framework for specifying and evaluating models. This
+frameworks does not describe the physical components of an organism;
+there are no concepts of organ systems, cells, proteins. Instead it
+describes the mathematical objects that play a role in
+evidence. Therefore, it allows experiments, analyses, simulations and
+models to be defined equationally and concisely.
+
+Our framework is derived from the work in incorporating input and
+output in referentially transparent programming languages. The most
+well-studied of these is the lambda calculus, a general framework for
+computation based entirely on evaluating functions in the purely
+mathematical sense, i.e. as maps between sets. The lambda calculus
+allows both recursive functions and the use of functions as first
+class entities: that is, they can be referenced by variables and
+passed as arguments to other functions (which then become higher-order
+functions). These properties together mean that the lambda calculus
+combines verifiable correctness with a high level of abstraction,
+leading to programs that are in practice more concise (ref). The
+lambda calculus or variants thereof has been used as a general
+framework for the foundation of mathematics (Martin-lof), classical
+(wisdom \& sussman) and quantum mechanics (Karczmarczuk 2003),
+microprocessor design (Grundy), chemistry (fontana \& buss 1994).
+
+But the pure lambda-calculus has
+no constructs for interacting with the real world and therefore cannot
+be used to describe experiments.
+
+Fortunately, it is possible to interact with the real world in a
+manner that maintains referentially transparency. 
+
+Here we highlight
+one approach to effects that seems to be well suited for
+physiology. Functional Reactive Programming (FRP; ref) recognizes the
+essential role time plays in certain computer programs, including
+animations, robotics and physical simulations. FRP augments the lambda
+calculus with two fundamental concepts to place information in a
+temporal concepts: Signals, which represent continuously varying
+quantities, and events representing discrete occurances. These
+concepts are given specific definitions in FRP and in our calculus of
+physiological evidence. Whether directly observed or calculated, they
+form the basis for inference in hierarchical regression models.
+
+We use the calculus of physiological evidence to perform a non-trivial
+experiment in \emph{in vivo} insect neurophysiology. The desert locust
+Schistocerca gregaria, like many other winged insects, has a
+specialised circuit in the optic lobe for detecting approaching
+objects. This system projects to descending ganglia via the DCMD
+neuron which is accessible to recording. The DCMD response is
+sensitive to a variety of parameters including the stimulus contrast,
+approach speed and size (gabbiani). However, few studies have have addressed
+whether the locust looming detection system is an efficient in that it
+can discriminate objects that are on collision course from those that
+are on a non-intercepting trajectory. We show that this is the case
+and that the precision of the looming detector is influenced by the
+approach velocity. The definitions of these experiments and the data
+analysis procedure is contained within the main sections of this paper
+in a handful of equations.
 \end{comment}

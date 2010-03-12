@@ -2,13 +2,34 @@
 
 %> inSessionsWhere zStopDist  & spikes & notDisplaced
 
->> openSession loomsig
+>> everywhere lovDur = (extendDur 1 approachLoV)
+>> everywhere chopx = ChopxAxis 1 (take 5 running)
+>> everywhere distFun lov t = let v = 0.149/lov in min (v*(t-5)) (-0.17)
+>> everywhere collision = evInDur 5 running
+>> everywhere rescale m a x = ((+a) . (*m)) <$$> x
+>> openSession 12eb
 
->> plot $ (A (rebase running gabbiani) :||: (B $ (during aroundHit $ rebase running zpos) :+: 
->>         (during aroundHit $ rebase running zreal) :+: 
->>         (during aroundHit $ rebase running $ tag 0 collision) :+: 
->>         (during aroundHit $ rebase running $ tag 0 hitScreen)) :==:
->>        ((C $ rebase running visangle :+: rebase running dvisangle) :||: (D $ rebase running lumin))) 
+>> distSig =  fillSigOver lovDur 0.001 distFun 
+
+>> plot $ chopx ((/80) <$$> distSig) :+: chopx (rescale 8 1 ecVoltage) :+: 
+>>        chopx (rescale 50 3 lovDur) :+: chopx (tag 2 spikes) :+:
+>>        chopx (tag 2 collision)
+
+>> take 5 lovDur
+
+>> take 5 distSig
+
+>> take 5 running
+
+>> close
+
+%>> openSession loomsig
+
+%>> plot $ (A (rebase running gabbiani) :||: (B $ (during aroundHit $ rebase running zpos) :+: 
+%>>         (during aroundHit $ rebase running zreal) :+: 
+%>>         (during aroundHit $ rebase running $ tag 0 collision) :+: 
+%>>         (during aroundHit $ rebase running $ tag 0 hitScreen)) :==:
+%>>        ((C $ rebase running visangle :+: rebase running dvisangle) :||: (D $ rebase running lumin))) 
 
 \textbf{Figure 1}. A, Diagram of experiment (placeholder image). B,
 Distance to object with linear motion (solid) and with arrested image
@@ -16,5 +37,5 @@ Distance to object with linear motion (solid) and with arrested image
 Angle subtending the object on the retina and derivative of this
 angle. D, Relative luminance (not correct).
 
-> close
+%> close
 

@@ -367,4 +367,18 @@ milliSecs = rebaseTime 1000
 
 nubTags = nub . map getTag 
 
+data ChopxAxis a = ChopxAxis Double [Duration ()] a
+
+instance (PlotWithGnuplot a, ChopByDur a, Shiftable a) 
+                      => PlotWithGnuplot (ChopxAxis a) where 
+    multiPlot r m@(ChopxAxis ivl durs x) = do
+      let objs = chopByDur durs x
+      let f (shft, lastt2) (t1,t2) = (t1 - lastt2+shft, t2 +ivl)
+          firstt = snd $ fst $ head durs
+      let shifts = drop 1 $ map (negate . fst) $ scanl f (0,firstt) $ map fst durs
+      --liftIO $ print $ map fst durs
+      --liftIO $ print shifts
+      pxs <- mapM getGnuplotCmd $ map (uncurry shift) $ zip shifts objs
+      return [(r, concat pxs)]
+
 --file:///var/bugpan/www/01a11b43ac06eef1e89e/plots1.html

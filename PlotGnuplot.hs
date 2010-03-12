@@ -555,6 +555,8 @@ groupsOf n xs = let (mine, rest) = splitAt n xs
 
 ensureLength n filler xs = map Left xs++replicate (n - length xs) (Right filler)
 
+
+
 {-instance Num a => PlotWithR (Hist a) where
     getRPlotCmd (Histogram tgs) = 
         plotHisto $ map getTag tgs

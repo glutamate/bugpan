@@ -198,6 +198,14 @@ sigStop :: [Signal a] -> [Event ()]
 sigStop = map f
     where f sig@(Signal t1 t2 dt sf _) = (t2,())
 
+durStart :: [Duration a] -> [Event a]
+durStart = map f
+    where f ((t1,t2),v) = (t1,v)
+
+durStop :: [Duration a] -> [Event a]
+durStop = map f
+    where f ((t1,t2),v) = (t2,v)
+
 
 inout :: [Event a] -> [Event b] -> [Duration (a,b)]
 inout [] _ = []
@@ -593,3 +601,5 @@ minInterval t (ts1:res@(ts2:es)) | dist (gettStart ts1) (gettStart ts2) < t = mi
 
 
 eq4 x y = abs(x-y)<1e-4
+
+evInDur t = shift t . durStart

@@ -305,3 +305,7 @@ showItx' nm (Signal t1 t2 dt arr Eq) =
 fillSig :: Storable a => Double -> Double -> Double -> (Double -> a) -> Signal a
 fillSig t1 t2 dt f = let vls = map f $ timePointsFromT1T2Dt t1 t2 dt
                      in Signal t1 t2 dt (SV.pack vls) Eq
+
+fillSigOver :: Storable a => [((Double,Double), b)] -> Double -> (b-> Double -> a) -> [Signal a]
+fillSigOver durs dt f = map g durs
+    where g ((t1,t2),v) = fillSig t1 t2 dt (\t -> f v (t-t1))
