@@ -64,13 +64,14 @@ Executable bugdriver
 --   extra-include-dirs
 --   extra-lib-dirs:     /usr/lib
    if flag(nogl)
-       Build-depends:     array, tnutils, probably, haskell98, process, directory, regex-posix, 
-                          utility-ht, random, base>4, bytestring, binary, old-time, storablevector, 
-                          mtl, data-binary-ieee754, uuid, GLFW>0.3, stm, OpenGL<2.4, storable-tuple, syb
-   else
+       GHC-Options:       -DNOGL
        Build-depends:     array, tnutils, probably, haskell98, process, directory, regex-posix, 
                           utility-ht, random, base>4, bytestring, binary, old-time, storablevector, 
                           mtl, data-binary-ieee754, uuid, stm, storable-tuple, syb
+   else
+       Build-depends:     array, tnutils, probably, haskell98, process, directory, regex-posix, 
+                          utility-ht, random, base>4, bytestring, binary, old-time, storablevector, 
+                          mtl, data-binary-ieee754, uuid, GLFW>0.3, stm, OpenGL<2.4, storable-tuple, syb
    if os(linux)
      c-sources:          Comedi/comedi_hs_helper.c
 --   ghc-options:      -O2 -threaded -lcomedi Comedi/comedi_hs_helper.o
@@ -91,13 +92,14 @@ Executable runbugpan
        ghc-options:        -O2 -threaded -DNODAQ
 --   ghc-options:      -O2 -threaded -lcomedi Comedi/comedi_hs_helper.o
    if flag(nogl)
-       Build-depends:     array, tnutils, probably, haskell98, process, directory, regex-posix, 
-                          utility-ht, random, base>4, bytestring, binary, old-time, storablevector, 
-                          mtl, data-binary-ieee754, uuid, GLFW>0.3, stm, OpenGL<2.4, storable-tuple, syb
-   else
+       GHC-Options:       -DNOGL
        Build-depends:     array, tnutils, probably, haskell98, process, directory, regex-posix, 
                           utility-ht, random, base>4, bytestring, binary, old-time, storablevector, 
                           mtl, data-binary-ieee754, uuid, stm, storable-tuple, syb
+   else
+       Build-depends:     array, tnutils, probably, haskell98, process, directory, regex-posix, 
+                          utility-ht, random, base>4, bytestring, binary, old-time, storablevector, 
+                          mtl, data-binary-ieee754, uuid, GLFW>0.3, stm, OpenGL<2.4, storable-tuple, syb
    if os(linux)
      c-sources:          Comedi/comedi_hs_helper.c
 --
