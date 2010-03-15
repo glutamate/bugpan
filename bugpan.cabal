@@ -13,53 +13,40 @@ Flag NoGl
   Description: Disable OpenGL and GLFW
   Default:     False
 
+Flag NoDaq
+  Description: Disable Comedi DAQ
+  Default:     False
 
 Library
    Exposed-modules:  Query, QueryTypes, QueryUtils, Numbers, PlotGnuplot, EvalM, Database, HaskShapes, RandomSources, QueryPlots, Expr, ValueIO, HaskSyntaxUntyped, NewSignal, FitGnuplot
-   if os(linux)
-     ghc-options:        -O2 -lcomedi
-   else
-     if os(mingw32)
-       ghc-options:        -O2 -DNODAQ -DMINGW32
-     else
-       ghc-options:        -O2 -DNODAQ
+   ghc-options:        -O2
+   if flag(nodaq)
+     ghc-options:        -DNODAQ
    other-modules:    Parse, Types,Eval, Traverse, Transform, PrettyPrint, BNFC.LexBugpan, BNFC.ParBugpan, BNFC.SkelBugpan,BNFC.PrintBugpan,BNFC.LayoutBugpan ,BNFC.ErrM,UnitTesting, BNFC.AbsBugpan,BuiltIn, TypeCheck, CompiledSrcsSinks
    Build-depends:    tnutils, probably, process, directory, regex-posix, random, base, bytestring, binary, old-time, storablevector, mtl, data-binary-ieee754, uuid, mersenne-random, storable-tuple, hmatrix
 
 
 Executable bugsess   
    Main-Is:          BugSess.hs
-   if os(linux)
-     ghc-options:        -O2 -threaded -lcomedi
-   else
-     if os(mingw32)
-       ghc-options:        -O2 -threaded -DNODAQ -DMINGW32
-     else
-       ghc-options:        -O2 -threaded -DNODAQ
+   ghc-options:      -O2 -threaded
+   if flag(nodaq)
+     ghc-options:    -DNODAQ
    other-modules:    EvalM, Parse, Types,Database,Eval,Expr, Traverse, Transform, HaskSyntaxUntyped, ValueIO, PrettyPrint, BNFC.LexBugpan, BNFC.ParBugpan, BNFC.SkelBugpan,BNFC.PrintBugpan,BNFC.LayoutBugpan ,BNFC.ErrM,UnitTesting, BNFC.AbsBugpan,BuiltIn, TypeCheck
    Build-depends:    array, tnutils, probably, haskell98, process, directory, regex-posix, random, base>4.0, bytestring, binary, old-time, storablevector, mtl, data-binary-ieee754, uuid, hint, SHA, mersenne-random, storable-tuple, syb
 
 Executable buganal   
    Main-Is:          BugAnal.hs
-   if os(linux)
-     ghc-options:        -O2 -threaded -lcomedi
-   else
-     if os(mingw32)
-       ghc-options:        -O2 -threaded -DNODAQ -DMINGW32
-     else
-       ghc-options:        -O2 -threaded -DNODAQ
    other-modules:    EvalM, Parse, Types,Database,Eval,Expr, Traverse, Transform, HaskSyntaxUntyped, ValueIO, PrettyPrint, BNFC.LexBugpan, BNFC.ParBugpan, BNFC.SkelBugpan,BNFC.PrintBugpan,BNFC.LayoutBugpan ,BNFC.ErrM,UnitTesting, BNFC.AbsBugpan,BuiltIn, TypeCheck
    Build-depends:    array, tnutils, probably, haskell98, process, directory, regex-posix, random, base>4, bytestring, binary, old-time, storablevector, mtl, data-binary-ieee754, uuid, hint, SHA, mersenne-random, storable-tuple, syb
 
 Executable bugdriver   
    Main-Is:            Driver.hs
-   if os(linux)
-     ghc-options:        -O2 -threaded -lcomedi
+   ghc-options:      -O2 -threaded 
+   if flag(nodaq)
+     ghc-options:    -DNODAQ
    else
-     if os(mingw32)
-       ghc-options:        -O2 -threaded -DNODAQ -DMINGW32
-     else
-       ghc-options:        -O2 -threaded -DNODAQ
+     ghc-options:    -lcomedi
+     c-sources:      Comedi/comedi_hs_helper.c
 --   extra-libraries:    comedi
 --   extra-include-dirs
 --   extra-lib-dirs:     /usr/lib
@@ -72,8 +59,7 @@ Executable bugdriver
        Build-depends:     array, tnutils, probably, haskell98, process, directory, regex-posix, 
                           utility-ht, random, base>4, bytestring, binary, old-time, storablevector, 
                           mtl, data-binary-ieee754, uuid, GLFW>0.3, stm, OpenGL<2.4, storable-tuple, syb
-   if os(linux)
-     c-sources:          Comedi/comedi_hs_helper.c
+
 --   ghc-options:      -O2 -threaded -lcomedi Comedi/comedi_hs_helper.o
 --   Includes:           comedilib.h, comedi.h
 --  Install-Includes:   comedilib.h, comedi.h
@@ -83,13 +69,12 @@ Executable bugdriver
 
 Executable runbugpan   
    Main-Is:          RunBugpan.hs
-   if os(linux)
-     ghc-options:        -O2 -threaded -lcomedi
+   ghc-options:      -O2 -threaded 
+   if flag(nodaq)
+     ghc-options:    -DNODAQ
    else
-     if os(mingw32)
-       ghc-options:        -O2 -threaded -DNODAQ -DMINGW32
-     else
-       ghc-options:        -O2 -threaded -DNODAQ
+     ghc-options:    -lcomedi
+     c-sources:      Comedi/comedi_hs_helper.c
 --   ghc-options:      -O2 -threaded -lcomedi Comedi/comedi_hs_helper.o
    if flag(nogl)
        GHC-Options:       -DNOGL
@@ -100,7 +85,6 @@ Executable runbugpan
        Build-depends:     array, tnutils, probably, haskell98, process, directory, regex-posix, 
                           utility-ht, random, base>4, bytestring, binary, old-time, storablevector, 
                           mtl, data-binary-ieee754, uuid, GLFW>0.3, stm, OpenGL<2.4, storable-tuple, syb
-   if os(linux)
-     c-sources:          Comedi/comedi_hs_helper.c
+
 --
 --   extra-libraries:  libcomedi
