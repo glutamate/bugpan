@@ -1,10 +1,8 @@
-{-# LANGUAGE GADTs, OverlappingInstances, UndecidableInstances, NoMonomorphismRestriction #-}
+{-# LANGUAGE GADTs, OverlappingInstances, UndecidableInstances, NoMonomorphismRestriction, CPP #-}
 {-# OPTIONS -fglasgow-exts #-}
 
 module OpenGL where 
 
-import Graphics.Rendering.OpenGL hiding (Sink, get)
-import Graphics.UI.GLFW -- hiding (Sink, get)
 import Data.IORef
 --import qualified Allegro.Shape as S
 import Control.Concurrent.STM
@@ -23,12 +21,18 @@ import EvalM
 import SrcSinks
 import Numbers
 import System.Environment
+#ifndef NOGL
+import Graphics.Rendering.OpenGL hiding (Sink, get)
+import Graphics.UI.GLFW -- hiding (Sink, get)
+#endif
+
+
 
 --import Allegro.Vector
 --import qualified Data.Map as M
 
 
-
+#ifndef NOGL
 globalTVar = unsafePerformIO . newTVarIO
 
 mouseXTVar :: TVar Int
@@ -215,3 +219,7 @@ unitCube = do
     vertex $ vertex3  1.0  1.0  1.0	-- Top Left Of The Quad (Right)
     vertex $ vertex3  1.0 0.0  1.0	-- Bottom Left Of The Quad (Right)
     vertex $ vertex3  1.0 0.0 0.0	-- Bottom Right Of The Quad (Right)
+
+#else
+initGlScreen _ _ _ = return ()
+#endif

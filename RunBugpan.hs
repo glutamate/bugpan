@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+
 module Main where
 
 import Parse
@@ -19,7 +21,9 @@ import HaskellBackend
 import System.Exit
 import System.Cmd
 import Query (bugpanRootDir)
+#ifndef NOGL
 import Graphics.UI.GLFW
+#endif
 
 {-chainM :: Monad m => (s -> [a] -> m s)  -> [a] -> s -> m (s, [a])
 chainM f [] s = return (s, [])
@@ -95,7 +99,9 @@ go rs@(RS ds Nothing mdt mtmax Nothing) = do
   mapM_ print ress
   mapM_ showSig ress
   putStrLn "done"
+#ifndef NOGL
   closeWindow
+#endif
 
 go rs@(RS ds (Just sess) mdt mtmax Nothing) = do
   --get t0 from db
@@ -105,7 +111,11 @@ go rs@(RS ds (Just sess) mdt mtmax Nothing) = do
   runOnce dt t0 tmax ds sess
   print "done running"
   return ()
+#ifndef NOGL
   closeWindow
+#endif
+
+
 
 go rs@(RS ds (Just sess) mdt mtmax (Just outNm)) = do
   let prg = getPrg rs

@@ -9,7 +9,7 @@ import Control.Monad.State.Strict
 import Data.IORef
 import qualified Data.HashTable as H
 import Data.Maybe
-import OpenGL
+import OpenGL (initGlScreen)
 import Control.Concurrent
 import Control.Concurrent.STM.TMVar
 import System.Time
