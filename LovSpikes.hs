@@ -29,7 +29,6 @@ import Database
 import Data.Array.Vector 
 import qualified Data.Vector.Unboxed as U
 import Data.Binary
-import GHC.Conc
 import StatsModel
 import Foreign.Storable
 import Foreign.C
@@ -237,9 +236,18 @@ last3 [x,y,z] = [x,y,z]
 last3 [] = []
 last3 (x:xs) = last3 xs
 
-main :: IO ()
+
+help = do
+  putStrLn "LovSpikes {niters} {chain name} {chain number}"
+
 main = do
-  (read -> count::Int) : filenm : _  <- getArgs 
+  nargs <- length `fmap` getArgs
+  case nargs of 
+    3 -> main3
+    _ -> help
+
+main3 = do
+  (read -> count::Int) : filenm : threadn :_  <- getArgs 
   --let dropn = (count*3) `div` 4
   --putStrLn $ "droping "++show dropn
   (concat -> spikes, 
@@ -267,8 +275,6 @@ main = do
   let thespikes = chopData2 segs (U.fromList spikes)
       thelovs = map (map $ snd . head) $ chopData2 segs $ (\lov-> log (lov / 0.02) / log 2) <$$> approachLoV
       (thedata::TheData) = zipWith (zip) thespikes thelovs
-  let nthreads = numCapabilities
-  putStrLn $ "splitting into nthreads="++show nthreads
 
   let acceptInit :: BigPar -> Bool
       acceptInit pars = all notNanInf 
@@ -289,9 +295,10 @@ main = do
 -}
   writeFile (filenm++"_parnames.mcmc") $ show parNames 
                             -- , "trialRateSD", "tau", "baseline", "t0"]
-  inPar nthreads $ \threadn-> do
-    let baymarkov = Mrkv (gibbsSF thedata) (inits!!threadn) id
-    print2 "initials: " $ ofInterest (inits!!threadn) 
+  --inPar nthreads $ \threadn-> do
+  do
+    let baymarkov = Mrkv (gibbsSF thedata) (head inits) id
+    print2 "initials: " $ ofInterest (head inits) 
     --print2 "spikes: " $ thespikes !!0 !!0
     --print2 "pars: " (head $ head $ trd3 $ inits!!threadn)
     --print2 "r(4) = " $ rFromPars (head $ head $ trd3 $ inits!!threadn) 1
