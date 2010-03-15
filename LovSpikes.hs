@@ -55,9 +55,9 @@ for2 :: [[a]] -> (a->b) -> [[b]]
 for2 xss f = map (map f) xss 
 
 
-metSampleP = metSample1P depSam
-metSamplePx0 x0  = metSample1P (depSamx0 x0)
-metSamplePCL = metSample1PCL depSam
+metSampleP s = metSample1P s depSam
+--metSamplePx0 x0  = metSample1P (depSamx0 x0)
+metSamplePCL s = metSample1PCL s depSam
 
 depSam w x0 =  mutGaussAbs x0 $ w*0.005
 depSamx0 x0 w _ =  mutGaussAbs x0 $ w*0.005
@@ -79,8 +79,8 @@ type BigPar = ((PopMeansSds, TrialSDs, BetaMeansSds), SessMeans, SessBetas, AllT
 type TheData = [[(U.Vector Double, Double)]]
 
 --[amp, t0, tau1, tau2, tau3, pslow, baseline]
-fixPars = [210, 4.9, 6.83e-5, 0.27,1,0.15]
-fixPopSds = [10, 0.01, 6.83e-6, 0.02, 0.1, 0.02]
+fixPars = [210, 4.9, 6.83e-2, 0.27,1,0.15]
+fixPopSds = [10, 0.01, 6.83e-3, 0.02, 0.1, 0.02]
 
 allMul x = map (x*)
 
@@ -88,7 +88,7 @@ allMul x = map (x*)
 up_trial :: TheData -> BigPar -> Sampler BigPar
 up_trial thedata ((popmeanssds, trialsds, betas), sessmeans, sessbetas, trialPars) = do
   newtrialPars <- sampleMany2 $ forIdx2 trialPars $ \sess tr-> 
-                  let (spikes, lov) = (thedata!!sess!!tr) in metSamplePCL
+                  let (spikes, lov) = (thedata!!sess!!tr) in metSamplePCL "lh"
                       (likelihoodH1 spikes)
                       (p_ij_i (zipWith (+) (unP $ sessmeans!!sess) (map (lov*) (unP $ sessbetas!!sess))) 
                               (map unP trialsds)) (trialPars!!sess!!tr)
@@ -97,7 +97,7 @@ up_trial thedata ((popmeanssds, trialsds, betas), sessmeans, sessbetas, trialPar
 up_session :: TheData -> BigPar -> Sampler BigPar
 up_session thedata ((popmeanssds, trialsds, betas), sessmeans, sessbetas, trialPars) = do
   newsessmeans <- sampleMany $ forIdx sessmeans $ \sess -> 
-                     metSampleP (\sessmean-> 
+                     metSampleP "sessmean" (\sessmean-> 
                        (sum $ for (zip (map snd $ thedata!!sess) $ map unP $ trialPars!!sess) $ 
                                 \(lov, tpar)-> p_ij_i (zipWith (+) sessmean 
                                                                    (map (lov*) (unP $ sessbetas!!sess))) 
@@ -105,29 +105,29 @@ up_session thedata ((popmeanssds, trialsds, betas), sessmeans, sessbetas, trialP
                           p_i_pop (map (fst . unP) popmeanssds) 
                                   (map (snd . unP) popmeanssds) sessmean) (sessmeans!!sess)
   newsessbetas <- sampleMany $ forIdx sessbetas $ \sess -> 
-                     metSampleP (\sessbeta-> 
+                     metSampleP "sessbetas" (\sessbeta-> 
                        (sum $ for (zip (map snd $ thedata!!sess) $ map unP $ trialPars!!sess) $ 
                                 \(lov, tpar)-> p_ij_i (zipWith (+) (unP $ newsessmeans!!sess)
                                                                    (map (lov*) sessbeta)) 
-                                                      (map unP trialsds) tpar) +
-                          p_i_pop (map (fst . unP) betas) 
-                                  (map (snd . unP) betas) sessbeta) (sessbetas!!sess)
+                                                      (map unP trialsds) tpar)  + 
+                       p_i_pop (map (fst . unP) betas) 
+                               (map (snd . unP) betas) sessbeta ) (sessbetas!!sess)
   return ((popmeanssds, trialsds, betas), newsessmeans, newsessbetas, trialPars)
 
 up_pop :: TheData -> BigPar -> Sampler BigPar
 up_pop thedata ((popmeanssds, trialsds, betas), sessmeans, sessbetas, trialPars) = do
   newpopmeanssds <- sampleMany $ forIdx (popmeanssds) $ \msi->
-                        metSampleP (\(pm, ps)-> let pmean = set msi pm $ map (fst. unP) popmeanssds 
-                                                    psd = set msi ps $ map (snd . unP) popmeanssds  in
-                                                (sum $ for sessmeans $ p_i_pop pmean psd . unP ) + 
-                                                ling ps ) $ popmeanssds!!msi
+                        metSampleP "popmeans" (\(pm, ps)-> let pmean = set msi pm $ map (fst. unP) popmeanssds 
+                                                               psd = set msi ps $ map (snd . unP) popmeanssds  in
+                                                           (sum $ for sessmeans $ p_i_pop pmean psd . unP ) + 
+                                                           ling ps ) $ popmeanssds!!msi
   newbetas <- sampleMany $ forIdx (betas) $ \bi->
-                        metSampleP (\(bm, bs)-> let bmean = set bi bm $ map (fst. unP) betas 
-                                                    bsd = set bi bs $ map (snd . unP) betas  in
-                                                (sum $ for sessbetas $ p_i_pop bmean bsd . unP ) + 
-                                                ling bs ) $ betas!!bi
+                        metSampleP "popbetas" (\(bm, bs)-> let bmean = set bi bm $ map (fst. unP) betas 
+                                                               bsd = set bi bs $ map (snd . unP) betas  in
+                                                           (sum $ for sessbetas $ p_i_pop bmean bsd . unP ) + 
+                                                           ling bs ) $ betas!!bi
   newtrialsds <- sampleMany $ forIdx trialsds $ \si -> 
-                        metSampleP (\sd-> (sum $ map sum $ forIdx2 trialPars $ \sess tr->
+                        metSampleP "trialsds" (\sd-> (sum $ map sum $ forIdx2 trialPars $ \sess tr->
                                        let trsds = set si sd $ map unP trialsds 
                                            lov = snd $ thedata!!sess!!tr in
                                        p_ij_i (zipWith (+) (unP $ sessmeans!!sess)
@@ -144,17 +144,17 @@ p_i_pop = p_ij_i
 
 p_pop _ sds = sum $ map ling sds
 
-ling =  const 1 --log . invGammaD 0.001 0.001
+ling = const 1 --log . invGammaD 0.001 0.001
 
 set 0 x (_:ys) = x:ys
 set n x (y:ys) = y : set (n-1) x ys
 
 rFromPars :: TrialPar -> Double -> Double
-rFromPars [amp, t0, tau1, tau2, tau3, pslow] = r amp t0 tau1 tau2 tau3 pslow 0.2
+rFromPars [amp, t0, tau1, tau2, tau3, pslow] = r amp t0 tau1 tau2 tau3 pslow 
 
 likelihoodH1 spikes pars@[amp, t0, tau1, tau2, tau3, pslow] =
 --    likelihood (realToFrac rate) (realToFrac tau) (realToFrac baseline) (realToFrac t0) 
-    (U.sum $ (U.map (logr amp t0 tau1 tau2 tau3 pslow ) spikes))- (integralR pars 6 - integralR pars 0)
+    (U.sum $ (U.map (log. r amp t0 tau1 tau2 tau3 pslow ) spikes))- (integralR pars 6 - integralR pars 0)
 
 gibbsSF ::TheData -> StochFun BigPar BigPar 
 gibbsSF thedata = condSampler (up_trial thedata) >>> condSampler (up_session thedata) >>> condSampler (up_pop thedata )
@@ -170,7 +170,7 @@ priorSamplerG nsess ntrialsPerSess=
        popsds <- mapM2 uniform (map (/k) fixPopSds) (map (*k) fixPopSds)
 
        betameans <- mapM2 uniform (map (negate . (/10)) fixPars) (map (/10) fixPars)
-       betasds <- mapM2 uniform (map (negate . (/10)) fixPopSds) (map (/10) fixPopSds)       
+       betasds <- mapM2 uniform (map (const 0 ) fixPopSds) (map (/100) fixPopSds)       
        trialsds <- mapM2 uniform (map (/k) fixPopSds) (map (*k) fixPopSds)
 
        sessmeans <- times nsess $ mapM2 gauss popmeans popsds
@@ -186,13 +186,13 @@ chopData2 durs allspikes =
 
 lrsq = log . recip . (\x-> x*x)
 
-r :: Double -> Double -> Double -> Double -> Double -> Double -> Double -> Double -> Double
-r amp t0 tau1 tau2 tau3 pslow baseline t 
+r :: Double -> Double -> Double -> Double -> Double -> Double -> Double -> Double
+r amp t0 tau1 tau2 tau3 pslow  t 
     | t < t0 = let x = (-t+t0) in 
-               amp*(1-exp(-x/tau1))*((1-pslow)*exp(-x/tau2)+pslow*exp(-x/tau3)) + baseline
-    | otherwise = baseline
+               amp*(1-exp(-x/tau1))*((1-pslow)*exp(-x/tau2)+pslow*exp(-x/tau3))
+    | otherwise = 0.02
 
-logr :: Double -> Double -> Double -> Double -> Double -> Double -> Double -> Double -> Double
+logr :: Double -> Double -> Double -> Double -> Double -> Double -> Double -> Double
 logr amp t0 tau1 tau2 tau3 pslow t 
     | t < t0 = let x = (-t+t0) in 
                log amp + log (1-exp(-x/tau1)) + log ((1-pslow)*exp(-x/tau2)+pslow*exp(-x/tau3))
@@ -242,7 +242,10 @@ main = do
   (read -> count::Int) : filenm : _  <- getArgs 
   --let dropn = (count*3) `div` 4
   --putStrLn $ "droping "++show dropn
-  (concat -> spikes, concat -> running, concat -> sess, concat -> approachLoV) <- fmap unzip4 $ manySessionData $ do
+  (concat -> spikes, 
+   concat -> running, 
+   concat -> sess, 
+   concat -> approachLoV) <- fmap unzip4 $ manySessionData $ do
            spikes <-  map fst `fmap` events "spike" ()
            running <- durations "running" ()
            modNm <- durations "moduleName" "foo"
@@ -262,13 +265,28 @@ main = do
   let segs = (distinct running) `within` (distinct sess)
   --let lh = undefined -- manyLikeH segs likelihoodH id (toU spikes)
   let thespikes = chopData2 segs (U.fromList spikes)
-      thelovs = map (map $ snd . head) $ chopData2 segs approachLoV
+      thelovs = map (map $ snd . head) $ chopData2 segs $ (\lov-> log (lov / 0.02) / log 2) <$$> approachLoV
       (thedata::TheData) = zipWith (zip) thespikes thelovs
   let nthreads = numCapabilities
   putStrLn $ "splitting into nthreads="++show nthreads
+
   let acceptInit :: BigPar -> Bool
-      acceptInit pars = all notNanInf $ map (uncurry likelihoodH1) $ zip2d (map (map fst) thedata) $ map ( map unP ) $ fth4 pars
-  inits <- fmap (filter acceptInit) $ runSamplerIO $ priorSamplerG (length sess) (map (length . (`during` running) . (:[])) sess)
+      acceptInit pars = all notNanInf 
+                        $ map (uncurry likelihoodH1) 
+                        $ zip2d (map (map fst) thedata) 
+                                (map ( map unP ) $ fth4 pars)
+  inits <- fmap (filter acceptInit) 
+           $ runSamplerIO 
+           $ priorSamplerG (length sess) 
+                           (map (length . (`during` running) . (:[])) sess)
+
+  {-let all_lhs =     map (uncurry likelihoodH1) 
+                        $ zip2d (map (map fst) thedata) 
+                                (map ( map unP ) $ fth4 $ head inits)
+  print all_lhs
+
+  print $ take 1 $ map (take 1) thedata
+-}
   writeFile (filenm++"_parnames.mcmc") $ show parNames 
                             -- , "trialRateSD", "tau", "baseline", "t0"]
   inPar nthreads $ \threadn-> do
