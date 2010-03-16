@@ -22,7 +22,7 @@
 \item A functional calculus of physiological evidence
 \item Structure and interpretation of physiological evidence
 \end{description}
-\section*{Introduction, take 1}
+\section*{Introduction}
 
 Mechanical reasoning removes ambiguity and thus allows ideas to be
 formulated and communicated efficiently and for inferences to be
@@ -37,7 +37,7 @@ be replaced by terms with identical meaning without changing the
 meaning of the context. For instance, no matter what $w$ refers to or
 where it appears, $w+w$ can always be substituted by $2w$. This
 property, which is called referential transparency
-\citep{Whitehead1927}, is shared by all ``matheatical'' notations but
+\citep{Whitehead1927}, is shared by all ``mathematical'' notations but
 not by conventional programming languages.
 
 Although we can describe quantitative scientific models, there are few
@@ -57,88 +57,11 @@ mathematical objects that play a role in physiological evidence.
 What is an experiment? Whether they are carried out by humans or by
 automated equipment, experiments can be seen as \emph{programs} that
 manipulate and observe the real world. This definition suggests that
-experiement definitions must resemble programming languages. 
-%, and if we are to calculate with them, referentially transparent
-%ones.
-%One could construct a standardized notation for experimentation based
-%on an conventional programming language involving step-by-step
-%instructions and procedure calls. But such a language is not
-%referentially transparent and would be very difficult to read and
-%reason about; its benefits would solely be to communicate the precise
-%experiment carried out to an automaton with identical
-%capabilities. For instance, it would be very difficult to extract from
-%an experiment description a definition of an observed value, when
-%these can be defined by conditional variable mutation.
-%% When trying to create a
-%% fundamental notation for these programs, we hit an obstacle: such a
-%%language must by necessity interact with the real world in perturbing
-%%the system under investigation and recording its response. How can a
-%%referentially transparent language that uses only functions cause
-%%these effects?  The best understood referentially 
-The lambda calculus \citep{Church1941} is the best understood
-framework for referentially transparent computation, based entirely on
-evaluating functions in the purely mathematical sense, i.e. as maps
-between sets. The lambda calculus allows the use of functions as first
-class entities: that is, they can be referenced by variables and
-passed as arguments to other functions (which then become higher-order
-functions). These properties together mean that the lambda calculus
-combines verifiable correctness with a high level of abstraction,
-leading to programs that are in practice more concise (ref). The
-lambda calculus or variants thereof has been used as foundation for
-mathematics \citep{Martin-Lof1985}, classical \citep{Sussman2001} and
-quantum mechanics \citep{Karczmarczuk2003}, evolutionary biochemistry
-\citep{Fontana1994} and functional programming languages
-(ref:mccarthy?). In the \emph{typed} lambda calculus, values inhabit
-base types such as integers, real numbers, or compound types such as
-vectors, lists, functions or pairs.
-
-Although the pure lambda calculus cannot interact with the physical
-world, there are many elegant solutions for doing so while retaining
-referential transparency. Functional Reactive Programming
-\citep[FRP;][]{Elliott1997, Nilsson2002} recognizes the essential role
-time plays in certain computer programs, including animations,
-robotics and physical simulations. FRP augments the lambda calculus
-with two fundamental concepts to place information in a temporal
-context: Signals, which represent continuously varying quantities, and
-events representing distinct occurances. Both signals and events are
-higher-order types, that is they are type constructors that can be
-instantiated with any type. For instance, the output of a differential
-voltage amplifier might be captured in a |Signal Real|. Here, we add a
-third higher-order type for information pertaining to a duration of
-time with a start and an end time.
-
-Time also plays a crucial role in physiology, and here we show that a
-language based on FRP can capture many aspects of experimentation and
-analysis. These simple, yet flexible, types suffice to represent many
-directly observed and inferred quantities: 
-\vskip1ex
-\begin{tabular}{l  l}
-\hline
-  Quantity & Type \\ 
-\hline
-  Voltage across the cell mebrane & |Signal Real| \\
-  Animal location in 2D & |Signal (Real times Real)| \\
-  Action potential & |Event ()| \\
-  Action potential waveforms & |Event (Signal Real)| \\
-  Spike detection threshold & |Duration Real| \\
-  Spike interval & |Duration ()| \\
-  Synaptic potential amplitude & |Event Real| \\
-  Drug present & |Duration ()| \\
-  Trial with parameter |alpha| & |Duration alpha| \\
-  Visual stimulus & |Signal Shape| \\
-\hline
-\end{tabular}
-\vskip1ex In addition, by virtue of its basis in the lambda calculus,
-FRP provides the transformation facilities needed for data
-analysis. Thus it is possible process events and signals, create new
-events from signals, filter data and apply point estimators as
-necessary. But we also find that new analysis methods become feasible;
-for instance, having functions as first class entities makes it much
-simpler to directly represent probability distributions. We show how
-hierarchical Bayesian modelling \citep{Gelman2003} can incorporate the
-reactive entities here introduced, such that model parameter
-estimation and hypothesis testing takes into account all the
-information observed.
+experiment definitions must resemble programming languages, and that a
+referentially transparent calculus of experiments could come from
+programming language theory. We combine observations defined in such a
+language with hierarchical bayesian models that form a powerful
+framework for biological inference rarely used in physiology.
 
 We use a calculus of physiological evidence based on FRP to perform a
 non-trivial experiment in \emph{in vivo} insect neurophysiology. The
@@ -158,44 +81,34 @@ definitions of these experiments and the data analysis procedure is
 contained within the main sections of this paper in a handful of
 equations.
 
-\section*{Methods}
+\section*{The calculus of physiological evidence}
 
-\subsection*{Language implementation} 
+Time plays a crucial role in physiology. Plots of the temporal
+evolution of observed quantities, such as instrinsic rhythms or responses
+to external stimuli, are ubiquitous in publications. Often these
+observations are mediated by actions that are said to happen at a
+certain time point - such as action potentials or secretion events -
+but are themselves composed of continuous changes in ion channel
+conductances or fusion pore dilations. Time must have a priviliged
+role in accounting for physiological evidence, although it is used to
+index many different things.
 
-Although Bugpan is intended to present a single language for
-experimentation, simulation and analysis, we have used two different
-implementation strategies for reasons of rapid development and
-execution efficiency. For purposes of experimentation and simulation,
-we have implemented a prototype compiler that can execute some Bugpan
-programs that contain signals and events that are defined by mutual
-recursion, as is necessary for many of the simulations and experiments
-in this paper. For post-acquisition/simulation analysis, where one
-often merely wishes to calculate a new value from existing
-observations, we have implemtented Bugpan as an domain-specific
-language embedded in the purely functional programming language
-Haskell.  OpenGL and Comedi.
+Functional Reactive Programming \citep[FRP;][]{Elliott1997,
+  Nilsson2002} recognizes the essential role time also plays in
+certain computer programs, including animations, robotics and physical
+simulations. FRP introduces two fundamental concepts to place
+information in a temporal context: Signals, which represent
+continuously varying quantities, and events representing distinct
+occurances. Programs writen in a such a language .. takes whole time
+as an input (Henrik had something that sounds good here.)... Here, we
+show that a language based on FRP can capture many aspects of
+experimentation and analysis. 
+-Types introduced by FRP cover the kinds of evidence (define ``reactive types'')
+-how to calculate: signal trnaformers and event detectors
+-observe from real world 
+-statistical inference. 
 
-\subsection*{Locust experiments}
-
-Recordings from the locust DCMD neurons were performed as previously
-described (ref). Briefly, locusts were fixed in plasticine with the
-abdomin upwards. The head was fixed with wax at an 90 degree angle and
-the connectives were exposed. A pair of hook electrodes were placed
-underneath the connectives and the electrodes and connectives enclosed
-in petrolium jelly. The electrode signal was amplified 1000x and
-bandpass filtered 50-5000 hz, before analog-to-digital conversion at
-18 bits and 20 khz with a NI-6xxx board. The locust was placed in
-front of a 22'' CRT monitor running with a vertical refresh rate of
-160 hz. All aspects of the visual stimulus and analog-to-digital
-conversion were controlled by Bugpan programs running on a single
-computer.
-
-\subsection*{Statistical analysis}
-
-metropolis-within-gibbs sampler, proposal: gaussian tuned to 25\% acceptance
-rate. non-informative improper priors.
-
-\section*{Results}
+\subsection*{Reactive Types}
 
 The observation, analysis and simulation of signals are essential to
 physiology, and also forms the basis of the bugpan formalism. In
@@ -203,20 +116,126 @@ physiology, observed signals are usually time-varying scalar
 quantities such as membrane voltages or muscle force, but there are
 also examples of non-scalar signals such as the two- or three
 dimensional location of an animal or of a body part. Here, we
-generalise this notion such that for \emph{any} type |alpha|, a signal of
-|alpha| is defined as a function from time to a value in
-|alpha|.
+generalise this notion such that for \emph{any} type |alpha|, a signal
+of |alpha| is defined as a function from time to a value in |alpha|:
+|Signal alpha = Time -> alpha|. For instance, the output of a
+differential voltage amplifier might be captured in a |Signal
+Real|. In addition to the types introduced here, we assume that the
+universe of types are inhabited by base types such as the integers,
+the real numbers, and means of combining simple types such as pairs,
+lists and functions. Indeed, signals and events are synonyms for such
+combinations.
 
-In order to define inputs, outputs and analyses of a physiological
-experiement, at least the following operations on signals are
-necessary:
-\begin{enumerate}
-\item Directly observation of signals from electrodes or amplifiers
-\item Construction of signals for stimulation
-\item Application of signal transformations to existing signals
-\end{enumerate}
+Unlike signals such as an extracellular potential or a membrane
+conductance, some observed quantities such as action potentials are
+discrete occurrences and are not associated with a new value at every
+timepoint. To represent this qualitatively different class of
+observations, we introduce events as the type |Event alpha = [Time
+  times alpha]|. Like signals, events are a higher-order type that can
+be instantiated for any type a, such that a event of a is a list of
+occurrences at specific timepoints, each with an associated value. For
+example, an event could be constructed from a scalar signal such that
+the time of the largest amplitude of a signal was associated with the
+signal amplitude at that time-point. Some events may not have a value
+of interest to associate with the timepoint at which it occured, in
+which case we can use the unit type |()| which has only one element
+(that is, no information).
 
-To handle the first case we introduce the notion of signal sources,
+.... How shall we represent such a summary
+statistic? It holds one value that pertains to a period of time, in
+this case from the beginning of the trials until the collision
+time. Signals (which change from one timepoint to another) and events
+(pertaining only to an instant) are unsuitable for representing this
+information. What is needed is a type for representing values
+associated with temporal extents. We define a duration of type |alpha|
+as a list of pairs, of which the second component is a value of
+|alpha| and the first component is itself a pair of a start time and
+an end time:
+\begin{code}
+Duration alpha = [Time times Time times alpha]
+\end{code}
+
+...  These simple, yet flexible, types suffice to represent many
+physiological quantities: \vskip1ex
+\begin{tabular}{l  l}
+\hline
+  Quantity & Type \\ 
+\hline
+  Voltage across the cell mebrane & |Signal Real| \\
+  Ion concentration & |Signal Real| \\
+  Animal location in 2D & |Signal (Real times Real)| \\
+  Action potential & |Event ()| \\
+  Action potential waveforms & |Event (Signal Real)| \\
+  Spike detection threshold & |Duration Real| \\
+  Spike interval & |Duration ()| \\
+  Synaptic potential amplitude & |Event Real| \\
+  Drug present & |Duration ()| \\
+  Trial with parameter |alpha| & |Duration alpha| \\
+  Visual stimulus & |Signal Shape| \\
+\hline
+\end{tabular}
+\vskip1ex 
+
+some directly observed, some inferred. How to infer them?
+
+\subsection*{Calculating with signals and events}
+
+Physiological inference necessarily involves the calculation of
+infered quantities from direct observations. In addition to specifying
+the types of these quantities, FRP provides the transformation
+facilities needed for data analysis. Thus one can process events and
+signals, create new events from signals, filter data and calculate
+statistics as necessary. A combination of pure functions that have
+no side effects and a construct to form signals based on an expression
+for their instantaneous value allows us to build signal transformers.
+
+
+The lambda calculus \citep{Church1941} is the best understood
+framework for referentially transparent computation, based entirely on
+evaluating functions in the purely mathematical sense, i.e. as maps
+between sets. The lambda calculus allows the use of functions as first
+class entities: that is, they can be referenced by variables and
+passed as arguments to other functions (which then become higher-order
+functions). These properties together mean that the lambda calculus
+combines verifiable correctness with a high level of abstraction,
+leading to programs that are in practice more concise (ref). The
+lambda calculus or variants thereof has been used as foundation for
+mathematics \citep{Martin-Lof1985}, classical \citep{Sussman2001} and
+quantum mechanics \citep{Karczmarczuk2003}, evolutionary biochemistry
+\citep{Fontana1994} and functional programming languages
+(ref:mccarthy?). In the \emph{typed} lambda calculus, values inhabit
+base types such as integers, real numbers, or compound types such as
+vectors, lists, functions or pairs.
+
+Here, we present a ....  Let the construct |sopen e sclose| create a
+signal with the value of the expression e at every time point, and |<:
+s :>| yield the current value of the signal s in the temporal context
+created by the surrounding |sopen ... sclose| braces. As in the lambda
+calculus, functions are first class and can be passed as arguments to
+other functions; |\x->e| denotes the function with argument |x| and
+body |e|. For instance, the function smap defined as
+\begin{code}
+smap = \f -> \s -> sopen f <: s :> sclose
+\end{code}
+transforms a signal of |alpha| s into a signal of |beta| by apply the
+function |f| of type |alpha → beta| to the value at every
+timepoint. 
+
+delay, D, 
+
+event constructor 
+emap
+
+durations, events: lists
+
+more examples
+
+\subsection*{Observing reactive values}
+
+In the previous examples, signals, events and durations exist as
+purely mathematical objects.
+
+we introduce the notion of signal sources,
 which represent the unprocessed/raw observations available in an
 experiment. 
 
@@ -226,37 +245,14 @@ identifier <* signal source
 \end{code}
 we bind the signal yielded by the signal source to the variable
 denoted by \emph{identifier}. This variable will hold the whole signal
-observed during the course of the experiment.
-
-The signal source binding construct allows us to formulate a simple
-experiment:
+observed during the course of the experiment. The signal source
+binding construct allows us to formulate a simple experiment:
 \begin{code}
-rawVoltage <* ADC (0, 20000, 6)
+voltage <* ADC (0, 20000)
 \end{code}
 which describes the (unperturbed) observation of the voltage signal on
-channel 0 on an analog-to-digital converter at 20kHz for 6
-seconds. This voltage trace may have been amplified before reaching
-the analog-to-digital converter; in that case, we may want to scale
-sampled signal to retrieve the original waveform. We will see how a
-combination of pure functions that can have no side effects and a
-construct to form signals based on an expression for their
-instantaneous value allows us to build signal transformers. Let the
-construct |sopen e sclose| create a signal with the value of the
-expression e at every time point, and |<: s :>| yield the current
-value of the signal s in the temporal context created by the
-surrounding |sopen ... sclose| braces. As in the lambda calculus,
-functions are first class and can be passed as arguments to other
-functions; |\x->e| denotes the function with argument |x| and body
-|e|. For instance, the function smap defined as
-\begin{code}
-smap = \f -> \s -> sopen f <: s :> sclose
-\end{code}
-transforms a signal of |alpha| s into a signal of |beta| by apply the
-function |f| of type |alpha → beta| to the value at every
-timepoint. Thus, to scale |rawVoltage| by, say, a factor of 0.01
-\begin{code}
-scaledVoltage = smap (\v->0.01*v) rawVoltage
-\end{code}
+channel 0 on an analog-to-digital converter at 20kHz sampling rate.
+
 In addition to making appropriate observations, an experiment may also
 involve a pertubation of the experimental preparation. To make a
 dynamic pertubation, we first need to be able to construct
@@ -278,7 +274,41 @@ signal source, namely a signal sink. To send the sineWave signal to a
 digital-to-analog converter, we might write
 
 \begin{code}
-sineWave *> DAC (0, 20000, 6)
+sineWave *> DAC (0, 20000)
+\end{code}
+
+Non-real signals: screen
+
+sources not restricted to signals. Events, random number generation.
+
+\subsection*{Probabilistic inference}
+
+But we also find that new analysis methods become feasible;
+for instance, having functions as first class entities makes it much
+simpler to directly represent probability distributions. We show how
+hierarchical Bayesian modelling \citep{Gelman2003} can incorporate the
+reactive entities here introduced, such that model parameter
+estimation and hypothesis testing takes into account all the
+information observed.
+
+\section*{Results}
+
+In order to define inputs, outputs and analyses of a physiological
+experiement, at least the following operations on signals are
+necessary:
+\begin{enumerate}
+\item Directly observation of signals from electrodes or amplifiers
+\item Construction of signals for stimulation
+\item Application of signal transformations to existing signals
+\end{enumerate}
+
+
+
+..
+
+Thus, to scale |rawVoltage| by, say, a factor of 0.01
+\begin{code}
+scaledVoltage = smap (\v->0.01*v) rawVoltage
 \end{code}
 
 However, in this paper we are primarily concerned with visual stimuli
@@ -338,20 +368,12 @@ simple measurement of the response of an external system to a
 controlled stimulus. In the case where rawVoltage holds an
 extracellular nerve recording, the voltage trace itself is likely to
 be of less interest than the timing of action potentials in the
-nerve. Unlike signals such as an extracellular potential or a membrane
-conductance, action potentials are discrete occurrences and are not
-associated with a new value at every timepoint. To represent this
-qualitatively different class of observations, we introduce events as
-the type |Event alpha = [Time times alpha]|. Like signals, events are
-a higher-order type that can be instantiated for any type a, such that
-a event of a is a list of occurrences at specific timepoints, each
-with an associated value. For example, an event could be constructed
-from a scalar signal such that the time of the largest amplitude of a
-signal was associated with the signal amplitude at that
-time-point. Some events may not have a value of interest to associate
-with the timepoint at which it occured, in which case we can use the
-unit type |()| which has only one element (that is, no
-information). To construct events from signals, we take a predicate on
+nerve. 
+
+....
+
+
+To construct events from signals, we take a predicate on
 the instantaneous values of the signal and generate an event whenever
 the predicate becomes true using the |??| operator (|?? ::
 (alpha->Bool) -> Signal alpha -> Event alpha|).
@@ -372,19 +394,14 @@ can be repeated several times in order to characterise response
 variability. As an outcome of the trial we may be satisfied with spike
 timings; on the other hand, it may be convenient to focus on a summary
 of the |spike| event such as the peak rate or the total number of
-spikes in the approach. How shall we represent such a summary
-statistic? It holds one value that pertains to a period of time, in
-this case from the beginning of the trials until the collision
-time. Signals (which change from one timepoint to another) and events
-(pertaining only to an instant) are unsuitable for representing this
-information. What is needed is a type for representing values
-associated with temporal extents. We define a duration of type |alpha|
-as a list of pairs, of which the second component is a value of
-|alpha| and the first component is itself a pair of a start time and
-an end time:
-\begin{code}
-Duration alpha = [Time times Time times alpha]
-\end{code}
+spikes in the approach. 
+
+
+... 
+define duration 
+...
+
+
 Unlike with signals and events, we have not found a need for any
 special syntax to construct durations over the generic list (cons and
 nil) and pair (,) constructor operations. In addition, it is useful to
@@ -543,6 +560,7 @@ engines.
 \item calculus of physiological evidence.
 \end{itemize}
 
+frequency domain
 no fancy analysis; not the point.
  
 
@@ -589,6 +607,43 @@ and consistent units of measure \citep{Kennedy1997}; the absense of
 of these issues in relating atomic observations to parameter
 estimation and hypothesis testing, but not how those observations are
 obtained.
+
+\section*{Methods}
+
+\subsection*{Language implementation} 
+
+Although Bugpan is intended to present a single language for
+experimentation, simulation and analysis, we have used two different
+implementation strategies for reasons of rapid development and
+execution efficiency. For purposes of experimentation and simulation,
+we have implemented a prototype compiler that can execute some Bugpan
+programs that contain signals and events that are defined by mutual
+recursion, as is necessary for many of the simulations and experiments
+in this paper. For post-acquisition/simulation analysis, where one
+often merely wishes to calculate a new value from existing
+observations, we have implemtented Bugpan as an domain-specific
+language embedded in the purely functional programming language
+Haskell.  OpenGL and Comedi.
+
+\subsection*{Locust experiments}
+
+Recordings from the locust DCMD neurons were performed as previously
+described (ref). Briefly, locusts were fixed in plasticine with the
+abdomin upwards. The head was fixed with wax at an 90 degree angle and
+the connectives were exposed. A pair of hook electrodes were placed
+underneath the connectives and the electrodes and connectives enclosed
+in petrolium jelly. The electrode signal was amplified 1000x and
+bandpass filtered 50-5000 hz, before analog-to-digital conversion at
+18 bits and 20 khz with a NI-6xxx board. The locust was placed in
+front of a 22'' CRT monitor running with a vertical refresh rate of
+160 hz. All aspects of the visual stimulus and analog-to-digital
+conversion were controlled by Bugpan programs running on a single
+computer.
+
+\subsection*{Statistical analysis}
+
+metropolis-within-gibbs sampler, proposal: gaussian tuned to 25\% acceptance
+rate. non-informative improper priors.
 
 \bibliographystyle{apalike}
 \bibliography{paper}
