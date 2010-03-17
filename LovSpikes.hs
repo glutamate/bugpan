@@ -36,6 +36,7 @@ import Foreign.ForeignPtr
 import Foreign.Ptr
 import Control.Arrow
 import FitGnuplot
+import Debug.Trace
 
 
 sampleMany :: [Sampler a] -> Sampler [a]
@@ -175,34 +176,45 @@ trialParSampler = uniform 0.1 1 >>= \t1 ->
 mlTrialPars :: [[(U.Vector Double, Double)]] -> [[(TrialPar, Double)]]
 mlTrialPars thedata = for2 thedata f
     where f (spks, lov) = 
-              let histo = histManyOver [((0,6),())] 0.05 $ map (flip (,) ()) $ U.toList spks
-              in (getTag . head $ fitG (rFromPars) trialParSampler histo, lov)
+              let histo = head $ histManyOver [((0,6),())] 0.05 $ map (flip (,) ()) $ U.toList spks
+                  (pars, _, err) = fitG' (rFromPars) trialParSampler (const 0) histo
+              in (pars, lov)
+
+--err in range 4000-17000
 
 mlSessBetasMean :: [[(TrialPar,Double)]] -> [(TrialPar,TrialPar)]
 mlSessBetasMean thepars = map sessf thepars
-    where npars = length $ fst $ head $ head thepars
-          rezip :: ([a],[b]) -> [(a,b)]
-          rezip (xs, ys) = zip xs ys
-          sessf :: [(TrialPar,Double)] -> (TrialPar,TrialPar)
-          sessf sdata = 
-              let sdata' :: [([Double],[Double])]
-                  sdata' = for sdata $ \(tpars,lov) -> (tpars, replicate npars lov)
-              in unzip $ runStatOnMany regressF $ map rezip $ sdata'
+    where sessf :: [(TrialPar,Double)] -> (TrialPar,TrialPar)
+          sessf sdata =
+              let sdata' :: [[(Double, Double)]]
+                  sdata' = for sdata $ \(tpars,lov) -> zip (repeat lov) tpars 
+                  foo = map (zip (map snd sdata)) $ transpose $ map fst sdata
+              in unzip $ map (runStat regressF) foo
+
+
+{-mlSessBetasMean :: [[(TrialPar,Double)]] -> [(TrialPar,TrialPar)]
+mlSessBetasMean thepars = map sessf thepars
+    where sessf :: [(TrialPar,Double)] -> (TrialPar,TrialPar)
+          sessf sdata =
+              let sdata' :: [[(Double, Double)]]
+                  sdata' = for sdata $ \(tpars,lov) -> zip (repeat lov) tpars 
+                  --foo = transpose $ map fst sdata
+              in unzip $ runStatOnMany regressF $ sdata' -}
 
 mlTrialSDs :: [[(TrialPar,Double)]] -> [(TrialPar,TrialPar)] -> TrialPar
 mlTrialSDs thepars betameans = avgit $ map f $ zip thepars betameans
     where avgit :: [TrialPar] -> TrialPar
-          avgit bysess = map (sqrt . runStat (before meanF square)) $ transpose bysess
+          avgit bysess = map (sqrt . runStat (before meanF square)) $ bysess
           f :: ([(TrialPar,Double)], (TrialPar,TrialPar)) -> TrialPar
           f (sessparlovs, (betas, alphas)) = 
-              runStatOnMany stdDevF 
+              map (runStat stdDevF)
               $ for sessparlovs $ \(tpars, lov)-> map (\(p,b, a)-> p-(a+b*lov) ) $ zip3 tpars alphas betas
 
 mlPopMeans :: [(TrialPar,TrialPar)] -> TrialPar
-mlPopMeans betameans = runStatOnMany meanF $ map snd betameans
-mlPopSds betameans = runStatOnMany stdDevF $ map snd betameans
-mlBetaMeans betameans = runStatOnMany meanF $ map fst betameans
-mlBetaSds betameans = runStatOnMany stdDevF $ map fst betameans
+mlPopMeans betameans = map (runStat meanF) $ transpose $ map snd betameans
+mlPopSds betameans = map (runStat stdDevF) $ transpose $ map snd betameans
+mlBetaMeans betameans = map (runStat meanF) $ transpose $ map fst betameans
+mlBetaSds betameans = map (runStat stdDevF) $ transpose $ map fst betameans
 
 
 mlPars :: [[(U.Vector Double, Double)]] -> BigPar
@@ -312,7 +324,7 @@ main3 = do
    concat . take 2 -> sess, 
    concat -> approachLoV) <- fmap unzip4 $ manySessionData $ do
            spikes <-  map fst `fmap` events "spike" ()
-           running <- take 6 `fmap` durations "running" ()
+           running <- take 3 `fmap` durations "running" ()
            modNm <- durations "moduleName" "foo"
            approachLoV <- extendDur 1 `fmap` durations "approachLoV" (1::Double)
            sess <- sessionDur
@@ -350,6 +362,26 @@ main3 = do
 
   print $ take 1 $ map (take 1) thedata
 -}
+  let mltpars = mlTrialPars thedata
+
+  let mlsess = mlSessBetasMean mltpars
+
+  print2 "mltpars " mltpars
+
+  print2 "mlsess " mlsess
+  --print2 "mlsess' " $mlSessBetasMean' mltpars
+
+  print2 "popmeans" $  mlPopMeans mlsess
+
+  print2 "sessmeans" $ map snd mlsess
+
+  print2 "trialsds" $ mlTrialSDs mltpars mlsess
+
+
+  --print $ runStatOnMany meanF $ transpose $ map snd mlsess
+
+  print $ mlPopMeans mlsess
+
   let inits = [mlPars thedata]
 
   writeFile (filenm++"_parnames.mcmc") $ show parNames 
