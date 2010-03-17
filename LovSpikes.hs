@@ -35,6 +35,7 @@ import Foreign.C
 import Foreign.ForeignPtr
 import Foreign.Ptr
 import Control.Arrow
+import FitGnuplot
 
 
 sampleMany :: [Sampler a] -> Sampler [a]
@@ -162,6 +163,62 @@ mapM2 :: Monad m => (a -> b -> m c) -> [a] -> [b] -> m [c]
 mapM2 f xs ys = mapM (uncurry f) $ zip xs ys
 
 --[amp, t0, tau1, tau2, tau3, pslow, baseline]
+
+
+--get ML trialpars
+-- 1. transform spikes to histograms
+-- 2. fit
+
+trialParSampler = uniform 0.1 1 >>= \t1 -> 
+                  return [100, 5, t1, 0.5, 2, 0.1]
+
+mlTrialPars :: [[(U.Vector Double, Double)]] -> [[(TrialPar, Double)]]
+mlTrialPars thedata = for2 thedata f
+    where f (spks, lov) = 
+              let histo = histManyOver [((0,6),())] 0.05 $ map (flip (,) ()) $ U.toList spks
+              in (getTag . head $ fitG (rFromPars) trialParSampler histo, lov)
+
+mlSessBetasMean :: [[(TrialPar,Double)]] -> [(TrialPar,TrialPar)]
+mlSessBetasMean thepars = map sessf thepars
+    where npars = length $ fst $ head $ head thepars
+          rezip :: ([a],[b]) -> [(a,b)]
+          rezip (xs, ys) = zip xs ys
+          sessf :: [(TrialPar,Double)] -> (TrialPar,TrialPar)
+          sessf sdata = 
+              let sdata' :: [([Double],[Double])]
+                  sdata' = for sdata $ \(tpars,lov) -> (tpars, replicate npars lov)
+              in unzip $ runStatOnMany regressF $ map rezip $ sdata'
+
+mlTrialSDs :: [[(TrialPar,Double)]] -> [(TrialPar,TrialPar)] -> TrialPar
+mlTrialSDs thepars betameans = avgit $ map f $ zip thepars betameans
+    where avgit :: [TrialPar] -> TrialPar
+          avgit bysess = map (sqrt . runStat (before meanF square)) $ transpose bysess
+          f :: ([(TrialPar,Double)], (TrialPar,TrialPar)) -> TrialPar
+          f (sessparlovs, (betas, alphas)) = 
+              runStatOnMany stdDevF 
+              $ for sessparlovs $ \(tpars, lov)-> map (\(p,b, a)-> p-(a+b*lov) ) $ zip3 tpars alphas betas
+
+mlPopMeans :: [(TrialPar,TrialPar)] -> TrialPar
+mlPopMeans betameans = runStatOnMany meanF $ map snd betameans
+mlPopSds betameans = runStatOnMany stdDevF $ map snd betameans
+mlBetaMeans betameans = runStatOnMany meanF $ map fst betameans
+mlBetaSds betameans = runStatOnMany stdDevF $ map fst betameans
+
+
+mlPars :: [[(U.Vector Double, Double)]] -> BigPar
+mlPars thedata = 
+  let trialpars = mlTrialPars thedata
+      mlSess = mlSessBetasMean trialpars 
+      popmeans = mlPopMeans mlSess
+      popsds = mlPopSds mlSess
+      betameans = mlBetaMeans mlSess
+      betasds = mlBetaSds mlSess
+      trialsds = mlTrialSDs trialpars mlSess
+      sessmeans = map snd mlSess
+      sessbetas = map fst mlSess 
+  in ((map newParam $ zip popmeans popsds, map newParam trialsds, map newParam $ zip betameans betasds), 
+               map newParam sessmeans, map newParam sessbetas, map (map (newParam . fst)) trialpars)
+
 priorSamplerG :: Int -> [Int] -> Sampler BigPar
 priorSamplerG nsess ntrialsPerSess= 
     let k = 1.01 in 
@@ -252,10 +309,10 @@ main3 = do
   --putStrLn $ "droping "++show dropn
   (concat -> spikes, 
    concat -> running, 
-   concat -> sess, 
+   concat . take 2 -> sess, 
    concat -> approachLoV) <- fmap unzip4 $ manySessionData $ do
            spikes <-  map fst `fmap` events "spike" ()
-           running <- durations "running" ()
+           running <- take 6 `fmap` durations "running" ()
            modNm <- durations "moduleName" "foo"
            approachLoV <- extendDur 1 `fmap` durations "approachLoV" (1::Double)
            sess <- sessionDur
@@ -281,10 +338,10 @@ main3 = do
                         $ map (uncurry likelihoodH1) 
                         $ zip2d (map (map fst) thedata) 
                                 (map ( map unP ) $ fth4 pars)
-  inits <- fmap (filter acceptInit) 
+  {-inits <- fmap (filter acceptInit) 
            $ runSamplerIO 
            $ priorSamplerG (length sess) 
-                           (map (length . (`during` running) . (:[])) sess)
+                           (map (length . (`during` running) . (:[])) sess) -}
 
   {-let all_lhs =     map (uncurry likelihoodH1) 
                         $ zip2d (map (map fst) thedata) 
@@ -293,12 +350,22 @@ main3 = do
 
   print $ take 1 $ map (take 1) thedata
 -}
+  let inits = [mlPars thedata]
+
   writeFile (filenm++"_parnames.mcmc") $ show parNames 
                             -- , "trialRateSD", "tau", "baseline", "t0"]
   --inPar nthreads $ \threadn-> do
+
+  putStrLn "fitting trial pars"
+
+
+
   do
+    print $ head $ head $ fth4 $ head inits
+
     let baymarkov = Mrkv (gibbsSF thedata) (head inits) id
-    print2 "initials: " $ ofInterest (head inits) 
+    putStrLn "initials: " 
+    mapM print $ zip parNames $ ofInterest (head inits)
     --print2 "spikes: " $ thespikes !!0 !!0
     --print2 "pars: " (head $ head $ trd3 $ inits!!threadn)
     --print2 "r(4) = " $ rFromPars (head $ head $ trd3 $ inits!!threadn) 1

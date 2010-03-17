@@ -60,7 +60,10 @@ fitG' f initsam sig@(Signal t1 t2 dt arr Eq) =
           inits <- initsam
           return $ fitG1 f inits sig
         manyRes = catMaybes $ sampleN 10 fitsam
-    in minimumBy (comparing trd3) manyRes
+        manyManyRes = if null manyRes
+                         then catMaybes $ sampleN 100 fitsam
+                         else manyRes
+    in minimumBy (comparing trd3) manyManyRes
 fitG' _ _ (ConstSig _) = error $ "fitG': constsig"
 fitG' f inits sig = fitG' f inits $ forceSigEq sig
 
