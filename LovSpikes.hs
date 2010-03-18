@@ -173,11 +173,16 @@ mapM2 f xs ys = mapM (uncurry f) $ zip xs ys
 trialParSampler = uniform 0.1 1 >>= \t1 -> 
                   return [100, 5, t1, 0.5, 2, 0.1]
 
+penalty [amp, t0, tau1, tau2, tau3, pslow] 
+    | tau1 < 1e-2 = 1000000*abs (1e-2 - tau1)
+    | otherwise = 0
+                                             
+
 mlTrialPars :: [[(U.Vector Double, Double)]] -> [[(TrialPar, Double)]]
 mlTrialPars thedata = for2 thedata f
     where f (spks, lov) = 
               let histo = head $ histManyOver [((0,6),())] 0.05 $ map (flip (,) ()) $ U.toList spks
-                  (pars, _, err) = fitG' (rFromPars) trialParSampler (const 0) histo
+                  (pars, _, err) = fitG' (rFromPars) trialParSampler penalty histo
               in (pars, lov)
 
 --err in range 4000-17000
@@ -201,14 +206,24 @@ mlSessBetasMean thepars = map sessf thepars
                   --foo = transpose $ map fst sdata
               in unzip $ runStatOnMany regressF $ sdata' -}
 
-mlTrialSDs :: [[(TrialPar,Double)]] -> [(TrialPar,TrialPar)] -> TrialPar
+{-mlTrialSDs :: [[(TrialPar,Double)]] -> [(TrialPar,TrialPar)] -> TrialPar
 mlTrialSDs thepars betameans = avgit $ map f $ zip thepars betameans
     where avgit :: [TrialPar] -> TrialPar
-          avgit bysess = map (sqrt . runStat (before meanF square)) $ bysess
+          avgit bysess = map (sqrt . runStat (before meanF square)) $ transpose bysess
           f :: ([(TrialPar,Double)], (TrialPar,TrialPar)) -> TrialPar
           f (sessparlovs, (betas, alphas)) = 
               map (runStat stdDevF)
-              $ for sessparlovs $ \(tpars, lov)-> map (\(p,b, a)-> p-(a+b*lov) ) $ zip3 tpars alphas betas
+              $ for sessparlovs $ \(tpars, lov)-> map (\(p,b, a)-> p-(a+b*lov) ) $ zip3 tpars alphas betas -}
+
+mlTrialSDs :: [[(TrialPar,Double)]] -> [(TrialPar,TrialPar)] -> TrialPar
+mlTrialSDs thepars betameans = avgit $ map f $ zip thepars betameans
+    where avgit :: [TrialPar] -> TrialPar
+          avgit bysess = map (sqrt . runStat (before meanF square)) $ transpose bysess
+          f :: ([(TrialPar,Double)], (TrialPar,TrialPar)) -> TrialPar
+          f (trialparlovs, (betas, alphas)) = 
+              map (runStat stdDevF) $ transpose 
+              $ for trialparlovs $ \(tpars, lov)-> map (\(p,b,a)-> p-(a+b*lov) ) $ zip3 tpars betas alphas
+
 
 mlPopMeans :: [(TrialPar,TrialPar)] -> TrialPar
 mlPopMeans betameans = map (runStat meanF) $ transpose $ map snd betameans
@@ -321,10 +336,10 @@ main3 = do
   --putStrLn $ "droping "++show dropn
   (concat -> spikes, 
    concat -> running, 
-   concat . take 2 -> sess, 
+   concat . take 3 -> sess, 
    concat -> approachLoV) <- fmap unzip4 $ manySessionData $ do
            spikes <-  map fst `fmap` events "spike" ()
-           running <- take 3 `fmap` durations "running" ()
+           running <- take 10 `fmap` durations "running" ()
            modNm <- durations "moduleName" "foo"
            approachLoV <- extendDur 1 `fmap` durations "approachLoV" (1::Double)
            sess <- sessionDur
