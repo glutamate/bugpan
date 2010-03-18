@@ -15,11 +15,14 @@
 >> everywhere oneStdDur = take 1 $ drop 1 stdDur
 >> aroundHit = fromto 4.5 5.5
 >> pos = \x -> if x >0 then x else 0
->> everywhere fitfalpha [t0, tau, amp, bl] x = pos(-((x-t0)/tau) * amp * exp(1 + (x-t0)/tau))+bl
+>> everywhere alphaf t0 tau amp x = pos(-((x-t0)/tau) * amp * exp(1 + (x-t0)/tau))
+>> everywhere fitfalpha2 [t0, tau1, amp1, tau2, amp2] x = alphaf t0 tau1 amp1 x + alphaf t0 tau2 amp2 x
+>> everywhere fitfalpha1 [t0, tau1, amp1] x = alphaf t0 tau1 amp1 x 
 >> everywhere fitf1 [t0, amp, t1, t2, t3, pslow, bl] t = let x = -(t-t0) in pos(amp*(1-exp(-x/t1))*((1-pslow)*exp(-x/t2)+pslow*exp(-x/t3)))+bl
 
 >> everywhere rateSig pars = fillSig 0 6 0.0005 $ fitf1 pars
 
 >> fitinit = uniform 0.1 1 >>= \t1 -> return [5, 100, t1, 0.5, 2, 0.1, 0.1]
-
+>> fitinitalpha1 = return [5, 0.13, 186] :: Sampler [Double]
+>> fitinitalpha2 = return [5, 0.13, 186, 1, 50]  :: Sampler [Double]
 

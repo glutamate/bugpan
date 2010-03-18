@@ -12,7 +12,7 @@
 >>        (C (XRange 0.005 0.055 $ XTics [0.01, 0.01, 0.05] $ Points [PointType 7, PointSize 0.4]  $ jitterxs 0.001 $ scatter $ zipD (contains spikes $ during longNotDisplaced approachLoV) nspikes) :||: 
 >>         D (XRange 0.005 0.055 $ XTics [0.01, 0.01, 0.05] $ Points [PointType 7, PointSize 0.3] $ jitterxs 0.002 $ scatter $ zipD (contains spikes $ during longNotDisplaced approachLoV) peakrate))
 
->> plot $ (lovStr 40, during dur35 $ shist 40) :+: (lovStr 20, during dur35 $shist 20) :+: (lovStr 10, during dur35 $shist 10) :+: thefit 10 :+: thefit 20 :+: thefit 40
+%>> plot $ (lovStr 40, during dur35 $ shist 40) :+: (lovStr 20, during dur35 $shist 20) :+: (lovStr 10, during dur35 $shist 10) :+: thefit 10 :+: thefit 20 :+: thefit 40
 
 \textbf{Figure 2}. A, recorded extracellular voltage, spike detection
 threshold and detected spikes. B, Spike event histogram for approaches

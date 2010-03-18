@@ -26,7 +26,7 @@
 
 Mechanical reasoning removes ambiguity and thus allows ideas to be
 formulated and communicated efficiently and for inferences to be
-scrutinized. Consequently, formal languages and calculi have had a
+scrutinised. Consequently, formal languages and calculi have had a
 profound impact both on mathematics and the natural sciences. As
 examples we point to Leibniz's infinitesimals, vector notation in
 electromagnetism and Frege's first-order logic. These languages are
@@ -45,9 +45,9 @@ formalisms to describe how evidence for or against these models is
 obtained and evaluated. A more explicit approach to experimentation
 could facilitate replication and meta-analysis, permit a better
 understanding of apparent inconsistencies between studies and a
-clearer formulation of what constitutes sound scientific practices.
+clearer formulation of what constitutes sound scientific practice.
 Here, we propose a calculus of physiological evidence that can
-describe an experiment such that it can be unambigorously replicated
+describe an experiment such that it can be unambiuously replicated
 and be inspected to certify whether analysis procedures are
 applicable. This framework does not describe the physical components
 of an animal; there are no concepts of organ systems, cells or
@@ -59,9 +59,12 @@ automated equipment, experiments can be seen as \emph{programs} that
 manipulate and observe the real world. This definition suggests that
 experiment definitions must resemble programming languages, and that a
 referentially transparent calculus of experiments could come from
-programming language theory. We combine observations defined in such a
-language with hierarchical bayesian models that form a powerful
-framework for biological inference rarely used in physiology.
+programming language theory. An elegant and declarative (\emph{what}, not
+\emph{how}) approch to effectful programing is realised in Functional
+Reactive Programming \citep[FRP;][]{Elliott1997, Nilsson2002}; we
+combine observations defined in such a language with hierarchical
+bayesian models, a powerful framework for biological inference rarely
+used in physiology.
 
 We use a calculus of physiological evidence based on FRP to perform a
 non-trivial experiment in \emph{in vivo} insect neurophysiology. The
@@ -77,7 +80,7 @@ locust looming detection system is efficient in discriminating objects
 that are on collision course from those that are on a non-intercepting
 trajectory. We show that this is the case and that the precision of
 the looming detector is influenced by the approach velocity. The
-definitions of these experiments and the data analysis procedure is
+definitions of these experiments and the data analysis procedure are
 contained within the main sections of this paper in a handful of
 equations.
 
@@ -93,22 +96,22 @@ conductances or fusion pore dilations. Time must have a priviliged
 role in accounting for physiological evidence, although it is used to
 index many different things.
 
-Functional Reactive Programming \citep[FRP;][]{Elliott1997,
-  Nilsson2002} recognizes the essential role time also plays in
-certain computer programs, including animations, robotics and physical
-simulations. FRP introduces two fundamental concepts to place
-information in a temporal context: Signals, which represent
-continuously varying quantities, and events representing distinct
-occurances. Programs writen in a such a language .. takes whole time
-as an input (Henrik had something that sounds good here.)... Here, we
-show that a language based on FRP can capture many aspects of
-experimentation and analysis. 
--Types introduced by FRP cover the kinds of evidence (define ``reactive types'')
--how to calculate: signal trnaformers and event detectors
--observe from real world 
--statistical inference. 
+Functional Reactive Programming is a family of programming languages
+built for computer programs where time also plays an essential role,
+such as animations, robotics and physical simulations. FRP introduces
+two abstract concepts to place information in a temporal context:
+Signals, which represent continuously varying quantities, and events
+representing distinct occurances. Programs writen in a such a language
+.. takes whole time as an input (Henrik had something that sounds good
+here.)... Here, we show that a language based on FRP can capture many
+aspects of experimentation and analysis in physiology. The types
+introduced by FRP - signals, events - present a flexible scheme for
+representing concrete physiological evidence. The ``functional''
+aspect of FRP define analysis procedures such as signal transformers
+and event detectors. Finally, we show how this framework ties in with
+inference in hierarchical probabilistic models.
 
-\subsection*{Reactive Types}
+\subsection*{Types}
 
 The observation, analysis and simulation of signals are essential to
 physiology, and also forms the basis of the bugpan formalism. In
@@ -140,6 +143,11 @@ signal amplitude at that time-point. Some events may not have a value
 of interest to associate with the timepoint at which it occured, in
 which case we can use the unit type |()| which has only one element
 (that is, no information).
+
+To construct events from signals, we take a predicate on
+the instantaneous values of the signal and generate an event whenever
+the predicate becomes true using the |??| operator (|?? ::
+(alpha->Bool) -> Signal alpha -> Event alpha|).
 
 .... How shall we represent such a summary
 statistic? It holds one value that pertains to a period of time, in
@@ -230,7 +238,7 @@ durations, events: lists
 
 more examples
 
-\subsection*{Observing reactive values}
+\subsection*{Observing signals and events}
 
 In the previous examples, signals, events and durations exist as
 purely mathematical objects.
@@ -293,30 +301,35 @@ information observed.
 
 \section*{Results}
 
-In order to define inputs, outputs and analyses of a physiological
-experiement, at least the following operations on signals are
-necessary:
-\begin{enumerate}
-\item Directly observation of signals from electrodes or amplifiers
-\item Construction of signals for stimulation
-\item Application of signal transformations to existing signals
-\end{enumerate}
+Although every mobile species can benefit from a mechanism for
+detecting and moving away from obstacles and predators, the need for a
+collision avoidance system is particularly acute in social animals. A
+common component in such systems is a detector for looming objects. In
+locusts, a single neuron in each brain hemisphere, the Lobular Giant
+Movement Detector, responds preferentially to looming stimuli
+(REFS). The response of is known to be invariant to manipulations of
+the looming stimulus; for instance, a key property, the time of the
+peak firing rate with respect to the retinal angle of the looming
+stimulus, is insensitive to the colour, texture, size, velocity and
+azimuth of the approaching object when averaged over several
+approaches (gabbinai). However, the reliability of the looming
+detector is not well understood. For instance, the amount and origin
+of variability in the response to repeated approaches of identical
+objects is important for the animal behaviour (ref?). In addition, a
+looming detector must be able to discriminate objects that are on
+collision course, but the efficiency of the LGMD in doing so has not
+been quantified. 
 
-
-
-..
-
-Thus, to scale |rawVoltage| by, say, a factor of 0.01
-\begin{code}
-scaledVoltage = smap (\v->0.01*v) rawVoltage
-\end{code}
-
-However, in this paper we are primarily concerned with visual stimuli
-consisting of animations of primitive geometric shapes. Since signals
-are entirely polymorphic containers, they can carry not just numeric
-values but also shapes if we have a suitable data representation for
-them. (in fact, FRP was invented to compose reactive animations). Say
-that the function
+We constructed several experiments in the calculus of physiological
+evidence to address these questions. Initially, we recorded the
+response to identical objects approaching with different velcities;
+the visual stimuli were later modified to distinguish looming from
+nearly-looming objects. These experiments all involved visual stimuli
+consisting of animations of primitive three-dimensional geometric
+shapes. Since signals are entirely polymorphic containers, they can
+carry not just numeric values but also shapes if we have a suitable
+data representation for them. (in fact, FRP was invented to compose
+reactive animations). Say that the function
 \begin{code}
 cube l
 \end{code}
@@ -335,11 +348,10 @@ green g and blue b. Additional constructors can be introduced for more
 complex stimuli, but these are sufficient for the experiments reported
 here. We aim to show a cube of side length l approaching the viewer
 with constant velocity v to produce the characteristic looming
-response in the locust DCMD neuron. We will construct the signal of
+response in the locust. We will construct the signal of
 shapes representing this animation and then connect it to a suitable
 signal sink. First, we calculate the time-varying distance from the
 observer to the cube in real-world coordinates:
-
 \begin{code}
 distance = sopen v * <: seconds :> - 5 sclose 
 \end{code}
@@ -352,6 +364,35 @@ loomingSquare =
                    (translate  (0,0, <: distance :> ) 
                                (cube l)) sclose
 \end{code}
+
+|loomingSquare| is a faithful animation of an object approaching the
+origin, but it differs from conventional protocols for stimulating the
+DCMD in that the object passes through the observer after
+collision. For reasons currently beyond the understanding of the first
+author of this (somewhat incomplete) manuscript, it is common to
+freeze the object as it reaches the plane of the surface onto which
+the animation is projected (Ref). To achieve this effect, first we
+define an event for the collision of the object and the screen
+
+\begin{code}
+hit = (\z->z<zscreen) ?? distance
+\end{code}
+We would like to create a new signal that changes its behaviour when
+the hit event occurs. Although in this case such an effect can be
+achieved by a conditional expression, the switch expression from FRP
+is a more general and powerful solution to this problem. Switch
+creates a new signal by selecting from a list of signals depending on
+which of several events occurred last.
+
+\begin{code}
+distance' = switch {hit ~> \ (thit, zhit) -> sopen zhit sclose } distance 
+\end{code}
+This statement creates a new signal |distance'| which is identical to
+the |distance| signal until an occurrence of a |hit| event, at which
+point a new signal can be calculated as a function of the time and the
+tag of the event occurrence. In this case, a signal with the constant
+value $z_{hit}$ (which equals $z_{screen}$) is the new form of distance'.
+
 Finally, loomingSquare is connected to a screen signal sink that
 represents an abstract visual display unit capable of projecting
 three-dimensional shapes onto a two-dimensional surface.
@@ -363,50 +404,29 @@ Here, the screen sink is not parametrized, but for a more flexible
 description language it could be configured with the background colour
 and the viewing angle.
 
-The definitions of loomingSquare and rawVoltage together constitute a
-simple measurement of the response of an external system to a
-controlled stimulus. In the case where rawVoltage holds an
-extracellular nerve recording, the voltage trace itself is likely to
-be of less interest than the timing of action potentials in the
-nerve. 
+explain runnign this multiple times.
 
-....
+refer to figure 1 here.
 
-
-To construct events from signals, we take a predicate on
-the instantaneous values of the signal and generate an event whenever
-the predicate becomes true using the |??| operator (|?? ::
-(alpha->Bool) -> Signal alpha -> Event alpha|).
-
-The simplest method for detecting spikes from a raw voltage trace is
-to search for threshold crossings, which works well in practice for
-calculating DCMD activity from recordings of the locust
-connectives. If the threshold voltage for spike detection is |vth|, we
-can define the event |spike| by
+In addition to producing the visual animation depicting a looming
+stimulus, we must also record its neural response. The LGMD reliably
+activates the descending contralateral movement detector (DCMD) that
+can be recorded extracellularly from the connectives. ...
 \begin{code}
-spike = (\v->v>vth) ?? scaledVoltage
+voltage <* ADC (0, 20000)
+\end{code}
+The simplest method for detecting spikes from a raw
+voltage trace is to search for threshold crossings, which works well
+in practice for calculating DCMD activity from recordings of the
+locust connectives. If the threshold voltage for spike detection is
+|vth|, we can define the event |spike| by
+\begin{code}
+spike = (\v->v>vth) ?? voltage
 \end{code}
 
--spell out what this creates. tag?
+fig 1: spikes and ecvoltage
 
-These signals and events define a unitary experiment (or a trial) that
-can be repeated several times in order to characterise response
-variability. As an outcome of the trial we may be satisfied with spike
-timings; on the other hand, it may be convenient to focus on a summary
-of the |spike| event such as the peak rate or the total number of
-spikes in the approach. 
-
-
-... 
-define duration 
-...
-
-
-Unlike with signals and events, we have not found a need for any
-special syntax to construct durations over the generic list (cons and
-nil) and pair (,) constructor operations. In addition, it is useful to
-have access to a duration |running| tagged with the unit type that
-signifies when a trial has been running.
+spike time histograms
 
 In order to create a duration tagged with the number of spikes during
 each trial, for every element in the |running| duration, we filter the
@@ -428,34 +448,6 @@ between = \t1 -> \t2 -> \t -> t>t1 && t<t2
 \end{code}
 and the standard list-processing functions |map|, |filter| and |length|.
 
-|loomingSquare| is a faithful animation of an object approaching the
-origin, but it differs from conventional protocols for stimulating the
-DCMD in that the object passes through the observer after
-collision. Because ... it is common to freeze the object as it reaches
-the plane of the surface onto which the animation is projected. To
-achieve this effect, first we define an event for the collision of the
-object and the screen
-
-\begin{code}
-hit = (\z->z<zscreen) ?? distance
-\end{code}
-We would like to create a new signal that changes its behaviour when
-the hit event occurs. Although in this case such an effect can be
-achieved by a conditional expression, the switch expression from FRP
-is a more general and powerful solution to this problem. Switch
-creates a new signal by selecting from a list of signals depending on
-which of several events occurred last.
-
-\begin{code}
-distance' = switch {hit ~> \ (thit, zhit) -> sopen zhit sclose } distance 
-\end{code}
-This statement creates a new signal |distance'| which is identical to
-the |distance| signal until an occurrence of a |hit| event, at which
-point a new signal can be calculated as a function of the time and the
-tag of the event occurrence. In this case, a signal with the constant
-value $z_{hit}$ (which equals $z_{screen}$) is the new form of distance'.
-
-run experiment on locusts...
 
 The spike count histogram, ie the average of |sopen length (filter
 (between <: delay seconds:> <: seconds:> . fst) spikes) sclose| for a
@@ -642,15 +634,15 @@ computer.
 
 \subsection*{Statistical analysis}
 
-metropolis-within-gibbs sampler, proposal: gaussian tuned to 25\% acceptance
-rate. non-informative improper priors.
+metropolis-within-gibbs sampler, proposal: gaussian tuned to 15-40\% acceptance
+rate. Uniform priors for mean and variance components. 
 
 \bibliographystyle{apalike}
 \bibliography{paper}
 
-\includepdf[pages=-]{Figure.pdf}
-
-
+\includepdf[pages=-]{Figure1.pdf}
+\includepdf[pages=-]{Figure2.pdf}
+\includepdf[pages=-]{Figure3.pdf}
 \end{document}
  
 

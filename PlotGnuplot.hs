@@ -378,6 +378,13 @@ instance PlotWithGnuplot a => PlotWithGnuplot (Boxes a) where
       px <- multiPlot r x
       return $ map (\(r', pls) -> (r', setWith "boxes" pls)) px
 
+data GnuplotTest = GnuplotTest
+
+instance PlotWithGnuplot (GnuplotTest) where
+    multiPlot r _ = do
+      return $ [(r, [TopLevelGnuplotCmd "test" ""])]
+
+
 data Margin a = Margin Double Double Double Double a
 data XRange a = XRange Double Double a
 data YRange a = YRange Double Double a

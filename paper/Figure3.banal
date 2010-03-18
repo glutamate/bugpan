@@ -8,7 +8,7 @@
 >> simEvents = simulateInhomogeneousPoisson fitpars rateSig
 >> simhists = histManyOver fitpars 0.05 simEvents
 >> simvar = varianceSigs $ alignBy sigStart simhists
->> fitpars1 = snd . head $ fitG fitf1 fitinit $ shist 40
+>> fitpars1 = snd . head $ fitG fitfalpha2 fitinitalpha2 $ shist 40
 
 %> show simvar
 
@@ -17,8 +17,12 @@
 >>        ((C $ fitS fitf1 fitinit $ alignBy sigStart $  during stdDur shistMany) :||:
 >>         (D $ simvar))
 
+%>> plot $ shist 40 :+: thefit
+
 %> plot [rateSig $ snd . head $ fitpars]
+
 %> show $ take 3 fitpars1
+
 %> show $ drop 3 fitpars1
 
 %> show simEvents
