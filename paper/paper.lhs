@@ -108,13 +108,16 @@ aspects of experimentation and analysis in physiology. The types
 introduced by FRP - signals, events - present a flexible scheme for
 representing concrete physiological evidence. The ``functional''
 aspect of FRP define analysis procedures such as signal transformers
-and event detectors. Finally, we show how this framework ties in with
-inference in hierarchical probabilistic models.
+and event detectors. Finally, we show how inference within this
+framework exploits the hierarchical structure of the observations
 
 \subsection*{Types}
 
+two types for continuously changing and discrete occurences. add a
+third: duration. Values of observations.
+
 The observation, analysis and simulation of signals are essential to
-physiology, and also forms the basis of the bugpan formalism. In
+physiology, and also forms the basis of this calculus. In
 physiology, observed signals are usually time-varying scalar
 quantities such as membrane voltages or muscle force, but there are
 also examples of non-scalar signals such as the two- or three
@@ -133,37 +136,33 @@ Unlike signals such as an extracellular potential or a membrane
 conductance, some observed quantities such as action potentials are
 discrete occurrences and are not associated with a new value at every
 timepoint. To represent this qualitatively different class of
-observations, we introduce events as the type |Event alpha = [Time
-  times alpha]|. Like signals, events are a higher-order type that can
-be instantiated for any type a, such that a event of a is a list of
-occurrences at specific timepoints, each with an associated value. For
-example, an event could be constructed from a scalar signal such that
-the time of the largest amplitude of a signal was associated with the
-signal amplitude at that time-point. Some events may not have a value
-of interest to associate with the timepoint at which it occured, in
-which case we can use the unit type |()| which has only one element
-(that is, no information).
+observations, we introduce events, defined as a set of occurrences at
+specific timepoints, each with an associated value in a type |alpha|:
+|Event alpha = {Time times alpha}|. For example, an event could be
+constructed from a scalar signal such that the time of the largest
+amplitude of a signal was associated with the signal amplitude at that
+time-point. Some events may not have a value of interest to associate
+with the timepoint at which it occured, in which case we can use the
+unit type |()| which has only one element (that is, no information).
 
-To construct events from signals, we take a predicate on
-the instantaneous values of the signal and generate an event whenever
-the predicate becomes true using the |??| operator (|?? ::
-(alpha->Bool) -> Signal alpha -> Event alpha|).
-
-.... How shall we represent such a summary
-statistic? It holds one value that pertains to a period of time, in
-this case from the beginning of the trials until the collision
-time. Signals (which change from one timepoint to another) and events
-(pertaining only to an instant) are unsuitable for representing this
-information. What is needed is a type for representing values
-associated with temporal extents. We define a duration of type |alpha|
-as a list of pairs, of which the second component is a value of
-|alpha| and the first component is itself a pair of a start time and
-an end time:
+A third kind of information describes the properties of whole
+``trials'', i.e. periods during which the system was exposed to a
+controlled stimulus. Signals (which change from one timepoint to
+another) and events (pertaining only to an instant) are unsuitable for
+representing this information. What is needed is a type for
+representing values associated with temporal extents. We define a
+duration of type |alpha| as a set of triples, of which the first two
+components denote  a start time and an end time. The last component is
+again a value of any type |alpha|:
 \begin{code}
-Duration alpha = [Time times Time times alpha]
+Duration alpha = {Time times Time times alpha}
 \end{code}
+Durations are here used for information about whole trial, but could
+also be useful as observations in their own right, such as open times
+of individual ion channels, periods in which activity of a system
+exceeds a set threshold (e.g bursts).
 
-...  These simple, yet flexible, types suffice to represent many
+These simple, yet flexible, types suffice to represent many
 physiological quantities: \vskip1ex
 \begin{tabular}{l  l}
 \hline
@@ -184,7 +183,8 @@ physiological quantities: \vskip1ex
 \end{tabular}
 \vskip1ex 
 
-some directly observed, some inferred. How to infer them?
+Some of these values are directly observed, while others are infered
+from other values. How to infer them? How to observe?
 
 \subsection*{Calculating with signals and events}
 
@@ -197,13 +197,12 @@ statistics as necessary. A combination of pure functions that have
 no side effects and a construct to form signals based on an expression
 for their instantaneous value allows us to build signal transformers.
 
-
-The lambda calculus \citep{Church1941} is the best understood
-framework for referentially transparent computation, based entirely on
-evaluating functions in the purely mathematical sense, i.e. as maps
-between sets. The lambda calculus allows the use of functions as first
-class entities: that is, they can be referenced by variables and
-passed as arguments to other functions (which then become higher-order
+The lambda calculus \citep{Church1941} is a formal language for
+referentially transparent computation, based entirely on evaluating
+functions in the purely mathematical sense, i.e. as maps between
+sets. The lambda calculus allows the use of functions as first class
+entities: that is, they can be referenced by variables and passed as
+arguments to other functions (which then become higher-order
 functions). These properties together mean that the lambda calculus
 combines verifiable correctness with a high level of abstraction,
 leading to programs that are in practice more concise (ref). The
@@ -215,58 +214,68 @@ quantum mechanics \citep{Karczmarczuk2003}, evolutionary biochemistry
 base types such as integers, real numbers, or compound types such as
 vectors, lists, functions or pairs.
 
-Here, we present a ....  Let the construct |sopen e sclose| create a
-signal with the value of the expression e at every time point, and |<:
-s :>| yield the current value of the signal s in the temporal context
-created by the surrounding |sopen ... sclose| braces. As in the lambda
-calculus, functions are first class and can be passed as arguments to
-other functions; |\x->e| denotes the function with argument |x| and
-body |e|. For instance, the function smap defined as
+Here, we present a concrete syntax for a formal language, based on the
+lambda calculus and extended with first-class signals and events. Let
+the construct |sopen e sclose| create a signal with the value of the
+expression e at every time point, and |<: s :>| yield the current
+value of the signal s in the temporal context created by the
+surrounding |sopen ... sclose| braces. As in the lambda calculus,
+functions are first class and can be passed as arguments to other
+functions; |\x->e| denotes the function with argument |x| and body
+|e|. For instance, the function smap defined as
 \begin{code}
 smap = \f -> \s -> sopen f <: s :> sclose
 \end{code}
-transforms a signal of |alpha| s into a signal of |beta| by apply the
-function |f| of type |alpha → beta| to the value at every
-timepoint. 
+transforms a signal of |alpha| s into a signal of |beta| by applying
+the function |f| of type |alpha → beta| to the value of the signal at
+every timepoint.
 
-delay, D, 
+Further primitives are needed to form signals that depend on the
+history of other signals. For any signal |s|, the expression |delay s|
+denotes the signal that is delayed by a small amount of time (in
+practice, one time step). The differential operator |D|, which can
+also be used to pattern match on derivatives in signals (e.g., |D s =
+k*s|) can be used for differentiating and solving differential
+equation. However, these constructs will not be used in this paper.
 
-event constructor 
+To construct events from signals, we take a predicate on the
+instantaneous values of the signal and generate an event whenever the
+predicate becomes true using the |??| operator (|?? :: (alpha->Bool)
+-> Signal alpha -> Event alpha|).
+
 emap
-
-durations, events: lists
 
 more examples
 
 \subsection*{Observing signals and events}
 
 In the previous examples, signals, events and durations exist as
-purely mathematical objects.
-
-we introduce the notion of signal sources,
-which represent the unprocessed/raw observations available in an
-experiment. 
+purely mathematical objects. In order to describe experiments, it must
+also be possible to observe these values from real-world systems, and
+to create controlled stimuli. For this purpose, we introduce
+\emph{sources} and \emph{sinks} that bridge variables in purely
+mathematical equations with the physical world.
 
 Using the construct
 \begin{code}
 identifier <* signal source
 \end{code}
-we bind the signal yielded by the signal source to the variable
+we bind the signal yielded by a \emph{signal source} to the variable
 denoted by \emph{identifier}. This variable will hold the whole signal
 observed during the course of the experiment. The signal source
 binding construct allows us to formulate a simple experiment:
 \begin{code}
-voltage <* ADC (0, 20000)
+v <* ADC (0, 20000)
 \end{code}
 which describes the (unperturbed) observation of the voltage signal on
 channel 0 on an analog-to-digital converter at 20kHz sampling rate.
 
 In addition to making appropriate observations, an experiment may also
 involve a pertubation of the experimental preparation. To make a
-dynamic pertubation, we first need to be able to construct
-time-varying signals, for instance a sine wave. To build such a
-signal, we start with a clock signal that counts the number of seconds
-since the experiment started, which can be read from a clock source
+dynamic pertubation, we first construct time-varying signals as
+described above, for instance a sine wave. To build such a signal, we
+start with a clock signal that counts the number of seconds since the
+experiment started, which can be read from a clock source
 \begin{code}
 seconds <* clock ()
 \end{code}
@@ -285,12 +294,24 @@ digital-to-analog converter, we might write
 sineWave *> DAC (0, 20000)
 \end{code}
 
-Non-real signals: screen
-
-sources not restricted to signals. Events, random number generation.
+In the context of a physiology experiment, these declarations can for
+instance control the amount of current injected in a cell. In this
+paper, we will see how non-numeric signals and signal sinks can be
+used to control visual stimuli through a projection screen. In
+addition, sources and sinks are not restricted to signals. Random
+number generators are also difficult to describe as pure functions and
+expressions involving random numbers can break referentially
+transparency. We have thus implemented sources corresponding to common
+paramtric probability distributions.
 
 \subsection*{Probabilistic inference}
 
+nesting durations
+
+what is the hierarchical model
+
+how to learn parameters
+....
 But we also find that new analysis methods become feasible;
 for instance, having functions as first class entities makes it much
 simpler to directly represent probability distributions. We show how
@@ -599,6 +620,8 @@ and consistent units of measure \citep{Kennedy1997}; the absense of
 of these issues in relating atomic observations to parameter
 estimation and hypothesis testing, but not how those observations are
 obtained.
+
+relationship to automation.
 
 \section*{Methods}
 

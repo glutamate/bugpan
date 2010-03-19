@@ -1,7 +1,41 @@
 >> importBanal FigurePrelude
 
+>> swap = \(x,y)->(y,x)
+>> shiftxs = \xs vls -> map (\(x,y) -> (x+xs,y)) vls
+>> chn = \xs -> map swap $ histValues 50 xs
+>> lns = \pts -> Lines [] pts
+
 >> chain t0beta ../ml 0 t0beta 29 32 100
+>> chain ampbeta ../ml 0 ampbeta 29 32 100
+>> chain tau3beta ../ml 0 tau3beta 29 32 100
+>> chain tau3 ../ml 0 tau3 29 32 100
+>> chain tau1beta ../ml 0 tau1beta 29 32 100
+>> chain tau1 ../ml 0 tau1 29 32 100
+>> chain tau2beta ../ml 0 tau2beta 29 32 100
+>> chain tau2 ../ml 0 tau2 29 32 100
+>> chain pslowbeta ../ml 0 pslowbeta 29 32 100
+>> chain pslow ../ml 0 pslow 29 32 100
+>> chain t0 ../ml 0 t0 29 32 100
+>> chain amp ../ml 0 amp 29 32 100
 
-> plot $ (Lines [] $ histValues 50 t0beta) 
 
-> plot (Lines [] $ zip [(0::Double)..] t0beta)
+>> plot $ (lns $ chn $ zipWith (/) ampbeta amp) :+: 
+>>        (lns $ shiftxs 80 $ chn $ zipWith (/) t0beta t0) :+: 
+>>        (lns $ shiftxs 160 $ chn $ zipWith (/) tau1beta tau1) :+:
+>>        (lns $ shiftxs 240 $ chn $ zipWith (/) tau2beta tau2) :+:
+>>        (lns $ shiftxs 320 $ chn $ zipWith (/) tau3beta tau3) :+:
+>>        Lines [] [(1::Double, 0::Double), (399, 0)]
+
+%>>        (lns $ shiftxs 400 $ chn $ zipWith (/) pslowbeta pslow) :+: 
+
+
+Figure 4. Top, inferred probability distributions for $\beta$
+parameters for amplitude, $t_0$, $\tau_1$ $\tau_2$ $\tau_3$ and $\p_{slow}$.
+
+%> plot (lns $ shiftxs 100 $ chn $ zipWith (/) t0beta t0)
+
+%> plot (Lines [] $ zip [(0::Double)..] amp)
+
+%> plot (Lines [] $ zip [(0::Double)..] ampbeta)
+
+%> plot $ Lines [] $ zip [(0::Double)..] $ zipWith (/) ampbeta amp
