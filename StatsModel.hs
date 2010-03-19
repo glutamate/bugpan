@@ -22,7 +22,7 @@ import Math.Probably.FoldingStats
 import QueryPlots
 import QueryUtils hiding (groupBy)
 import Database
-import Data.Array.Vector 
+--import Data.Array.Vector 
 import qualified Data.Vector.Unboxed as U
 import Data.Binary
 import GHC.Conc
@@ -33,12 +33,26 @@ import Foreign.Storable
 import System.IO
 import qualified Data.ByteString.Lazy as L
 import qualified Data.Binary as B
+import System.Directory
 
 
 
 safeLoad :: Binary a => String -> IO [a]
 safeLoad file = C.catch (loadBinary file)
                         (\e->return $ const [] (e::C.SomeException))
+
+loadChain :: String -> String -> Int -> (Int,Int) -> Int -> IO [Double]
+loadChain nm parnm cnum (flo, fhi) thn = do
+  parstr <- readFile (nm++"_parnames.mcmc") 
+  let Just parIdx = fmap snd $ find ((==parnm) . fst) $ zip (read parstr) [0..]
+  xs <- forM [flo..fhi] $ \fnum-> do 
+          let file =(nm++"_chain"++show cnum++"_file"++show fnum++".mcmc")
+--          putStr $ file++" "
+          ifM (doesFileExist file ) 
+              (fmap (map (!!parIdx) . thin thn) $safeLoad file)             
+              (return [])
+  return $ concat xs
+
 
 writeInChunksK :: (Show a, Binary b) => String -> Int ->  (a->b) -> [a] -> IO ()
 writeInChunksK = writeInChunks' 0
@@ -59,15 +73,6 @@ writeInChunks = writeInChunks' 0
             let (out, rest) = splitAt chsize xs
             saveBinary (fnm++"_file"++(show counter)++".mcmc") out
             writeInChunks' (counter+1) fnm chsize rest
-    
-instance Binary a => Binary (Param a) where
-    put (Param j t cLH curW ini x) = 
-      put (j,t, cLH, curW, ini, x)
-    get = do
-      (j,t, cLH, curW, ini, x) <- get
-      return $ Param j t cLH curW ini x
-      
-
 
 mapMretLast :: Monad m => (a-> m b) -> [a] -> m a
 mapMretLast f [x] = f x >> return x
@@ -132,10 +137,10 @@ instance MutateGaussian a => MutateGaussian [a] where
     mutGaussAbs xs0 cv xs =  mapM (\(x0,x)-> mutGaussAbs x0 cv x) $ zip xs0 xs
     nearlyEq tol xs ys = length xs == length ys && (all (uncurry $ nearlyEq tol) $ zip xs ys )
 
-instance (MutateGaussian a, UA a )=> MutateGaussian (UArr a) where
+{-instance (MutateGaussian a, UA a )=> MutateGaussian (UArr a) where
     mutGauss cv xs = toU `fmap` mutGaussMany cv (fromU xs)
     mutGaussAbs x0 cv xs = toU `fmap` mutGaussAbs (fromU x0) cv (fromU xs)
-    nearlyEq tol xs ys = lengthU xs == lengthU ys && (allU (uncurryS $ nearlyEq tol) $ zipU xs ys )
+    nearlyEq tol xs ys = lengthU xs == lengthU ys && (allU (uncurryS $ nearlyEq tol) $ zipU xs ys ) -}
 
 instance (MutateGaussian a, U.Unbox a )=> MutateGaussian (U.Vector a) where
     mutGauss cv xs = U.fromList `fmap` mutGaussMany cv (U.toList xs)
@@ -165,8 +170,8 @@ instance (MutateGaussian a, MutateGaussian b, MutateGaussian c, MutateGaussian d
         liftM4 (,,,) (mutGaussAbs x0 cv x) (mutGaussAbs y0 cv y) (mutGaussAbs z0 cv z) (mutGaussAbs w0 cv w)
     nearlyEq t (x,y, z, w) (x1,y1, z1, w1) = nearlyEq t x x1 && nearlyEq t y y1 && nearlyEq t z z1 && nearlyEq t w w1
 
-instance ChopByDur (UArr Double) where
-    chopByDur durs arr = map (\((t1,t2),_)->filterU (\t->t>t1 && t<t2 ) arr) durs
+{-instance ChopByDur (UArr Double) where
+    chopByDur durs arr = map (\((t1,t2),_)->filterU (\t->t>t1 && t<t2 ) arr) durs-}
 
 instance ChopByDur (U.Vector Double) where
     chopByDur durs arr = map (\((t1,t2),_)->U.filter (\t->t>t1 && t<t2 ) arr) durs
@@ -175,9 +180,9 @@ instance ChopByDur (SV.Vector Double) where
     chopByDur durs arr = map (\((t1,t2),_)->SV.filter (\t->t>t1 && t<t2 ) arr) durs
 
 
-instance Shiftable (UArr Double) where
+{-instance Shiftable (UArr Double) where
     shift ts = mapU (+ts)
-    rebaseTime = undefined
+    rebaseTime = undefined-}
 
 instance Shiftable (U.Vector Double) where
     shift ts = U.map (+ts)

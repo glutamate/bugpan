@@ -1,0 +1,7 @@
+>> importBanal FigurePrelude
+
+>> chain t0beta ../ml 0 t0beta 29 32 100
+
+> plot $ (Lines [] $ histValues 50 t0beta) 
+
+> plot (Lines [] $ zip [(0::Double)..] t0beta)

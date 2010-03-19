@@ -18,12 +18,12 @@ Flag NoDaq
   Default:     False
 
 Library
-   Exposed-modules:  Query, QueryTypes, QueryUtils, Numbers, PlotGnuplot, EvalM, Database, HaskShapes, RandomSources, QueryPlots, Expr, ValueIO, HaskSyntaxUntyped, NewSignal, FitGnuplot
+   Exposed-modules:  Query, QueryTypes, QueryUtils, Numbers, PlotGnuplot, EvalM, Database, HaskShapes, RandomSources, QueryPlots, Expr, ValueIO, HaskSyntaxUntyped, NewSignal, FitGnuplot, StatsModel
    ghc-options:        -O2
    if flag(nodaq)
      ghc-options:        -DNODAQ
    other-modules:    Parse, Types,Eval, Traverse, Transform, PrettyPrint, BNFC.LexBugpan, BNFC.ParBugpan, BNFC.SkelBugpan,BNFC.PrintBugpan,BNFC.LayoutBugpan ,BNFC.ErrM,UnitTesting, BNFC.AbsBugpan,BuiltIn, TypeCheck, CompiledSrcsSinks
-   Build-depends:    tnutils, probably, process, directory, regex-posix, random, base, bytestring, binary, old-time, storablevector, mtl, data-binary-ieee754, uuid, mersenne-random, storable-tuple, hmatrix
+   Build-depends:    tnutils, probably, process, directory, regex-posix, random, base, bytestring, binary, old-time, storablevector, mtl, data-binary-ieee754, uuid, mersenne-random, storable-tuple, hmatrix, vector
 
 
 Executable bugsess   

@@ -81,6 +81,11 @@ quote = show
 histArr :: (Int, Int) -> [Int] -> UArray Int Double
 histArr bnds is = accumArray (+) 0 bnds [( i, 1) | i<-is, inRange bnds i]
 
+histValues :: Int -> [Double] -> [(Double,Double)]
+histValues nbins vls = 
+    let (hArr, lo, hi, binSize) = histList nbins vls
+    in zip [lo, lo+binSize..hi] hArr
+
 histList :: Int -> [Double] -> ([Double] , Double, Double, Double)
 histList _ [] = ([], 0, 0, 1)
 histList nbins vls = let lo = foldl1' min vls

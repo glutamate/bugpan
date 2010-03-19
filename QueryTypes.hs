@@ -52,6 +52,7 @@ import Text.Regex.Posix
 import Text.Printf
 import NewSignal
 --import Graphics.Rendering.HSparklines
+import System.Environment
 
 type Duration a = ((Double,Double),a)
 type Event a = (Double,a)
@@ -251,12 +252,12 @@ ask qx = do
   liftIO $ putStrLn $ qos
   return qos
 
-askForLiterate :: (QueryResult a, MonadIO m) => a -> StateT QState m ()
+askForLiterate :: (QueryResult a, MonadIO m) => a ->  m ()
 askForLiterate qx = do
-  modify (\s-> s { shArgs = "-litlatex" : shArgs s })
-  x <- qResThroughSession qx
-  args <- shArgs `fmap` get
-  str <- liftIO $ qReply x (args)
+--  modify (\s-> s { shArgs = "-litlatex" : shArgs s })
+--  x <- qResThroughSession qx
+  args <- liftIO $ getArgs -- shArgs `fmap` get
+  str <- liftIO $ qReply qx ("-litlatex" : args)
   --let str = unlines $ [s | QString s <- qos ]
   --liftIO $ putStr "askForLiterate"
   --liftIO $ putStrLn $ str

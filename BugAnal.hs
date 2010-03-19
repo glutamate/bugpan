@@ -67,6 +67,9 @@ mkAnal (('>':q):ss) =
                 let fnm = ensurePostfix ".banal" $ (words q1)!!1
                 lines <- fmap lines $ liftIO $ readFile fnm
                 mkAnal $ lines ++ rest),
+             ("chain" `isPrefixOf` (chomp q1), do
+                procChain (words q1)
+                mkAnal rest),
              ("t-test" `isPrefixOf` (chomp q1), do
                 procTtest (words q1) tablines
                 mkAnal rest),
@@ -132,6 +135,13 @@ tellNmsTys = do
                                                        (typeToProxyName $ unWrapT ty), ";"
                                                       ]
   tellEverywheres
+
+procChain [_, vname, cname, cnum, parnm, fstart, fstop, thinNum] = do
+  tell $ vname ++"<- loadChain "++unwords [show cname, show parnm, 
+                                           cnum, "("++fstart++","++fstop++")", 
+                                           thinNum]
+  return ()
+
 
 procTtest qs [tl1, tl2] = do
   let mfiltr = case qs of
@@ -329,6 +339,7 @@ writer s = do
   modimport "TNUtils"
   modimport "NewSignal"
   modimport "Control.Monad"
+  modimport "StatsModel"
   modimport "FitGnuplot"
   modimport "Math.Probably.FoldingStats"
   modimport "Math.Probably.Sampler"
