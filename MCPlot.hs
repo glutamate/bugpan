@@ -11,22 +11,12 @@ import Data.Maybe
 import Control.Monad
 import Math.Probably.FoldingStats
 import StatsModel
-import Text.Regex.Posix
 import PlotGnuplot
 import QueryPlots
 
-parseFileName :: String -> String -> Maybe (Int, Int)
-parseFileName setnm filenm = 
-    let mat = "^"++setnm++"_chain(.+)_file(.+).mcmc$" in -- [[mat, filenm]]
-    case filenm =~ mat of 
-      [[all, cnum, fnum]]-> liftM2 (,) (safeRead cnum) (safeRead fnum)
-      _ -> Nothing
 
-unparseFileName :: String -> Int -> Int -> String
-unparseFileName setnm cnum fnum = setnm++"_chain"++show cnum++"_file"++show fnum++".mcmc"
-
-tst :: Bool
-tst =  "foo_bar" =~ "foo_bar" 
+--tst :: Bool
+--tst =  "foo_bar" =~ "foo_bar" 
        
 
 
@@ -34,7 +24,7 @@ isLstDbls :: [Double] -> [Double]
 isLstDbls = id
 
 idx2 ix1 ix2 xs = (xs!!ix1, xs!!ix2)
-
+ 
 main = do
   args <- getArgs
   case length args of
@@ -48,9 +38,6 @@ help = do
   putStrLn "MCPlot {chain name} {parameter name}"
   putStrLn "MCPlot {chain name} {parameter name} {parameter name}" 
 
-getFiles nm = (catMaybes .
-               map (parseFileName nm) . 
-               filter (nm `isPrefixOf`)) `fmap` getDirectoryContents "."
 
 main0 = do
   nm:_ <- getArgs

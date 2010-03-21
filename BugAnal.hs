@@ -136,10 +136,10 @@ tellNmsTys = do
                                                       ]
   tellEverywheres
 
-procChain [_, vname, cname, cnum, parnm, fstart, fstop, thinNum] = do
+procChain [_, vname, cname, cnum, parnm, fstart, fstop] = do
   tell $ vname ++"<- loadChain "++unwords [show cname, show parnm, 
-                                           cnum, "("++fstart++","++fstop++")", 
-                                           thinNum]
+                                           cnum, "("++fstart++","++fstop++")" 
+                                           ]
   return ()
 
 

@@ -34,6 +34,24 @@ import System.IO
 import qualified Data.ByteString.Lazy as L
 import qualified Data.Binary as B
 import System.Directory
+import Text.Regex.Posix
+import Data.Maybe
+
+
+parseFileName :: String -> String -> Maybe (Int, Int)
+parseFileName setnm filenm = 
+    let mat = "^"++setnm++"_chain(.+)_file(.+).mcmc$" in -- [[mat, filenm]]
+    case filenm =~ mat of 
+      [[all, cnum, fnum]]-> liftM2 (,) (safeRead cnum) (safeRead fnum)
+      _ -> Nothing
+
+unparseFileName :: String -> Int -> Int -> String
+unparseFileName setnm cnum fnum = setnm++"_chain"++show cnum++"_file"++show fnum++".mcmc"
+
+
+getFiles nm = (catMaybes .
+               map (parseFileName nm) . 
+               filter (nm `isPrefixOf`)) `fmap` getDirectoryContents "."
 
 
 
@@ -41,15 +59,15 @@ safeLoad :: Binary a => String -> IO [a]
 safeLoad file = C.catch (loadBinary file)
                         (\e->return $ const [] (e::C.SomeException))
 
-loadChain :: String -> String -> Int -> (Int,Int) -> Int -> IO [Double]
-loadChain nm parnm cnum (flo, fhi) thn = do
+loadChain :: String -> String -> Int -> (Int,Int) -> IO [Double]
+loadChain nm parnm cnum (flo, fhi) = do
   parstr <- readFile (nm++"_parnames.mcmc") 
   let Just parIdx = fmap snd $ find ((==parnm) . fst) $ zip (read parstr) [0..]
   xs <- forM [flo..fhi] $ \fnum-> do 
           let file =(nm++"_chain"++show cnum++"_file"++show fnum++".mcmc")
 --          putStr $ file++" "
           ifM (doesFileExist file ) 
-              (fmap (map (!!parIdx) . thin thn) $safeLoad file)             
+              (fmap (map (!!parIdx)) $safeLoad file)             
               (return [])
   return $ concat xs
 
