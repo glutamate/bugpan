@@ -1,36 +1,38 @@
 >> importBanal FigurePrelude
 
 >> swap = \(x,y)->(y,x)
->> shiftxs = \xs vls -> map (\(x,y) -> (x+xs,y)) vls
->> chn = \xs -> map swap $ histValues 50 xs
->> lns = \pts -> Lines [] pts
+>> shiftxs = \xs vls -> map (\(x,y) -> (x,y+xs)) vls
+>> chn = \xs -> histValues 50 $ drop 5000 xs
+>> lns = \pts -> Lines [LineType 1, LineWidth 2] pts
 
->> chain t0beta ../ml 0 t0beta 29 32 100
->> chain ampbeta ../ml 0 ampbeta 29 32 100
->> chain tau3beta ../ml 0 tau3beta 29 32 100
->> chain tau3 ../ml 0 tau3 29 32 100
->> chain tau1beta ../ml 0 tau1beta 29 32 100
->> chain tau1 ../ml 0 tau1 29 32 100
->> chain tau2beta ../ml 0 tau2beta 29 32 100
->> chain tau2 ../ml 0 tau2 29 32 100
->> chain pslowbeta ../ml 0 pslowbeta 29 32 100
->> chain pslow ../ml 0 pslow 29 32 100
->> chain t0 ../ml 0 t0 29 32 100
->> chain amp ../ml 0 amp 29 32 100
-
+>> chain t0beta ../conmlthin 0 t0beta 0 0
+>> chain ampbeta ../conmlthin 0 ampbeta 0 0
+>> chain tau3beta ../conmlthin 0 tau3beta 0 0
+>> chain tau3 ../conmlthin 0 tau3 0 0
+>> chain tau1beta ../conmlthin 0 tau1beta 0 0
+>> chain tau1 ../conmlthin 0 tau1 0 0
+>> chain tau2beta ../conmlthin 0 tau2beta 0 0
+>> chain tau2 ../conmlthin 0 tau2 0 0
+>> chain pslowbeta ../conmlthin 0 pslowbeta 0 0
+>> chain pslow ../conmlthin 0 pslow 0 0
+>> chain t0 ../conmlthin 0 t0 0 0
+>> chain amp ../conmlthin 0 amp 0 0
 
 >> plot $ (lns $ chn $ zipWith (/) ampbeta amp) :+: 
->>        (lns $ shiftxs 80 $ chn $ zipWith (/) t0beta t0) :+: 
->>        (lns $ shiftxs 160 $ chn $ zipWith (/) tau1beta tau1) :+:
->>        (lns $ shiftxs 240 $ chn $ zipWith (/) tau2beta tau2) :+:
->>        (lns $ shiftxs 320 $ chn $ zipWith (/) tau3beta tau3) :+:
->>        Lines [] [(1::Double, 0::Double), (399, 0)]
+>>        (lns $ shiftxs 550 $ chn $ zipWith (/) t0beta (map (5-) t0)) :+: 
+>>        (lns $ shiftxs 1100 $ chn $ zipWith (/) tau1beta tau1) :+:
+>>        (lns $ shiftxs 1650 $ chn $ zipWith (/) tau2beta tau2) :+:
+>>        (lns $ shiftxs 2200 $ chn $ zipWith (/) tau3beta tau3) :+:
+>>        Lines [LineType 2, LineWidth 2, LineColor "black" ] [(0::Double, 0::Double), (0,2750)]
 
+%>>        (lns $ shiftxs 3500 $ chn $ zipWith (/) pslowbeta pslow) :+: 
 %>>        (lns $ shiftxs 400 $ chn $ zipWith (/) pslowbeta pslow) :+: 
 
+Figure 4. Top, inferred probability distributions for $\frac{\beta_{pop}}{\alpha_{pop}}$
+parameters for $A$, $t_0$, $\tau_1$ $\tau_2$ $\tau_3$ and (not) $p_{slow}$. 
+Note: simulated data!
 
-Figure 4. Top, inferred probability distributions for $\beta$
-parameters for amplitude, $t_0$, $\tau_1$ $\tau_2$ $\tau_3$ and $\p_{slow}$.
+% >> plot $ GnuplotTest
 
 %> plot (lns $ shiftxs 100 $ chn $ zipWith (/) t0beta t0)
 

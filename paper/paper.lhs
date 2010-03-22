@@ -17,7 +17,6 @@
 
 \subsection*{Alternative titles}
 \begin{description}
-\item Structure and Interpretation of Neural Physiology
 \item Functional reactivity as a calculus of physiological evidence
 \item A functional calculus of physiological evidence
 \item Structure and interpretation of physiological evidence
@@ -59,12 +58,14 @@ automated equipment, experiments can be seen as \emph{programs} that
 manipulate and observe the real world. This definition suggests that
 experiment definitions must resemble programming languages, and that a
 referentially transparent calculus of experiments could come from
-programming language theory. An elegant and declarative (\emph{what}, not
-\emph{how}) approch to effectful programing is realised in Functional
-Reactive Programming \citep[FRP;][]{Elliott1997, Nilsson2002}; we
-combine observations defined in such a language with hierarchical
-bayesian models, a powerful framework for biological inference rarely
-used in physiology.
+programming language theory. An elegant and declarative (\emph{what},
+not \emph{how}) approch to effectful programing is realised in
+Functional Reactive Programming \citep[FRP;][]{Elliott1997,
+  Nilsson2002}; we show that the semantics of FRP provide an structure
+for physiological evidence. Observations defined in such a language
+are given a interpretation in hierarchical bayesian models, a powerful
+framework for biological inference rarely used in physiology (but see
+REF).
 
 We use a calculus of physiological evidence based on FRP to perform a
 non-trivial experiment in \emph{in vivo} insect neurophysiology. The
@@ -87,44 +88,52 @@ equations.
 \section*{The calculus of physiological evidence}
 
 Time plays a crucial role in physiology. Plots of the temporal
-evolution of observed quantities, such as instrinsic rhythms or responses
-to external stimuli, are ubiquitous in publications. Often these
-observations are mediated by actions that are said to happen at a
-certain time point - such as action potentials or secretion events -
-but are themselves composed of continuous changes in ion channel
-conductances or fusion pore dilations. Time must have a priviliged
-role in accounting for physiological evidence, although it is used to
-index many different things.
+evolution of observed quantities, such as instrinsic rhythms or
+responses to external stimuli, are ubiquitous in publications. Often
+these observations are mediated by actions that are said to happen at
+a certain time point - such as action potentials or secretion events -
+but are themselves manifestations of continuous changes in ion channel
+conductances or fusion pore dilations. Time must play a multifaceted
+role in physiological evidence.
 
 Functional Reactive Programming is a family of programming languages
 built for computer programs where time also plays an essential role,
-such as animations, robotics and physical simulations. FRP introduces
-two abstract concepts to place information in a temporal context:
-Signals, which represent continuously varying quantities, and events
-representing distinct occurances. Programs writen in a such a language
-.. takes whole time as an input (Henrik had something that sounds good
-here.)... Here, we show that a language based on FRP can capture many
-aspects of experimentation and analysis in physiology. The types
-introduced by FRP - signals, events - present a flexible scheme for
-representing concrete physiological evidence. The ``functional''
-aspect of FRP define analysis procedures such as signal transformers
-and event detectors. Finally, we show how inference within this
-framework exploits the hierarchical structure of the observations
+such as animations, robotics and physical simulations. Programs writen
+in a such a language transform the whole input, including responses
+from the user, into the entire output from the program. Here, we show
+that a language based on FRP can capture many aspects of
+experimentation and analysis in physiology. The types introduced by
+FRP - signals, events - present a flexible scheme for representing
+concrete physiological evidence, both observed and inferred. The
+``functional'' aspect of FRP define analysis procedures such as signal
+transformers and event detectors. Finally, we show how inference
+within this framework exploits the hierarchical structure of the
+observations
 
 \subsection*{Types}
 
-two types for continuously changing and discrete occurences. add a
-third: duration. Values of observations.
+\begin{itemize}
+\item what is a type
+\end{itemize}
 
-The observation, analysis and simulation of signals are essential to
-physiology, and also forms the basis of this calculus. In
-physiology, observed signals are usually time-varying scalar
+FRP introduces two abstract concepts to place information in a
+temporal context: Signals, which represent continuously varying
+quantities, and events representing distinct occurances.
+
+\begin{itemize}
+\item add a third: duration. Values of observations.
+\end{itemize}
+
+In physiology, observed signals are usually time-varying scalar
 quantities such as membrane voltages or muscle force, but there are
 also examples of non-scalar signals such as the two- or three
 dimensional location of an animal or of a body part. Here, we
 generalise this notion such that for \emph{any} type |alpha|, a signal
 of |alpha| is defined as a function from time to a value in |alpha|:
-|Signal alpha = Time -> alpha|. For instance, the output of a
+\begin{code}
+Signal alpha = Time -> alpha
+\end{code}
+For instance, the output of a
 differential voltage amplifier might be captured in a |Signal
 Real|. In addition to the types introduced here, we assume that the
 universe of types are inhabited by base types such as the integers,
@@ -136,14 +145,17 @@ Unlike signals such as an extracellular potential or a membrane
 conductance, some observed quantities such as action potentials are
 discrete occurrences and are not associated with a new value at every
 timepoint. To represent this qualitatively different class of
-observations, we introduce events, defined as a set of occurrences at
-specific timepoints, each with an associated value in a type |alpha|:
-|Event alpha = {Time times alpha}|. For example, an event could be
-constructed from a scalar signal such that the time of the largest
-amplitude of a signal was associated with the signal amplitude at that
-time-point. Some events may not have a value of interest to associate
-with the timepoint at which it occured, in which case we can use the
-unit type |()| which has only one element (that is, no information).
+observations, we introduce events, defined as a set of pairs of
+timepoints and a value in a type |alpha|, called the ``tag'': 
+\begin{code}
+Event alpha = {Time times alpha}
+\end{code}
+For example, an event could be constructed from a
+scalar signal such that the time of the largest amplitude of a signal
+was associated with the signal amplitude at that time-point. Some
+events may not have a value of interest to associate with the
+timepoint at which it occured, in which case we can use the unit type
+|()| which has only one element (that is, no information).
 
 A third kind of information describes the properties of whole
 ``trials'', i.e. periods during which the system was exposed to a
@@ -162,8 +174,10 @@ also be useful as observations in their own right, such as open times
 of individual ion channels, periods in which activity of a system
 exceeds a set threshold (e.g bursts).
 
-These simple, yet flexible, types suffice to represent many
-physiological quantities: \vskip1ex
+Since signals, events and durations can be instantiated for any type,
+they form a simple but flexible framework for representing many
+physiological quantities. We show a list of such examples primarily
+drawn from neurophysiology here: \vskip1ex
 \begin{tabular}{l  l}
 \hline
   Quantity & Type \\ 
@@ -183,19 +197,23 @@ physiological quantities: \vskip1ex
 \end{tabular}
 \vskip1ex 
 
-Some of these values are directly observed, while others are infered
-from other values. How to infer them? How to observe?
+Some of these values are directly observed from equipment such as
+amplifiers or electronic detectors, but may need to be conditioned
+before any conclusions can be drawn from them. Values in other types
+can only be inferred from calculations on other observations. First we
+show how to build programs that calculate with signals and events;
+then we show how annotations allow these programs to stimulate
+external system and observe their responses.
 
 \subsection*{Calculating with signals and events}
 
-Physiological inference necessarily involves the calculation of
-infered quantities from direct observations. In addition to specifying
-the types of these quantities, FRP provides the transformation
-facilities needed for data analysis. Thus one can process events and
-signals, create new events from signals, filter data and calculate
-statistics as necessary. A combination of pure functions that have
-no side effects and a construct to form signals based on an expression
-for their instantaneous value allows us to build signal transformers.
+In addition to specifying the types of physiological observations, FRP
+provides the transformation facilities needed for data analysis. Thus
+one can process events and signals, create new events from signals,
+filter data and calculate statistics as necessary. A combination of
+pure functions that have no side effects and a construct to form
+signals based on an expression for their instantaneous value allows us
+to build signal transformers.
 
 The lambda calculus \citep{Church1941} is a formal language for
 referentially transparent computation, based entirely on evaluating
@@ -214,9 +232,13 @@ quantum mechanics \citep{Karczmarczuk2003}, evolutionary biochemistry
 base types such as integers, real numbers, or compound types such as
 vectors, lists, functions or pairs.
 
+\begin{itemize}
+\item lambda calculus syntax
+\end{itemize}
+
 Here, we present a concrete syntax for a formal language, based on the
 lambda calculus and extended with first-class signals and events. Let
-the construct |sopen e sclose| create a signal with the value of the
+the construct |sopen e sclose| creates a signal with the value of the
 expression e at every time point, and |<: s :>| yield the current
 value of the signal s in the temporal context created by the
 surrounding |sopen ... sclose| braces. As in the lambda calculus,
@@ -226,26 +248,31 @@ functions; |\x->e| denotes the function with argument |x| and body
 \begin{code}
 smap = \f -> \s -> sopen f <: s :> sclose
 \end{code}
-transforms a signal of |alpha| s into a signal of |beta| by applying
-the function |f| of type |alpha → beta| to the value of the signal at
-every timepoint.
+transforms, for any two types |alpha| and |beta|, a signal of |alpha|s
+into a signal of |beta|s by applying the function |f| of type |alpha
+-> beta| to the value of the signal at every timepoint.
 
 Further primitives are needed to form signals that depend on the
 history of other signals. For any signal |s|, the expression |delay s|
 denotes the signal that is delayed by a small amount of time (in
-practice, one time step). The differential operator |D|, which can
-also be used to pattern match on derivatives in signals (e.g., |D s =
-k*s|) can be used for differentiating and solving differential
-equation. However, these constructs will not be used in this paper.
+practice, one time step). The differential operator |D| can be used
+for differentiating signals and solving differential equations, but is
+not necessary for the experiments described in this paper.
+
+\begin{itemize}
+\item intro to event detection
+\end{itemize}
 
 To construct events from signals, we take a predicate on the
 instantaneous values of the signal and generate an event whenever the
 predicate becomes true using the |??| operator (|?? :: (alpha->Bool)
 -> Signal alpha -> Event alpha|).
 
-emap
-
-more examples
+\begin{itemize}
+\item emap
+\item events and durations: treat as lists
+\item switch
+\end{itemize}
 
 \subsection*{Observing signals and events}
 
@@ -295,23 +322,24 @@ sineWave *> DAC (0, 20000)
 \end{code}
 
 In the context of a physiology experiment, these declarations can for
-instance control the amount of current injected in a cell. In this
-paper, we will see how non-numeric signals and signal sinks can be
-used to control visual stimuli through a projection screen. In
-addition, sources and sinks are not restricted to signals. Random
-number generators are also difficult to describe as pure functions and
-expressions involving random numbers can break referentially
-transparency. We have thus implemented sources corresponding to common
-paramtric probability distributions.
+instance control the amount of current injected in a cell. Below,
+non-numeric signals and signal sinks are used to control visual
+stimuli on a projection screen. In addition, sources and sinks
+are not restricted to signals. Random number generators are also
+difficult to describe as pure functions and expressions involving
+random numbers can break referentially transparency. We have thus
+implemented sources corresponding to common paramtric probability
+distributions.
 
 \subsection*{Probabilistic inference}
 
-nesting durations
-
-what is the hierarchical model
-
-how to learn parameters
-....
+\begin{itemize}
+\item the need for a statistical framework
+\item what is the hierarchical model
+\item nesting durations
+\item how to learn parameters
+\end{itemize}
+...
 But we also find that new analysis methods become feasible;
 for instance, having functions as first class entities makes it much
 simpler to directly represent probability distributions. We show how
@@ -336,10 +364,10 @@ azimuth of the approaching object when averaged over several
 approaches (gabbinai). However, the reliability of the looming
 detector is not well understood. For instance, the amount and origin
 of variability in the response to repeated approaches of identical
-objects is important for the animal behaviour (ref?). In addition, a
-looming detector must be able to discriminate objects that are on
-collision course, but the efficiency of the LGMD in doing so has not
-been quantified. 
+objects is important for the animal behaviour (ref?), but has not been
+quantified for this detector. In addition, a looming detector must be
+able to discriminate objects that are on collision course, but the
+efficiency of the LGMD in doing so has not been quantified.
 
 We constructed several experiments in the calculus of physiological
 evidence to address these questions. Initially, we recorded the
@@ -349,35 +377,32 @@ nearly-looming objects. These experiments all involved visual stimuli
 consisting of animations of primitive three-dimensional geometric
 shapes. Since signals are entirely polymorphic containers, they can
 carry not just numeric values but also shapes if we have a suitable
-data representation for them. (in fact, FRP was invented to compose
-reactive animations). Say that the function
+data representation for them. Let the expression
 \begin{code}
 cube l
 \end{code}
-constructs a value of the shape type representing a cube located at
-the origin with the side length |l|,
+denote a cube located at the origin with the side length |l|,
 \begin{code}
-translate (x,y,z) shp 
+translate (x,y,z) s
 \end{code}
-denotes the shape that results from translating the shape shp by the
+the shape that results from translating the shape |s| by the
 vector |(x,y,z)| and
 \begin{code}
-colour (r,g,b) shp
+colour (r,g,b) s
 \end{code}
-the shape identical to shp except with the colour intensity red r,
-green g and blue b. Additional constructors can be introduced for more
-complex stimuli, but these are sufficient for the experiments reported
-here. We aim to show a cube of side length l approaching the viewer
-with constant velocity v to produce the characteristic looming
-response in the locust. We will construct the signal of
-shapes representing this animation and then connect it to a suitable
-signal sink. First, we calculate the time-varying distance from the
-observer to the cube in real-world coordinates:
+the shape identical to |s| except with the colour intensity red |r|,
+green |g| and blue |b|. Additional constructors can be introduced for
+more complex stimuli, but these are sufficient for the experiments
+reported here. The looming stimulus for locusts consists of a cube of
+side length l approaching the viewer with constant velocity v. The
+time-varying distance from the observer to the cube in real-world
+coordinates is a real-valued signal:
 \begin{code}
-distance = sopen v * <: seconds :> - 5 sclose 
+distance = sopen v * (5 - <: seconds :>) sclose 
 \end{code}
 
-Secondly, we calculate the shape signal
+The |distance| signal is the basis of shape-valued signal for the
+approaching square, |loomingSquare|:
 
 \begin{code}
 loomingSquare = 
@@ -398,56 +423,64 @@ define an event for the collision of the object and the screen
 \begin{code}
 hit = (\z->z<zscreen) ?? distance
 \end{code}
-We would like to create a new signal that changes its behaviour when
-the hit event occurs. Although in this case such an effect can be
-achieved by a conditional expression, the switch expression from FRP
-is a more general and powerful solution to this problem. Switch
-creates a new signal by selecting from a list of signals depending on
-which of several events occurred last.
 
+and |switch| a new distance signal, |distance'|, based on the
+occurance of |hit|.
 \begin{code}
 distance' = switch {hit ~> \ (thit, zhit) -> sopen zhit sclose } distance 
 \end{code}
 This statement creates a new signal |distance'| which is identical to
 the |distance| signal until an occurrence of a |hit| event, at which
-point a new signal can be calculated as a function of the time and the
-tag of the event occurrence. In this case, a signal with the constant
-value $z_{hit}$ (which equals $z_{screen}$) is the new form of distance'.
+point the distance is a constant, |zhit| (which equals $z_{screen}$.)
+|loomingSquare'| is identical to |loomingSquare| except for the use of
+|distance'|, and is connected to the |screen| sink.
 
-Finally, loomingSquare is connected to a screen signal sink that
+Finally, |loomingSquare'| is connected to a screen signal sink that
 represents an abstract visual display unit capable of projecting
 three-dimensional shapes onto a two-dimensional surface.
 
 \begin{code}
-loomingSquare *> screen ()
+loomingSquare' *> screen ()
 \end{code}
-Here, the screen sink is not parametrized, but for a more flexible
-description language it could be configured with the background colour
-and the viewing angle.
 
-explain runnign this multiple times.
+The response to the looming stimulus in the LGMD can be recorded from
+the locust connectives. Although the LGMD is not thought to make a
+long-range projection, it reliably activate the descending
+contralateral movement detector (DCMD) with a strong synaptic
+connection, such that spikes in the DCMD follow LGMD spikes one to
+one. Extracellular hook electrodes wrapped around the connectives
+record activity in the DCMD as the strongest unit. These electrodes
+were amplified, filtered (see methods) and converted to a digital signal:
 
-refer to figure 1 here.
-
-In addition to producing the visual animation depicting a looming
-stimulus, we must also record its neural response. The LGMD reliably
-activates the descending contralateral movement detector (DCMD) that
-can be recorded extracellularly from the connectives. ...
 \begin{code}
 voltage <* ADC (0, 20000)
 \end{code}
-The simplest method for detecting spikes from a raw
-voltage trace is to search for threshold crossings, which works well
-in practice for calculating DCMD activity from recordings of the
-locust connectives. If the threshold voltage for spike detection is
-|vth|, we can define the event |spike| by
+
+|loomingSquare'| and |voltage| define a single approach and the
+recording of the response thereto. This approach was repeated every 4
+minutes, with different values of $\frac{l}{v}$. Figure 1 shows the
+$\frac{l}{v}$ as values with type |Duration Real|, together with the
+|distance'| and |voltage| signals and analysis value (see below) on a
+common time scale.
+
+The simplest method for detecting spikes from a raw voltage trace is
+to search for threshold crossings, which works well in practice for
+calculating DCMD activity from recordings of the locust connectives
+(ref). If the threshold voltage for spike detection is |vth|, the
+event |spike| can be calculated with
 \begin{code}
 spike = (\v->v>vth) ?? voltage
 \end{code}
+Here, we through away the tag
+\begin{code}
+spike = tag () ((\v->v>vth) ?? voltage)
+\end{code}
+so that |spike| has type |Event ()|. This event, with a jittered tag
+for display purposes (ref), is displayed on the common time scale in
+Figure 1. 
 
-fig 1: spikes and ecvoltage
 
-spike time histograms
+These spikes can simply be counted during each
 
 In order to create a duration tagged with the number of spikes during
 each trial, for every element in the |running| duration, we filter the
@@ -467,7 +500,8 @@ which requires a single non-standard utility function
 \begin{code}
 between = \t1 -> \t2 -> \t -> t>t1 && t<t2 
 \end{code}
-and the standard list-processing functions |map|, |filter| and |length|.
+and the standard list-processing functions |map|, |filter| and
+|length|.
 
 
 The spike count histogram, ie the average of |sopen length (filter
@@ -666,6 +700,7 @@ rate. Uniform priors for mean and variance components.
 \includepdf[pages=-]{Figure1.pdf}
 \includepdf[pages=-]{Figure2.pdf}
 \includepdf[pages=-]{Figure3.pdf}
+\includepdf[pages=-]{Figure4.pdf}
 \end{document}
  
 
