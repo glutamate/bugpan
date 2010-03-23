@@ -28,5 +28,6 @@
 %format msdelay= "0.002"
 
 %format zhit = "z_{hit}"
+%format hspike = "H_{spike}"
 %format thit = "t_{hit}"
 %format zscreen = "z_{screen}"
