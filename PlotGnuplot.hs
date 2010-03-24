@@ -398,6 +398,8 @@ data XTics a = XTics [Double] a
 data YTics a = YTics [Double] a
 
 data Noaxis a = Noaxis a
+              | NoXaxis a
+              | NoYaxis a
 
 setMargin (Margin b t l r _) = unlines ["set bmargin "++show b,
                                         "set lmargin "++show l,
@@ -425,6 +427,10 @@ instance PlotWithGnuplot a => PlotWithGnuplot (Noaxis a) where
     multiPlot r m@(Noaxis x) = do
       px <- multiPlot r x
       let cmd = TopLevelGnuplotCmd "unset border; unset tics" "set border; set tics"
+      return $ map (\(r', pls) -> (r', cmd:pls)) px
+    multiPlot r m@(NoYaxis x) = do
+      px <- multiPlot r x
+      let cmd = TopLevelGnuplotCmd "set border 1; unset tics" "set border; set tics"
       return $ map (\(r', pls) -> (r', cmd:pls)) px
 
 instance PlotWithGnuplot a => PlotWithGnuplot (XTics a) where

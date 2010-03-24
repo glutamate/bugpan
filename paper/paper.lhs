@@ -46,25 +46,28 @@ could facilitate replication and meta-analysis, permit a better
 understanding of apparent inconsistencies between studies and a
 clearer formulation of what constitutes sound scientific practice.
 Here, we propose a calculus of physiological evidence that can
-describe an experiment such that it can be unambiuously replicated
+describe an experiment such that it can be unambiguously replicated
 and be inspected to certify whether analysis procedures are
 applicable. This framework does not describe the physical components
 of an animal; there are no concepts of organ systems, cells or
 proteins. Instead it describes observation and calculation of the
-mathematical objects that play a role in physiological evidence.
+mathematical objects that constitute physiological evidence.
 
 What is an experiment? Whether they are carried out by humans or by
 automated equipment, experiments can be seen as \emph{programs} that
 manipulate and observe the real world. This definition suggests that
-experiment definitions must resemble programming languages, and that a
-referentially transparent calculus of experiments could come from
-programming language theory. An elegant and declarative approch to
-effectful programing is realised in Functional Reactive Programming
-\citep[FRP;][]{Elliott1997, Nilsson2002}; we show that the semantics
-of FRP provide a structure for physiological evidence. Observations
-defined in such a language are given a interpretation in hierarchical
-bayesian models, a powerful framework for biological inference rarely
-used in physiology (but see REF).
+experiment descriptions must resemble programming languages, and that
+a referentially transparent calculus of experiments could come from
+programming language theory. Functional Reactive Programming
+\citep[FRP;][]{Elliott1997, Nilsson2002} is an elegant approach for
+purely mathematical transformations to interact with the real world;
+here we show that the semantics of FRP provide a structure for
+physiological evidence. We have implemented this calculus of evidence
+in a concrete programming language and used it for neurophysiological
+experiments, simulations and data analysis. Observations defined in
+such a language have a simple interpretation in hierarchical Bayesian
+models, a powerful framework for biological inference rarely used in
+physiological data analysis \citep[but see][]{Gelman1996}.
 
 We use a calculus of physiological evidence based on FRP to perform a
 non-trivial experiment in \emph{in vivo} insect neurophysiology. The
@@ -86,71 +89,68 @@ equations.
 
 \section*{The calculus of physiological evidence}
 
-Time plays a crucial role in physiology. Plots of the temporal
-evolution of observed quantities, such as instrinsic rhythms or
-responses to external stimuli, are ubiquitous in publications. Often
-these observations are mediated by actions that are said to happen at
-a certain time point - such as action potentials or secretion events -
-but are themselves manifestations of continuous changes in ion channel
-conductances or fusion pore dilations. Time must play a multifaceted
-role in physiological evidence.
+Examining the temporal evolution of observed quantities, such as
+intrinsic rhythms or responses to external stimuli, is ubiquitous in
+physiology. Often these observations are mediated by actions that are
+said to happen at a certain time point - such as action potentials or
+secretion events - but are themselves manifestations of continuous
+changes in ion channel conductances or fusion pore dilations on a
+different timescale. Time must play a multifaceted role in
+physiological evidence.
 
 Functional Reactive Programming is a family of programming languages
 built for computer programs where time also plays an essential role,
-such as animations, robotics and physical simulations. Programs writen
-in a such a language transform the whole input, including responses
-from the user, into the entire output from the program. Here, we show
-that a language based on FRP can capture many aspects of
-experimentation and analysis in physiology. The types introduced by
-FRP - signals, events - present a flexible scheme for representing
-concrete physiological evidence, both observed and inferred. The
-``functional'' aspect of FRP define analysis procedures such as signal
-transformers and event detectors. Finally, we show that nested
-temporal periods can define the structure of a hierarchical Bayesian
-model for observations.
+such as animations, video games, robotics and physical simulations. Programs
+written in a such a language transform the whole input, including
+responses from the user, into the entire output from the
+program. Here, we show that a language based on FRP can capture many
+aspects of experimentation and analysis in physiology. The types
+introduced by FRP - signals, events - present a flexible scheme for
+representing concrete physiological evidence, both observed and
+inferred. The ``functional'' aspect of FRP define analysis procedures
+such as signal transformers and event detectors. Finally, we show that
+nested temporal periods can define the structure of a hierarchical
+Bayesian model for observations.
 
-\subsection*{Types}
+\subsubsection*{Types}
 
-\begin{itemize}
-\item what is a type ...In addition to the types introduced here, we
-  assume that the universe of types is inhabited by base types such as
-  the integers, the real numbers, and means of combining simple types
-  such as pairs, lists and functions. Indeed, signals and events are
-  synonyms for such combinations.
-\end{itemize}
+FRP introduces two types of values to place information in a temporal
+context: Signals, which represent continuously varying quantities, and
+events representing distinct occurrences. These types are flexible, in
+that they can be ``instantiated'' with any other type. In the later
+sections, we show that particular values in the signal and event types
+are the mathematical objects that constitute physiological
+evidence. Here, we also add a third type for information pertaining to
+temporal extents.
 
-FRP introduces two abstract concepts to place information in a
-temporal context: Signals, which represent continuously varying
-quantities, and events representing distinct occurances.
-
-\begin{itemize}
-\item add a third: duration. Values of observations.
-\end{itemize}
-
-In physiology, observed signals are usually time-varying scalar
-quantities such as membrane voltages or muscle force, but there are
+In physiology, observed time-varying quantities often represent scalar
+quantities, such as membrane voltages or muscle force, but there are
 also examples of non-scalar signals such as the two- or three
 dimensional location of an animal or of a body part. Here, we
 generalise this notion such that for \emph{any} type |alpha|, a signal
-of |alpha| is defined as a function from time to a value in |alpha|:
+of |alpha| is defined as a function from time to a value in |alpha|,
+written formally as:
 \begin{code}
 Signal alpha = Time -> alpha
 \end{code}
-Signals can thus take a new value for every different timepoint and
+Signals can thus take a new value for every different time point and
 represent quantities that vary continuously, although these values may
 be piecewise constant. For instance, the output of a differential
-voltage amplifier might be captured in a |Signal Real|. Signals may be
-stored in many different ways --- some signals as a sampled array,
-others as an elementary function of time --- but to satisfy this
-definition, there must exist an operation that, for any signal and for
-any timepoint, can yield a value.
+voltage amplifier might be captured in a |Signal Real|. In addition to
+real numbers, our simple type system other basic types such as
+integers and the unit type (|()|; see below) and means of combining
+types such as pairs, lists and functions. Signals may be stored in many
+different ways --- some signals as a sampled array, others as an
+elementary function of time --- but to satisfy this definition, there
+must exist an operation that, for any signal and for any time point,
+can yield a value.
 
 Unlike signals such as an extracellular potential or a membrane
 conductance, some observed quantities such as action potentials are
 discrete occurrences and are not associated with a new value at every
-timepoint. To represent this qualitatively different class of
+time point. To represent this qualitatively different class of
 observations, we introduce events, defined as a set of pairs of
-timepoints and a value in a type |alpha|, called the ``tag'': 
+time points and a value in a type |alpha|, called the ``tag'': 
 \begin{code}
 Event alpha = {Time times alpha}
 \end{code}
@@ -158,12 +158,12 @@ For example, an event could be constructed from a
 scalar signal such that the time of the largest amplitude of a signal
 was associated with the signal amplitude at that time-point. Some
 events may not have a value of interest to associate with the
-timepoint at which it occured, in which case we can use the unit type
+time point at which it occurred, in which case we can use the unit type
 |()| which has only one element (that is, no information).
 
 A third kind of information describes the properties of whole
 ``trials'', i.e. periods during which the system was exposed to a
-controlled stimulus. Signals (which change from one timepoint to
+controlled stimulus. Signals (which change from one time point to
 another) and events (pertaining only to an instant) are unsuitable for
 representing this information. What is needed is a type for
 representing values associated with temporal extents. We define a
@@ -186,7 +186,7 @@ drawn from neurophysiology here: \vskip1ex
 \hline
   Quantity & Type \\ 
 \hline
-  Voltage across the cell mebrane & |Signal Real| \\
+  Voltage across the cell membrane & |Signal Real| \\
   Ion concentration & |Signal Real| \\
   Animal location in 2D & |Signal (Real times Real)| \\
   Action potential & |Event ()| \\
@@ -209,7 +209,7 @@ show how to build programs that calculate with signals and events;
 then we show how annotations allow these programs to stimulate
 external system and observe their responses.
 
-\subsection*{Calculating with signals and events}
+\subsubsection*{Calculating with signals and events}
 
 In addition to specifying the types of physiological observations, FRP
 provides the transformation facilities needed for data analysis. Thus
@@ -225,12 +225,11 @@ other hand, the lambda calculus excludes variable or state mutation,
 such that the meaning of variables are solely as references to
 values. These properties together mean that the lambda calculus
 combines verifiable correctness with a high level of abstraction,
-leading to programs that are in practice more concise (ref). The
+leading to programs that are in practise more concise (ref). The
 lambda calculus or variants thereof has been used as foundation for
 mathematics \citep{Martin-Lof1985}, classical \citep{Sussman2001} and
 quantum \citep{Karczmarczuk2003} mechanics, evolutionary biochemistry
-\citep{Fontana1994} and functional programming languages
-(ref:mccarthy?). 
+\citep{Fontana1994} and programming languages \citep{McCarthy1960}. 
 
 In the simple lambda calculus, calculations are performed by function
 abstraction and application. |\x->e| denotes the function with
@@ -244,40 +243,54 @@ lambda calculus and extended with first-class signals and events. Let
 the construct |sopen e sclose| create a signal with the value of the
 expression e at every time point, and |<: s :>| yield the current
 value of the signal s in the temporal context created by the
-surrounding |sopen ... sclose| braces. For instance, the function smap
+surrounding |sopen ... sclose| braces. For instance, 
+\begin{code}
+sopen 1 sclose
+\end{code}
+denotes the signal that always has the value 1; and the function smap
 defined as
 \begin{code}
 smap = \f -> \s -> sopen f <: s :> sclose
 \end{code}
 transforms, for any two types |alpha| and |beta|, a signal of |alpha|
 into a signal of |beta| by applying the function |f| of type |alpha
--> beta| to the value of the signal at every timepoint.
+-> beta| to the value of the signal at every time point.
 
 Further primitives are needed to form signals that depend on the
 history of other signals. For any signal |s|, the expression |delay s|
 denotes the signal that is delayed by a small amount of time (in
-practice, one time step). The differential operator |D| can be used
+practise, one time step). The differential operator |D| can be used
 for differentiating signals and solving differential equations, but is
-not necessary for the experiments described in this paper.
+not needed for the experiments described in this paper.
 
-\begin{itemize}
-\item intro to event detection
-\end{itemize}
-
-To construct events from signals, we take a predicate on the
+The simplest approach to constructing events, and that taken here, is
+to detect events from existing signals. For instance, a threshold
+detector generates an occurrence in an event every time point the value
+of a signal exceeds a set level (and then not again before the value
+of the signal has decreased below that level and then reached it
+again.)  Here, we generalise the threshold detector slightly by taking
+a predicate (i.e., a function of type |alpha->Bool|) on the
 instantaneous values of the signal and generate an event whenever the
-predicate becomes true using the |??| operator (|?? :: (alpha->Bool)
--> Signal alpha -> Event alpha|).
+predicate becomes true using the |??| operator. For instance,
+\begin{code}
+(\x->x>5) ?? s
+\end{code}
+denotes the event that occurs whenever x crosses the threshold level
+|5|. 
+
+In addition to event detection, we suggest that events (and durations)
+should be manipulated as if they were lists in a functional
+programming language. Thus, a large number of transformations can be
+defined with simple recursive equations including filters, folds and
+scans (refs).
 
 \begin{itemize}
-\item emap
-\item events and durations: treat as lists
 \item switch
 \item examples of functions
-\item standard library
+\item standard library of analysis procedures
 \end{itemize}
 
-\subsection*{Observing signals and events}
+\subsubsection*{Observing signals and events}
 
 In the previous examples, signals, events and durations exist as
 purely mathematical objects. In order to describe experiments, it must
@@ -301,7 +314,7 @@ which describes the observation of the voltage signal on channel 0 on
 an analog-to-digital converter at 20kHz sampling rate.
 
 In addition to making appropriate observations, an experiment may also
-involve a pertubation of the experimental preparation. To create a
+involve a perturbation of the experimental preparation. To create a
 stimulus for an external system, we first construct time-varying signals as
 described above, for instance a sine wave. To build such a signal, we
 start with a clock signal that counts the number of seconds since the
@@ -331,18 +344,20 @@ stimuli on a projection screen. In addition, sources and sinks
 are not restricted to signals. Random number generators are also
 difficult to describe as pure functions and expressions involving
 random numbers can break referentially transparency. We have thus
-implemented sources corresponding to common paramtric probability
+implemented sources corresponding to common parametric probability
 distributions.
 
-\subsection*{Probabilistic inference}
+\subsubsection*{Probabilistic inference}
 
 \begin{itemize}
 \item the need for a statistical framework
+\item what is the type of the likelihood function
 \item what is the hierarchical model
 \item use all data, no loss of information.
 \item nesting durations
 \item how to learn parameters
 \end{itemize}
+
 ...
 But we also find that new analysis methods become feasible;
 for instance, having functions as first class entities makes it much
@@ -360,12 +375,12 @@ collision avoidance system is particularly acute in social animals. A
 common component in such systems is a detector for looming objects. In
 locusts, a single neuron in each brain hemisphere, the Lobular Giant
 Movement Detector (LGMD), responds preferentially to looming stimuli
-(REFS). The response of the LGMD is known to be invariant to manipulations of
+\citep{Rind1992}. The response of the LGMD is known to be invariant to manipulations of
 the looming stimulus; for instance, a key property, the time of the
 peak firing rate with respect to the retinal angle of the looming
 stimulus, is insensitive to the colour, texture, size, velocity and
 azimuth of the approaching object when averaged over several
-approaches (gabbinai). However, the reliability of the looming
+approaches \citep{Gabbiani2001}. However, the reliability of the looming
 detector is not well understood. For instance, the amount and origin
 of variability in the response to repeated approaches of identical
 objects is important for the animal behaviour (ref?), but has not been
@@ -376,7 +391,7 @@ efficiency of the LGMD in doing so has not been quantified.
 We constructed several experiments in the calculus of physiological
 evidence to address these questions. Initially, we recorded the
 response to visual stimuli representing identical objects approaching
-with different velcities; the stimuli were later modified to
+with different velocities; the stimuli were later modified to
 distinguish looming from nearly-looming objects. To generate these
 stimuli, we augmented the calculus of physiological evidence with
 primitive three-dimensional geometric shapes. Let the expression
@@ -415,20 +430,20 @@ loomingSquare =
                                (cube l)) sclose
 \end{code}
 
-|loomingSquare| is a faithful animation of an object approaching the
-origin, but it differs from conventional protocols for stimulating the
-DCMD in that the object passes through the observer after
+|loomingSquare| differs from conventional protocols for stimulating
+the DCMD in that the object passes through the observer after
 collision. In order not to evoke a large OFF response from the LGMD
-immidiately after collision, the object is frozen in space as it
-reaches the plane of the surface onto which the animation is projected
-(Ref). To achieve this effect, first we define an event for the
-collision of the object and the screen
+\citep{O'shea1976} immediately after collision, the object is frozen
+in space as it reaches the plane of the surface onto which the
+animation is projected \citep{Hatsopoulos1995}. To achieve this
+effect, first we define an event for the collision of the object and
+the screen
 
 \begin{code}
 hit = (\z->z<zscreen) ?? distance
 \end{code}
 and |switch| a new distance signal, |distance'|, based on the
-occurance of |hit|.
+occurrence of |hit|.
 \begin{code}
 distance' = switch {hit ~> \ (thit, zhit) -> sopen zhit sclose } distance 
 \end{code}
@@ -451,7 +466,7 @@ the locust connectives. Although the LGMD is not thought to make a
 long-range projection, it reliably activate the descending
 contralateral movement detector (DCMD) with a strong synaptic
 connection, such that spikes in the DCMD follow LGMD spikes one to
-one. Extracellular hook electrodes wrapped around the connectives
+one \cite{O'Shea1974}. Extracellular hook electrodes wrapped around the connectives
 record activity in the DCMD as the strongest unit. These electrodes
 were amplified, filtered (see methods) and converted to a digital signal:
 
@@ -467,7 +482,7 @@ $\frac{l}{v}$ as values with type |Duration Real|, together with the
 common time scale.
 
 The simplest method for detecting spikes from a raw voltage trace is
-to search for threshold crossings, which works well in practice for
+to search for threshold crossings, which works well in practise for
 calculating DCMD activity from recordings of the locust connectives
 (ref). If the threshold voltage for spike detection is |vth|, the
 event |spike| can be calculated with
@@ -482,7 +497,7 @@ so that |spike| has type |Event ()|. This event, with a jittered tag
 for display purposes (ref), is displayed on the common time scale in
 Figure 1. The top row displays the spike count histogram |hspike =
 sopen length (filter (between <: delay seconds:> <: seconds:> . fst)
-spikes)ss sclose| for each trial.
+spikes) sclose| for each trial.
 
 We examined how the DCMD spike response varied with changes in
 $\frac{l}{v}$. The average of |hist| for three different values of
@@ -492,23 +507,24 @@ each approach, plotted against the value of $\frac{l}{v}$. These plots
 show that while the peak rate of the spike histogram is an decreasing
 function of $\frac{l}{v}$, the total number of spikes in the approach
 is n increasing function. In addition, the time of the peak rate is
-later with smaller values of $\frac{l}{v}$ (ref). These preliminary observations
-suggest a complex relationship between the firing rate and the
-stimulus parameters. (And we have no idea what aspect of the spike
-train are most important in influencing behaviour)
+later with smaller values of $\frac{l}{v}$
+\citep{Hatsopoulos1995}. These preliminary observations suggest a
+complex relationship between the firing rate and the stimulus
+parameters. (And we have no idea what aspect of the spike train are
+most important in influencing behaviour)
 
 Rather than drawing relationships between specific point estimators
 (peak rate, number of spikes, time of peak firing), we built a
 hierarchical probabilistic model of the full spike train on every
-trial and use bayesian inference to estimate its parameters.  explain
+trial and use Bayesian inference to estimate its parameters.  explain
 what this is. (In this way, we do not lose any information in the
 process of data analysis.)
 
 First, we assume that on a particular trial i with a given approach
-speed, the DCMD firing rate can be described by an inhomogenous
+speed, the DCMD firing rate can be described by an inhomogeneous
 Poisson process with rate $r(t)$. That is, the probability of seeing a
-spike between time $t$ and $t+dt$ is $r(t)dt$ for small dt. Although we do
-not know what the form of $r(t)$ is a priori, in practice we can look
+spike between time $t$ and $t+dt$ is $r(t)dt$ for small $dt$. Although we do
+not know what the form of $r(t)$ is a priori, in practise we can look
 for a parametric function that can be fit to the spike time histogram
 under a variety of conditions in a series of preliminary
 experiments. One such function is the reversed and time-shifted alpha
@@ -521,19 +537,19 @@ baseline &\text{if $t > t_0$.}
 \end{cases}
 \end{equation*}
 
-Second, we assume that on each trial, the the paramters of $r(t)$ is
+Second, we assume that on each trial, the the parameters of $r(t)$ is
 drawn from some distribution for the animal, defined by compound
 parameter $\theta_{animal}$. Here, we assume that the trial parameters
 are normally distributed, such that $\theta_{animal} =
-(\vec{\mu}_{animal}, \mathbf{\Sigma}_{animal})$. The model should attempt to explain the influence of the
-approach speed on the spike train. We thus replace
-$\vec{\mu}_{animal}$ by an offset $\vec{\alpha}_{animal}$ and slope
-$\vec{\beta}_{animal}$. Finally, we assume that
-$\vec{\alpha}_{animal}$ and $\vec{\beta}_{animal}$ are themselves
-drawn from some population parameter $\theta_{population} =
-(\vec{\mu}_{population}, \mathbf{\Sigma}_{population})$. For simplicity, we assume
-constant (but unknown) trial-level covariance matrix $\mathbf{\Sigma}_{animal}$ across all
-animals.
+(\vec{\mu}_{animal}, \mathbf{\Sigma}_{animal})$. The model should
+attempt to explain the influence of the approach speed on the spike
+train. We thus replace $\vec{\mu}_{animal}$ by an offset
+$\vec{\alpha}_{animal}$ and slope $\vec{\beta}_{animal}$. Finally, we
+assume that $\vec{\alpha}_{animal}$ and $\vec{\beta}_{animal}$ are
+themselves drawn from some population parameter $\theta_{population} =
+(\vec{\mu}_{population}, \mathbf{\Sigma}_{population})$. For
+simplicity, we assume a constant (but unknown) trial-level covariance
+matrix $\mathbf{\Sigma}_{animal}$ across all animals.
 
 % To see that this model is not sufficient to explain the variability on
 % different trials even within one approach speed, we calculate the
@@ -557,34 +573,28 @@ individual-level parameters are drawn. The population parameters form
 the highest-level hyperprior and can be considered the only (free)
 parameters (of interest) in the model.
 
-The final model, estimated parameters. 
+\begin{itemize}
+\item The final model, estimated parameters. 
+\item which correlate? 
+\item show effect on time of peak, amplitude, mean weighted rise.
+\item is the peak before or after collision?
+\item variability within and between animals
+\item Motivate displaced loom experiment. 
+\item show responses, nspikes etc
+\item Do responses still follow function?
+\item Which parameters does the displacement affect? 
+\item Interaction displacement and speed.
 
-which correlate? 
+\item say something about Accuracy/speed trade-off.
 
-show effect on time of peak, amplitude, mean weighted rise.
-
-is the peak before or after collision?
-
-variability wihtin and between animals
-
-Motivate displaced loom experiment. 
-
-show responses, nspikes etc
-
-Do responses still follow function?
-Which parameters does the displacement affect? 
-Interaction displacement and speed.
-
-say something about Accuracy/speed tradeoff.
-
-bias
-
+\item bias
+\end{itemize}
 \section*{Discussion}
 
-No histograms, point estimators, data/meta-data distinction, workflow
+No histograms, point estimators, data/meta-data distinction, work-flow
 engines.
 
-\subsection*{What is bugpan}
+\subsection*{What is this thing?}
 
 \begin{itemize}
 \item practical tool
@@ -636,8 +646,8 @@ for instance that particular variables were randomly controlled and
 not observed; outcomes have not gained correlation due to the analysis
 procedure; missing data is accounted for by the statistical model
 \citep{Gelman2003}; correct propagation of errors \citep{Taylor1997}
-and consistent units of measure \citep{Kennedy1997}; the absense of
-``double dipping'' \citep{Kriegeskorte2009}. Statistics adresses some
+and consistent units of measure \citep{Kennedy1997}; the absence of
+``double dipping'' \citep{Kriegeskorte2009}. Statistics addresses some
 of these issues in relating atomic observations to parameter
 estimation and hypothesis testing, but not how those observations are
 obtained.
@@ -657,7 +667,7 @@ programs that contain signals and events that are defined by mutual
 recursion, as is necessary for many of the simulations and experiments
 in this paper. For post-acquisition/simulation analysis, where one
 often merely wishes to calculate a new value from existing
-observations, we have implemtented Bugpan as an domain-specific
+observations, we have implemented Bugpan as an domain-specific
 language embedded in the purely functional programming language
 Haskell.  OpenGL and Comedi.
 
@@ -665,20 +675,20 @@ Haskell.  OpenGL and Comedi.
 
 Recordings from the locust DCMD neurons were performed as previously
 described (ref). Briefly, locusts were fixed in plasticine with the
-abdomin upwards. The head was fixed with wax at an 90 degree angle and
+abdomen upwards. The head was fixed with wax at an 90 degree angle and
 the connectives were exposed. A pair of hook electrodes were placed
 underneath the connectives and the electrodes and connectives enclosed
-in petrolium jelly. The electrode signal was amplified 1000x and
-bandpass filtered 50-5000 hz, before analog-to-digital conversion at
-18 bits and 20 khz with a NI-6xxx board. The locust was placed in
+in petroleum jelly. The electrode signal was amplified 1000x and
+bandpass filtered 50-5000 Hz, before analog-to-digital conversion at
+18 bits and 20 kHz with a NI-6xxx board. The locust was placed in
 front of a 22'' CRT monitor running with a vertical refresh rate of
-160 hz. All aspects of the visual stimulus and analog-to-digital
+160 Hz. All aspects of the visual stimulus and analog-to-digital
 conversion were controlled by Bugpan programs running on a single
 computer.
 
 \subsection*{Statistical analysis}
 
-metropolis-within-gibbs sampler, proposal: gaussian tuned to 15-40\% acceptance
+metropolis-within-Gibbs sampler, proposal: Gaussian tuned to 15-40\% acceptance
 rate. Uniform priors for mean and variance components. 
 
 \bibliographystyle{apalike}

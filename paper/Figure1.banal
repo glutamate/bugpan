@@ -16,7 +16,7 @@
 
 >> pts = \c ty sz -> Points [PointType ty, PointSize sz, LineColor c]  
 
->> plot $ AxisLabels "time (s)" "" $ lns "dark-red" 1 (chopx ((/80) <$$> distSig)) :+: 
+>> plot $ NoYaxis $ AxisLabels "time (s)" "" $ lns "dark-red" 1 (chopx ((/80) <$$> distSig)) :+: 
 >>        lns "black" 1 (chopx (rescale 8 1 ecVoltage)) :+: 
 >>        lns "blue" 4 (chopx (rescale 20 (-1.6) lovDur)) :+:
 >>        pts "dark-green" 7 0.3 (chopx (jitterys 0.08 $ tag 1.2 spikes)) :+:
