@@ -173,10 +173,17 @@ mapM2 f xs ys = mapM (uncurry f) $ zip xs ys
 trialParSampler = uniform 0.1 1 >>= \t1 -> 
                   return [100, 5, t1, 0.5, 2, 0.1]
 
-penalty [amp, t0, tau1, tau2, tau3, pslow] 
-    | tau1 < 1e-2 = 1000000*abs (1e-2 - tau1)
+penalty_tau1 [amp, t0, tau1, tau2, tau3, pslow] 
+    | tau1 < 1e-2 = 5000000*abs (1e-2 - tau1)
     | otherwise = 0
-                                             
+            
+penalty_pslow [amp, t0, tau1, tau2, tau3, pslow] 
+    | pslow < 0 = 5000000*abs (pslow)
+    | pslow > 1 = 5000000*abs (pslow-1)
+    | otherwise = 0
+
+
+penalty p = penalty_tau1 p + penalty_pslow p                                 
 
 mlTrialPars :: [[(U.Vector Double, Double)]] -> [[(TrialPar, Double)]]
 mlTrialPars thedata = for2 thedata f
@@ -336,10 +343,10 @@ main3 = do
   --putStrLn $ "droping "++show dropn
   (concat -> spikes, 
    concat -> running, 
-   concat . take 3 -> sess, 
+   concat -> sess, 
    concat -> approachLoV) <- fmap unzip4 $ manySessionData $ do
            spikes <-  map fst `fmap` events "spike" ()
-           running <- take 10 `fmap` durations "running" ()
+           running <- durations "running" ()
            modNm <- durations "moduleName" "foo"
            approachLoV <- extendDur 1 `fmap` durations "approachLoV" (1::Double)
            sess <- sessionDur
@@ -370,32 +377,6 @@ main3 = do
            $ priorSamplerG (length sess) 
                            (map (length . (`during` running) . (:[])) sess) -}
 
-  {-let all_lhs =     map (uncurry likelihoodH1) 
-                        $ zip2d (map (map fst) thedata) 
-                                (map ( map unP ) $ fth4 $ head inits)
-  print all_lhs
-
-  print $ take 1 $ map (take 1) thedata
--}
-  let mltpars = mlTrialPars thedata
-
-  let mlsess = mlSessBetasMean mltpars
-
-  print2 "mltpars " mltpars
-
-  print2 "mlsess " mlsess
-  --print2 "mlsess' " $mlSessBetasMean' mltpars
-
-  print2 "popmeans" $  mlPopMeans mlsess
-
-  print2 "sessmeans" $ map snd mlsess
-
-  print2 "trialsds" $ mlTrialSDs mltpars mlsess
-
-
-  --print $ runStatOnMany meanF $ transpose $ map snd mlsess
-
-  print $ mlPopMeans mlsess
 
   let inits = [mlPars thedata]
 
@@ -408,8 +389,6 @@ main3 = do
 
 
   do
-    print $ head $ head $ fth4 $ head inits
-
     let baymarkov = Mrkv (gibbsSF thedata) (head inits) id
     putStrLn "initials: " 
     mapM print $ zip parNames $ ofInterest (head inits)

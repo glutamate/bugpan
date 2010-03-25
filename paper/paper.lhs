@@ -60,7 +60,7 @@ experiment descriptions must resemble programming languages, and that
 a referentially transparent calculus of experiments could come from
 programming language theory. Functional Reactive Programming
 \citep[FRP;][]{Elliott1997, Nilsson2002} is an elegant approach for
-purely mathematical transformations to interact with the real world;
+purely mathematical transformations to interact with the physical world;
 here we show that the semantics of FRP provide a structure for
 physiological evidence. We have implemented this calculus of evidence
 in a concrete programming language and used it for neurophysiological
@@ -100,11 +100,11 @@ physiological evidence.
 
 Functional Reactive Programming is a family of programming languages
 built for computer programs where time also plays an essential role,
-such as animations, video games, robotics and physical simulations. Programs
-written in a such a language transform the whole input, including
-responses from the user, into the entire output from the
-program. Here, we show that a language based on FRP can capture many
-aspects of experimentation and analysis in physiology. The types
+such as animations, video games, robotics and physical
+simulations. Programs written in a such a language transform the whole
+input, including responses from the user, into the entire output from
+the program. Here, we show that a language based on FRP can capture
+many aspects of experimentation and analysis in physiology. The types
 introduced by FRP - signals, events - present a flexible scheme for
 representing concrete physiological evidence, both observed and
 inferred. The ``functional'' aspect of FRP define analysis procedures
@@ -349,9 +349,19 @@ distributions.
 
 \subsubsection*{Probabilistic inference}
 
+The previous three sections have described a formal structure for
+phsyiological observations. For these values to be considered
+evidence, they must be understood in the context of a statistical
+model. Here, we consider how the structure of observations described
+here lends itself to parameter estimation and hypothesis testing.
+
+The hierarchical bayesian model \citep{Gelman2003} is an expressive
+and general framework for statistical models over several straitified
+levels. Its principal advantage is that all the
+available information \citep{Rouder2003} into a single model. For
+instance, typically in physiology 
+
 \begin{itemize}
-\item the need for a statistical framework
-\item what is the type of the likelihood function
 \item what is the hierarchical model
 \item use all data, no loss of information.
 \item nesting durations
@@ -369,7 +379,7 @@ information observed.
 
 \section*{Results}
 
-Although every mobile species can benefit from a mechanism for
+Although every animal species can benefit from a mechanism for
 detecting and moving away from obstacles and predators, the need for a
 collision avoidance system is particularly acute in social animals. A
 common component in such systems is a detector for looming objects. In
@@ -466,7 +476,7 @@ the locust connectives. Although the LGMD is not thought to make a
 long-range projection, it reliably activate the descending
 contralateral movement detector (DCMD) with a strong synaptic
 connection, such that spikes in the DCMD follow LGMD spikes one to
-one \cite{O'Shea1974}. Extracellular hook electrodes wrapped around the connectives
+one \citep{O'Shea1974}. Extracellular hook electrodes wrapped around the connectives
 record activity in the DCMD as the strongest unit. These electrodes
 were amplified, filtered (see methods) and converted to a digital signal:
 
