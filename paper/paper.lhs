@@ -353,29 +353,54 @@ The previous three sections have described a formal structure for
 phsyiological observations. For these values to be considered
 evidence, they must be understood in the context of a statistical
 model. Here, we consider how the structure of observations described
-here lends itself to parameter estimation and hypothesis testing.
+here lends itself to parameter estimation and hypothesis
+testing. First, we present the existing statistical framework we have
+used; then, how the temporal structure of observations arrange the
+data in this framework.
 
 The hierarchical bayesian model \citep{Gelman2003} is an expressive
 and general framework for statistical models over several straitified
-levels. Its principal advantage is that all the
-available information \citep{Rouder2003} into a single model. For
-instance, typically in physiology 
+levels. Its principal advantage is that all the available information
+\citep{Rouder2003} is incorporated into a single model. For instance,
+it is common in physiology to base estimates and tests on measurements
+that have been repeated within animals and then across animals. In a
+hierarchical model, there is no requirement to average out
+measurements within each animal; every measurement can be
+included. There is no requirement for or advantage to balanced
+designs, so measurements from each animal can continue until recording
+conditions deteriorate. Furthermore, there are not inherent
+assumptions about normality; any distribution can be used for error
+terms or population distribution. Indeed, measurements within a trial
+need not be compressed into a single number. Observations of any type,
+including signals or events, can be directly modelled. Lastly, by
+potentially taking into account \emph{all} the available information
+from an experiment, the hierarchical model can give the
+probability-theoretically correct uncertainty in an estimate, without
+making assumptions about within- and between subject variability.
+
+The hierachical model posits that parameters at each level are drawn
+from distributions that are themselves parametrised with values from a
+higher level. For instance, the response amplitude $r_{ij}$ to a
+stimulus on a particular trial $j$ in a particular subject $i$ may be
+distributed as
+\begin{equation*}
+r_{ij} \sim \mathcal{N}(\mu_{i},\,\sigma)
+\end{equation*}
+and across a population, the mean $\mu_{i}$ may be distributed as
+\begin{equation*}
+\mu_{i} \sim \mathcal{N}(\mu_p,\,\sigma_p)
+\end{equation*}
+or some other distribution. This multi-level structure can be caried
+in countless ways to include regression, non-linear terms and
+additional levels. Here, $\mu_p$ and $\sigma_p$ are known as the
+hyperparameters and are the parameters of interest to be estimated. We
+have used Bayesian inference to estimate the hyperparamters (see
+below), but we stress that these can also be estimated using maximum
+likelihood methods or subjected to classical significance testing.
 
 \begin{itemize}
-\item what is the hierarchical model
-\item use all data, no loss of information.
 \item nesting durations
-\item how to learn parameters
 \end{itemize}
-
-...
-But we also find that new analysis methods become feasible;
-for instance, having functions as first class entities makes it much
-simpler to directly represent probability distributions. We show how
-hierarchical Bayesian modelling \citep{Gelman2003} can incorporate the
-reactive entities here introduced, such that model parameter
-estimation and hypothesis testing takes into account all the
-information observed.
 
 \section*{Results}
 
