@@ -176,7 +176,13 @@ Duration alpha = {Time times Time times alpha}
 Durations are here used for information about whole trial or about an
 entire animal, but could also be useful as observations in their own
 right, such as open times of individual ion channels, periods in which
-activity of a system exceeds a set threshold (e.g bursts).
+activity of a system exceeds a set threshold (e.g bursts). 
+
+\begin{itemize}
+\item drug present. 
+\end{itemize}
+
+
 
 Since signals, events and durations can be instantiated for any type,
 they form a simple but flexible framework for representing many
@@ -394,12 +400,24 @@ or some other distribution. This multi-level structure can be caried
 in countless ways to include regression, non-linear terms and
 additional levels. Here, $\mu_p$ and $\sigma_p$ are known as the
 hyperparameters and are the parameters of interest to be estimated. We
-have used Bayesian inference to estimate the hyperparamters (see
+have used Bayesian inference to estimate the hyperparameters (see
 below), but we stress that these can also be estimated using maximum
 likelihood methods or subjected to classical significance testing.
 
+In the presentation of the hierachical model given above and elsewhere
+(ref), subscript indicies are used to separate parameters within and
+between levels. The implementation of model inference may not be clear
+in the case of unbalanced designs, where the responses cannot be a
+matrix. Indeed, one of the principal difficulties in using WinBUGS, a
+prominent tool for hierachical models, is importing data into the
+program. Here, we suggest that the temporal structure of physiological
+evidence is inherently hierarchical with an arbitrary number of
+levels. First, observe that different durations can be nested. That
+is, occurrences of a duration $d_1$ seperated into groups
+corresponding to occurences of a duration $d_2$. 
+
 \begin{itemize}
-\item nesting durations
+\item ...
 \end{itemize}
 
 \section*{Results}
@@ -410,18 +428,19 @@ collision avoidance system is particularly acute in social animals. A
 common component in such systems is a detector for looming objects. In
 locusts, a single neuron in each brain hemisphere, the Lobular Giant
 Movement Detector (LGMD), responds preferentially to looming stimuli
-\citep{Rind1992}. The response of the LGMD is known to be invariant to manipulations of
-the looming stimulus; for instance, a key property, the time of the
-peak firing rate with respect to the retinal angle of the looming
-stimulus, is insensitive to the colour, texture, size, velocity and
-azimuth of the approaching object when averaged over several
-approaches \citep{Gabbiani2001}. However, the reliability of the looming
-detector is not well understood. For instance, the amount and origin
-of variability in the response to repeated approaches of identical
-objects is important for the animal behaviour (ref?), but has not been
-quantified for this detector. In addition, a looming detector must be
-able to discriminate objects that are on collision course, but the
-efficiency of the LGMD in doing so has not been quantified.
+\citep{Rind1992}. The response of the LGMD is known to be invariant to
+manipulations of the looming stimulus; for instance, a key property,
+the time of the peak firing rate with respect to the retinal angle of
+the looming stimulus, is insensitive to the colour, texture, size,
+velocity and azimuth of the approaching object when averaged over
+several approaches \citep{Gabbiani2001}. However, the reliability of
+the looming detector is not well understood. For instance, the amount
+and origin of variability in the response to repeated approaches of
+identical objects is important for the animal behaviour (ref?), but
+has not been quantified for this detector. In addition, a looming
+detector must be able to discriminate objects that are on collision
+course, but the efficiency of the LGMD in doing so has not been
+quantified.
 
 We constructed several experiments in the calculus of physiological
 evidence to address these questions. Initially, we recorded the
