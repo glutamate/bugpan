@@ -176,13 +176,11 @@ Duration alpha = {Time times Time times alpha}
 Durations are here used for information about whole trial or about an
 entire animal, but could also be useful as observations in their own
 right, such as open times of individual ion channels, periods in which
-activity of a system exceeds a set threshold (e.g bursts). 
-
-\begin{itemize}
-\item drug present. 
-\end{itemize}
-
-
+activity of a system exceeds a set threshold (e.g bursts). We have
+used durations to hold information about an entire experiment, for
+instance a session identifier or the animal strain. Lastly, durations
+could be used for information that spans multiple trials but not an
+entire experiement - for instance, the presence of a drug. 
 
 Since signals, events and durations can be instantiated for any type,
 they form a simple but flexible framework for representing many
@@ -290,11 +288,35 @@ programming language. Thus, a large number of transformations can be
 defined with simple recursive equations including filters, folds and
 scans (refs).
 
-\begin{itemize}
-\item switch
-\item examples of functions
-\item standard library of analysis procedures
-\end{itemize}
+Thus, signals describe continuous changes and events discrete
+occurrences. Sometimes, one requires a continuous behaviour to change
+abruptly into a different mode. FRP provides a clever way of doing
+this: a special construct, |switch| changes the definition of signals
+depending of the occurrence of specified events. For instance, in the
+integrate-and-fire model of a spiking neuron, a cell changes between
+two modes (integration and refraction) 
+\begin{code}
+v_m =  switch {  _, refrac_end  ~>  let D v = cellOde v in v
+                 spike          ~>  sopen v_rest sclose }
+\end{code}
+where
+\begin{code} 
+spike       = (\v->v>0.05) ?? v_m
+refrac_end  = later 0.002 spike
+\end{code}
+In this example, the temporal evolution of |v_m| will alternate
+between two modes: solving the differential equation given by
+|cellOde| and a constant value of |v_rest|. The first mode will be
+active initially (as indicated by |_|), and whenever the |refrac_end|
+event occurs (the end of the refractory period). When the |spike|
+event occurs, |v_m| will follow the constant signal |sopen v_rest
+sclose| until another event occurs.
+
+This small number of special constructors, along with the lambda
+calculus and the list semantics of events and durations, have allowed
+us to construct a small ``standard library'' of analysis procedures
+for physiology. Table S1 details the types and names of the functions
+in this library.
 
 \subsubsection*{Observing signals and events}
 
@@ -310,7 +332,7 @@ Using the construct
 identifier <* source parameter
 \end{code}
 we bind the signal yielded by a \emph{paramet}rised \emph{source} to
-the variable denoted by \emph{identifier}. This variable will hold the
+the variable \emph{identifier}. This variable will hold the
 whole signal observed during the course of the experiment. The signal
 source binding construct defined a simple experiment:
 \begin{code}
@@ -386,23 +408,26 @@ making assumptions about within- and between subject variability.
 
 The hierachical model posits that parameters at each level are drawn
 from distributions that are themselves parametrised with values from a
-higher level. For instance, the response amplitude $r_{ij}$ to a
-stimulus on a particular trial $j$ in a particular subject $i$ may be
-distributed as
+higher level. For instance, in a hierachical regression model, the
+response amplitude $y_{ij}$ to a stimulus of amplitude $x_j$ on a
+particular trial $j$ in a particular subject $i$ may be distributed as
 \begin{equation*}
-r_{ij} \sim \mathcal{N}(\mu_{i},\,\sigma)
+y_{ij} \sim \mathcal{N}(\alpha_{i}+x_j\beta_{i},\,\sigma)
 \end{equation*}
-and across a population, the mean $\mu_{i}$ may be distributed as
+and across a population, the offset $\alpha_{i}$ and slope $\beta_{i}$
+may be distributed as
 \begin{equation*}
-\mu_{i} \sim \mathcal{N}(\mu_p,\,\sigma_p)
+\alpha_i ,\, \beta_i \sim \mathcal{N}(\vec{\mu}_p,\,\mathbf{\Sigma}_p)
 \end{equation*}
-or some other distribution. This multi-level structure can be caried
-in countless ways to include regression, non-linear terms and
-additional levels. Here, $\mu_p$ and $\sigma_p$ are known as the
-hyperparameters and are the parameters of interest to be estimated. We
-have used Bayesian inference to estimate the hyperparameters (see
-below), but we stress that these can also be estimated using maximum
-likelihood methods or subjected to classical significance testing.
+or some other bivariate distribution. This multi-level structure can be varied
+in countless ways to include categorical or mulitple continuous
+variables, non-linearities and additional levels
+\citep{Gelman2006}. Here, $\vec{\mu}_p$ and $\mathbf{\Sigma}_p$ are
+known as the hyperparameters and are the parameters of interest to be
+estimated. We have used Bayesian inference to estimate the
+hyperparameters (see below), but we stress that these can also be
+estimated using maximum likelihood methods or subjected to classical
+significance testing.
 
 In the presentation of the hierachical model given above and elsewhere
 (ref), subscript indicies are used to separate parameters within and
@@ -410,15 +435,25 @@ between levels. The implementation of model inference may not be clear
 in the case of unbalanced designs, where the responses cannot be a
 matrix. Indeed, one of the principal difficulties in using WinBUGS, a
 prominent tool for hierachical models, is importing data into the
-program. Here, we suggest that the temporal structure of physiological
-evidence is inherently hierarchical with an arbitrary number of
-levels. First, observe that different durations can be nested. That
-is, occurrences of a duration $d_1$ seperated into groups
-corresponding to occurences of a duration $d_2$. 
+program (ref?). We suggest that one reason for this is that it is an
+intrinsically difficult problem. Here, we show that the temporal
+structure of physiological evidence is inherently hierarchical with an
+arbitrary number of levels. First, observe that different durations
+can be nested. That is, occurrences of a duration $d_1$ seperated into
+groups corresponding to occurences of a duration $d_2$. Secondly,
+signals and events can also occur within durations. These two
+properties indicate that a hierarchry can be established with the
+longest durations at the top (corresponding to individual subjects,
+for instance) with shorter, nested, durations below (drug state and
+trial) and the inidividual observations (signals and events) at the
+bottom. Thus, the temporal structure of physiological evidence can
+provide a scaffold on which to place a hierarchical model of the
+observations.
 
-\begin{itemize}
-\item ...
-\end{itemize}
+In the following section, we demonstrate how the definition of an
+experiment in the language outlined above, with observations defined
+as signals and events, can be combined with a hierarchical
+probabilistic model for hypothesis testing and parameter estimation. 
 
 \section*{Results}
 
@@ -499,7 +534,8 @@ hit = (\z->z<zscreen) ?? distance
 and |switch| a new distance signal, |distance'|, based on the
 occurrence of |hit|.
 \begin{code}
-distance' = switch {hit ~> \ (thit, zhit) -> sopen zhit sclose } distance 
+distance' = switch {  _    ~>  distance, 
+                      hit  ~>  \ (thit, zhit) -> sopen zhit sclose } 
 \end{code}
 This statement creates a new signal |distance'| which is identical to
 the |distance| signal until an occurrence of a |hit| event, at which
@@ -519,10 +555,11 @@ The response to the looming stimulus in the LGMD can be recorded from
 the locust connectives. Although the LGMD is not thought to make a
 long-range projection, it reliably activate the descending
 contralateral movement detector (DCMD) with a strong synaptic
-connection, such that spikes in the DCMD follow LGMD spikes one to
-one \citep{O'Shea1974}. Extracellular hook electrodes wrapped around the connectives
-record activity in the DCMD as the strongest unit. These electrodes
-were amplified, filtered (see methods) and converted to a digital signal:
+connection, such that spikes in the DCMD follow LGMD spikes one to one
+\citep{O'Shea1974}. Extracellular hook electrodes wrapped around the
+connectives record activity in the DCMD as the strongest unit. These
+electrodes were amplified, filtered (see methods) and converted to a
+digital signal:
 
 \begin{code}
 voltage <* ADC (0, 20000)
@@ -594,38 +631,23 @@ baseline &\text{if $t > t_0$.}
 Second, we assume that on each trial, the the parameters of $r(t)$ is
 drawn from some distribution for the animal, defined by compound
 parameter $\theta_{animal}$. Here, we assume that the trial parameters
-are normally distributed, such that $\theta_{animal} =
-(\vec{\mu}_{animal}, \mathbf{\Sigma}_{animal})$. The model should
-attempt to explain the influence of the approach speed on the spike
-train. We thus replace $\vec{\mu}_{animal}$ by an offset
-$\vec{\alpha}_{animal}$ and slope $\vec{\beta}_{animal}$. Finally, we
-assume that $\vec{\alpha}_{animal}$ and $\vec{\beta}_{animal}$ are
-themselves drawn from some population parameter $\theta_{population} =
-(\vec{\mu}_{population}, \mathbf{\Sigma}_{population})$. For
-simplicity, we assume a constant (but unknown) trial-level covariance
-matrix $\mathbf{\Sigma}_{animal}$ across all animals.
+are normally distributed, such that $\theta_{animal}$ consists of a
+location vector $\vec{\mu}_{animal}$ and a covariance matrix
+$\mathbf{\Sigma}_{animal}$. The model should attempt to explain the
+influence of the approach speed on the spike train. Thus
+$\vec{\mu}_{animal}$ is itself composed of an offset
+$\vec{\alpha}_{animal}$ concatenated with slope $\vec{\beta}_{animal}$
+with respect to $\frac{l}{v}$. Finally, we assume that
+$\vec{\alpha}_{animal}$ and $\vec{\beta}_{animal}$ are themselves
+drawn from some population distribution
+$\mathcal{N}(\vec{\mu}_{population},
+\mathbf{\Sigma}_{population})$. For simplicity, we assume a constant
+(but unknown) trial-level covariance matrix $\mathbf{\Sigma}_{animal}$
+across all animals. A graphical representation of this model is shown
+in Figure 4A (missing).
 
-% To see that this model is not sufficient to explain the variability on
-% different trials even within one approach speed, we calculate the
-% variance of spike time histograms for individual trials simulated with
-% a fixed set of parameters tau, t0, baseline and rate, with histogram
-% variances averaged across draws of parameters from the posterior
-% interred from the spike trains recorded with $L/V=20 ms^{-1}$.  The
-% expected variance from fixed parameter models is much smaller than
-% that observed. To compensate, we draw a new rate for every trial from
-% a distribution $N(mu_{rate}, sd_{rate})$, such that the parameters $mu_{rate}$
-% and $sd_{rate}$ replace rate (and are fixed across trials). This model can
-% better account for the trial-to-trial variability of the spike time
-% histogram (Figure X).
-
-%Implementation of this with [Duration [Int]] and list of priors.
-
-Finally, any of these parameters may vary across individuals in a
-population of locusts. We add an additional layer to the hierarchical
-model for the parameters for the population distribution from which
-individual-level parameters are drawn. The population parameters form
-the highest-level hyperprior and can be considered the only (free)
-parameters (of interest) in the model.
+Figure 4B shows the inferred estimates for the population $\beta$
+means, given as probability distributions. 
 
 \begin{itemize}
 \item The final model, estimated parameters. 
@@ -644,6 +666,8 @@ parameters (of interest) in the model.
 \item bias
 \end{itemize}
 \section*{Discussion}
+
+summary
 
 No histograms, point estimators, data/meta-data distinction, work-flow
 engines.
@@ -756,6 +780,27 @@ rate. Uniform priors for mean and variance components.
  
 
 
+% To see that this model is not sufficient to explain the variability on
+% different trials even within one approach speed, we calculate the
+% variance of spike time histograms for individual trials simulated with
+% a fixed set of parameters tau, t0, baseline and rate, with histogram
+% variances averaged across draws of parameters from the posterior
+% interred from the spike trains recorded with $L/V=20 ms^{-1}$.  The
+% expected variance from fixed parameter models is much smaller than
+% that observed. To compensate, we draw a new rate for every trial from
+% a distribution $N(mu_{rate}, sd_{rate})$, such that the parameters $mu_{rate}$
+% and $sd_{rate}$ replace rate (and are fixed across trials). This model can
+% better account for the trial-to-trial variability of the spike time
+% histogram (Figure X).
+
+%Implementation of this with [Duration [Int]] and list of priors.
+
+% Finally, any of these parameters may vary across individuals in a
+% population of locusts. We add an additional layer to the hierarchical
+% model for the parameters for the population distribution from which
+% individual-level parameters are drawn. The population parameters form
+% the highest-level hyperprior and can be considered the only (free)
+% parameters (of interest) in the model.
 
 \begin{comment}
 --rest of intro

@@ -31,3 +31,13 @@ HaskellBackend_with_local_params.hs
 *.mcmc
 latpic*
 *.aux
+*.log
+*.ptb
+*.tex
+*.tar.gz
+*.png
+paper/Figure?
+paper/Figure?.lhs
+*.html
+*.hc
+*.hp
