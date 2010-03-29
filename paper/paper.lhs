@@ -39,19 +39,21 @@ property, which is called referential transparency
 \citep{Whitehead1927}, is shared by all ``mathematical'' notations but
 not by conventional programming languages.
 
-Although we can describe quantitative scientific models, there are few
-formalisms to describe how evidence for or against these models is
-obtained and evaluated. A more explicit approach to experimentation
-could facilitate replication and meta-analysis, permit a better
-understanding of apparent inconsistencies between studies and a
-clearer formulation of what constitutes sound scientific practice.
-Here, we propose a calculus of physiological evidence that can
-describe an experiment such that it can be unambiguously replicated
-and be inspected to certify whether analysis procedures are
-applicable. This framework does not describe the physical components
-of an animal; there are no concepts of organ systems, cells or
-proteins. Instead it describes observation and calculation of the
-mathematical objects that constitute physiological evidence.
+Although we can describe quantitative scientific models rigorously,
+there are few formalisms to describe how evidence for or against these
+models is obtained and evaluated. Today, most experiments are executed
+by \emph{ad hoc} computer code, and communicated in natural
+language. A more explicit approach to experimentation could facilitate
+replication and meta-analysis, permit a better understanding of
+apparent inconsistencies between studies and a clearer formulation of
+what constitutes sound scientific practice.  Here, we propose a
+calculus of physiological evidence that can describe an experiment
+such that it can be unambiguously replicated and be inspected to
+certify whether analysis procedures are applicable. This framework
+does not describe the physical components of an animal; there are no
+concepts of organ systems, cells or proteins. Instead it describes
+observation and calculation of the mathematical objects that
+constitute physiological evidence.
 
 What is an experiment? Whether they are carried out by humans or by
 automated equipment, experiments can be seen as \emph{programs} that
@@ -180,7 +182,7 @@ activity of a system exceeds a set threshold (e.g bursts). We have
 used durations to hold information about an entire experiment, for
 instance a session identifier or the animal strain. Lastly, durations
 could be used for information that spans multiple trials but not an
-entire experiement - for instance, the presence of a drug. 
+entire experiment - for instance, the presence of a drug. 
 
 Since signals, events and durations can be instantiated for any type,
 they form a simple but flexible framework for representing many
@@ -378,7 +380,7 @@ distributions.
 \subsubsection*{Probabilistic inference}
 
 The previous three sections have described a formal structure for
-phsyiological observations. For these values to be considered
+physiological observations. For these values to be considered
 evidence, they must be understood in the context of a statistical
 model. Here, we consider how the structure of observations described
 here lends itself to parameter estimation and hypothesis
@@ -386,8 +388,8 @@ testing. First, we present the existing statistical framework we have
 used; then, how the temporal structure of observations arrange the
 data in this framework.
 
-The hierarchical bayesian model \citep{Gelman2003} is an expressive
-and general framework for statistical models over several straitified
+The hierarchical Bayesian model \citep{Gelman2003} is an expressive
+and general framework for statistical models over several stratified
 levels. Its principal advantage is that all the available information
 \citep{Rouder2003} is incorporated into a single model. For instance,
 it is common in physiology to base estimates and tests on measurements
@@ -406,9 +408,9 @@ from an experiment, the hierarchical model can give the
 probability-theoretically correct uncertainty in an estimate, without
 making assumptions about within- and between subject variability.
 
-The hierachical model posits that parameters at each level are drawn
+The hierarchical model posits that parameters at each level are drawn
 from distributions that are themselves parametrised with values from a
-higher level. For instance, in a hierachical regression model, the
+higher level. For instance, in a hierarchical regression model, the
 response amplitude $y_{ij}$ to a stimulus of amplitude $x_j$ on a
 particular trial $j$ in a particular subject $i$ may be distributed as
 \begin{equation*}
@@ -420,7 +422,7 @@ may be distributed as
 \alpha_i ,\, \beta_i \sim \mathcal{N}(\vec{\mu}_p,\,\mathbf{\Sigma}_p)
 \end{equation*}
 or some other bivariate distribution. This multi-level structure can be varied
-in countless ways to include categorical or mulitple continuous
+in countless ways to include categorical or multiple continuous
 variables, non-linearities and additional levels
 \citep{Gelman2006}. Here, $\vec{\mu}_p$ and $\mathbf{\Sigma}_p$ are
 known as the hyperparameters and are the parameters of interest to be
@@ -429,23 +431,23 @@ hyperparameters (see below), but we stress that these can also be
 estimated using maximum likelihood methods or subjected to classical
 significance testing.
 
-In the presentation of the hierachical model given above and elsewhere
-(ref), subscript indicies are used to separate parameters within and
+In the presentation of the hierarchical model given above and elsewhere
+(ref), subscript indices are used to separate parameters within and
 between levels. The implementation of model inference may not be clear
 in the case of unbalanced designs, where the responses cannot be a
 matrix. Indeed, one of the principal difficulties in using WinBUGS, a
-prominent tool for hierachical models, is importing data into the
+prominent tool for hierarchical models, is importing data into the
 program (ref?). We suggest that one reason for this is that it is an
 intrinsically difficult problem. Here, we show that the temporal
 structure of physiological evidence is inherently hierarchical with an
 arbitrary number of levels. First, observe that different durations
-can be nested. That is, occurrences of a duration $d_1$ seperated into
-groups corresponding to occurences of a duration $d_2$. Secondly,
+can be nested. That is, occurrences of a duration $d_1$ separated into
+groups corresponding to occurrences of a duration $d_2$. Secondly,
 signals and events can also occur within durations. These two
-properties indicate that a hierarchry can be established with the
+properties indicate that a hierarchy can be established with the
 longest durations at the top (corresponding to individual subjects,
 for instance) with shorter, nested, durations below (drug state and
-trial) and the inidividual observations (signals and events) at the
+trial) and the individual observations (signals and events) at the
 bottom. Thus, the temporal structure of physiological evidence can
 provide a scaffold on which to place a hierarchical model of the
 observations.
