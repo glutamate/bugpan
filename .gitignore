@@ -36,8 +36,12 @@ latpic*
 *.tex
 *.tar.gz
 *.png
+!*.hs
+!*.hs
+!*.bug
 paper/Figure?
 paper/Figure?.lhs
+paper/Figure?.hs
 *.html
 *.hc
 *.hp

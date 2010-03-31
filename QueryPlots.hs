@@ -26,6 +26,7 @@ import Database
 import NewSignal
 import PrettyPrint
 import System.Environment
+import Math.Probably.Sampler
 
 data Histo where -- GADT bec i don't know syntax for double existential (no longer needed)
     Histo :: Int -> [(a,Double)] -> Histo 
@@ -380,5 +381,28 @@ instance (PlotWithGnuplot a, ChopByDur a, Shiftable a)
       --liftIO $ print shifts
       pxs <- mapM getGnuplotCmd $ map (uncurry shift) $ zip shifts objs
       return [(r, concat pxs)]
+
+data CatScat = CatScat [(String, [Double])]
+
+instance PlotWithGnuplot CatScat where
+    getGnuplotCmd (CatScat lst) = do
+      let f (idx, xs) = zip (repeat idx) xs
+      let vls = map f $ zip [(0::Double)..] $ map snd lst      
+      let lbls = zip [(0::Int)..] $ map fst lst
+      pls <- getGnuplotCmd $ concat vls
+      let cmds (n,lbl) = show lbl++" "++show n
+      let s1 = "set xtics ("++(intercalate "," $ map cmds lbls)++")"
+      let cmd = TopLevelGnuplotCmd s1 "unset xtics"
+      return (cmd:pls)
+
+data SamHist = SamHist Int Int (Sampler Double)
+
+instance PlotWithGnuplot SamHist where
+    getGnuplotCmd (SamHist nsam nbins sam) = do
+      vls <- take nsam `fmap` runSamplerIO sam
+      getGnuplotCmd $ Histo nbins $ zip (repeat ()) vls
+
+
+
 
 --file:///var/bugpan/www/01a11b43ac06eef1e89e/plots1.html
