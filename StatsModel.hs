@@ -1,4 +1,4 @@
-{-# LANGUAGE ViewPatterns, NoMonomorphismRestriction, FlexibleInstances #-}
+{-# LANGUAGE ViewPatterns, NoMonomorphismRestriction, FlexibleInstances, ScopedTypeVariables #-}
 {-# OPTIONS_GHC -fvia-c -optc-O3 #-}
 module StatsModel where
 
@@ -36,6 +36,7 @@ import qualified Data.Binary as B
 import System.Directory
 import Text.Regex.Posix
 import Data.Maybe
+import qualified Data.Map as Map
 
 
 parseFileName :: String -> String -> Maybe (Int, Int)
@@ -70,6 +71,36 @@ loadChain nm parnm cnum (flo, fhi) = do
               (fmap (map (!!parIdx)) $safeLoad file)             
               (return [])
   return $ concat xs
+
+loadChainMap :: String -> Int -> (Int,Int) -> Int -> IO [(String,[Double])]
+loadChainMap nm cnum (flo, fhi) takeN = do
+  parstrs <- fmap read $ readFile (nm++"_parnames.mcmc") 
+  --let Just parIdx = fmap snd $ find ((==parnm) . fst) $ zip (read parstr) [0..]
+  xs <- forM [flo..fhi] $ \fnum-> do 
+          let file =(nm++"_chain"++show cnum++"_file"++show fnum++".mcmc")
+--          putStr $ file++" "
+          ifM (doesFileExist file ) 
+              (safeLoad file)             
+              (return [])
+  xss <- runSamplerIO $ mapM (nOf takeN) $ transpose $ concat xs
+  return $ zip parstrs $ head xss
+      where nOf n lst = sequence $ replicate n $ oneOf lst
+            joinMap k mv = fmap ((,) k) mv 
+  
+onlyKeys :: Eq k => [k] -> [(k,v)] -> [(k,v)]
+onlyKeys ks = filter ((`elem` ks) . fst)
+
+mapScat :: [String] -> [(String,[Double])] -> CatScat
+mapScat ks mp = CatScat $ onlyKeys ks mp
+
+mapSingly2 :: Eq k => k -> (v->v->a) -> k -> [(k,[v])] -> [a]
+mapSingly2 k1 op k2 mp = 
+    let xs = fromJust $ lookup k1 mp
+        ys = fromJust $ lookup k2 mp
+    in  zipWith op xs ys
+
+mapSinglyMany :: Eq k => [(k, v->v->a, k, knew)] -> [(k,[v])] -> [(knew,[a])]
+mapSinglyMany ks mp = for ks $ \(k1, op, k2, knew) -> (knew, mapSingly2 k1 op k2 mp)
 
 
 writeInChunksK :: (Show a, Binary b) => String -> Int ->  (a->b) -> [a] -> IO ()

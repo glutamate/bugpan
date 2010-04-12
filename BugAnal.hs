@@ -70,6 +70,9 @@ mkAnal (('>':q):ss) =
              ("chain" `isPrefixOf` (chomp q1), do
                 procChain (words q1)
                 mkAnal rest),
+             ("chainmap" `isPrefixOf` (chomp q1), do
+                procChainMap (words q1)
+                mkAnal rest),
              ("t-test" `isPrefixOf` (chomp q1), do
                 procTtest (words q1) tablines
                 mkAnal rest),
@@ -136,10 +139,15 @@ tellNmsTys = do
                                                       ]
   tellEverywheres
 
-procChain [_, vname, cname, cnum, parnm, fstart, fstop] = do
+procChain [_, vname, cname, cnum, parnm, fstart, fstop, thin] = do
   tell $ vname ++"<- loadChain "++unwords [show cname, show parnm, 
-                                           cnum, "("++fstart++","++fstop++")" 
+                                           cnum, "("++fstart++","++fstop++")", show thin
                                            ]
+  return ()
+
+procChainMap [_, vname, cname, cnum, fstart, fstop] = do
+  tell $ vname ++"<- loadChainMap "++unwords [show cname,
+                                              cnum, "("++fstart++","++fstop++")"]
   return ()
 
 

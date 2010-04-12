@@ -307,12 +307,15 @@ integralR pars@[amp, t0, tau1, tau2, tau3, pslow] t
 
 ofInterest :: BigPar -> [Double]
 ofInterest ((popmeanssds, trialsds, betas), sessmeans, sessbetas, trialPars) = 
-    (map (fst . unP) popmeanssds) ++ (map (fst . unP) betas) ++ (map unP trialsds) ++ (unP $ head sessmeans) ++( unP $ head $ head trialPars)
+    (map (fst . unP) popmeanssds) ++ (map (snd . unP) popmeanssds) ++ (map (fst . unP) betas) ++ 
+    (map (snd . unP) betas)++ (map unP trialsds) ++ (unP $ head sessmeans) ++( unP $ head $ head trialPars)
 
 -- ++popsds -- ++trialsds
 
 parNames = words $ "amp t0 tau1 tau2 tau3 pslow "++
+                   "ampsd t0sd tau1sd tau2sd tau3sd pslowsd "++
                    "ampbeta t0beta tau1beta tau2beta tau3beta pslowbeta "++
+                   "ampbetasd t0betasd tau1betasd tau2betasd tau3betasd pslowbetasd "++
                    "amptrsd t0trsd tau1trsd tau2trsd tau3trsd pslowtrsd "++
                    "amps1mean t0s1mean tau1s1mean tau2s1mean tau3s1mean pslows1mean "++ 
                    "amps1tr1 t0s1tr1 tau1s1tr1 tau2s1tr1 tau3s1tr1 pslows1tr1"
