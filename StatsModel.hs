@@ -36,7 +36,7 @@ import qualified Data.Binary as B
 import System.Directory
 import Text.Regex.Posix
 import Data.Maybe
-import qualified Data.Map as Map
+--import qualified Data.Map as Map
 
 
 parseFileName :: String -> String -> Maybe (Int, Int)
@@ -98,6 +98,8 @@ mapSingly2 k1 op k2 mp =
     let xs = fromJust $ lookup k1 mp
         ys = fromJust $ lookup k2 mp
     in  zipWith op xs ys
+
+m !!! k = fromJust $ lookup k m  
 
 mapSinglyMany :: Eq k => [(k, v->v->a, k, knew)] -> [(k,[v])] -> [(knew,[a])]
 mapSinglyMany ks mp = for ks $ \(k1, op, k2, knew) -> (knew, mapSingly2 k1 op k2 mp)

@@ -67,11 +67,11 @@ mkAnal (('>':q):ss) =
                 let fnm = ensurePostfix ".banal" $ (words q1)!!1
                 lines <- fmap lines $ liftIO $ readFile fnm
                 mkAnal $ lines ++ rest),
-             ("chain" `isPrefixOf` (chomp q1), do
-                procChain (words q1)
-                mkAnal rest),
              ("chainmap" `isPrefixOf` (chomp q1), do
                 procChainMap (words q1)
+                mkAnal rest),
+             ("chain" `isPrefixOf` (chomp q1), do
+                procChain (words q1)
                 mkAnal rest),
              ("t-test" `isPrefixOf` (chomp q1), do
                 procTtest (words q1) tablines
@@ -139,15 +139,15 @@ tellNmsTys = do
                                                       ]
   tellEverywheres
 
-procChain [_, vname, cname, cnum, parnm, fstart, fstop, thin] = do
+procChain [_, vname, cname, cnum, parnm, fstart, fstop] = do
   tell $ vname ++"<- loadChain "++unwords [show cname, show parnm, 
-                                           cnum, "("++fstart++","++fstop++")", show thin
+                                           cnum, "("++fstart++","++fstop++")"
                                            ]
   return ()
 
-procChainMap [_, vname, cname, cnum, fstart, fstop] = do
+procChainMap [_, vname, cname, cnum, fstart, fstop, thn] = do
   tell $ vname ++"<- loadChainMap "++unwords [show cname,
-                                              cnum, "("++fstart++","++fstop++")"]
+                                              cnum, "("++fstart++","++fstop++")", thn]
   return ()
 
 
@@ -351,6 +351,7 @@ writer s = do
   modimport "FitGnuplot"
   modimport "Math.Probably.FoldingStats"
   modimport "Math.Probably.Sampler"
+  modimport "qualified Math.Probably.PDF as PDF"
   tell "main = do"
   indent 3
   when (('\\'/=) $ head $ head $ s) $

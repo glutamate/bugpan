@@ -18,15 +18,22 @@
 >> chain t0 ../conmlthin 0 t0 0 0
 >> chain amp ../conmlthin 0 amp 0 0
 
->> plot $ (lns $ chn $ zipWith (/) ampbeta amp) :+: 
->>        (lns $ shiftxs 550 $ chn $ zipWith (/) t0beta (map (5-) t0)) :+: 
->>        (lns $ shiftxs 1100 $ chn $ zipWith (/) tau1beta tau1) :+:
->>        (lns $ shiftxs 1650 $ chn $ zipWith (/) tau2beta tau2) :+:
->>        (lns $ shiftxs 2200 $ chn $ zipWith (/) tau3beta tau3) :+:
->>        Lines [LineType 2, LineWidth 2, LineColor "black" ] [(0::Double, 0::Double), (0,2750)]
+>> chainmap chnm ../conmlthin 0 0 0 100
+
+%>> plot $ (lns $ chn $ zipWith (/) ampbeta amp) :+: 
+%>>        (lns $ shiftxs 550 $ chn $ zipWith (/) t0beta (map (5-) t0)) :+: 
+%>>        (lns $ shiftxs 1100 $ chn $ zipWith (/) tau1beta tau1) :+:
+%>>        (lns $ shiftxs 1650 $ chn $ zipWith (/) tau2beta tau2) :+:
+%>>        (lns $ shiftxs 2200 $ chn $ zipWith (/) tau3beta tau3) :+:
+%>>        Lines [LineType 2, LineWidth 2, LineColor "black" ] [(0::Double, 0::Double), (0,2750)]
 
 %>>        (lns $ shiftxs 3500 $ chn $ zipWith (/) pslowbeta pslow) :+: 
 %>>        (lns $ shiftxs 400 $ chn $ zipWith (/) pslowbeta pslow) :+: 
+
+>> plot $ mapScat (words "t0beta tau1beta tau2beta tau3beta pslowbeta") chnm
+
+>> plot $ XRange 0 10 $ (SamHist 100000 1000 $ fmap exp $ gaussD 1 1) :+: FunSeg 0 10 (PDF.logNormal 1 1)
+
 
 Figure 4. Top, inferred probability distributions for $\frac{\beta_{pop}}{\alpha_{pop}}$
 parameters for $A$, $t_0$, $\tau_1$ $\tau_2$ $\tau_3$ and (not) $p_{slow}$. 
