@@ -72,6 +72,10 @@ loadChain nm parnm cnum (flo, fhi) = do
               (return [])
   return $ concat xs
 
+takeRandomly :: Int -> [a] -> IO [a]
+takeRandomly n xs = do
+  fmap (take n) $ runSamplerIO $ oneOf xs
+
 loadChainMap :: String -> Int -> (Int,Int) -> Int -> IO [(String,[Double])]
 loadChainMap nm cnum (flo, fhi) takeN = do
   parstrs <- fmap read $ readFile (nm++"_parnames.mcmc") 
@@ -87,6 +91,25 @@ loadChainMap nm cnum (flo, fhi) takeN = do
       where nOf n lst = sequence $ replicate n $ oneOf lst
             joinMap k mv = fmap ((,) k) mv 
   
+newtype Samples a = Samples {unSamples :: [a] } deriving (Eq, Ord, Show)
+
+instance Functor Samples where
+    fmap f = Samples . map f . unSamples
+
+samOp2 op (Samples xs) (Samples ys) = Samples $ zipWith op xs ys
+
+instance Num a => Num (Samples a) where
+    (+) = samOp2 (+)
+    (*) = samOp2 (*)
+    (-) = samOp2 (-)
+    abs = fmap abs
+    signum = fmap signum
+    fromInteger = Samples . repeat . fromInteger
+
+instance Fractional a => Fractional (Samples a) where
+    (/) = samOp2 (/)
+    fromRational = Samples . repeat . fromRational    
+
 onlyKeys :: Eq k => [k] -> [(k,v)] -> [(k,v)]
 onlyKeys ks = filter ((`elem` ks) . fst)
 

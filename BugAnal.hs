@@ -70,6 +70,9 @@ mkAnal (('>':q):ss) =
              ("chainmap" `isPrefixOf` (chomp q1), do
                 procChainMap (words q1)
                 mkAnal rest),
+             ("chains" `isPrefixOf` (chomp q1), do
+                procLoadChain (words q1)
+                mkAnal rest),
              ("chain" `isPrefixOf` (chomp q1), do
                 procChain (words q1)
                 mkAnal rest),
@@ -145,9 +148,18 @@ procChain [_, vname, cname, cnum, parnm, fstart, fstop] = do
                                            ]
   return ()
 
+procLoadChain [_, cname, cnum, fstart, fstop, thn] = do
+  parstrs <- fmap read $ liftIO $ readFile (cname++"_parnames.mcmc")
+  let varnm = last $ splitBy '/' cname
+  tell $ varnm ++ " <- loadChainMap "++unwords [show cname,cnum, 
+                                                "("++fstart++","++fstop++")", thn]
+  forM_ parstrs $ \parnm-> do
+    tell $ "let "++parnm++" = Samples $ "++varnm++"!!!"++show parnm
+  return ()
+
 procChainMap [_, vname, cname, cnum, fstart, fstop, thn] = do
-  tell $ vname ++"<- loadChainMap "++unwords [show cname,
-                                              cnum, "("++fstart++","++fstop++")", thn]
+  tell $ vname ++"<- loadChainMap "++unwords [show cname,cnum, 
+                                              "("++fstart++","++fstop++")", thn]
   return ()
 
 
