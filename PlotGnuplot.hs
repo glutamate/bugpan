@@ -480,11 +480,21 @@ instance PlotWithGnuplot CentreLabel where
 
 
 data AxisLabels a = AxisLabels String String a
+                  | XLabel String a
+                  | YLabel String a
 
 instance PlotWithGnuplot a => PlotWithGnuplot (AxisLabels a) where
     multiPlot r (AxisLabels xlab ylab x) = do
       let mklabs = [TopLevelGnuplotCmd ("set xlabel "++show xlab) "unset xlabel", 
                     TopLevelGnuplotCmd ("set ylabel "++show ylab) "unset ylabel"]
+      px <- multiPlot r x
+      return $ map (\(r', pls) -> (r', mklabs++pls)) px
+    multiPlot r (XLabel xlab x) = do
+      let mklabs = [TopLevelGnuplotCmd ("set xlabel "++show xlab) "unset xlabel"]
+      px <- multiPlot r x
+      return $ map (\(r', pls) -> (r', mklabs++pls)) px
+    multiPlot r (YLabel xlab x) = do
+      let mklabs = [TopLevelGnuplotCmd ("set ylabel "++show xlab) "unset ylabel"]
       px <- multiPlot r x
       return $ map (\(r', pls) -> (r', mklabs++pls)) px
 

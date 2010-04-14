@@ -5,34 +5,28 @@
 >> chn = \xs -> histValues 50 $ drop 5000 xs
 >> lns = \pts -> Lines [LineType 1, LineWidth 2] pts
 
->> chain t0beta ../conmlthin 0 t0beta 0 0
->> chain ampbeta ../conmlthin 0 ampbeta 0 0
->> chain tau3beta ../conmlthin 0 tau3beta 0 0
->> chain tau3 ../conmlthin 0 tau3 0 0
->> chain tau1beta ../conmlthin 0 tau1beta 0 0
->> chain tau1 ../conmlthin 0 tau1 0 0
->> chain tau2beta ../conmlthin 0 tau2beta 0 0
->> chain tau2 ../conmlthin 0 tau2 0 0
->> chain pslowbeta ../conmlthin 0 pslowbeta 0 0
->> chain pslow ../conmlthin 0 pslow 0 0
->> chain t0 ../conmlthin 0 t0 0 0
->> chain amp ../conmlthin 0 amp 0 0
+>> chains ../conml2thin 0 0 0 100 500 
 
->> chainmap chnm ../conmlthin 0 0 0 100
-
-%>> plot $ (lns $ chn $ zipWith (/) ampbeta amp) :+: 
-%>>        (lns $ shiftxs 550 $ chn $ zipWith (/) t0beta (map (5-) t0)) :+: 
-%>>        (lns $ shiftxs 1100 $ chn $ zipWith (/) tau1beta tau1) :+:
-%>>        (lns $ shiftxs 1650 $ chn $ zipWith (/) tau2beta tau2) :+:
-%>>        (lns $ shiftxs 2200 $ chn $ zipWith (/) tau3beta tau3) :+:
-%>>        Lines [LineType 2, LineWidth 2, LineColor "black" ] [(0::Double, 0::Double), (0,2750)]
+>> plot $ (lns $ chn $ zipWith (/) ampbeta amp) :+: 
+>>        (lns $ shiftxs 550 $ chn $ zipWith (/) t0beta (map (5-) t0)) :+: 
+>>        (lns $ shiftxs 1100 $ chn $ zipWith (/) tau1beta tau1) :+:
+>>        (lns $ shiftxs 1650 $ chn $ zipWith (/) tau2beta tau2) :+:
+>>        (lns $ shiftxs 2200 $ chn $ zipWith (/) tau3beta tau3) :+:
+>>        Lines [LineType 2, LineWidth 2, LineColor "black" ] [(0::Double, 0::Double), (0,2750)]
 
 %>>        (lns $ shiftxs 3500 $ chn $ zipWith (/) pslowbeta pslow) :+: 
 %>>        (lns $ shiftxs 400 $ chn $ zipWith (/) pslowbeta pslow) :+: 
 
->> plot $ mapScat (words "t0beta tau1beta tau2beta tau3beta pslowbeta") chnm
+>> yrep = unsafeYrep conml2thin 1000
 
->> plot $ XRange 0 10 $ (SamHist 100000 1000 $ fmap exp $ gaussD 1 1) :+: FunSeg 0 10 (PDF.logNormal 1 1)
+>> plot $ sel fst3 yrep
+
+>> plot $ YLabel "Coefficient of variation" $ mapScat (words "amp t_0 tau_1 tau_2 tau_3 amp t_0 tau_1 tau_2 tau_3") 
+>>     [ampsd/amp, t0sd/t0, tau1sd/tau1, tau2sd/tau2, tau3sd/tau3, 
+>>      amptrsd/amp, t0trsd/t0, tau1trsd/tau1, tau2trsd/tau2, tau3trsd/tau3]
+%>>      ampbetasd/abs ampbeta, t0betasd/abs t0beta, tau1betasd/abs tau1beta, tau2betasd/abs tau2beta, tau3betasd/abs tau3beta]
+
+% >> plot $ XRange 0 10 $ (SamHist 100000 1000 $ fmap exp $ gaussD 1 1) :+: FunSeg 0 10 (PDF.logNormal 1 1)
 
 
 Figure 4. Top, inferred probability distributions for $\frac{\beta_{pop}}{\alpha_{pop}}$

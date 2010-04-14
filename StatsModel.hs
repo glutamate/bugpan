@@ -76,8 +76,8 @@ takeRandomly :: Int -> [a] -> IO [a]
 takeRandomly n xs = do
   fmap (take n) $ runSamplerIO $ oneOf xs
 
-loadChainMap :: String -> Int -> (Int,Int) -> Int -> IO [(String,[Double])]
-loadChainMap nm cnum (flo, fhi) takeN = do
+loadChainMap :: String -> Int -> (Int,Int) -> Int -> Int -> IO [(String,[Double])]
+loadChainMap nm cnum (flo, fhi) takeN dropN = do
   parstrs <- fmap read $ readFile (nm++"_parnames.mcmc") 
   --let Just parIdx = fmap snd $ find ((==parnm) . fst) $ zip (read parstr) [0..]
   xs <- forM [flo..fhi] $ \fnum-> do 
@@ -86,12 +86,15 @@ loadChainMap nm cnum (flo, fhi) takeN = do
           ifM (doesFileExist file ) 
               (safeLoad file)             
               (return [])
-  xss <- runSamplerIO $ mapM (nOf takeN) $ transpose $ concat xs
+  xss <- runSamplerIO $ mapM (nOf takeN . drop dropN) $ transpose $ concat xs
   return $ zip parstrs $ head xss
       where nOf n lst = sequence $ replicate n $ oneOf lst
             joinMap k mv = fmap ((,) k) mv 
   
 newtype Samples a = Samples {unSamples :: [a] } deriving (Eq, Ord, Show)
+
+pickSamples :: [(String,[a])] -> IO [(String,a)]
+pickSamples = mapM $ \(s,xs)-> fmap (((,) s) . head) $ runSamplerIO $ oneOf xs
 
 instance Functor Samples where
     fmap f = Samples . map f . unSamples
@@ -113,8 +116,10 @@ instance Fractional a => Fractional (Samples a) where
 onlyKeys :: Eq k => [k] -> [(k,v)] -> [(k,v)]
 onlyKeys ks = filter ((`elem` ks) . fst)
 
-mapScat :: [String] -> [(String,[Double])] -> CatScat
-mapScat ks mp = CatScat $ onlyKeys ks mp
+mapScat :: [String] -> [Samples Double] -> CatScat
+mapScat nms sams = CatScat $ zip nms $ map unSamples sams
+
+
 
 mapSingly2 :: Eq k => k -> (v->v->a) -> k -> [(k,[v])] -> [a]
 mapSingly2 k1 op k2 mp = 

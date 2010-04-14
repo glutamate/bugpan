@@ -37,7 +37,7 @@ import Foreign.Ptr
 import Control.Arrow
 import FitGnuplot
 import Debug.Trace
-
+import Locust
 
 sampleMany :: [Sampler a] -> Sampler [a]
 sampleMany = sequence
@@ -45,15 +45,6 @@ sampleMany = sequence
 sampleMany2 :: [[Sampler a]] -> Sampler [[a]]
 sampleMany2 = sequence . map sequence
 
-forIdx ::  [a] -> (Int ->  b) ->[b]
-forIdx xss f = map (f . snd) $ zip xss [0..]
-
-forIdx2 :: [[a]] -> (Int -> Int -> b) -> [[b]]
-forIdx2 xss f = map g $ zip xss [0..]
-    where g (xs, i) = map  (f i . snd) $ zip xs [0..]
- 
-for2 :: [[a]] -> (a->b) -> [[b]]
-for2 xss f = map (map f) xss 
 
 
 metSampleP s = metSample1P s depSam
@@ -118,18 +109,18 @@ up_session thedata ((popmeanssds, trialsds, betas), sessmeans, sessbetas, trialP
 up_pop :: TheData -> BigPar -> Sampler BigPar
 up_pop thedata ((popmeanssds, trialsds, betas), sessmeans, sessbetas, trialPars) = do
   newpopmeanssds <- sampleMany $ forIdx (popmeanssds) $ \msi->
-                        metSampleP "popmeans" (\(pm, ps)-> let pmean = set msi pm $ map (fst. unP) popmeanssds 
-                                                               psd = set msi ps $ map (snd . unP) popmeanssds  in
+                        metSampleP "popmeans" (\(pm, ps)-> let pmean = setIdx msi pm $ map (fst. unP) popmeanssds 
+                                                               psd = setIdx msi ps $ map (snd . unP) popmeanssds  in
                                                            (sum $ for sessmeans $ p_i_pop pmean psd . unP ) + 
                                                            ling ps ) $ popmeanssds!!msi
   newbetas <- sampleMany $ forIdx (betas) $ \bi->
-                        metSampleP "popbetas" (\(bm, bs)-> let bmean = set bi bm $ map (fst. unP) betas 
-                                                               bsd = set bi bs $ map (snd . unP) betas  in
+                        metSampleP "popbetas" (\(bm, bs)-> let bmean = setIdx bi bm $ map (fst. unP) betas 
+                                                               bsd = setIdx bi bs $ map (snd . unP) betas  in
                                                            (sum $ for sessbetas $ p_i_pop bmean bsd . unP ) + 
                                                            ling bs ) $ betas!!bi
   newtrialsds <- sampleMany $ forIdx trialsds $ \si -> 
                         metSampleP "trialsds" (\sd-> (sum $ map sum $ forIdx2 trialPars $ \sess tr->
-                                       let trsds = set si sd $ map unP trialsds 
+                                       let trsds = setIdx si sd $ map unP trialsds 
                                            lov = snd $ thedata!!sess!!tr in
                                        p_ij_i (zipWith (+) (unP $ sessmeans!!sess)
                                                            (map (lov*) (unP $ sessbetas!!sess))) 
@@ -147,11 +138,6 @@ p_pop _ sds = sum $ map ling sds
 
 ling = const 1 --log . invGammaD 0.001 0.001
 
-set 0 x (_:ys) = x:ys
-set n x (y:ys) = y : set (n-1) x ys
-
-rFromPars :: TrialPar -> Double -> Double
-rFromPars [amp, t0, tau1, tau2, tau3, pslow] = r amp t0 tau1 tau2 tau3 pslow 
 
 likelihoodH1 spikes pars@[amp, t0, tau1, tau2, tau3, pslow] =
 --    likelihood (realToFrac rate) (realToFrac tau) (realToFrac baseline) (realToFrac t0) 
@@ -159,9 +145,6 @@ likelihoodH1 spikes pars@[amp, t0, tau1, tau2, tau3, pslow] =
 
 gibbsSF ::TheData -> StochFun BigPar BigPar 
 gibbsSF thedata = condSampler (up_trial thedata) >>> condSampler (up_session thedata) >>> condSampler (up_pop thedata )
-
-mapM2 :: Monad m => (a -> b -> m c) -> [a] -> [b] -> m [c]
-mapM2 f xs ys = mapM (uncurry f) $ zip xs ys
 
 --[amp, t0, tau1, tau2, tau3, pslow, baseline]
 
@@ -276,33 +259,6 @@ chopData2 durs allspikes =
 
 lrsq = log . recip . (\x-> x*x)
 
-r :: Double -> Double -> Double -> Double -> Double -> Double -> Double -> Double
-r amp t0 tau1 tau2 tau3 pslow  t 
-    | t < t0 = let x = (-t+t0) in 
-               amp*(1-exp(-x/tau1))*((1-pslow)*exp(-x/tau2)+pslow*exp(-x/tau3))
-    | otherwise = 0.02
-
-logr :: Double -> Double -> Double -> Double -> Double -> Double -> Double -> Double
-logr amp t0 tau1 tau2 tau3 pslow t 
-    | t < t0 = let x = (-t+t0) in 
-               log amp + log (1-exp(-x/tau1)) + log ((1-pslow)*exp(-x/tau2)+pslow*exp(-x/tau3))
-    | otherwise = log 0.02
-
-
---http://integrals.wolfram.com/index.jsp?expr=(-(x-z)%2Ft)*Exp[1%2B(x-z)%2Ft]*(r-b)%2Bb&random=false
-
---integralR :: (Double, Double, Double, Double) -> Double -> Double
---integralR pars@(rate, tau, baseline, t0) t 
---    | t>t0 = integralR pars t0 + baseline * t
---    | otherwise = (baseline - rate)*exp((tau+t-t0)/tau)*(-tau+t-t0)+baseline*t
-
---http://www.wolframalpha.com/input/?i=a*(1-Exp[(x-t0)/t1])*((1-p)*Exp[(x-t0)/t2]%2Bp*Exp[(x-t0)/t3])
-integralR :: [Double]-> Double -> Double
-integralR pars@[amp, t0, tau1, tau2, tau3, pslow] t 
-    | t>t0 = integralR pars t0 + 0.02 * (t-t0)
-    | otherwise = let bigterm tau = tau * exp ((tau1*t - t0*(tau1+tau)) /(tau1*tau)) * 
-                                    ((tau1+tau)* exp (t0/tau1) - tau1 * exp (t/tau1)) / (tau1+tau) 
-		  in amp * (pslow * bigterm tau3 - (pslow-1) * bigterm tau2) 
 
 
 ofInterest :: BigPar -> [Double]
@@ -320,15 +276,6 @@ parNames = words $ "amp t0 tau1 tau2 tau3 pslow "++
                    "amps1mean t0s1mean tau1s1mean tau2s1mean tau3s1mean pslows1mean "++ 
                    "amps1tr1 t0s1tr1 tau1s1tr1 tau2s1tr1 tau3s1tr1 pslows1tr1"
 
-all2 :: (a->Bool) -> [[a]] -> Bool
-all2 p = and . map (all p)
-
-zip2d :: [[a]] -> [[b]] -> [(a,b)]
-zip2d xss yss = concat $ zipWith zip xss yss
-
-last3 [x,y,z] = [x,y,z]
-last3 [] = []
-last3 (x:xs) = last3 xs
 
 
 help = do
@@ -430,7 +377,3 @@ main3 = do
 
 
 
-euler :: Double -> Double -> Double -> (Double -> Double) -> Double
-euler h t1 t2 f = let ts = [t1, t1+h..t2]
-                      g acc t =  acc+h*f(t) 
-                  in foldl g 0 ts

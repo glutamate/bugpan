@@ -148,11 +148,11 @@ procChain [_, vname, cname, cnum, parnm, fstart, fstop] = do
                                            ]
   return ()
 
-procLoadChain [_, cname, cnum, fstart, fstop, thn] = do
+procLoadChain [_, cname, cnum, fstart, fstop, takeN, dropN] = do
   parstrs <- fmap read $ liftIO $ readFile (cname++"_parnames.mcmc")
   let varnm = last $ splitBy '/' cname
   tell $ varnm ++ " <- loadChainMap "++unwords [show cname,cnum, 
-                                                "("++fstart++","++fstop++")", thn]
+                                                "("++fstart++","++fstop++")", takeN, dropN]
   forM_ parstrs $ \parnm-> do
     tell $ "let "++parnm++" = Samples $ "++varnm++"!!!"++show parnm
   return ()
@@ -361,6 +361,7 @@ writer s = do
   modimport "Control.Monad"
   modimport "StatsModel"
   modimport "FitGnuplot"
+  modimport "Locust"
   modimport "Math.Probably.FoldingStats"
   modimport "Math.Probably.Sampler"
   modimport "qualified Math.Probably.PDF as PDF"

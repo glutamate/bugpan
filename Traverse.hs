@@ -65,10 +65,10 @@ setter :: (TravS -> TravS) -> TravM ()
 setter f = do s <- get
               put $ f s
 
-setIdx :: Int -> a-> [a]->[a]
+{-setIdx :: Int -> a-> [a]->[a]
 setIdx _ _ [] = []
 setIdx 0 y (x:xs) = y:xs
-setIdx n y (x:xs) = x:setIdx (n-1) y xs
+setIdx n y (x:xs) = x:setIdx (n-1) y xs-}
 
 spliceAt :: Int -> [a]-> [a]->[a]
 spliceAt n ys xs = let (hd, tl) = splitAt n xs in

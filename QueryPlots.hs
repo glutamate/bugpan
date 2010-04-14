@@ -388,8 +388,9 @@ instance PlotWithGnuplot CatScat where
     getGnuplotCmd (CatScat lst) = do
       let f (idx, xs) = zip (repeat idx) xs
       let vls = map f $ zip [(0::Double)..] $ map snd lst      
+      let ncats = length lst 
       let lbls = zip [(0::Int)..] $ map fst lst
-      pls <- getGnuplotCmd $ concat vls
+      pls <- getGnuplotCmd $ jitterxs 0.1 $ concat vls
       let cmds (n,lbl) = show lbl++" "++show n
       let s1 = "set xtics ("++(intercalate "," $ map cmds lbls)++")"
       let cmd = TopLevelGnuplotCmd s1 "unset xtics"
