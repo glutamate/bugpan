@@ -101,6 +101,8 @@ instance Functor Samples where
 
 samOp2 op (Samples xs) (Samples ys) = Samples $ zipWith op xs ys
 
+thinSamples n = Samples . thin n . unSamples
+
 instance Num a => Num (Samples a) where
     (+) = samOp2 (+)
     (*) = samOp2 (*)

@@ -648,8 +648,8 @@ $\mathcal{N}(\vec{\mu}_{population},
 across all animals. A graphical representation of this model is shown
 in Figure 4A (missing).
 
-Figure 4B shows the inferred estimates for the population $\beta$
-means, given as probability distributions. 
+Figure 4B shows the inferred estimates for the ratio population
+$\beta$ to $\alpha$ means, given as probability distributions.
 
 \begin{itemize}
 \item The final model, estimated parameters. 

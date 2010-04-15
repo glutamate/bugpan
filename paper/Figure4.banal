@@ -2,38 +2,45 @@
 
 >> swap = \(x,y)->(y,x)
 >> shiftxs = \xs vls -> map (\(x,y) -> (x,y+xs)) vls
->> chn = \xs -> histValues 50 $ drop 5000 xs
+>> chn = \xs -> histValues 20 $ unSamples xs
 >> lns = \pts -> Lines [LineType 1, LineWidth 2] pts
 
->> chains ../conml2thin 0 0 0 100 500 
+>> chains ../conml2thin 0 0 0 2000 4000 
 
->> plot $ (lns $ chn $ zipWith (/) ampbeta amp) :+: 
->>        (lns $ shiftxs 550 $ chn $ zipWith (/) t0beta (map (5-) t0)) :+: 
->>        (lns $ shiftxs 1100 $ chn $ zipWith (/) tau1beta tau1) :+:
->>        (lns $ shiftxs 1650 $ chn $ zipWith (/) tau2beta tau2) :+:
->>        (lns $ shiftxs 2200 $ chn $ zipWith (/) tau3beta tau3) :+:
->>        Lines [LineType 2, LineWidth 2, LineColor "black" ] [(0::Double, 0::Double), (0,2750)]
+>> yrep = unsafeYrep conml2thin 10000
+
+>> plot $ (YLabel "ignore me" $ (lns $ chn $ ampbeta/amp) :+: 
+>>        (lns $ shiftxs 550 $ chn $ t0beta/(5-t0)) :+: 
+>>        (lns $ shiftxs 1100 $ chn $ tau1beta/tau1) :+:
+>>        (lns $ shiftxs 1650 $ chn $ tau2beta/tau2) :+:
+>>        (lns $ shiftxs 2200 $ chn $ tau3beta/tau3) :+:
+>>        Lines [LineType 2, LineWidth 2, LineColor "black" ] [(0::Double, 0::Double), (0,2750)]) :||:
+>>        (Points [PointType 0] $ Vplots [GnuplotBox $ YLabel "t_{peak}" $ sel fst3 yrep, 
+>>          GnuplotBox $ YLabel "amp" $ sel snd3 yrep, GnuplotBox $ YLabel "nspikes" $sel trd3 yrep])
 
 %>>        (lns $ shiftxs 3500 $ chn $ zipWith (/) pslowbeta pslow) :+: 
 %>>        (lns $ shiftxs 400 $ chn $ zipWith (/) pslowbeta pslow) :+: 
 
->> yrep = unsafeYrep conml2thin 1000
-
->> plot $ sel fst3 yrep
 
 >> plot $ YLabel "Coefficient of variation" $ mapScat (words "amp t_0 tau_1 tau_2 tau_3 amp t_0 tau_1 tau_2 tau_3") 
->>     [ampsd/amp, t0sd/t0, tau1sd/tau1, tau2sd/tau2, tau3sd/tau3, 
+>>     $ map (thinSamples 20) [ampsd/amp, t0sd/t0, tau1sd/tau1, tau2sd/tau2, tau3sd/tau3, 
 >>      amptrsd/amp, t0trsd/t0, tau1trsd/tau1, tau2trsd/tau2, tau3trsd/tau3]
 %>>      ampbetasd/abs ampbeta, t0betasd/abs t0beta, tau1betasd/abs tau1beta, tau2betasd/abs tau2beta, tau3betasd/abs tau3beta]
 
 % >> plot $ XRange 0 10 $ (SamHist 100000 1000 $ fmap exp $ gaussD 1 1) :+: FunSeg 0 10 (PDF.logNormal 1 1)
 
 
-Figure 4. Top, inferred probability distributions for $\frac{\beta_{pop}}{\alpha_{pop}}$
-parameters for $A$, $t_0$, $\tau_1$ $\tau_2$ $\tau_3$ and (not) $p_{slow}$. 
-Note: simulated data!
+Figure 4. Top left, inferred probability distributions for
+$\frac{\beta_{pop}}{\alpha_{pop}}$ parameters for $A$, $t_0$, $\tau_1$
+$\tau_2$ $\tau_3$ and (not) $p_{slow}$. Top right, replicated data
+points with inferred parameters ($y^{rep}$) for the number of spikes,
+peak expected firing rate and time of that peak. Each point represents
+an individual locust stimulated once with a random
+$\frac{L}{V}$. Bottom, across (first set) and within (second set)
+coefficient of variation for rate function parameters.
 
-% >> plot $ GnuplotTest
+
+Note: simulated data!
 
 %> plot (lns $ shiftxs 100 $ chn $ zipWith (/) t0beta t0)
 

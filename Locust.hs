@@ -24,14 +24,17 @@ replicateData sams = do
   vs <- forM sams $ \(s,xs)-> fmap ((,) s) $ oneOf xs
   alpha <- mapM2 gauss (takeMany vs $ parsWith "") (takeMany vs $ parsWith "sd")
   beta <- mapM2 gauss (takeMany vs $ parsWith "beta") (takeMany vs $ parsWith "betasd")
-  lov <- uniform 0.01 0.05
-  let centres = zipWith (\a b-> a+lov*b) alpha beta
+  lov <-  uniform 0.01 0.05
+  let lovl = (\lov-> log (lov / 0.02) / log 2) lov
+  let centres = zipWith (\a b-> a+lovl*b) alpha beta
   pars <- mapM2 gauss centres (takeMany vs $ parsWith "trsd")
   let thisr = rFromPars pars 
   let rsig  = fillSig 0 6 0.001 thisr
   let [(tpeak, peakamp)]  = peak [rsig]
-  spikes <- sIPevSam rsig
-  return (lov, (tpeak,peakamp,length spikes))
+  nspikes <- length `fmap` sIPevSam rsig
+  if tpeak >3  --FUDGE!!!!
+     then nspikes `seq` tpeak `seq` peakamp `seq` return (lov, (tpeak,peakamp, nspikes))
+     else replicateData sams
 
 unsafeYrep :: [(String, [Double])] -> Int -> [(LoV, (TPeak,Amp,NSpikes))]
 unsafeYrep mp n = unsafePerformIO $ fmap (take n) $ runSamplerIO $ replicateData mp
