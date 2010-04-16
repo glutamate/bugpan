@@ -130,6 +130,7 @@ up_pop thedata ((popmeanssds, trialsds, betas), sessmeans, sessbetas, trialPars)
                                    ) (trialsds!!si)
   return ((newpopmeanssds, newtrialsds, newbetas), sessmeans, sessbetas, trialPars)
 
+pln_ij_i means sds pars =  sum $ map (\(mu, sd, x) ->  P.logLogNormalD mu sd x) $ zip3 means sds pars
 p_ij_i means sds pars =  sum $ map (\(mu, sd, x) ->  P.logGaussD mu sd x) $ zip3 means sds pars
 
 p_i_pop = p_ij_i
@@ -161,12 +162,15 @@ penalty_tau1 [amp, t0, tau1, tau2, tau3, pslow]
     | otherwise = 0
             
 penalty_pslow [amp, t0, tau1, tau2, tau3, pslow] 
-    | pslow < 0 = 5000000*abs (pslow)
+--    | pslow < 0 = 5000000*abs (pslow)
     | pslow > 1 = 5000000*abs (pslow-1)
     | otherwise = 0
 
+penalty_nonzero = sum . map f
+    where f x | x < 0 = 5000000*abs x
+              | otherwise = 0
 
-penalty p = penalty_tau1 p + penalty_pslow p                                 
+penalty p = penalty_tau1 p + penalty_pslow p + penalty_nonzero p                      
 
 mlTrialPars :: [[(U.Vector Double, Double)]] -> [[(TrialPar, Double)]]
 mlTrialPars thedata = for2 thedata f
@@ -184,7 +188,7 @@ mlSessBetasMean thepars = map sessf thepars
               let sdata' :: [[(Double, Double)]]
                   sdata' = for sdata $ \(tpars,lov) -> zip (repeat lov) tpars 
                   foo = map (zip (map snd sdata)) $ transpose $ map fst sdata
-              in unzip $ map (runStat regressF) foo
+              in unzip $ map (runStat regressF . map (onSnd log)) foo
 
 
 {-mlSessBetasMean :: [[(TrialPar,Double)]] -> [(TrialPar,TrialPar)]
@@ -208,11 +212,11 @@ mlTrialSDs thepars betameans = avgit $ map f $ zip thepars betameans
 mlTrialSDs :: [[(TrialPar,Double)]] -> [(TrialPar,TrialPar)] -> TrialPar
 mlTrialSDs thepars betameans = avgit $ map f $ zip thepars betameans
     where avgit :: [TrialPar] -> TrialPar
-          avgit bysess = map (sqrt . runStat (before meanF square)) $ transpose bysess
+          avgit bysess = map (runStat meanF) $ transpose bysess
           f :: ([(TrialPar,Double)], (TrialPar,TrialPar)) -> TrialPar
           f (trialparlovs, (betas, alphas)) = 
-              map (runStat stdDevF) $ transpose 
-              $ for trialparlovs $ \(tpars, lov)-> map (\(p,b,a)-> p-(a+b*lov) ) $ zip3 tpars betas alphas
+              map (runStat sdLogNormalF) $ transpose 
+              $ for trialparlovs $ \(tpars, lov)-> map (\(p,b,a)-> log p- b*lov ) $ zip3 tpars betas alphas
 
 
 mlPopMeans :: [(TrialPar,TrialPar)] -> TrialPar
@@ -220,7 +224,6 @@ mlPopMeans betameans = map (runStat meanF) $ transpose $ map snd betameans
 mlPopSds betameans = map (runStat stdDevF) $ transpose $ map snd betameans
 mlBetaMeans betameans = map (runStat meanF) $ transpose $ map fst betameans
 mlBetaSds betameans = map (runStat stdDevF) $ transpose $ map fst betameans
-
 
 mlPars :: [[(U.Vector Double, Double)]] -> BigPar
 mlPars thedata = 
@@ -236,7 +239,7 @@ mlPars thedata =
   in ((map newParam $ zip popmeans popsds, map newParam trialsds, map newParam $ zip betameans betasds), 
                map newParam sessmeans, map newParam sessbetas, map (map (newParam . fst)) trialpars)
 
-priorSamplerG :: Int -> [Int] -> Sampler BigPar
+{-priorSamplerG :: Int -> [Int] -> Sampler BigPar
 priorSamplerG nsess ntrialsPerSess= 
     let k = 1.01 in 
     do popmeans <- mapM2 uniform (map (/k) fixPars) (map (*k) fixPars)
@@ -250,7 +253,7 @@ priorSamplerG nsess ntrialsPerSess=
        sessbetas <- times nsess $ mapM2 gauss betameans betasds
        trialpars <- forM ntrialsPerSess $ \ntrs -> (times ntrs $ mapM2 gauss popmeans popsds)
        return ((map newParam $ zip popmeans popsds, map newParam trialsds, map newParam $ zip betameans betasds), 
-               map newParam sessmeans, map newParam sessbetas, map (map newParam) trialpars)
+               map newParam sessmeans, map newParam sessbetas, map (map newParam) trialpars)-}
 
 chopData2 :: (ChopByDur obs,Shiftable obs) => [Duration [Int]] -> obs -> [[obs]]
 chopData2 durs allspikes = 
@@ -293,10 +296,10 @@ main3 = do
   --putStrLn $ "droping "++show dropn
   (concat -> spikes, 
    concat -> running, 
-   concat -> sess, 
+   take 2 . concat -> sess, 
    concat -> approachLoV) <- fmap unzip4 $ manySessionData $ do
            spikes <-  map fst `fmap` events "spike" ()
-           running <- durations "running" ()
+           running <- take 5 `fmap` durations "running" ()
            modNm <- durations "moduleName" "foo"
            approachLoV <- extendDur 1 `fmap` durations "approachLoV" (1::Double)
            sess <- sessionDur

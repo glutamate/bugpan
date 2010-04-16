@@ -1,0 +1,18 @@
+alpha_p ~ uniform
+alphasd_p ~ uniform
+beta_p ~ uniform 
+betasd_p ~ uniform
+
+mu ~ uniform 2
+sigma ~ uniform (2,2)
+
+err ~ uniform
+
+every s <- session where simulatePoissonSpikes
+   (alpha\s, beta\s) ~ N(mu, sigma)
+
+   every t <- running\s
+      y\t ~ N(alpha\s + x\t * beta\s, err)
+      r\t = {: y*exp(-y) :}
+
+spikes ~ IHP(r)
