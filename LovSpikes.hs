@@ -82,7 +82,7 @@ up_trial thedata ((popmeanssds, trialsds, betas), sessmeans, sessbetas, trialPar
   newtrialPars <- sampleMany2 $ forIdx2 trialPars $ \sess tr-> 
                   let (spikes, lov) = (thedata!!sess!!tr) in metSamplePCL "lh"
                       (likelihoodH1 spikes)
-                      (p_ij_i (zipWith (+) (unP $ sessmeans!!sess) (map (lov*) (unP $ sessbetas!!sess))) 
+                      (pln_ij_i (zipWith (+) (unP $ sessmeans!!sess) (map (lov*) (unP $ sessbetas!!sess))) 
                               (map unP trialsds)) (trialPars!!sess!!tr)
   return ((popmeanssds, trialsds, betas), sessmeans, sessbetas, newtrialPars)
 
@@ -167,7 +167,7 @@ penalty_pslow [amp, t0, tau1, tau2, tau3, pslow]
     | otherwise = 0
 
 penalty_nonzero = sum . map f
-    where f x | x < 0 = 5000000*abs x
+    where f x | x < 0 = 50000000*abs x
               | otherwise = 0
 
 penalty p = penalty_tau1 p + penalty_pslow p + penalty_nonzero p                      
@@ -215,7 +215,7 @@ mlTrialSDs thepars betameans = avgit $ map f $ zip thepars betameans
           avgit bysess = map (runStat meanF) $ transpose bysess
           f :: ([(TrialPar,Double)], (TrialPar,TrialPar)) -> TrialPar
           f (trialparlovs, (betas, alphas)) = 
-              map (runStat sdLogNormalF) $ transpose 
+              map (runStat stdDevF) $ transpose 
               $ for trialparlovs $ \(tpars, lov)-> map (\(p,b,a)-> log p- b*lov ) $ zip3 tpars betas alphas
 
 
@@ -296,10 +296,10 @@ main3 = do
   --putStrLn $ "droping "++show dropn
   (concat -> spikes, 
    concat -> running, 
-   take 2 . concat -> sess, 
+   concat -> sess, 
    concat -> approachLoV) <- fmap unzip4 $ manySessionData $ do
            spikes <-  map fst `fmap` events "spike" ()
-           running <- take 5 `fmap` durations "running" ()
+           running <- durations "running" ()
            modNm <- durations "moduleName" "foo"
            approachLoV <- extendDur 1 `fmap` durations "approachLoV" (1::Double)
            sess <- sessionDur
@@ -329,6 +329,8 @@ main3 = do
            $ runSamplerIO 
            $ priorSamplerG (length sess) 
                            (map (length . (`during` running) . (:[])) sess) -}
+
+--  print $ mlTrialPars thedata
 
 
   let inits = [mlPars thedata]
