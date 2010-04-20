@@ -1,0 +1,19 @@
+module Regression where
+
+alpha_p ~ uniform
+alphasd_p ~ uniform
+beta_p ~ uniform 
+betasd_p ~ uniform
+
+mu ~ uniform 2
+sigma ~ uniform 2
+
+inevery s <- session where
+   (alpha,beta) ~ N mu sigma
+
+   inevery t <- running where
+      y ~ N (alpha + x * beta) err
+      r = {: y*exp(-y) :}
+      
+      spikes ~ IHP(r)
+   

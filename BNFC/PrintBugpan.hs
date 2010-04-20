@@ -102,6 +102,8 @@ instance Print Declare where
    DReadSrc bident0 bident exp -> prPrec i 0 (concatD [prt 0 bident0 , doc (showString "<*") , prt 0 bident , prt 0 exp])
    DStage bident n -> prPrec i 0 (concatD [doc (showString "stage") , prt 0 bident , prt 0 n])
    DStageNeg bident n -> prPrec i 0 (concatD [doc (showString "stage") , prt 0 bident , doc (showString "-") , prt 0 n])
+   DEvery pat exp declares -> prPrec i 0 (concatD [doc (showString "inevery") , prt 0 pat , doc (showString "<-") , prt 0 exp , doc (showString "where") , doc (showString "{") , prt 0 declares , doc (showString "}")])
+   DDist pat exp -> prPrec i 0 (concatD [prt 0 pat , doc (showString "~") , prt 0 exp])
 
   prtList es = case es of
    [] -> (concatD [])
@@ -114,6 +116,7 @@ instance Print Exp where
    Sub exp0 exp -> prPrec i 2 (concatD [prt 2 exp0 , doc (showString "-") , prt 3 exp])
    Mul exp0 exp -> prPrec i 3 (concatD [prt 3 exp0 , doc (showString "*") , prt 4 exp])
    Div exp0 exp -> prPrec i 3 (concatD [prt 3 exp0 , doc (showString "/") , prt 4 exp])
+   EIn exp0 exp -> prPrec i 3 (concatD [prt 3 exp0 , doc (showString "\\") , prt 4 exp])
    Negate exp -> prPrec i 1 (concatD [doc (showString "-") , prt 2 exp])
    Natexp exp -> prPrec i 5 (concatD [doc (showString "exp") , prt 0 exp])
    Natlog exp -> prPrec i 5 (concatD [doc (showString "ln") , prt 0 exp])
@@ -148,7 +151,7 @@ instance Print Exp where
    Box exp -> prPrec i 5 (concatD [doc (showString "box") , prt 4 exp])
    Translate exp0 exp -> prPrec i 4 (concatD [doc (showString "translate") , prt 4 exp0 , prt 5 exp])
    Colour exp0 exp -> prPrec i 4 (concatD [doc (showString "colour") , prt 4 exp0 , prt 5 exp])
-   ELet letlines exp -> prPrec i 0 (concatD [doc (showString "let") , doc (showString "{") , prt 0 letlines , doc (showString "}") , doc (showString "in") , prt 0 exp])
+   ELet declares exp -> prPrec i 0 (concatD [doc (showString "let") , doc (showString "{") , prt 0 declares , doc (showString "}") , doc (showString "in") , prt 0 exp])
    ECase exp caselines -> prPrec i 0 (concatD [doc (showString "case") , prt 0 exp , doc (showString "of") , doc (showString "{") , prt 0 caselines , doc (showString "}")])
 
   prtList es = case es of
@@ -159,15 +162,6 @@ instance Print Exp where
 instance Print SwitchLine where
   prt i e = case e of
    SwitchLine exp0 exp -> prPrec i 0 (concatD [prt 0 exp0 , doc (showString "~>") , prt 0 exp])
-
-  prtList es = case es of
-   [] -> (concatD [])
-   [x] -> (concatD [prt 0 x])
-   x:xs -> (concatD [prt 0 x , doc (showString ";") , prt 0 xs])
-
-instance Print LetLine where
-  prt i e = case e of
-   LetLine pat exp -> prPrec i 0 (concatD [prt 0 pat , doc (showString "=") , prt 0 exp])
 
   prtList es = case es of
    [] -> (concatD [])
@@ -208,6 +202,7 @@ instance Print Pat where
    PPair pat0 pat -> prPrec i 1 (concatD [doc (showString "(") , prt 0 pat0 , doc (showString ",") , prt 0 pat , doc (showString ")")])
    PNil  -> prPrec i 1 (concatD [doc (showString "[]")])
    PCons pat0 pat -> prPrec i 0 (concatD [prt 0 pat0 , doc (showString ":") , prt 0 pat])
+   PIn pat0 pat -> prPrec i 0 (concatD [prt 0 pat0 , doc (showString "\\") , prt 0 pat])
    PDeriv pat -> prPrec i 0 (concatD [doc (showString "D") , prt 0 pat])
 
 

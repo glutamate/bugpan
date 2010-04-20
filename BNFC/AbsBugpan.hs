@@ -16,6 +16,8 @@ data Declare =
  | DReadSrc BIdent BIdent Exp
  | DStage BIdent Integer
  | DStageNeg BIdent Integer
+ | DEvery Pat Exp [Declare]
+ | DDist Pat Exp
   deriving (Eq,Ord,Show)
 
 data Exp =
@@ -23,6 +25,7 @@ data Exp =
  | Sub Exp Exp
  | Mul Exp Exp
  | Div Exp Exp
+ | EIn Exp Exp
  | Negate Exp
  | Natexp Exp
  | Natlog Exp
@@ -57,16 +60,12 @@ data Exp =
  | Box Exp
  | Translate Exp Exp
  | Colour Exp Exp
- | ELet [LetLine] Exp
+ | ELet [Declare] Exp
  | ECase Exp [CaseLine]
   deriving (Eq,Ord,Show)
 
 data SwitchLine =
    SwitchLine Exp Exp
-  deriving (Eq,Ord,Show)
-
-data LetLine =
-   LetLine Pat Exp
   deriving (Eq,Ord,Show)
 
 data CaseLine =
@@ -88,6 +87,7 @@ data Pat =
  | PPair Pat Pat
  | PNil
  | PCons Pat Pat
+ | PIn Pat Pat
  | PDeriv Pat
   deriving (Eq,Ord,Show)
 

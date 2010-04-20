@@ -34,8 +34,6 @@ instance Fractional V where
 	(NumV n1) / (NumV n2) = NumV $ n1/n2
 	fromRational r = NumV . NReal $ fromRational r
 
- 
-
 data E =  If E E E
         | Const V
 	| Lam String T E
@@ -76,6 +74,8 @@ data Declare
         | ReadSource String (String,E)
         | Stage String Int
         | Comment String
+        | Every Pat E [Declare]
+        | Distribute Pat E
         | Nop
 	deriving (Show, Eq, Read)
 
@@ -154,6 +154,7 @@ data Pat = 	  PatVar String T
 		| PatPair Pat Pat
 		| PatNil 
 		| PatCons Pat Pat
+		| PatIn Pat Pat
                 | PatDeriv Pat
 		-- | PatGuard E Pat
 		deriving (Show, Eq, Read, Data, Typeable)
@@ -162,6 +163,7 @@ unsafePatToName (PatVar nm _) = nm
 
 patIntroducedVars (PatVar nm t) = [nm]
 patIntroducedVars (PatCons h t)= patIntroducedVars h ++ patIntroducedVars t
+patIntroducedVars (PatIn h t)= patIntroducedVars h ++ patIntroducedVars t
 patIntroducedVars (PatPair h t)= patIntroducedVars h ++ patIntroducedVars t
 patIntroducedVars _ = []
 

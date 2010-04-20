@@ -33,6 +33,8 @@ convDecl (B.DReadSrc (B.BIdent b) (B.BIdent nm) arg ) = ReadSource (ident b) (nm
 
 convDecl (B.DStage (B.BIdent b) si) = Stage (ident b) $ fromInteger si
 convDecl (B.DStageNeg (B.BIdent b) nsi) = Stage (ident b) . negate $ fromInteger nsi
+convDecl (B.DDist pat diste) = Distribute (cPat pat) (cE diste)
+convDecl (B.DEvery pat src decls) = Every (cPat pat) (cE src) $ map convDecl decls
 --convDecl b = error $"convDecl: "++show b
 
 unSubst (B.ImpSubstLine (B.BIdent b) e) = (ident b, cE e)
@@ -91,7 +93,7 @@ cE (B.Switch s1 ses) =
 
 cE (B.ELet les e) = 
     LetE
-       (map (\(B.LetLine pat es) -> (cPat pat, cE es)) les)
+       (map (\(B.DLet pat _ es) -> (cPat pat, cE es)) les)
        (cE e)
 cE (B.ECase e pats) = 
     Case (cE e)

@@ -29,6 +29,8 @@ transDeclare x = case x of
   DReadSrc bident0 bident exp  -> failure x
   DStage bident n  -> failure x
   DStageNeg bident n  -> failure x
+  DEvery pat exp declares  -> failure x
+  DDist pat exp  -> failure x
 
 
 transExp :: Exp -> Result
@@ -37,6 +39,7 @@ transExp x = case x of
   Sub exp0 exp  -> failure x
   Mul exp0 exp  -> failure x
   Div exp0 exp  -> failure x
+  EIn exp0 exp  -> failure x
   Negate exp  -> failure x
   Natexp exp  -> failure x
   Natlog exp  -> failure x
@@ -71,18 +74,13 @@ transExp x = case x of
   Box exp  -> failure x
   Translate exp0 exp  -> failure x
   Colour exp0 exp  -> failure x
-  ELet letlines exp  -> failure x
+  ELet declares exp  -> failure x
   ECase exp caselines  -> failure x
 
 
 transSwitchLine :: SwitchLine -> Result
 transSwitchLine x = case x of
   SwitchLine exp0 exp  -> failure x
-
-
-transLetLine :: LetLine -> Result
-transLetLine x = case x of
-  LetLine pat exp  -> failure x
 
 
 transCaseLine :: CaseLine -> Result
@@ -108,6 +106,7 @@ transPat x = case x of
   PPair pat0 pat  -> failure x
   PNil  -> failure x
   PCons pat0 pat  -> failure x
+  PIn pat0 pat  -> failure x
   PDeriv pat  -> failure x
 
 

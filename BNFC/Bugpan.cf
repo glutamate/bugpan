@@ -11,10 +11,16 @@ DReadSrc.Declare ::= BIdent "<*" BIdent Exp ;
 DStage.Declare ::= "stage" BIdent Integer;
 DStageNeg.Declare ::= "stage" BIdent "-" Integer;
 
+DEvery.Declare ::= "inevery" Pat "<-" Exp "where" "{" [Declare] "}"  ;
+
+DDist. Declare ::= Pat "~" Exp ;
+
+
 Add. Exp2 ::= Exp2 "+" Exp3 ;
 Sub. Exp2 ::= Exp2 "-" Exp3 ;
 Mul. Exp3 ::= Exp3 "*" Exp4 ;
 Div. Exp3 ::= Exp3 "/" Exp4 ;
+EIn. Exp3 ::= Exp3 "\\" Exp4 ;
 Negate. Exp1 ::= "-" Exp2;
 Natexp. Exp5 ::= "exp" Exp ;
 Natlog. Exp5 ::= "ln" Exp ;
@@ -61,11 +67,12 @@ Box. Exp5 ::= "box" Exp4;
 Translate. Exp4 ::= "translate" Exp4 Exp5;
 Colour. Exp4 ::= "colour" Exp4 Exp5;
 
-ELet.Exp ::= "let" "{" [LetLine] "}" "in" Exp ;
+ELet.Exp ::= "let" "{" [Declare] "}" "in" Exp ;
 ECase.Exp ::= "case" Exp "of" "{" [CaseLine] "}"  ;
 
 SwitchLine. SwitchLine ::= Exp "~>" Exp ;
-LetLine. LetLine ::= Pat "=" Exp ;
+--LetLine. LetLine ::= Pat "=" Exp ;
+--LetDist. LetLine ::= Pat "~" Exp ;
 CaseLine. CaseLine ::= Pat "->" Exp ;
 Arg. Arg ::= Pat1 ;
 
@@ -77,6 +84,7 @@ PLit. Pat1 ::= Const ;
 PPair. Pat1 ::= "(" Pat "," Pat ")" ;
 PNil. Pat1 ::= "[]" ;
 PCons. Pat ::= Pat ":" Pat ;
+PIn. Pat ::= Pat "\\" Pat ;
 PDeriv. Pat ::= "D" Pat;
 
 CInt. Const ::= Integer ;
@@ -115,7 +123,7 @@ coercions Pat 1;
 coercions Type 2;
 separator Declare ";"  ;
 separator SwitchLine ";"  ;
-separator LetLine ";"  ;
+--separator LetLine ";"  ;
 separator CaseLine ";"  ;
 
 separator Exp ","  ;
