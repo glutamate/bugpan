@@ -91,7 +91,7 @@ up_session thedata ((popmeanssds, trialsds, betas), sessmeans, sessbetas, trialP
   newsessmeans <- sampleMany $ forIdx sessmeans $ \sess -> 
                      metSampleP "sessmean" (\sessmean-> 
                        (sum $ for (zip (map snd $ thedata!!sess) $ map unP $ trialPars!!sess) $ 
-                                \(lov, tpar)-> p_ij_i (zipWith (+) sessmean 
+                                \(lov, tpar)-> pln_ij_i (zipWith (+) sessmean 
                                                                    (map (lov*) (unP $ sessbetas!!sess))) 
                                                       (map unP trialsds) tpar) +
                           p_i_pop (map (fst . unP) popmeanssds) 
