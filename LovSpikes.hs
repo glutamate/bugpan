@@ -99,7 +99,7 @@ up_session thedata ((popmeanssds, trialsds, betas), sessmeans, sessbetas, trialP
   newsessbetas <- sampleMany $ forIdx sessbetas $ \sess -> 
                      metSampleP "sessbetas" (\sessbeta-> 
                        (sum $ for (zip (map snd $ thedata!!sess) $ map unP $ trialPars!!sess) $ 
-                                \(lov, tpar)-> p_ij_i (zipWith (+) (unP $ newsessmeans!!sess)
+                                \(lov, tpar)-> pln_ij_i (zipWith (+) (unP $ newsessmeans!!sess)
                                                                    (map (lov*) sessbeta)) 
                                                       (map unP trialsds) tpar)  + 
                        p_i_pop (map (fst . unP) betas) 
@@ -122,7 +122,7 @@ up_pop thedata ((popmeanssds, trialsds, betas), sessmeans, sessbetas, trialPars)
                         metSampleP "trialsds" (\sd-> (sum $ map sum $ forIdx2 trialPars $ \sess tr->
                                        let trsds = setIdx si sd $ map unP trialsds 
                                            lov = snd $ thedata!!sess!!tr in
-                                       p_ij_i (zipWith (+) (unP $ sessmeans!!sess)
+                                       pln_ij_i (zipWith (+) (unP $ sessmeans!!sess)
                                                            (map (lov*) (unP $ sessbetas!!sess))) 
                                               trsds 
                                               (unP $ trialPars!!sess!!tr)) +
