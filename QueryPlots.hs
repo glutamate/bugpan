@@ -263,6 +263,9 @@ instance AccuShow Double where
 instance (AccuShow a, AccuShow b) => AccuShow (a,b) where
     accushow (x,y) = "("++accushow x++","++accushow y++")"
 
+instance AccuShow a => AccuShow [a] where
+    accushow xs = "["++intercalate "," (map accushow xs)++"]"
+
 
 instance QueryResult [(Int, (Double, Double))] where
     qFilterSuccess = not . null
