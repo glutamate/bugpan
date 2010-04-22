@@ -293,10 +293,10 @@ main3 = do
   --putStrLn $ "droping "++show dropn
   (concat -> spikes, 
    concat  -> running, 
-   concat . take 5 -> sess, 
+   concat  -> sess, 
    concat -> approachLoV) <- fmap unzip4 $ manySessionData $ do
            spikes <-  map fst `fmap` events "spike" ()
-           running <- take 20 `fmap` durations "running" ()
+           running <- durations "running" ()
            modNm <- durations "moduleName" "foo"
            approachLoV <- extendDur 1 `fmap` durations "approachLoV" (1::Double)
            sess <- sessionDur

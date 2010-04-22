@@ -79,6 +79,8 @@ r amp t0 tau1 tau2 tau3 pslowpar  t
 
 alpha tau t = if t<0.0 then 0.0 else (t/tau) * exp(1 - t/tau)
 
+tsalpha t0 tau t = alpha tau $ negate $ t - t0
+
 logr :: Double -> Double -> Double -> Double -> Double -> Double -> Double -> Double
 logr amp t0 tau1 tau2 tau3 pslow t 
     | t < t0 = let x = (-t+t0) in 
