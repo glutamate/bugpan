@@ -82,7 +82,7 @@ up_trial thedata ((popmeanssds, trialsds, betas), sessmeans, sessbetas, trialPar
   newtrialPars <- sampleMany2 $ forIdx2 trialPars $ \sess tr-> 
                   let (spikes, lov) = (thedata!!sess!!tr) in metSamplePCL "lh"
                       (likelihoodH1 spikes)
-                      (pln_ij_i (zipWith (+) (unP $ sessmeans!!sess) (map (lov*) (unP $ sessbetas!!sess))) 
+                      (p_ij_i (zipWith (+) (unP $ sessmeans!!sess) (map (lov*) (unP $ sessbetas!!sess))) 
                               (map unP trialsds)) (trialPars!!sess!!tr)
   return ((popmeanssds, trialsds, betas), sessmeans, sessbetas, newtrialPars)
 
@@ -91,7 +91,7 @@ up_session thedata ((popmeanssds, trialsds, betas), sessmeans, sessbetas, trialP
   newsessmeans <- sampleMany $ forIdx sessmeans $ \sess -> 
                      metSampleP "sessmean" (\sessmean-> 
                        (sum $ for (zip (map snd $ thedata!!sess) $ map unP $ trialPars!!sess) $ 
-                                \(lov, tpar)-> pln_ij_i (zipWith (+) sessmean 
+                                \(lov, tpar)-> p_ij_i (zipWith (+) sessmean 
                                                                    (map (lov*) (unP $ sessbetas!!sess))) 
                                                       (map unP trialsds) tpar) +
                           p_i_pop (map (fst . unP) popmeanssds) 
@@ -99,7 +99,7 @@ up_session thedata ((popmeanssds, trialsds, betas), sessmeans, sessbetas, trialP
   newsessbetas <- sampleMany $ forIdx sessbetas $ \sess -> 
                      metSampleP "sessbetas" (\sessbeta-> 
                        (sum $ for (zip (map snd $ thedata!!sess) $ map unP $ trialPars!!sess) $ 
-                                \(lov, tpar)-> pln_ij_i (zipWith (+) (unP $ newsessmeans!!sess)
+                                \(lov, tpar)-> p_ij_i (zipWith (+) (unP $ newsessmeans!!sess)
                                                                    (map (lov*) sessbeta)) 
                                                       (map unP trialsds) tpar)  + 
                        p_i_pop (map (fst . unP) betas) 
@@ -122,7 +122,7 @@ up_pop thedata ((popmeanssds, trialsds, betas), sessmeans, sessbetas, trialPars)
                         metSampleP "trialsds" (\sd-> (sum $ map sum $ forIdx2 trialPars $ \sess tr->
                                        let trsds = setIdx si sd $ map unP trialsds 
                                            lov = snd $ thedata!!sess!!tr in
-                                       pln_ij_i (zipWith (+) (unP $ sessmeans!!sess)
+                                       p_ij_i (zipWith (+) (unP $ sessmeans!!sess)
                                                            (map (lov*) (unP $ sessbetas!!sess))) 
                                               trsds 
                                               (unP $ trialPars!!sess!!tr)) +
@@ -130,7 +130,7 @@ up_pop thedata ((popmeanssds, trialsds, betas), sessmeans, sessbetas, trialPars)
                                    ) (trialsds!!si)
   return ((newpopmeanssds, newtrialsds, newbetas), sessmeans, sessbetas, trialPars)
 
-pln_ij_i means sds pars =  sum $ map (\(mu, sd, x) ->  P.logLogNormalD mu sd x) $ zip3 means sds pars
+--pln_ij_i means sds pars =  sum $ map (\(mu, sd, x) ->  P.logLogNormalD mu sd x) $ zip3 means sds pars
 p_ij_i means sds pars =  sum $ map (\(mu, sd, x) ->  P.logGaussD mu sd x) $ zip3 means sds pars
 
 p_i_pop = p_ij_i
@@ -155,7 +155,7 @@ gibbsSF thedata = condSampler (up_trial thedata) >>> condSampler (up_session the
 -- 2. fit
 
 trialParSampler = uniform 0.1 1 >>= \t1 -> 
-                  return [100, 5, t1, 0.5, 2, 0.1]
+                  return [100, 5, t1, 0.5, 2, -2]
 
 penalty_tau1 [amp, t0, tau1, tau2, tau3, pslow] 
     | tau1 < 1e-2 = 5000000*abs (1e-2 - tau1)
@@ -170,7 +170,7 @@ penalty_nonzero = sum . map f
     where f x | x < 0 = 50000000*abs x
               | otherwise = 0
 
-penalty p = penalty_tau1 p + penalty_pslow p + penalty_nonzero p                      
+penalty p = penalty_tau1 p -- + penalty_pslow p + penalty_nonzero p                      
 
 mlTrialPars :: [[(U.Vector Double, Double)]] -> [[(TrialPar, Double)]]
 mlTrialPars thedata = for2 thedata f
@@ -188,7 +188,7 @@ mlSessBetasMean thepars = map sessf thepars
               let sdata' :: [[(Double, Double)]]
                   sdata' = for sdata $ \(tpars,lov) -> zip (repeat lov) tpars 
                   foo = map (zip (map snd sdata)) $ transpose $ map fst sdata
-              in unzip $ map (runStat regressF . map (onSnd log)) foo
+              in unzip $ map (runStat regressF) foo
 
 
 {-mlSessBetasMean :: [[(TrialPar,Double)]] -> [(TrialPar,TrialPar)]
@@ -216,7 +216,7 @@ mlTrialSDs thepars betameans = avgit $ map f $ zip thepars betameans
           f :: ([(TrialPar,Double)], (TrialPar,TrialPar)) -> TrialPar
           f (trialparlovs, (betas, alphas)) = 
               map (runStat stdDevF) $ transpose 
-              $ for trialparlovs $ \(tpars, lov)-> map (\(p,b,a)-> log p- b*lov ) $ zip3 tpars betas alphas
+              $ for trialparlovs $ \(tpars, lov)-> map (\(p,b,a)-> p- b*lov ) $ zip3 tpars betas alphas
 
 
 mlPopMeans :: [(TrialPar,TrialPar)] -> TrialPar

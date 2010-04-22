@@ -43,14 +43,19 @@ we can also look at just the bursts in D0:
 Let's define some more things we need for the cross-correlations (one plot for ever animal)
 
 > everywhere binSize = 0.01
-> everywhere cc x y = limitSigs (-0.6) 0.6 $ crossCorrelateControlled scratch binSize x y
+> everywhere cc x y = limitSigs (-0.2) 0.2 $ crossCorrelateControlled scratch binSize x y
 
 The plots are on the following pages!
 
 > break
 
 > inEverySession 
-> plot ((("ci1 seti",  cc setiSpikes ci1Spikes) :||: ("ci1 feti ",  cc fetiSpikes ci1Spikes ))
+> plot ((("flexor feti",  cc fetiSpikes flex1Spikes) :||: ("ci1 feti ",  cc fetiSpikes ci1Spikes ))
 >      :==:
 >      (("ci1 flexor" , cc flex1Spikes ci1Spikes ) :||: ("seti flexor ", cc flex1Spikes setiSpikes)))
+
+> length flex1Spikes
+
+> length flex2Spikes
+
 > break

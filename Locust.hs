@@ -67,10 +67,13 @@ integralR pars@[amp, t0, tau1, tau2, tau3, pslow] t
 		  in amp * (pslow * bigterm tau3 - (pslow-1) * bigterm tau2) 
 
 
+sigmoid x = 1/(1+exp (-x))
+
 r :: Double -> Double -> Double -> Double -> Double -> Double -> Double -> Double
-r amp t0 tau1 tau2 tau3 pslow  t 
-    | t < t0 = let x = (-t+t0) in 
-               amp*(1-exp(-x/tau1))*((1-pslow)*exp(-x/tau2)+pslow*exp(-x/tau3))
+r amp t0 tau1 tau2 tau3 pslowpar  t 
+    | t < t0 = let x = (-t+t0) 
+                   pslow = sigmoid pslowpar
+               in amp*(1-exp(-x/tau1))*((1-pslow)*exp(-x/tau2)+pslow*exp(-x/tau3))
     | otherwise = 0.02
 
 
