@@ -116,6 +116,10 @@ Bayesian model for observations.
 
 \subsubsection*{Types}
 
+What kinds of mathematical objects can count as physiological
+evidence? We answer this question within simple type theory, which
+assigns to every object a type... 
+
 FRP introduces two types of values to place information in a temporal
 context: Signals, which represent continuously varying quantities, and
 events representing distinct occurrences. These types are flexible, in

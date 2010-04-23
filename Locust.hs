@@ -1,3 +1,5 @@
+{-# LANGUAGE ViewPatterns #-} 
+
 module Locust where
 
 import StatsModel
@@ -8,6 +10,7 @@ import Control.Monad
 import Math.Probably.Sampler
 import TNUtils
 import System.IO.Unsafe
+import Math.Probably.FoldingStats
 
 type TPeak = Double
 type Amp = Double
@@ -19,27 +22,76 @@ takeMany mp ks = for ks $ \k -> mp !!! k
 
 parsWith s = map (++s) basePars
 
-replicatePars :: [(String, [Double])] -> Sampler (LoV, [Double])
-replicatePars sams = do 
+replicateAnimal :: [(String, [Double])] -> Sampler ([Double], [Double], [Double])
+replicateAnimal sams = do 
   vs <- forM sams $ \(s,xs)-> fmap ((,) s) $ oneOf xs
   alpha <- mapM2 gauss (takeMany vs $ parsWith "") (takeMany vs $ parsWith "sd")
   beta <- mapM2 gauss (takeMany vs $ parsWith "beta") (takeMany vs $ parsWith "betasd")
+  return (alpha, beta, (takeMany vs $ parsWith "trsd"))
+
+animalMeasures :: LoV -> ([Double], [Double], [Double]) ->  Sampler (TPeak,Amp,NSpikes)
+animalMeasures lov (alpha, beta, trsds) = do
+  let centres = zipWith (\a b->  a+lovl lov*b) alpha beta
+  pars <- mapM2 gauss centres trsds
+  let rsig = parsToR pars
+  let [(tpeak, peakamp)]  = peak [rsig]
+  nspikes <- length `fmap` sIPevSam rsig
+  if tpeak >3  --FUDGE!!!! 
+     then nspikes `seq` tpeak `seq` peakamp `seq` return (tpeak,peakamp, nspikes)
+     else animalMeasures lov (alpha, beta, trsds)
+
+withinVariability1 :: Int -> LoV -> ([Double], [Double], [Double]) ->  Sampler (TPeak,Amp,Double)
+withinVariability1 ntrs lov animal = do
+  measures <- mapM (const $ animalMeasures lov animal) [1..ntrs]
+  let sdTpeak = stdDevF `runStat` map fst3 measures
+  let sdAmp = stdDevF `runStat` map snd3 measures
+  let sdNspks = stdDevF `runStat` map (realToFrac . trd3) measures
+  return (sdTpeak, sdAmp, sdNspks)
+            
+withinAndAcrossVariability :: Double -> Int -> Int ->  [(String, [Double])] -> Sampler [Double]
+withinAndAcrossVariability lov nanimal ntrs sams = do
+  animals <- mapM (const $ replicateAnimal sams) [1..nanimal]
+  measuress <- forM animals $ \animal -> 
+                 mapM (const $ animalMeasures lov animal) [1..ntrs]
+  meansds <- forM measuress $ \measures-> do
+                    let (mpeak, sdTpeak) = meanSDF `runStat` map ((5-) . fst3) measures
+                    let (mamp, sdamp) = meanSDF `runStat` map snd3 measures
+                    let (mnsp, sdnsp) = meanSDF `runStat` map (realToFrac . trd3) measures
+                    return ([mpeak, mamp, mnsp],[sdTpeak, sdamp, sdnsp])
+  let between = (fmap (\(m,sd) -> sd/m) meanSDF) `runStatOnMany` map fst meansds
+  let avgs = meanF `runStatOnMany` map fst meansds
+  let within = meanF `runStatOnMany` map snd meansds
+
+  return $ between ++ (zipWith (/) within avgs)
+
+
+lovl lov = log (lov / 0.02) / log 2
+
+replicatePars :: [(String, [Double])] -> Sampler (LoV, [Double])
+replicatePars sams = do 
+  (alpha, beta, trsds) <- replicateAnimal sams
   lov <-  uniform 0.01 0.05
-  let lovl = log (lov / 0.02) / log 2
-  let centres = zipWith (\a b->  a+lovl*b) alpha beta
-  pars <- mapM2 gauss centres (takeMany vs $ parsWith "trsd")
-  return (lov,centres)
+  let centres = zipWith (\a b->  a+lovl lov *b) alpha beta
+  pars <- mapM2 gauss centres trsds
+  return (lov,pars)
+
+parsToR = fillSig 0 6 0.001 . rFromPars
+
+replicateRsigs :: [(String, [Double])] -> Sampler (LoV, Signal Double)
+replicateRsigs sams = do
+  (lov, pars) <- replicatePars sams
+  let thisr = rFromPars pars 
+  let rsig  = fillSig 0 6 0.001 thisr
+  return (lov, rsig)
 
 replicateData :: [(String, [Double])] -> Sampler (LoV, (TPeak,Amp,NSpikes))
 replicateData sams = do 
-  (lov, pars) <- replicatePars sams
-  let thisr = rFromPars $ map exp pars 
-  let rsig  = fillSig 0 6 0.001 thisr
+  (lov, rsig) <- replicateRsigs sams
   let [(tpeak, peakamp)]  = peak [rsig]
   nspikes <- length `fmap` sIPevSam rsig
-  {-if tpeak >3  --FUDGE!!!! -}
-  nspikes `seq` tpeak `seq` peakamp `seq` return (lov, (tpeak,peakamp, nspikes))
-     --else replicateData sams
+  if tpeak >3  --FUDGE!!!! 
+     then nspikes `seq` tpeak `seq` peakamp `seq` return (lov, (tpeak,peakamp, nspikes))
+     else replicateData sams
 
 unsafeYrep :: [(String, [Double])] -> Int -> [(LoV, (TPeak,Amp,NSpikes))]
 unsafeYrep mp n = unsafePerformIO $ fmap (take n) $ runSamplerIO $ replicateData mp
@@ -60,7 +112,7 @@ sel f = map $ onSnd f
 
 --http://www.wolframalpha.com/input/?i=a*(1-Exp[(x-t0)/t1])*((1-p)*Exp[(x-t0)/t2]%2Bp*Exp[(x-t0)/t3])
 integralR :: [Double]-> Double -> Double
-integralR pars@[amp, t0, tau1, tau2, tau3, pslowpar] t 
+integralR pars@[amp, t0, tau1, tau2, tau3, pslowpar ] t 
     | t>t0 = integralR pars t0 + 0.02 * (t-t0)
     | otherwise = let pslow = sigmoid pslowpar 
                       bigterm tau = tau * exp ((tau1*t - t0*(tau1+tau)) /(tau1*tau)) * 
@@ -81,11 +133,11 @@ alpha tau t = if t<0.0 then 0.0 else (t/tau) * exp(1 - t/tau)
 
 tsalpha t0 tau t = alpha tau $ negate $ t - t0
 
-logr :: Double -> Double -> Double -> Double -> Double -> Double -> Double -> Double
+{-logr :: Double -> Double -> Double -> Double -> Double -> Double -> Double -> Double
 logr amp t0 tau1 tau2 tau3 pslow t 
     | t < t0 = let x = (-t+t0) in 
                log amp + log (1-exp(-x/tau1)) + log ((1-pslow)*exp(-x/tau2)+pslow*exp(-x/tau3))
-    | otherwise = log 0.02
+    | otherwise = log 0.02 -}
 
 
 rFromPars :: [Double] -> Double -> Double
