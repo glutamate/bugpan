@@ -298,22 +298,30 @@ dispatch opts ("addev":sessNm:evNm:rest) = do
 dispatch opts ("check":sessSpec:_) = 
     if sessSpec == "all"
        then do  sesns <- getSessionInRootDir root
-                forM_ sesns checkit
-       else checkit sessSpec
+                forM_ sesns (checkit False)
+       else checkit True sessSpec 
 
-    where checkit sessNm = do
+    where checkit verbose sessNm  = do
             sess <- loadApproxSession root sessNm
-            tps <- sessionTypes sess
-            putStr $ sessNm++ ": "
+            --tps <- sessionTypes sess
+            when (not verbose) $ putStr $ sessNm++ ": "
+            --when verbose $ putStr $ "types: "
             hFlush stdout
+            --when verbose $ print $ length $ concatMap show tps
             lens<- forM ["signals", "events", "durations"] $ \kind -> do
                                    sigs <- getDirContents $ (oneTrailingSlash $ baseDir sess)++kind
                                    let path  = (oneTrailingSlash $ baseDir sess)++kind++"/"
+                                   when verbose $ putStrLn $ "testing "++ show sigs
                                    forM sigs $ \sig -> do 
+                                     when verbose $ putStr $ path++sig++" "
                                      fnms <- getSortedDirContents $ path++sig
+                                     fTT <- fileTypeTag $ path ./ sig ./ (head fnms)
                                      utevs <- forM fnms $ \fn-> liftIO $ loadVs $ path++sig++"/"++fn
-                                     return $ sum $ map length utevs
-            putStrLn $ "OK ("++show ((sum $ map sum lens) + (length $ concatMap show tps))++")"
+                                     let sm = (sum $ map length utevs) + (length $ show fTT)
+                                     when verbose $ do putStrLn $ show sm
+                                                       hFlush stdout
+                                     return $ sm
+            putStrLn $ "OK ("++show ((sum $ map sum lens))++")"
 
 dispatch os ss = putStrLn $ unlines ["",
               "Unknown command: bugsess "++intercalate " " os++" "++intercalate " " ss,
@@ -333,7 +341,8 @@ dispatch os ss = putStrLn $ unlines ["",
               "\tbugsess mkdur {session} {durationName} [value]",
               "\tbugsess addev {session} {eventName} [value]",
               "\tbugsess plotsigs {session} {signalName}",
-              "\tbugsess askall {query}"
+              "\tbugsess askall {query}",
+              "\tbugsess check {session}|all"
  ]
 
 -- find . -name "compacted" -exec rm -rf {} \;

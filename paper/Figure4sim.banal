@@ -1,0 +1,70 @@
+>> importBanal FigurePrelude
+
+>> swap = \(x,y)->(y,x)
+>> shiftys = \ys vls -> map (\(x,y) -> (x,y+ys)) vls
+>> chn = \xs -> histValues 20 $ unSamples xs
+>> lns = \pts -> Lines [LineType 1, LineWidth 2] pts
+
+>> chains ../sigmlthin 0 0 0 2000 3000 
+
+>> yrep = unsafeYrep sigmlthin 5000
+
+>> measNms = words "t_{peak} amp nspikes"
+
+>> vardata = transpose $ sampleN 30 $ withinAndAcrossVariability 0.02 20 20 sigmlthin
+
+
+>> plot $ (YLabel "ignore me" $ (lns $ chn $ ampbeta/amp) :+: 
+>>        (lns $ shiftys 550 $ chn $ t0beta/(5-t0)) :+: 
+>>        (lns $ shiftys 1100 $ chn $ tau1beta/tau1) :+:
+>>        (lns $ shiftys 1650 $ chn $ tau2beta/tau2) :+:
+>>        (lns $ shiftys 2200 $ chn $ tau3beta/tau3) :+:
+>>        (lns $ shiftys 2750 $ chn $ pslowbeta/pslow) :+:
+>>        Lines [LineType 2, LineWidth 2, LineColor "black" ] [(0::Double, 0::Double), (0,3200)]) :||:
+>>        (Points [PointType 0] $ Vplots [GnuplotBox $ YLabel "t_{peak}" $ sel fst3 yrep, 
+>>          GnuplotBox $ YLabel "amp" $ sel snd3 yrep, GnuplotBox $ YLabel "nspikes" $sel trd3 yrep])
+
+%>>        (lns $ shiftxs 3500 $ chn $ zipWith (/) pslowbeta pslow) :+: 
+%>>        (lns $ shiftxs 400 $ chn $ zipWith (/) pslowbeta pslow) :+: 
+
+>> nms = words "amp t_0 tau_1 tau_2 tau_3 pslow amp t_0 tau_1 tau_2 tau_3 pslow"
+
+>> plot $ YLabel "Coefficient of variation" $
+>>      CatScat $ zip (measNms++measNms) vardata
+
+%>> plot $ YLabel "Coefficient of variation" $ mapScat (nms) 
+%>>     $ map (thinSamples 20) [ampsd/amp, t0sd/t0, tau1sd/tau1, tau2sd/tau2, tau3sd/tau3, pslowsd/abs pslow, 
+%>>      amptrsd/amp, t0trsd/t0, tau1trsd/tau1, tau2trsd/tau2, tau3trsd/tau3, pslowtrsd/abs pslow]
+
+%>>      ampbetasd/abs ampbeta, t0betasd/abs t0beta, tau1betasd/abs tau1beta, tau2betasd/abs tau2beta, tau3betasd/abs tau3beta]
+
+% >> plot $ XRange 0 10 $ (SamHist 100000 1000 $ fmap exp $ gaussD 1 1) :+: FunSeg 0 10 (PDF.logNormal 1 1)
+
+
+Figure 4. Top left, inferred probability distributions for
+$\frac{\beta_{pop}}{\alpha_{pop}}$ parameters for $A$, $t_0$, $\tau_1$
+$\tau_2$ $\tau_3$ and $p_{slow}$. Top right, replicated data
+points with inferred parameters ($y^{rep}$) for the number of spikes,
+peak expected firing rate and time of that peak. Each point represents
+an individual locust stimulated once with a random
+$\frac{L}{V}$. Bottom, across (first set) and within (second set)
+coefficient of variation for rate function parameters.
+
+
+Note: simulated data!
+
+
+%> unlines $ map accushow $ unsafeRepPars sigmlthin 10
+
+%> sigs = sampleN 10 $replicateRsigs sigmlthin
+
+%> plot$ map snd sigs
+
+%> plot (lns $ shiftxs 100 $ chn $ zipWith (/) t0beta t0)
+
+%> plot (Lines [] $ zip [(0::Double)..] amp)
+
+%> plot (Lines [] $ zip [(0::Double)..] ampbeta)
+
+%> plot $ Lines [] $ zip [(0::Double)..] $ zipWith (/) ampbeta amp
+

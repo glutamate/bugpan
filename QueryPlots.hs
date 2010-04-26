@@ -1,5 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, FlexibleInstances, ExistentialQuantification #-}
-{-# LANGUAGE TypeOperators, FlexibleContexts, GADTs #-}
+{-# LANGUAGE TypeOperators, FlexibleContexts, GADTs, OverlappingInstances #-}
 
 module QueryPlots where
 

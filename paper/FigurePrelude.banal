@@ -1,9 +1,10 @@
 >> eq = nearly 1e-8 
->> everywhere notDisplaced = (eq 0)//displacedAngle
 >> everywhere displaced = (not . eq 0)//displacedAngle
+>> everywhere notDisplaced = notDuring displaced running
 >> everywhere longStop = (eq $ -0.17)//zStopDist
 >> everywhere shortStop = (eq $ -0.50)//zStopDist
->> everywhere longNotDisplaced = during longStop notDisplaced     
+>> everywhere longNotDisplaced = during longStop notDisplaced    
+>> everywhere notShortNotDisplaced = notDuring shortStop notDisplaced    
 >> everywhere speed lov = (eq $ lov/1000)//approachLoV
 >> everywhere nspikes = realcountDuring (approachLoV) spikes
 >> everywhere stdDur = (extendDur 1 $ during (speed 40) $ contains spikes $ during longStop notDisplaced)

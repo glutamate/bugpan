@@ -1,0 +1,25 @@
+>> importBanal FigurePrelude
+
+>> swap = \(x,y)->(y,x)
+>> shiftys = \ys vls -> map (\(x,y) -> (x,y+ys)) vls
+>> chn = \xs -> histValues 20 $ unSamples xs
+>> lns = \pts -> Lines [LineType 1, LineWidth 2] pts
+
+>> everywhere monitorPos = hold monitorMoveTo
+>> everywhere noMove = notDuring ((not . eq 0)//monitorPos) notShortNotDisplaced
+
+>> everywhere stdDurL lov = (extendDur 1 $ during (speed lov) $ contains spikes $ noMove)
+>> everywhere anySpeed = (extendDur 1 $ contains spikes $ noMove)
+
+> table where anySpeed
+>    morph
+>    hasSpikes ~ length $ anySpeed
+>    displaced ~ length displacedAngle
+>    notdisp40 ~ length $ stdDurL 40
+>    notdisp10 ~ length $ stdDurL 10
+>    notdisp20 ~ length $ stdDurL 20
+>    lov ~ accushow $ tagRange approachLoV
+
+
+> close 
+

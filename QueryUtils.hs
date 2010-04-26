@@ -331,9 +331,11 @@ gaussian dt mean sd = let t1 =(-5*sd)
 tagValues :: (Eq a, Tagged t) => [t a] -> [a]
 tagValues = nub . map getTag
 
-tagRange :: (Ord a, Tagged t) => [t a] -> (a,a)
+tagRange :: (Ord a, Tagged t, Fractional a) => [t a] -> (a,a)
 tagRange tgs = let vls = map getTag tgs in 
-               (foldr1 min vls, foldr1 max vls) 
+               case vls of 
+                 [] -> (1/0, 1/0)
+                 _ -> (foldr1 min vls, foldr1 max vls) 
 
 
 convolveWithin :: (Storable a, Num a) => [Duration b] -> Signal a -> [Event a] -> [Signal a]
