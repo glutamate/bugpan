@@ -1,3 +1,5 @@
+{-# LANGUAGE ViewPatterns #-}
+
 module Main where
 
 import Text.Regex.Posix
@@ -69,6 +71,9 @@ mkAnal (('>':q):ss) =
                 mkAnal $ lines ++ rest),
              ("chainmap" `isPrefixOf` (chomp q1), do
                 procChainMap (words q1)
+                mkAnal rest),
+             ("do " `isPrefixOf` (chomp q1), do
+                tell $ drop 3 q1
                 mkAnal rest),
              ("chains" `isPrefixOf` (chomp q1), do
                 procLoadChain (words q1)
@@ -242,7 +247,7 @@ procTable qs tablines = do
 
 
 procCalc q tablines = do
-  let nm:rhs:_ = splitByMany ":=" q
+  let (chomp -> nm):rhs:_ = splitByMany ":=" q
   let (xform,query) = if "$$" `isInfixOf` rhs
                           then let x:q:_ = splitByMany "$$" rhs in (x,q)
                           else ("id", rhs)
@@ -250,16 +255,18 @@ procCalc q tablines = do
                       whereln:_ -> Just (intercalate " " $ tail $ words whereln)
                       _ -> Nothing
   
-  if isJust mfiltr 
+  if not $ isJust mfiltr 
      then tell $ nm ++" <- fmap ("++xform++") $ inEverySession $ do"
      else tell $ nm ++" <- fmap (("++xform++") . catMaybes) $ inEverySession $ do"
   indent 3
   tellNmsTys
-  when (isJust mfiltr) $ do tell $ "if (not . null $ "++fromJust mfiltr++")"
-                            tell $ "   then return $ Just $ "++ query
-                            tell $ "   else return Nothing"
+  if isJust mfiltr 
+     then do tell $ "if (not . null $ "++fromJust mfiltr++")"
+             tell $ "   then return $ Just $ "++ query
+             tell $ "   else return Nothing"
+     else tell $ "return $ "++ query
   indent $ -3
-  tell $ "askForLiterateIO "++nm
+  --tell $ "askForLiterateIO "++nm
   return ()
 
 
@@ -350,6 +357,7 @@ endHtml =
 
 writer s = do
   modimport "Database"
+  modimport "Data.Maybe"
   modimport "QueryTypes"
   modimport "QueryUtils"
   modimport "Query"
@@ -366,7 +374,9 @@ writer s = do
   modimport "Math.Probably.FoldingStats"
   modimport "Math.Probably.GlobalRandoms"
   modimport "Math.Probably.Sampler"
-  modimport "qualified Math.Probably.PDF as PDF"
+  modimport "ReactiveDistributions"
+  modimport "Math.Probably.Distribution"
+
   tell "main = do"
   indent 3
   when (('\\'/=) $ head $ head $ s) $

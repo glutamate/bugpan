@@ -49,13 +49,33 @@ The plots are on the following pages!
 
 > break
 
-> inEverySession 
-> plot ((("flexor feti",  cc fetiSpikes flex1Spikes) :||: ("ci1 feti ",  cc fetiSpikes ci1Spikes ))
->      :==:
->      (("ci1 flexor" , cc flex1Spikes ci1Spikes ) :||: ("seti flexor ", cc flex1Spikes setiSpikes)))
+%> inEverySession 
+%> plot ((("flexor feti",  cc fetiSpikes flex1Spikes) :||: ("ci1 feti ",  cc fetiSpikes ci1Spikes ))
+%>      :==:
+%>      (("ci1 flexor" , cc flex1Spikes ci1Spikes ) :||: ("seti flexor ", cc flex1Spikes setiSpikes)))
 
-> length flex1Spikes
+% jan needs raw traces for each animal of cc feti flexor and cc seti flexor 
+% and time window in which feti and seti is supressed around 1 flexor spike.
 
-> length flex2Spikes
+> flexSeti := (smap (/0.09)) . head $$ cc flex1Spikes setiSpikes
 
-> break
+> flexFeti := (smap (/0.09)) . head $$ cc flex1Spikes fetiSpikes
+> flexFlex := head $$ cc flex1Spikes flex1Spikes
+
+%> length flex1Spikes
+
+%> length flex2Spikes
+
+%> break
+
+>> avgSeti = (averageSigs flexSeti) 
+
+> length avgSeti
+
+> plot $ ("flex-Seti", take 1 avgSeti)
+
+> plot $ ("flex-Feti", take 1 $ averageSigs flexFeti)
+
+> plot $ (averageSigs flexFlex)
+
+> [avgSeti!!1]

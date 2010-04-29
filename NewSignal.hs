@@ -44,6 +44,8 @@ instance Functor Signal where
     fmap f (Signal t1 t2 dt arr Eq) = Signal t1 t2 dt arr $ Kont f
     fmap f (Signal t1 t2 dt arr (Kont g)) = Signal t1 t2 dt arr $ Kont $ f . g
 
+smap f = map (fmap f)
+
 sigPnts :: Signal a -> Int
 sigPnts (Signal t1 t2 dt arr _) = SV.length arr
 sigVPnts (SigV t1 t2 dt sf ) = round $ (t2-t1)/dt

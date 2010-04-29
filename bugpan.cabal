@@ -18,7 +18,7 @@ Flag NoDaq
   Default:     False
 
 Library
-   Exposed-modules:  Query, QueryTypes, QueryUtils, Numbers, PlotGnuplot, EvalM, Database, HaskShapes, RandomSources, QueryPlots, Expr, ValueIO, HaskSyntaxUntyped, NewSignal, FitGnuplot, StatsModel, Locust
+   Exposed-modules:  Query, QueryTypes, QueryUtils, Numbers, PlotGnuplot, EvalM, Database, HaskShapes, RandomSources, QueryPlots, Expr, ValueIO, HaskSyntaxUntyped, NewSignal, FitGnuplot, StatsModel, Locust, ReactiveDistributions
    ghc-options:        -O2
    if flag(nodaq)
      ghc-options:        -DNODAQ

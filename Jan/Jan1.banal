@@ -1,0 +1,17 @@
+>> waveform = \t -> negate $ alpha 0.06 (t-0.1)
+
+>> meanSig = fillSig 0 2 0.02 waveform
+
+>> noise = 0.0002
+
+>> sigDist = RandomSignal meanSig noise 
+
+>> sigs = sampleN 10 $ sampler sigDist
+
+>> sigs1 = sampleN 19 $ janSampler 0.2
+
+%> plot $ YRange (-1.2) 0.1 [meanSig]
+
+> plot sigs
+
+> plot sigs1 

@@ -11,6 +11,8 @@ import Math.Probably.Sampler
 import TNUtils
 import System.IO.Unsafe
 import Math.Probably.FoldingStats
+import Math.Probably.Distribution
+import ReactiveDistributions
 
 type TPeak = Double
 type Amp = Double
@@ -142,3 +144,16 @@ logr amp t0 tau1 tau2 tau3 pslow t
 
 rFromPars :: [Double] -> Double -> Double
 rFromPars [amp, t0, tau1, tau2, tau3, pslow] = r amp t0 tau1 tau2 tau3 pslow 
+
+
+janSampler tau2mean = do 
+  t0' <- uniform 0 0.02
+  let noise = 0.05
+  tau1 <- gaussD 0.06 0.002
+  amp1 <- gaussD 25 0.5
+  tau2 <- gaussD 0.2 0.02
+  amp2 <- gaussD 5 0.5
+  offset <- gaussD 95 0.3
+  let waveform t = offset - amp1 * alpha tau1 (t-(0.1+t0')) - amp2 * alpha tau2 (t-(0.1+t0'))
+  let sig = fillSig 0 2 0.02 waveform
+  sampler $ RandomSignal sig noise
