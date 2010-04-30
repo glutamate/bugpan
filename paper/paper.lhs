@@ -100,22 +100,31 @@ formulation of FRP designed to describe scientific experiments,
 simulations and analyses. We begin by describing the types that are
 central to FRP, and how physiological quantities can be captured in
 these types. We then describe how values of of these types can be
-observed, and how observations can be transformed. gen stimulus.
+observed, and how fuctions can be used to refine existing observations
+or generate stimuli for experiments.
 
 \subsubsection*{Types}
 
 What kinds of mathematical objects can count as physiological
 evidence? We answer this question within simple type theory (Ref),
-which assigns to every object a type...
+which assigns to every object a \emph{type}. The types include base
+types, such as integers, real numbers and text strings. In addition,
+types can be arbitrarily combined in several ways, such that if
+|alpha| and |beta| are types, the type |alpha times beta| is the pair
+formed by an element of |alpha| and one of |beta|; |[alpha]| is a list
+of |alpha|s; and |alpha -> beta| is a function from |alpha| to
+|beta|. Types can be defined with to reference arbitrary types; for
+instance, |withIntegers alpha = [(Z, alpha)]| denotes for any type
+|alpha| the list of pairs of integers and |alpha|s. The ability to
+build flexible type schemata in this manner and write generic function
+over them (``parametric polymorphism'') is essential for the ability
+to represent \emph{all} physiological quantities. 
 
 FRP introduces two types of values to place information in a temporal
 context: Signals, which represent continuously varying quantities, and
 events representing distinct occurrences. These types are flexible, in
-that they can be ``instantiated'' with any other type. In the later
-sections, we show that particular values in the signal and event types
-are the mathematical objects that constitute physiological
-evidence. Here, we also add a third type for information pertaining to
-temporal extents.
+that they can be instantiated with any other type. Here, we add a
+third type for information pertaining to temporal extents.
 
 In physiology, observed time-varying quantities often represent scalar
 quantities, such as membrane voltages or muscle force, but there are
@@ -130,14 +139,11 @@ Signal alpha = Time -> alpha
 Signals can thus take a new value for every different time point and
 represent quantities that vary continuously, although these values may
 be piecewise constant. For instance, the output of a differential
-voltage amplifier might be captured in a |Signal Real|. In addition to
-real numbers, our simple type system other basic types such as
-integers and the unit type (|()|; see below) and means of combining
-types such as pairs, lists and functions. Signals may be stored in many
-different ways --- some signals as a sampled array, others as an
-elementary function of time --- but to satisfy this definition, there
-must exist an operation that, for any signal and for any time point,
-can yield a value.
+voltage amplifier might be captured in a |Signal Real|. Signals may be
+stored in many different ways --- some signals as a sampled array,
+others as an elementary function of time --- but to satisfy this
+definition, there must exist an operation that, for any signal and for
+any time point, can yield a value.
 
 Unlike signals such as an extracellular potential or a membrane
 conductance, some observed quantities such as action potentials are
@@ -167,14 +173,14 @@ again a value of any type |alpha|:
 \begin{code}
 Duration alpha = {Time times Time times alpha}
 \end{code}
-Durations are here used for information about whole trial or about an
-entire animal, but could also be useful as observations in their own
-right, such as open times of individual ion channels, periods in which
-activity of a system exceeds a set threshold (e.g bursts). We have
-used durations to hold information about an entire experiment, for
-instance a session identifier or the animal strain. Lastly, durations
-could be used for information that spans multiple trials but not an
-entire experiment - for instance, the presence of a drug. 
+Durations are useful for information about whole trial or about an
+entire animal, but could also be observations in their own right, such
+as open times of individual ion channels, periods in which activity of
+a system exceeds a set threshold (e.g bursts). We have used durations
+to hold information about an entire experiment, for instance a session
+identifier or the animal strain. Lastly, durations could be used for
+information that spans multiple trials but not an entire experiment -
+for instance, the presence of a drug.
 
 Since signals, events and durations can be instantiated for any type,
 they form a simple but flexible framework for representing many
@@ -257,9 +263,14 @@ into a signal of |beta| by applying the function |f| of type |alpha
 Further primitives are needed to form signals that depend on the
 history of other signals. For any signal |s|, the expression |delay s|
 denotes the signal that is delayed by a small amount of time (in
-practise, one time step). The differential operator |D| can be used
-for differentiating signals and solving differential equations, but is
-not needed for the experiments described in this paper.
+practise, one time step). 
+
+The differential operator |D| differentiates a real-valued signal with
+respect to time, such |D s| denote its first derivative |D D s| the
+second derivative of the signal |s|. Likewise, the differential
+operator can appear on the left side of a definition, in which case it
+introduces a differential equation. This is illustrated in example 2
+(see below)
 
 The simplest approach to constructing events, and that taken here, is
 to detect events from existing signals. For instance, a threshold
@@ -286,25 +297,9 @@ Thus, signals describe continuous changes and events discrete
 occurrences. Sometimes, one requires a continuous behaviour to change
 abruptly into a different mode. FRP provides a clever way of doing
 this: a special construct, |switch| changes the definition of signals
-depending of the occurrence of specified events. For instance, in the
-integrate-and-fire model of a spiking neuron, a cell changes between
-two modes (integration and refraction) 
-\begin{code}
-v_m =  switch {  _, refrac_end  ~>  let D v = cellOde v in v
-                 spike          ~>  sopen v_rest sclose }
-\end{code}
-where
-\begin{code} 
-spike       = (\v->v>0.05) ?? v_m
-refrac_end  = later 0.002 spike
-\end{code}
-In this example, the temporal evolution of |v_m| will alternate
-between two modes: solving the differential equation given by
-|cellOde| and a constant value of |v_rest|. The first mode will be
-active initially (as indicated by |_|), and whenever the |refrac_end|
-event occurs (the end of the refractory period). When the |spike|
-event occurs, |v_m| will follow the constant signal |sopen v_rest
-sclose| until another event occurs.
+depending of the occurrence of specified events. 
+
+...
 
 This small number of special constructors, along with the lambda
 calculus and the list semantics of events and durations, have allowed
@@ -369,87 +364,7 @@ random numbers can break referentially transparency. We have thus
 implemented sources corresponding to common parametric probability
 distributions.
 
-\subsubsection*{Probabilistic inference}
-
-The previous three sections have described a formal structure for
-physiological observations. For these values to be considered
-evidence, they must be understood in the context of a statistical
-model. Here, we consider how the structure of observations described
-here lends itself to parameter estimation and hypothesis
-testing. First, we present the existing statistical framework we have
-used; then, how the temporal structure of observations arrange the
-data in this framework.
-
-The hierarchical Bayesian model \citep{Gelman2003} is an expressive
-and general framework for statistical models over several stratified
-levels. Its principal advantage is that all the available information
-\citep{Rouder2003} is incorporated into a single model. For instance,
-it is common in physiology to base estimates and tests on measurements
-that have been repeated within animals and then across animals. In a
-hierarchical model, there is no requirement to average out
-measurements within each animal; every measurement can be
-included. There is no requirement for or advantage to balanced
-designs, so measurements from each animal can continue until recording
-conditions deteriorate. Furthermore, there are not inherent
-assumptions about normality; any distribution can be used for error
-terms or population distribution. Indeed, measurements within a trial
-need not be compressed into a single number. Observations of any type,
-including signals or events, can be directly modelled. Lastly, by
-potentially taking into account \emph{all} the available information
-from an experiment, the hierarchical model can give the
-probability-theoretically correct uncertainty in an estimate, without
-making assumptions about within- and between subject variability.
-
-The hierarchical model posits that parameters at each level are drawn
-from distributions that are themselves parametrised with values from a
-higher level. For instance, in a hierarchical regression model, the
-response amplitude $y_{ij}$ to a stimulus of amplitude $x_j$ on a
-particular trial $j$ in a particular subject $i$ may be distributed as
-\begin{equation*}
-y_{ij} \sim \mathcal{N}(\alpha_{i}+x_j\beta_{i},\,\sigma)
-\end{equation*}
-and across a population, the offset $\alpha_{i}$ and slope $\beta_{i}$
-may be distributed as
-\begin{equation*}
-\alpha_i ,\, \beta_i \sim \mathcal{N}(\vec{\mu}_p,\,\mathbf{\Sigma}_p)
-\end{equation*}
-or some other bivariate distribution. This multi-level structure can be varied
-in countless ways to include categorical or multiple continuous
-variables, non-linearities and additional levels
-\citep{Gelman2006}. Here, $\vec{\mu}_p$ and $\mathbf{\Sigma}_p$ are
-known as the hyperparameters and are the parameters of interest to be
-estimated. We have used Bayesian inference to estimate the
-hyperparameters (see below), but we stress that these can also be
-estimated using maximum likelihood methods or subjected to classical
-significance testing.
-
-In the presentation of the hierarchical model given above and elsewhere
-(ref), subscript indices are used to separate parameters within and
-between levels. The implementation of model inference may not be clear
-in the case of unbalanced designs, where the responses cannot be a
-matrix. Indeed, one of the principal difficulties in using WinBUGS, a
-prominent tool for hierarchical models, is importing data into the
-program (ref?). We suggest that one reason for this is that it is an
-intrinsically difficult problem. Here, we show that the temporal
-structure of physiological evidence is inherently hierarchical with an
-arbitrary number of levels. First, observe that different durations
-can be nested. That is, occurrences of a duration $d_1$ separated into
-groups corresponding to occurrences of a duration $d_2$. Secondly,
-signals and events can also occur within durations. These two
-properties indicate that a hierarchy can be established with the
-longest durations at the top (corresponding to individual subjects,
-for instance) with shorter, nested, durations below (drug state and
-trial) and the individual observations (signals and events) at the
-bottom. Thus, the temporal structure of physiological evidence can
-provide a scaffold on which to place a hierarchical model of the
-observations.
-
-In the following section, we demonstrate how the definition of an
-experiment in the language outlined above, with observations defined
-as signals and events, can be combined with a hierarchical
-probabilistic model for hypothesis testing and parameter estimation. 
-
-\section*{Results}
+\section*{Example 1}
 
 Although every animal species can benefit from a mechanism for
 detecting and moving away from obstacles and predators, the need for a
@@ -593,72 +508,39 @@ show that while the peak rate of the spike histogram is an decreasing
 function of $\frac{l}{v}$, the total number of spikes in the approach
 is n increasing function. In addition, the time of the peak rate is
 later with smaller values of $\frac{l}{v}$
-\citep{Hatsopoulos1995}. These preliminary observations suggest a
-complex relationship between the firing rate and the stimulus
-parameters. (And we have no idea what aspect of the spike train are
-most important in influencing behaviour)
+\citep{Hatsopoulos1995}. 
 
-Rather than drawing relationships between specific point estimators
-(peak rate, number of spikes, time of peak firing), we built a
-hierarchical probabilistic model of the full spike train on every
-trial and use Bayesian inference to estimate its parameters.  explain
-what this is. (In this way, we do not lose any information in the
-process of data analysis.)
+\section*{Example 2}
 
-First, we assume that on a particular trial i with a given approach
-speed, the DCMD firing rate can be described by an inhomogeneous
-Poisson process with rate $r(t)$. That is, the probability of seeing a
-spike between time $t$ and $t+dt$ is $r(t)dt$ for small $dt$. Although we do
-not know what the form of $r(t)$ is a priori, in practise we can look
-for a parametric function that can be fit to the spike time histogram
-under a variety of conditions in a series of preliminary
-experiments. One such function is the reversed and time-shifted alpha
-function with a fixed baseline:
-\begin{equation*}
-r_{\alpha}(t) = 
-\begin{cases} rate \cdot \frac{-(t-t_0)}{\tau}\cdot e^{1+\frac{-(t-t_0)}{\tau}}+baseline & \text{if $t \le t_0$,}
-\\
-baseline &\text{if $t > t_0$.}
-\end{cases}
-\end{equation*}
+An important property studied in computational neuroscience is the
+input-output relationships of neurons. Given a stimulus, e.g. injected
+current waveform or pattern of synaptic input, what is the membrance
+voltage trajectory and firing rate response of a particular neuron?
+This question can be addressed with experiements or simulations; here
+we show how the calculus of physiological evidence can be used to
+construct simple models of spiking neurons concisely. 
 
-Second, we assume that on each trial, the the parameters of $r(t)$ is
-drawn from some distribution for the animal, defined by compound
-parameter $\theta_{animal}$. Here, we assume that the trial parameters
-are normally distributed, such that $\theta_{animal}$ consists of a
-location vector $\vec{\mu}_{animal}$ and a covariance matrix
-$\mathbf{\Sigma}_{animal}$. The model should attempt to explain the
-influence of the approach speed on the spike train. Thus
-$\vec{\mu}_{animal}$ is itself composed of an offset
-$\vec{\alpha}_{animal}$ concatenated with slope $\vec{\beta}_{animal}$
-with respect to $\frac{l}{v}$. Finally, we assume that
-$\vec{\alpha}_{animal}$ and $\vec{\beta}_{animal}$ are themselves
-drawn from some population distribution
-$\mathcal{N}(\vec{\mu}_{population},
-\mathbf{\Sigma}_{population})$. For simplicity, we assume a constant
-(but unknown) trial-level covariance matrix $\mathbf{\Sigma}_{animal}$
-across all animals. A graphical representation of this model is shown
-in Figure 4A (missing).
+First, we consider the integrate-and-fire neuron. In this model, a
+cell changes between two modes (integration and refraction)
+\begin{code}
+v_m =  switch {  _, refrac_end  ~>  let D v = cellOde v in v
+                 spike          ~>  sopen v_rest sclose }
+\end{code}
+where
+\begin{code} 
+spike       = (\v->v>0.05) ?? v_m
+refrac_end  = later 0.002 spike
+\end{code}
+In this example, the temporal evolution of |v_m| will alternate
+between two modes: solving the differential equation given by
+|cellOde| and a constant value of |v_rest|. The first mode will be
+active initially (as indicated by |_|), and whenever the |refrac_end|
+event occurs (the end of the refractory period). When the |spike|
+event occurs, |v_m| will follow the constant signal |sopen v_rest
+sclose| until another event occurs.
 
-Figure 4B shows the inferred estimates for the ratio population
-$\beta$ to $\alpha$ means, given as probability distributions.
 
-\begin{itemize}
-\item The final model, estimated parameters. 
-\item which correlate? 
-\item show effect on time of peak, amplitude, mean weighted rise.
-\item is the peak before or after collision?
-\item variability within and between animals
-\item Motivate displaced loom experiment. 
-\item show responses, nspikes etc
-\item Do responses still follow function?
-\item Which parameters does the displacement affect? 
-\item Interaction displacement and speed.
 
-\item say something about Accuracy/speed trade-off.
-
-\item bias
-\end{itemize}
 \section*{Discussion}
 
 summary
