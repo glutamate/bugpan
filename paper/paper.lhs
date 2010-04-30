@@ -72,22 +72,9 @@ models, a powerful framework for biological inference rarely used in
 physiological data analysis \citep[but see][]{Gelman1996}.
 
 We use a calculus of physiological evidence based on FRP to perform a
-non-trivial experiment in \emph{in vivo} insect neurophysiology. The
-desert locust \emph{Schistocerca gregaria}, like many other winged
-insects, has a specialised circuit in the optic lobe for detecting
-approaching objects \citep{Rowell1976, Hatsopoulos1995}. This system
-projects to descending ganglia via the descending contralateral
-movement detector (DCMD) neuron which is accessible to recording. The
-DCMD response is sensitive to a variety of parameters including the
-stimulus contrast, approach speed and size
-\citep{Gabbiani2001}. However, few studies have addressed whether the
-locust looming detection system is efficient in discriminating objects
-that are on collision course from those that are on a non-intercepting
-trajectory. We show that this is the case and that the precision of
-the looming detector is influenced by the approach velocity. The
-definitions of these experiments and the data analysis procedure are
-contained within the main sections of this paper in a handful of
-equations.
+several non-trivial experiments in neurophysiology. The definitions of
+these experiments and the data analysis procedure are contained within
+the main sections of this paper in a handful of equations.
 
 \section*{The calculus of physiological evidence}
 
@@ -100,25 +87,26 @@ changes in ion channel conductances or fusion pore dilations on a
 different timescale. Time must play a multifaceted role in
 physiological evidence.
 
-Functional Reactive Programming is a family of programming languages
-built for computer programs where time also plays an essential role,
+Time also plays an essential role in some computer programs, such as
 such as animations, video games, robotics and physical
-simulations. Programs written in a such a language transform the whole
-input, including responses from the user, into the entire output from
-the program. Here, we show that a language based on FRP can capture
-many aspects of experimentation and analysis in physiology. The types
-introduced by FRP - signals, events - present a flexible scheme for
-representing concrete physiological evidence, both observed and
-inferred. The ``functional'' aspect of FRP define analysis procedures
-such as signal transformers and event detectors. Finally, we show that
-nested temporal periods can define the structure of a hierarchical
-Bayesian model for observations.
+simulations. Although these can be implemented in a conventional
+programming language, then can also be composed in a referentially
+transparent manner by combining elementary transformations of the
+whole input, including responses from the user, into the entire output
+from the program. When these transformations can be defined by purely
+mathematical functions, the resulting style is known as Functional
+Reactive Programming (Ref and inelegant). Here, we introduce a new
+formulation of FRP designed to describe scientific experiments,
+simulations and analyses. We begin by describing the types that are
+central to FRP, and how physiological quantities can be captured in
+these types. We then describe how values of of these types can be
+observed, and how observations can be transformed. gen stimulus.
 
 \subsubsection*{Types}
 
 What kinds of mathematical objects can count as physiological
-evidence? We answer this question within simple type theory, which
-assigns to every object a type... 
+evidence? We answer this question within simple type theory (Ref),
+which assigns to every object a type...
 
 FRP introduces two types of values to place information in a temporal
 context: Signals, which represent continuously varying quantities, and
