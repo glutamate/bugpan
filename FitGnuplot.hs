@@ -1,3 +1,4 @@
+{-# LANGUAGE GADTs #-}
 module FitGnuplot where
 
 import PlotGnuplot
