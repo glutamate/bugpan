@@ -539,7 +539,18 @@ event occurs (the end of the refractory period). When the |spike|
 event occurs, |v_m| will follow the constant signal |sopen v_rest
 sclose| until another event occurs.
 
+The above equations give the integrate-and-fire solution to the
+differential equation specified by cellOde, the form of which will be
+defined by the cell parameters and the synaptic input. For a standard RC compartment 
 
+-input 
+-show response
+-long run with many different input rates
+-f-f curve
+
+-quadratic integrate and fire
+
+-HH?
 
 \section*{Discussion}
 
