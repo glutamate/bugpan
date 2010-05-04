@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies, FunctionalDependencies, MultiParamTypeClasses, FlexibleInstances #-}
+{-# LANGUAGE TypeFamilies, FunctionalDependencies, MultiParamTypeClasses, FlexibleInstances, GADTs #-}
 
 module ReactiveDistributions where
 

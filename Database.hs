@@ -23,8 +23,8 @@ import System.Cmd
 --import System.Info.MAC as MAC
 --import Data.Digest.Pure.SHA
 --import Data.ByteString.Internal
-import Data.UUID
-import Data.UUID.V1
+--import Data.UUID
+--import Data.UUID.V1
 import Numeric
 --import Traverse
 --import Transform
@@ -56,6 +56,11 @@ createSession rootDir t0@(TOD t1 t2) name = do
   writeFile (baseDir./ "sessionFormatVersion") $ "3"
   return $ Session baseDir t0
 
+getUUID :: IO String
+getUUID = do
+  u <- sh "uuidgen"
+  return $ filter (/='-') u
+
 newSession :: FilePath -> IO Session
 newSession rootDir = do
   t0@(TOD t1 t2) <- getClockTime  
@@ -64,9 +69,10 @@ newSession rootDir = do
   --let longStr = concat [show t1, show t2, show mac, show rnd] 
   --putStrLn longStr
   --let sha = take 20 . showDigest . sha512 . BS.pack $ map c2w "foo"
-  muuid <- (fmap (filter (/='-') . toString)) `fmap` nextUUID
-  print muuid
-  Just uuid <- return muuid
+  --muuid <- (fmap (filter (/='-') . toString)) `fmap` nextUUID
+  --print muuid
+  --Just uuid <- return muuid
+  uuid <- getUUID
   createSession rootDir t0 uuid
 --sessEvalState s = EvalS 0 0 Nothing (qenv s ++( evalManyAtOnce $ sessPrelude s))
 

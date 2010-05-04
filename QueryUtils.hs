@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns, NoMonomorphismRestriction, FlexibleContexts, ScopedTypeVariables #-}
+{-# LANGUAGE BangPatterns, NoMonomorphismRestriction, FlexibleContexts, ScopedTypeVariables, GADTs #-}
 
 module QueryUtils where
 

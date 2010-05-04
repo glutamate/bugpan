@@ -10,10 +10,9 @@ import Data.Maybe
 import Text.Regex.Posix
 import System.Directory
 import Control.Monad
-import System.Process 
-import System.Exit
 import System.IO
 import PrettyPrint
+import TNUtils
 
 type TError = String
 
@@ -100,16 +99,3 @@ runAllTests  = do
                            s -> putStrLn $ concat $ [": ", s]
   putStrLn "done testing"
 
-sh :: String -> IO String
-sh cmd = do (hin, hout, herr, ph) <- runInteractiveCommand cmd
-            excode <-  waitForProcess ph
-            sout <-  hGetContents hout
-            serr <- hGetContents herr
-            case excode of
-                  ExitSuccess -> return sout
-                  ExitFailure n ->
-                      return $ concat ["process error ",
-                                           show n,
-                                           " :",
-                                           serr
-                                          ]

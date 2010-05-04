@@ -9,7 +9,7 @@ import System.Directory
 
 import Control.Monad
 import Control.Monad.Writer.Lazy
-import Language.Haskell.Interpreter
+--import Language.Haskell.Interpreter
 import QueryTypes
 import Data.Char
 --import System.Posix.Resource
