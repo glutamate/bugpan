@@ -370,7 +370,7 @@ writer s = do
   modimport "StatsModel"
   modimport "FitGnuplot"
   modimport "Locust"
-  modimport "Control.DeepSeq"
+--  modimport "Control.DeepSeq"
   modimport "Math.Probably.FoldingStats"
   modimport "Math.Probably.GlobalRandoms"
   modimport "Math.Probably.Sampler"

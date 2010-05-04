@@ -100,6 +100,13 @@ readSigPt :: Signal a -> Int -> a
 readSigPt (Signal t1 t2 dt arr eqOrK)  t = 
     (eqOrKToF eqOrK) $ arr `SV.index` t
 
+sigInit tm s@(Signal t1 t2 dt arr eqOrK) = 
+    let t2' = t1+tm
+    in limitSig t1 t2' s
+       
+sigZero s@(Signal t1 t2 dt arr eqOrK) = Signal 0 (t2-t1) dt arr eqOrK
+
+
 limitSig lo hi (Signal t1 t2 dt arr eqOrK) = 
     let t1' = max t1 lo
         t2' = min hi t2

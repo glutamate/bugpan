@@ -1,0 +1,41 @@
+module Intfire where
+
+use Prelude
+
+rate = 200
+--mitchell silver 385 ps
+--rin = 2.6e9
+
+--we go with sargent
+rin=1.0e9
+
+vrest = -0.080
+
+cm = 2.5e-12
+
+stepAmp = 0 
+
+
+_dt = 4.0e-5
+_tmax= 0.1
+
+gcell :: Signal Real
+gcell = {: if between 0.01 0.09 <:seconds:> then stepAmp else 0:}
+
+cellOde = \v->{: ((<: gcell :>*(0-v)) - ((v-vrest)/rin))/cm :} 
+
+
+vm = switch 
+	    (solveOde cellOde) vrest
+	    spike ~> \_->\_->{: vrest :}
+	    refrac_end ~> \tsp->\_-> solveOdeFrom (tsp+dt) cellOde vrest
+
+
+spike :: [(Real, ())]
+spike = crosses (-0.05) vm
+refrac_end :: [(Real, ())]
+refrac_end = later 2.5e-3 spike
+
+gcell *> store ""
+vm *> store ""
+spike *> store ""

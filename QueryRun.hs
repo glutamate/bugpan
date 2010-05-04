@@ -74,6 +74,7 @@ useFile fp params subs = do ds <- makeSubs subs `fmap` use fp
                           
 compile :: MonadIO m => [Declare] -> [(String, T)] -> StateT QState m CompiledToken
 compile ds params = do
+--  io $ print params
   let trun = (lookupDefn "_tmax" ds >>= vToDbl) `orJust` 1
   let dt = (lookupDefn "_dt" ds >>= vToDbl) `orJust` 0.001
   let commentParams = map (\(nm,ty)-> Comment $ "PARAMETER: "++nm++ppType ty) params

@@ -80,6 +80,8 @@ newSessionNamed :: String -> FilePath -> IO Session
 newSessionNamed nm rootDir = do
   t0@(TOD t1 t2) <- getClockTime  
   putStrLn $ "creating new session called "++nm
+--  whenM (existsSession nm) $ do
+     
   createSession rootDir t0 nm
 
 
@@ -133,7 +135,8 @@ lastSession rootDir = do
 
 deleteSession :: Session -> IO ()
 deleteSession (Session dir _) = system ("rm -rf "++ dir) >> return ()
-   
+
+  
 resolveApproxSession  :: FilePath -> String -> IO String
 resolveApproxSession  root nm | nm == "last" = do
   (last . splitBy '/' . baseDir) `fmap` lastSession root 

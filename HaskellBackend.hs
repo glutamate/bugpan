@@ -36,6 +36,8 @@ getDeclaredType ds nm =
 
 compileToHask fp dt tmax ds params = do
   --forM_ ds $ putStrLn .ppDecl
+  
+  putStrLn $ "compToHask params: "++show params
   let prg = toHask dt tmax ds params
   writeFile (fp) prg
   --putStrLn prg
@@ -257,7 +259,7 @@ compStageP ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++
 
           breakStep =  "\n                         " 
           runRtSrcs = map (\(v,s,p)-> ind++v++" <- "++s++" tmax dt "++pp p) rtSrcs
-          runAtOnceSrcs = map (\(v,s,p)-> v++" <- "++s++" tmax dt "++pp p) atOnceSrcs 
+          runAtOnceSrcs = map (\(v,s,p)-> ind++v++" <- "++s++" tmax dt "++pp p) atOnceSrcs 
           --initVls = ["0"]++map (\_->"undefined") (init sigs)++ (map (inPar . pp . (tweakExprP (nmOrd nm) ds) .snd) delays)++map (\_->"[]") exps
           defineStep = [ind++"let step 0 "++(intercalate " " args) ++" = return ("++
                           (intercalate ", " $ expBufs++evExps )++")",

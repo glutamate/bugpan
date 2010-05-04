@@ -97,3 +97,6 @@ black = (0.0, 0.0, 0.0)
 green = (0.0, 1.0, 0.0)
 
 derivative sig = {: (<: sig :> - <: delay sig 0 :>)/dt  :}
+
+between :: Real -> Real -> Real -> Bool
+between x y z = (z>x) && (z<y)

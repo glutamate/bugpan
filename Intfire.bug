@@ -15,12 +15,7 @@ vrest = -0.080
 
 cm = 2.5e-12
 
-stepAmp = 0 
-
---gsynmul = 1.2e-12
---gsynmul = 3.0e-13 -- for 7 mv
 gsynmul = 1.0e-12
---gsynmul = 1.342e-12
 
 _dt = 4.0e-5
 _tmax= 10
@@ -42,9 +37,7 @@ gcell :: Signal Real
 --gcell = convAux gsyn tmax rndSpike 
 --fspikes = forget 0.02 rndSpike
 
-gcell = if stepAmp > 0
-           then {: stepAmp :}
-           else (convolve gsyn) (forget 0.02 rndSpike )
+gcell = (convolve gsyn) (forget 0.02 rndSpike )
 
 cellOde = \v->{: ((<: gcell :>*(0-v)) + (tonicInhib*((0-0.07)-v)) - ((v-vrest)/rin))/cm :} 
 
@@ -83,7 +76,7 @@ vm *> store ""
 spike *> store ""
 --refrac_end *> store ""
 --spike *> print ()
---rndSpike *> store ""
+rndSpike *> store ""
 
 --foo = "foo"
 

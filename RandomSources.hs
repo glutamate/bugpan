@@ -47,6 +47,8 @@ poisson tmax _ rate = aux 0
                            then return []
                            else liftM2 (:) (return (next, ())) $ aux next
 
+tstP = poisson 1 0.01 1
+
 regular :: Double -> Double -> Double -> IO [(Double,())]
 regular tmax dt rate = let n = tmax*rate
                        in return $ map (\i-> (i/rate , ())) [1..n]

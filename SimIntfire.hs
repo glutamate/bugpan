@@ -19,13 +19,16 @@ import QueryTypes
 realTs nms = zip (words nms) $ repeat realT
 
 main = do
-  inSessionFromArgs $ do
+  deleteSessionIfExists "intfire"
+  inApproxSession "new:intfire" $ do
     intfire <- useFile "Intfire" 
-                         (realTs "stepAmp rate") []
-    determineS intfire [("stepAmp", return 1e-12),
-                        ("rate", return 0)]
+                         (realTs "rate") []
+    io $ print intfire
+    intfireStep <- useFile "IntfireStep" 
+                         (realTs "stepAmp") []
 
-    times 10 $ do 
+    determineS intfireStep [("stepAmp", return 6.05e-10)]
+
+    times 200 $ do 
       determineS intfire 
-                 [("stepAmp", return (-1))
-                  ("rate", uniform 0 100)]
+                 [("rate", uniform 0 400)]
