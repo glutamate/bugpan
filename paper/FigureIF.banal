@@ -1,0 +1,15 @@
+> defineSession! intfire ../SimIntfire
+
+> openSession intfire
+
+> d1 = drop 1 -- initial step sim
+
+> outrate = freqDuring (d1 running) spike
+
+> ffcurve = scatter $ zipD (d1 inputRate) outrate
+
+> plot $ (A [take 1 vm] :||: B [gcell!!1]) 
+>        :==: (C [vm!!1] :||: D ffcurve) 
+
+> close
+
