@@ -541,14 +541,24 @@ sclose| until another event occurs.
 
 The above equations give the integrate-and-fire solution to the
 differential equation specified by cellOde, the form of which will be
-defined by the cell parameters and the synaptic input. For a standard RC compartment 
+defined by the cell parameters and the synaptic input. For a
+compartment with parallel resistance |rin|, capacitance |cm|, and
+time-varying conductance |gcell|, cellOde takes the form
+\begin{code}
+cellOde = \v->{: (-<: gcell :>*v - ((v-vrest)/rin))/cm :}
+\end{code}
+Thus, the signal |gcell| determines the input to the cell, and for
+fixed rin, cm, vrest, refrac_time the simulation can be seen as a function from
+the conductance signal to the simulated spike train or membrance
+voltage.
 
--input 
--show response
--long run with many different input rates
--f-f curve
+-fig:
+- A step response with vm
+- B synaptic input convolved
+- C vm response to syn input
+- D f-f curve.
 
--quadratic integrate and fire
+-quadratic/exponential integrate and fire
 
 -HH?
 
@@ -659,10 +669,10 @@ rate. Uniform priors for mean and variance components.
 \bibliographystyle{apalike}
 \bibliography{paper}
 
-\includepdf[pages=-]{Figure1.pdf}
-\includepdf[pages=-]{Figure2.pdf}
-\includepdf[pages=-]{Figure3.pdf}
-\includepdf[pages=-]{Figure4.pdf}
+%\includepdf[pages=-]{Figure1.pdf}
+%\includepdf[pages=-]{Figure2.pdf}
+%\includepdf[pages=-]{Figure3.pdf}
+%\includepdf[pages=-]{Figure4.pdf}
 \end{document}
  
 
