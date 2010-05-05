@@ -140,6 +140,12 @@ dispatch _ ("convert2":sessNm:_) = do
                       return $ xs)
                   ((print $ "dir not found:" ++fp) >> return [])
 
+dispatch o ("compactall":sessPrefix:_) = do
+  sesns <- getSessionInRootDir root
+  forM_ sesns $ \sNm -> do
+      when (sessPrefix `isPrefixOf` sNm) $ dispatch o ["compact", sNm]
+
+
 dispatch _ ("compact":sessNm:_) = do
   system $ "bugsess compact_1 "++sessNm
   system $ "bugsess compact_2 "++sessNm
@@ -333,6 +339,7 @@ dispatch os ss = putStrLn $ unlines ["",
               "\tbugsess list",
               "\tbugsess filter1 {query}",
               "\tbugsess compact {session}",
+              "\tbugsess compactall {session prefix}",
               "\tbugsess convert2 {session}",
               "\tbugsess convert1 {session}",
               "\tbugsess kill {session}",

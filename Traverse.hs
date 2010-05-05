@@ -14,7 +14,7 @@ import Control.Monad.Error
 
 data TravS = TravS { counter :: Int,
                      decls :: [Declare],
-                     env ::  [(String, E)],
+                     trenv ::  [(String, E)],
                      boundVars :: [String],
                      lineNum :: Int,
                      exprPath :: [E],
@@ -162,10 +162,10 @@ genSym base = do tok <- counter `fmap` get
                  return $ base ++ "_" ++ (show tok)
 
 withEnv :: String -> E -> TravM a -> TravM a
-withEnv n e tx = do env1 <- env `fmap` get
-                    setter $ \s-> s { env = (n,e):env1 }
+withEnv n e tx = do env1 <- trenv `fmap` get
+                    setter $ \s-> s { trenv = (n,e):env1 }
                     x <- tx
-                    setter $ \s-> s { env = env1 }
+                    setter $ \s-> s { trenv = env1 }
                     return x
 
 withBvars n tx = do bvs <- boundVars `fmap` get
@@ -194,7 +194,7 @@ insideSolveOde  = (isOde . head . exprPath) `fmap` get
 
 
 lookUp :: String -> TravM (E)
-lookUp nm = do env <- env `fmap` get
+lookUp nm = do env <- trenv `fmap` get
                case L.lookup nm env of
                  Just e -> return e
                  Nothing -> lookUpInDecls
@@ -206,7 +206,7 @@ lookUp nm = do env <- env `fmap` get
                           
 
 safeLookUp :: String -> TravM (Maybe E)
-safeLookUp nm = do env <- env `fmap` get
+safeLookUp nm = do env <- trenv `fmap` get
                    case L.lookup nm env of
                      Just e -> return $ Just e
                      Nothing -> lookUpInDecls

@@ -1,6 +1,6 @@
 module Jan where
 
-alpha tau t = if t<0.0 then 0.0 else tau*tau*t*(exp (-t*tau)) 
+alpha tau t = if t<0.0 then 0.0 else (t/tau)*exp (1-t/tau)
 
 tau1m ~ unknown 0.06
 tau1sd ~ unknown 0.002
@@ -19,18 +19,23 @@ noise ~ unknown 0.05
 
 _dt = 0.02
 _tmax = 2
+inevery t <- session 1 where
 
-inevery t <- running 5 where
-   tau1 ~ N tau1m tau1sd
-   amp1 ~ N amp1m amp1sd
+  inevery t <- running 10 where
+     tau1 ~ N tau1m tau1sd
+     amp1 ~ N amp1m amp1sd
 
-   tau2 ~ N tau2m tau2sd
-   amp2 ~ N amp2m amp2sd
-   offset ~ N offm offsd
+     tau2 ~ N tau2m tau2sd
+     amp2 ~ N amp2m amp2sd
+     offset ~ N offm offsd
 
-   t0 ~ uniform 0.1 0.12
+     t0 ~ uniform 0.1 0.12
 
-   waveform = {: offset - amp1 * alpha tau1 (<:seconds:>-t0) - amp2 * alpha tau2 (<:seconds:>-t0) :} 
-   angle ~ RandomSignal waveform noise
+     testalpha = {: alpha tau1 <:seconds:> :}
+
+     testsecs = {: <: seconds :> :}
+
+     waveform = {: offset - amp1 * alpha tau1 (<:seconds:>-t0) - amp2 * alpha tau2 (<:seconds:>-t0) :} 
+     angle ~ RandomSignal waveform noise
 
    

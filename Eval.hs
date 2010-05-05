@@ -118,15 +118,19 @@ eval es env (StrCat e1 e2) = do StrLit a <- eval es env e1 t
     Just t -> return ()
     Nothing -> error $ "no time in expr "++show sve-}
   return $ efun (curTime es) -}
-
-{-eval es (Sig se) 
-    = do let boundVars = map fst $ env es
-         if all (`elem` boundVars) fvars
-            then return . SigV $ \t -> unEvalM (eval (withTime t es) se)
-            else fail $ "unknown free vars: " ++ show (fvars \\ boundVars) ++ "\nEnv: "++(show $ env es)
-    where fvars = freeVars se
+eval es (SigVal (Var "seconds")) = do
+  case cur_t es of
+    Just t -> return $ NumV $ NReal t
+    Nothing -> fail "eval: evaluating sigval seconds outside temporal context"
+  
+eval es (Sig se) 
+    = do --let boundVars = map fst $ env es
+  --       if all (`elem` boundVars) fvars
+      return . SigV 0 (tmax es) (dt es) $ \ti -> unEvalM (eval (withTime (realToFrac ti*dt es) es) se)
+--            else fail $ "unknown free vars: " ++ show (fvars \\ boundVars) ++ "\nEnv: "++(show $ env es)
+--    where fvars = freeVars se
           --boundVars = map fst env
--}
+
 
 eval es (SigAt offset sve) = 
     do s<- eval (withoutTime es) sve 
