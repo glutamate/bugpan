@@ -31,10 +31,6 @@ inevery t <- session 1 where
 
      t0 ~ uniform 0.1 0.12
 
-     testalpha = {: alpha tau1 <:seconds:> :}
-
-     testsecs = {: <: seconds :> :}
-
      waveform = {: offset - amp1 * alpha tau1 (<:seconds:>-t0) - amp2 * alpha tau2 (<:seconds:>-t0) :} 
      angle ~ RandomSignal waveform noise
 

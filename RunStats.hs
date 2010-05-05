@@ -19,6 +19,7 @@ import Query
 import QueryTypes
 import Data.List
 import Data.Maybe
+import Stats.Simulate
 
 help = putStrLn $ unlines [
         "runstats simfakes {model file} {session base} {session count}\n\n"
@@ -30,90 +31,40 @@ unConst (Const e) = e
 
 dispatch ("simfakes":filenm:sessBase:_) = do
   ds <- fileDecls filenm []
-  mapM print ds
+--  mapM print ds
   let tmax = unsafeReify $ unConst $ fromJust $ lookup "_tmax" $ declsToEnv ds
   let dt = unsafeReify $ unConst $ fromJust $ lookup "_dt" $ declsToEnv ds
   let es = EvalS dt tmax Nothing []
   fakeenv <- fmap (EM.env . head) $ runSamplerIO $ evalSim es ds
-  mapM print $ fakeenv
+  --mapM print $ fakeenv
   saveEnv sessBase tmax dt $ fakeenv
   return ()
 
+dispatch ("estimate":filenm:sessFiltr:_) = do
+  ds <- fileDecls filenm []
+  let tmax = unsafeReify $ unConst $ fromJust $ lookup "_tmax" $ declsToEnv ds
+  let dt = unsafeReify $ unConst $ fromJust $ lookup "_dt" $ declsToEnv ds
+  let es = EvalS dt tmax Nothing []
+  return ()
+
+
 dispatch _ = help
 
-saveEnv :: String -> Double ->  Double -> [(String,V)] -> IO ()
-saveEnv _ tmax dt [] = return ()
-saveEnv sessBase tmax dt ((nm, v):rest) | "session" `isPrefixOf` nm = do
-  let sessNm = sessBase++drop 7 nm
-  deleteSessionIfExists sessNm
-  inApproxSession ("new:"++sessBase++drop 7 nm) $ saveSess tmax dt v
-  return ()
-saveEnv sB tmax dt (_:rest) = saveEnv sB tmax dt rest
+data RVar = RVar String T
+          | InEvery String [RVar]
 
-saveSess :: Double -> Double -> V -> QueryM ()
-saveSess tmax dt (ListV vs)  = forM_ vs $ saveSess tmax dt
-saveSess tmax dt (PairV (StringV durnm) (ListV vs)) | "running" `isPrefixOf` durnm = do
-  t0 <- lastTStop `fmap` get
-  forM_ vs $ saveVal t0 dt tmax
-  modify (\s -> s {lastTStop = t0+tmax+1})
-
-makeSavable :: Double -> V -> V
-makeSavable tmax v@(SigV t1 t2 dt sf) =  v
-makeSavable tmax v | isEvents v = v
-                   | isEpochs v =  v
-                   | otherwise = ListV [PairV (PairV 0 (pack tmax)) v]
-
-saveVal t0 dt tmax (PairV (StringV nm) v) = do
-  sess <- getSession
-  liftIO $ saveInSession sess nm t0 dt $ makeSavable tmax v
-saveVal _ _ _ v = error $ "unknown val: "++show v
- 
-evalSim :: EvalS -> [Declare] -> Sampler EvalS
-evalSim env [] = return env
-evalSim env ((Distribute (PatVar nm _) dist):rest) = do
-   newVal <- drawFake env dist
-   evalSim (extEnv (nm,newVal) env) rest
-evalSim env ((Let (PatVar nm _) e):rest) = do
-   let newVal = unEvalM $ eval env e
-   evalSim (extEnv (nm,newVal) env) rest
-evalSim es ((Every (PatVar nm _) (App (Var durnm) counte) decls):rest) = do
-   let NumV (NInt n) = unEvalM $ eval es counte
-   let currentHead = fst $ head $ env es
-   retenvs <- forM [1..n] $ const $ do
-         newe <- evalSim es decls --incomplete. how to update envs?
-         return $ takeWhile ((/=currentHead) . fst) $ EM.env newe
-   let extNms :: [String]
-       extNms = map ((durnm++) . show) [0..(n-1)]
-       fixEnv :: [(String,V)] -> V
-       fixEnv nmvals = ListV $ map (\(nm, val) -> PairV (StringV nm) val) nmvals 
-       extion :: [(String,V)]
-       extion = zip extNms $ map fixEnv retenvs
-   evalSim (extsEnv extion es) rest
-
-evalSim env (_:rest) = return env
-
-drawFake :: EvalS -> E -> Sampler V
-drawFake env (App (Var "unknown") (Const v)) = return v
-drawFake env  (App (App (Var "uniform") loe) hie) = do
-  let lo = unEvalM $ eval env loe
-  let hi = unEvalM $ eval env hie
-  u <- uniform lo hi
-  return u
-drawFake env  (App (App (Var "N") me) sde) = do
-  let NumV m = unEvalM $ eval env me
-  let NumV sd = unEvalM $ eval env sde
-  u <- gauss m sd
-  return $ NumV u
-
-drawFake env  (App (App (Var "RandomSignal") me) sde) = do
-  let m = unEvalM $ eval env me
-  let sd = unEvalM $ eval env sde
-  u <- sampler $ RandomSignal (unsafeReify m) (unsafeReify sd)
-  return $ pack u
-
-rvars :: [Declare] -> [(String, Int)]
+rvars :: [Declare] -> [RVar]
 rvars = concatMap rvar 
-   where rvar (Distribute p e) = [(unsafePatToName p, 0)]
+   where rvar (Distribute p e) = [RVar (unsafePatToName p) (typeOfDist e)]
+         rvar (Every p dure decls) = [InEvery (durExprToName dure) $ concatMap rvar decls]
          rvar _ = []
+
+typeOfDist (App (App (Var "N") _) _) = NumT (Just RealT)
+typeOfDist (App (App (Var "uniform") _) _) = NumT (Just RealT)
+typeOfDist (App (App (Var "RandomSignal") _) _) = SignalT $ NumT (Just RealT)
+
+durExprToName (Var nm) = nm
+durExprToName (App (Var nm) _) = nm
+
 
 
