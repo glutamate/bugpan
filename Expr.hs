@@ -156,14 +156,21 @@ data Pat = 	  PatVar String T
 		| PatCons Pat Pat
 		| PatIn Pat Pat
                 | PatDeriv Pat
+                | PatRemember Pat
 		-- | PatGuard E Pat
 		deriving (Show, Eq, Read, Data, Typeable)
 
 unsafePatToName (PatVar nm _) = nm
+unsafePatToName (PatRemember p)  = unsafePatToName p
+
+unsafePatToNameWithBang (PatVar nm _) = nm
+unsafePatToNameWithBang (PatRemember p)  = unsafePatToNameWithBang p++"!"
 
 patIntroducedVars (PatVar nm t) = [nm]
 patIntroducedVars (PatCons h t)= patIntroducedVars h ++ patIntroducedVars t
 patIntroducedVars (PatIn h t)= patIntroducedVars h ++ patIntroducedVars t
+patIntroducedVars (PatDeriv h)= patIntroducedVars h 
+patIntroducedVars (PatRemember h)= patIntroducedVars h 
 patIntroducedVars (PatPair h t)= patIntroducedVars h ++ patIntroducedVars t
 patIntroducedVars _ = []
 

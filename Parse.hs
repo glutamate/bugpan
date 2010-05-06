@@ -128,6 +128,7 @@ cPat (B.PPair p1 p2) = PatPair (cPat p1) (cPat p2)
 cPat B.PNil = PatNil
 cPat (B.PCons p1 p2) = PatCons (cPat p1) (cPat p2)
 cPat (B.PDeriv p) = PatDeriv (cPat p)
+cPat (B.PRemember p) = PatRemember (cPat p)
 
 cType (B.TUnit) = UnitT
 cType (B.TNum) = NumT Nothing

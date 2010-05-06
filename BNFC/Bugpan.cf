@@ -86,6 +86,7 @@ PNil. Pat1 ::= "[]" ;
 PCons. Pat ::= Pat ":" Pat ;
 PIn. Pat ::= Pat "\\" Pat ;
 PDeriv. Pat ::= "D" Pat;
+PRemember. Pat ::= Pat "!";
 
 CInt. Const ::= Integer ;
 CDbl. Const ::= Double ;

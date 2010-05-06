@@ -108,6 +108,7 @@ transPat x = case x of
   PCons pat0 pat  -> failure x
   PIn pat0 pat  -> failure x
   PDeriv pat  -> failure x
+  PRemember pat  -> failure x
 
 
 transConst :: Const -> Result

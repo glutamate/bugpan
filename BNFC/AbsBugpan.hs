@@ -89,6 +89,7 @@ data Pat =
  | PCons Pat Pat
  | PIn Pat Pat
  | PDeriv Pat
+ | PRemember Pat
   deriving (Eq,Ord,Show)
 
 data Const =

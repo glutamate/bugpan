@@ -204,6 +204,7 @@ instance Print Pat where
    PCons pat0 pat -> prPrec i 0 (concatD [prt 0 pat0 , doc (showString ":") , prt 0 pat])
    PIn pat0 pat -> prPrec i 0 (concatD [prt 0 pat0 , doc (showString "\\") , prt 0 pat])
    PDeriv pat -> prPrec i 0 (concatD [doc (showString "D") , prt 0 pat])
+   PRemember pat -> prPrec i 0 (concatD [prt 0 pat , doc (showString "!")])
 
 
 instance Print Const where
