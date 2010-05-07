@@ -54,6 +54,11 @@ dispatch ("estimate":filenm:sessFiltr:_) = do
   putStrLn $ ppParamTypes rvs
 
   putStrLn $ ppUpdaters [] rvs rvs
+
+  putStrLn $ mlEstimators rvs
+
+  putStrLn $ loadData rvs
+
   return ()
 
 
@@ -61,6 +66,7 @@ dispatch _ = help
 
 data RVar = RVar String T E
           | InEvery String [RVar]
+          | StaticV String T E
 
 flattenRVars :: [RVar] -> [RVar]
 flattenRVars [] = []
@@ -157,10 +163,21 @@ pathOf' nm rvs = [[noExclaim nm'] | RVar nm' t e <- rvs, nm==nm']++ -- first att
                  [[dnm] | InEvery dnm moreRvars <- rvs, dnm == nm]++
                  concat [map (dnm:) $ pathOf' nm moreRvars | InEvery dnm moreRvars <- rvs]
 
-last2 [] = []
+allLevels rvs =  [[dnm] | InEvery dnm moreRvars <- rvs]++
+                 concat [map (dnm:) $ allLevels moreRvars | InEvery dnm moreRvars <- rvs]
+
+mlEstimators allrvs = concatMap mlSubEstimator (allLevels allrvs) ++ mlGlobalEstimator allrvs
+
+mlSubEstimator path = "mlEstimator_"++last path++" allpars = do\n"
+
+mlGlobalEstimator path = "mlGlobalEstimator allpars = do\n"
+
+loadData allrvs = ""
+
+{-last2 [] = []
 last2 [x] = [x]
 last2 [x,y] = [x,y]
-last2 (x:xs) = last2 xs
+last2 (x:xs) = last2 xs -}
 
 childrenOf :: String -> [RVar] -> [[String]]
 childrenOf nm rvs = 
