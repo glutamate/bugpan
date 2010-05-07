@@ -4,35 +4,37 @@ alpha tau t = if t<0.0 then 0.0 else (t/tau)*exp (1-t/tau)
 
 tau1m ~ unknown 0.06
 tau1sd ~ unknown 0.002
-amp1m ~ unknown 25 
+--amp1m ~ unknown 25 
 --amp1m ~ N tau1m tau1sd 
-amp1sd ~ unknown 0.5
+--amp1sd ~ unknown 0.5
 
-tau2m ~ unknown  0.2
-tau2sd ~ unknown 0.02
-amp2m ~ unknown 5
-amp2sd ~ unknown 0.5
+--tau2m ~ unknown  0.2
+--tau2sd ~ unknown 0.02
+--amp2m ~ unknown 5
+--amp2sd ~ unknown 0.5
 
-offm ~ unknown 95
-offsd ~ unknown 0.3
+--offm ~ unknown 95
+--offsd ~ unknown 0.3
 
-noise ~ unknown 0.05
+--noise ~ unknown 0.05
 
 _dt = 0.02
 _tmax = 2
 inevery t <- session 1 where
+  taus ~ N tau1m tau1sd
 
   inevery t <- running 10 where
-     tau1 ~ N tau1m tau1sd
-     amp1 ~ N amp1m amp1sd
+     tau1 ~ N taus tau1sd
+     tau2! ~ N tau1 tau1sd
+--     amp1 ~ N amp1m amp1sd
 
-     tau2 ~ N tau2m tau2sd
-     amp2 ~ N amp2m amp2sd
-     offset ~ N offm offsd
+--     tau2 ~ N tau2m tau2sd
+--     amp2 ~ N amp2m amp2sd
+--     offset ~ N offm offsd
 
-     t0 ~ uniform 0.1 0.12
+--     t0 ~ uniform 0.1 0.12
 
-     waveform = {: offset - amp1 * alpha tau1 (<:seconds:>-t0) - amp2 * alpha tau2 (<:seconds:>-t0) :} 
-     angle! ~ RandomSignal waveform noise
+--     waveform = {: offset - amp1 * alpha tau1 (<:seconds:>-t0) - amp2 * alpha tau2 (<:seconds:>-t0) :} 
+--     angle! ~ RandomSignal waveform noise
 
    

@@ -88,39 +88,89 @@ ppParamTypes rs =
     in ppSubParStype "AllPars" rs++concat topPars
 
 ppSubParStype :: String -> [RVar] -> String
-ppSubParStype nm rvs = "data "++nm++" = "++nm++" {\n"++(intercalate ",\n" $ catMaybes $ map pprv rvs)++"}\n\n"
+ppSubParStype nm rvs = "data "++nm++" = "++nm++" {\n"++(intercalate ",\n" $ map pprv rvs)++"}\n\n"
     where ind = replicate 4 ' '
-          pprv (RVar vnm t _ ) | hasExclaim vnm = Nothing
-                               |otherwise = Just $ ind ++vnm++" :: Param "++haskTypeString t
-          pprv (InEvery dnm rs) = Just $ ind ++ dnm++" :: [Par"++dnm++"]\n"
+          pprv (RVar vnm t _ ) | hasExclaim vnm =  ind ++noExclaim vnm++" :: "++haskTypeString t
+                               | otherwise =  ind ++vnm++" :: Param "++haskTypeString t
+          pprv (InEvery dnm rs) =  ind ++ dnm++" :: [Par"++dnm++"]\n"
 
 ppUpdaters :: [String] -> [RVar]  -> [RVar] -> String
-ppUpdaters path allrvs rs@((RVar vnm t ex):rest) = 
-    unlines ["update"++vnm++" thedata allpars = do",
-             ind++"new"++vnm++" <- metSampleP "++show vnm++" (\\"++vnm++" -> ",
-             intercalate "+\n" $ map (((ind++ind)++) . pp . distE) dists,
-             ind++ind++") $ "++vnm++" " ++intercalate "$" path ++" allpars",
-             "-- children: "++show (childrenOf vnm allrvs)
-            ] -- full path
-    where ind = replicate 4 ' '
-          childDist cnm = ($>(Var (last cnm))) $ lookupDist allrvs $ last cnm
-          dists = map (unPex [vnm] allrvs) $ ex : (map childDist $ childrenOf vnm allrvs)
+ppUpdaters _ _ [] = ""
+ppUpdaters outerPath allrvs rs@((InEvery durnm rvs):rest) = 
+    ppUpdaters (durnm:outerPath) allrvs rvs ++ ppUpdaters outerPath allrvs rest
+ppUpdaters outerPath allrvs ((RVar vnm t ex):rest) = 
+    if (hasExclaim vnm) then "" else alllines 
+    where alllines = unlines [updName++" allpars = do",
+             ind++"new"++vnm++" <- "++smany++" metSampleP "++show vnm++" (\\"++vnm++" -> ",
+             intercalate "+\n" $ map (((ind++ind)++) . pp) dists,
+             ind++ind++") $ "++parpath, -- vnm++" $ " ++concatMap (++" $") outerPath ++" allpars",
+             ind++"return $ "++retval++"\n" -- children: "++show (childrenOf vnm allrvs)++"\n"
+            ] ++ ppUpdaters outerPath allrvs rest
+          updName = "update_"++(concat $ map (++"_") outerPath)++vnm
+          smany = case outerPath of
+                    [] -> "" -- forIdx2' (session allpars) running
+                    [p] -> "sampleMany $ forIdx ("++p++" allpars) $ \\"++p++"-> "
+                    [p1,p2] -> "sampleMany2 $ forIdx' (" ++p2++" allpars) "++p1++" $ \\"++p2++" "++p1++"-> "
+          retval = case outerPath of
+                    [] -> "allpars { "++vnm++" = new"++vnm++" }"
+                    [p] -> "allpars { "++p++" = map ("++p++" allpars) $ \\r -> r { "++vnm++" = new"++vnm++" } }"
+                    [p2, p1] -> "allpars { "++p1++" = map ("++p1++" allpars) $ \\r1 -> r1 { "++p2++" = map ("++p2++" r1) $ \\r2 -> r2 { "++vnm ++" = new"++vnm++" } }"
+          ind = replicate 4 ' '
+          ppath myout cnm = (pathE $ pathOf myout cnm allrvs)
+          distSum myout [cnm] = unPex myout [vnm] allrvs $ distE $ childDist cnm
+          distSum myout (cnm:cnms) = Var "sum" $> 
+                                     ((Var "for" $> ppath myout cnm) $> 
+                                     Lam cnm UnspecifiedT (distSum (cnm:myout) cnms))
+          childDist cnm = ($>(Var cnm)) $ lookupDist allrvs cnm
+          lh = distE (ex $> Var vnm)
+          parpath = pp $ pathE $ pathOf outerPath vnm allrvs
+          dists = unPex outerPath [vnm] allrvs lh : (map (distSum outerPath) $ childrenOf vnm allrvs)
 
-distE (App (Var "unknown") _) = 1
-distE (App (App (Var "N") mue) sde) = Var "P.logGaussD" $> mue $> sde
+forIdx2' :: [a] -> (a->[b]) -> (a -> b -> c) -> [[c]]
+forIdx2' xs f g = map (\x-> map (g x) $ f x) xs
+
+distE (App (App (Var "unknown") _) _)= 1
+--distE (App (App (Var "N") mue) sde) = Var "P.logGaussD" $> mue $> sde
 distE (App (App (App (Var "N") mue) sde) xe) = Var "P.logGaussD" $> mue $> sde $> xe
-
+distE d = error $ "distE: "++show d
 lookupDist :: [RVar] -> String -> E
 lookupDist rvars nm = head $ [e | RVar nm' t e <- flattenRVars rvars, nm' ==nm]
+
+pathE :: [String] -> E
+pathE = pathE' . reverse
+        where pathE' [x] = Var x 
+              pathE' (x:xs) = Var x $> (pathE' xs)
+              pathE' [] = Nil
+
+
+pathOf :: [String] -> String -> [RVar] -> [String]
+pathOf outerPath nm rvs = case pathOf' nm rvs of
+                            (x:_) -> blockOuter outerPath $ "allPars":x
+                            [] -> error $ "can't find path to "++nm
+    where --blockOuter [] fullPath = [] -- fullPath
+          blockOuter outer full =  if any (`elem` outer) full
+                                      then [head outer] ++ (reverse $ takeWhile (not . (`elem` outer)) $ reverse full) 
+                                      else full
+
+pathOf' :: String -> [RVar] -> [[String]]
+pathOf' nm rvs = [[noExclaim nm'] | RVar nm' t e <- rvs, nm==nm']++ -- first attempt
+                 [[dnm] | InEvery dnm moreRvars <- rvs, dnm == nm]++
+                 concat [map (dnm:) $ pathOf' nm moreRvars | InEvery dnm moreRvars <- rvs]
+
+last2 [] = []
+last2 [x] = [x]
+last2 [x,y] = [x,y]
+last2 (x:xs) = last2 xs
 
 childrenOf :: String -> [RVar] -> [[String]]
 childrenOf nm rvs = 
     [[nm'] | RVar nm' t e <- rvs, Var nm `elem` flatE e]++ -- first attempt
     concat [map (dnm:) $ childrenOf nm moreRvars | InEvery dnm moreRvars <- rvs]
-unPex notThese rvs = mapE f
-        where f (Var nm) | nm `elem` [vnm | RVar vnm _ _ <- flattenRVars rvs] &&
+unPex outer notThese rvs = mapE f
+        where f (Var nm) | hasExclaim nm = pathE $ pathOf outer nm rvs
+                         | nm `elem` [vnm | RVar vnm _ _ <- flattenRVars rvs] &&
                            not (nm `elem` notThese) 
-                             = (App (Var "unP") (Var nm))
+                             = (App (Var "unP") $ pathE $ pathOf outer nm rvs)
                          | otherwise = Var nm
               f e = e
 
