@@ -26,8 +26,8 @@ import PrettyPrint
 -- exclamation mark for saving values in simfakes 
 
 help = putStrLn $ unlines [
-        "runstats simfakes {model file} {session base} {session count}\n\n",
-        "runstats estimate {model file} {session filter}\n\n"
+        "runstats simfakes {model file} {session base} {session count}",
+        "runstats estimate {model file} {session filter}\n"
         ]       
 
 main = getArgs >>= dispatch
@@ -45,19 +45,22 @@ dispatch ("simfakes":filenm:sessBase:_) = do
   saveEnv sessBase tmax dt $ fakeenv
   return ()
 
-dispatch ("estimate":filenm:sessFiltr:_) = do
+dispatch ("estimate":filenm:rest) = do
   ds <- fileDecls filenm []
   let tmax = unsafeReify $ unConst $ fromJust $ lookup "_tmax" $ declsToEnv ds
   let dt = unsafeReify $ unConst $ fromJust $ lookup "_dt" $ declsToEnv ds
   let es = EvalS dt tmax Nothing []
   let rvs = rvars ds
+  let filtr = case rest of
+                   [] -> "[()]"
+                   s:_ -> s
   putStrLn $ ppParamTypes rvs
 
   putStrLn $ ppUpdaters [] rvs rvs
 
   putStrLn $ mlEstimators rvs
 
-  putStrLn $ loadData rvs
+  putStrLn $ loadData filtr rvs
 
   return ()
 
@@ -67,6 +70,8 @@ dispatch _ = help
 data RVar = RVar String T E
           | InEvery String [RVar]
           | StaticV String T E
+
+rvarName (RVar nm _ _) = nm
 
 flattenRVars :: [RVar] -> [RVar]
 flattenRVars [] = []
@@ -165,6 +170,8 @@ pathOf' nm rvs = [[noExclaim nm'] | RVar nm' t e <- rvs, nm==nm']++ -- first att
 
 allLevels rvs =  [[dnm] | InEvery dnm moreRvars <- rvs]++
                  concat [map (dnm:) $ allLevels moreRvars | InEvery dnm moreRvars <- rvs]
+allExclaim rvs =  [[r] | r@(RVar nm _ _) <- rvs, hasExclaim nm]++
+                  concat [map (ie:) $ allExclaim moreRvars | ie@(InEvery dnm moreRvars) <- rvs]
 
 mlEstimators allrvs = concatMap mlSubEstimator (allLevels allrvs) ++ mlGlobalEstimator allrvs
 
@@ -172,7 +179,27 @@ mlSubEstimator path = "mlEstimator_"++last path++" allpars = do\n"
 
 mlGlobalEstimator path = "mlGlobalEstimator allpars = do\n"
 
-loadData allrvs = ""
+loadData filtr allrvs =           
+   unlines ["loadData :: IO AllPars",
+            "loadData = do",
+            ind++"sessVls <- fmap catMaybes $ manySessionData $ do",
+            ind2++"running <- durations \"running\" ()",
+            ind2++"modNm <- durations \"moduleName\" \"foo\"",
+            ind2++"sess <- sessionDur"]++
+   (concatMap showGetter $ allExclaim allrvs)++
+   unlines [ind2++"if not $ null $ "++filtr,
+            ind2++"   then ...",
+            ind2++"   else return Nothing"
+            ]
+   where showGetter nms = 
+            let RVar nm t e = last nms 
+                proxy (NumT (Just RealT)) = "(1::Double)"
+                proxy (ListT (PairT (NumT (Just RealT)) t)) = proxy t
+                proxy (UnitT) = "()"
+                proxy (SignalT (NumT (Just RealT))) = ""
+            in ind2++noExclaim nm++" <- something "++show (noExclaim nm)++ " "++ proxy t++"\n"
+         ind = replicate 3 ' '   
+         ind2 = ind++ind 
 
 {-last2 [] = []
 last2 [x] = [x]
