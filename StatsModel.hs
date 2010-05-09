@@ -316,3 +316,22 @@ lastn n xs = let len = length xs
 
 --mapIdx :: (Int -> b) -> [a] -> [b]
 --mapIdx f xs = map f [0..length xs-1]
+
+forIdx2' :: [a] -> (a->[b]) -> (a -> b -> c) -> [[c]]
+forIdx2' xs f g = map (\x-> map (g x) $ f x) xs
+
+sampleMany :: [Sampler a] -> Sampler [a]
+sampleMany = sequence
+
+sampleMany2 :: [[Sampler a]] -> Sampler [[a]]
+sampleMany2 = sequence . map sequence
+
+f >-> g = \x -> f x >>= g
+
+metSampleP s = metSample1P s depSam
+--metSamplePx0 x0  = metSample1P (depSamx0 x0)
+metSamplePCL s = metSample1PCL s depSam
+
+depSam w x0 =  mutGaussAbs x0 $ w*0.005
+depSamx0 x0 w _ =  mutGaussAbs x0 $ w*0.005
+

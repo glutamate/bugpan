@@ -39,20 +39,7 @@ import FitGnuplot
 import Debug.Trace
 import Locust
 
-sampleMany :: [Sampler a] -> Sampler [a]
-sampleMany = sequence
 
-sampleMany2 :: [[Sampler a]] -> Sampler [[a]]
-sampleMany2 = sequence . map sequence
-
-
-
-metSampleP s = metSample1P s depSam
---metSamplePx0 x0  = metSample1P (depSamx0 x0)
-metSamplePCL s = metSample1PCL s depSam
-
-depSam w x0 =  mutGaussAbs x0 $ w*0.005
-depSamx0 x0 w _ =  mutGaussAbs x0 $ w*0.005
 
 --tst = fmap (take 100) $ runSamplerIO $ metSample (log . P.gaussD 0 1) 0.1
 

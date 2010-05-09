@@ -54,13 +54,21 @@ dispatch ("estimate":filenm:rest) = do
   let filtr = case rest of
                    [] -> "[()]"
                    s:_ -> s
-  putStrLn $ ppParamTypes rvs
+                          
+  let prog =  
+       unlines [initialStuff,
+                ppParamTypes rvs,
 
-  putStrLn $ ppUpdaters [] rvs rvs
+                ppUpdaters [] rvs rvs,
 
-  putStrLn $ mlEstimators rvs
+                mlEstimators rvs,
 
-  putStrLn $ loadData filtr rvs
+                loadData filtr rvs,
+
+                theGibbs rvs,
+                themain]
+
+  writeFile ("Estimator.hs") prog
 
   return ()
 
@@ -69,7 +77,7 @@ dispatch _ = help
 
 data RVar = RVar String T E
           | InEvery String [RVar]
-          | StaticV String T E
+          deriving Show
 
 rvarName (RVar nm _ _) = nm
 
@@ -111,7 +119,7 @@ ppUpdaters outerPath allrvs rs@((InEvery durnm rvs):rest) =
     ppUpdaters (durnm:outerPath) allrvs rvs ++ ppUpdaters outerPath allrvs rest
 ppUpdaters outerPath allrvs ((RVar vnm t ex):rest) = 
     if (hasExclaim vnm) then "" else alllines 
-    where alllines = unlines [updName++" allpars = do",
+    where alllines = unlines [updName++" allPars = do",
              ind++"new"++vnm++" <- "++smany++" metSampleP "++show vnm++" (\\"++vnm++" -> ",
              intercalate "+\n" $ map (((ind++ind)++) . pp) dists,
              ind++ind++") $ "++parpath, -- vnm++" $ " ++concatMap (++" $") outerPath ++" allpars",
@@ -120,12 +128,12 @@ ppUpdaters outerPath allrvs ((RVar vnm t ex):rest) =
           updName = "update_"++(concat $ map (++"_") outerPath)++vnm
           smany = case outerPath of
                     [] -> "" -- forIdx2' (session allpars) running
-                    [p] -> "sampleMany $ forIdx ("++p++" allpars) $ \\"++p++"-> "
-                    [p1,p2] -> "sampleMany2 $ forIdx' (" ++p2++" allpars) "++p1++" $ \\"++p2++" "++p1++"-> "
+                    [p] -> "sampleMany $ forIdx ("++p++" allPars) $ \\"++p++"-> "
+                    [p1,p2] -> "sampleMany2 $ forIdx2' (" ++p2++" allPars) "++p1++" $ \\"++p2++" "++p1++"-> "
           retval = case outerPath of
-                    [] -> "allpars { "++vnm++" = new"++vnm++" }"
-                    [p] -> "allpars { "++p++" = map ("++p++" allpars) $ \\r -> r { "++vnm++" = new"++vnm++" } }"
-                    [p2, p1] -> "allpars { "++p1++" = map ("++p1++" allpars) $ \\r1 -> r1 { "++p2++" = map ("++p2++" r1) $ \\r2 -> r2 { "++vnm ++" = new"++vnm++" } }"
+                    [] -> "allPars { "++vnm++" = new"++vnm++" }"
+                    [p] -> "allPars { "++p++" = map ("++p++" allPars) $ \\r -> r { "++vnm++" = new"++vnm++" } }"
+                    [p2, p1] -> "allPars { "++p1++" = map ("++p1++" allPars) $ \\r1 -> r1 { "++p2++" = map ("++p2++" r1) $ \\r2 -> r2 { "++vnm ++" = new"++vnm++" } } }"
           ind = replicate 4 ' '
           ppath myout cnm = (pathE $ pathOf myout cnm allrvs)
           distSum myout [cnm] = unPex myout [vnm] allrvs $ distE $ childDist cnm
@@ -136,9 +144,6 @@ ppUpdaters outerPath allrvs ((RVar vnm t ex):rest) =
           lh = distE (ex $> Var vnm)
           parpath = pp $ pathE $ pathOf outerPath vnm allrvs
           dists = unPex outerPath [vnm] allrvs lh : (map (distSum outerPath) $ childrenOf vnm allrvs)
-
-forIdx2' :: [a] -> (a->[b]) -> (a -> b -> c) -> [[c]]
-forIdx2' xs f g = map (\x-> map (g x) $ f x) xs
 
 distE (App (App (Var "unknown") _) _)= 1
 --distE (App (App (Var "N") mue) sde) = Var "P.logGaussD" $> mue $> sde
@@ -172,12 +177,17 @@ allLevels rvs =  [[dnm] | InEvery dnm moreRvars <- rvs]++
                  concat [map (dnm:) $ allLevels moreRvars | InEvery dnm moreRvars <- rvs]
 allExclaim rvs =  [[r] | r@(RVar nm _ _) <- rvs, hasExclaim nm]++
                   concat [map (ie:) $ allExclaim moreRvars | ie@(InEvery dnm moreRvars) <- rvs]
+allNoExclaim rvs =  [[r] | r@(RVar nm _ _) <- rvs, not $ hasExclaim nm]++
+                    concat [map (ie:) $ allNoExclaim moreRvars | ie@(InEvery dnm moreRvars) <- rvs]
+
+inLevel nm rvs = 
+   concat [mrvs | InEvery dnm mrvs <- flattenRVars rvs, dnm == nm ]
 
 mlEstimators allrvs = concatMap mlSubEstimator (allLevels allrvs) ++ mlGlobalEstimator allrvs
 
-mlSubEstimator path = "mlEstimator_"++last path++" allpars = do\n"
+mlSubEstimator path = "mlEstimator_"++last path++" allpars = do\n  return ()\n"
 
-mlGlobalEstimator path = "mlGlobalEstimator allpars = do\n"
+mlGlobalEstimator path = "mlGlobalEstimator allpars = do\n  return ()\n"
 
 loadData filtr allrvs =           
    unlines ["loadData :: IO AllPars",
@@ -187,19 +197,84 @@ loadData filtr allrvs =
             ind2++"modNm <- durations \"moduleName\" \"foo\"",
             ind2++"sess <- sessionDur"]++
    (concatMap showGetter $ allExclaim allrvs)++
-   unlines [ind2++"if not $ null $ "++filtr,
-            ind2++"   then ...",
-            ind2++"   else return Nothing"
+   unlines [ind2++"let runners = for running $ \\r-> "++getRunner,
+            ind2++"let sessVal = Parsession "++
+               concatMap (mkval "") (inLevel "session" allrvs)++" runners",
+            ind2++"if not $ null $ "++filtr,
+            ind2++"   then return $ Just sessVal",
+            ind2++"   else return Nothing", 
+            ind++"return $ AllPars "++mksess ++"sessVls"
             ]
    where showGetter nms = 
             let RVar nm t e = last nms 
-                proxy (NumT (Just RealT)) = "(1::Double)"
-                proxy (ListT (PairT (NumT (Just RealT)) t)) = proxy t
-                proxy (UnitT) = "()"
-                proxy (SignalT (NumT (Just RealT))) = ""
-            in ind2++noExclaim nm++" <- something "++show (noExclaim nm)++ " "++ proxy t++"\n"
+                
+            in ind2++noExclaim nm++" <- "++getter t++" "++show (noExclaim nm)++ " "++ proxy t++"\n"
+         proxy (NumT (Just RealT)) = "(1::Double)"
+         proxy (ListT (PairT (NumT (Just RealT)) t)) = proxy t
+         proxy (UnitT) = "()"
+         getter (SignalT (NumT (Just RealT))) = "signalsDirect"
+         getter (ListT (PairT (PairT (NumT (Just RealT)) 
+                              (NumT (Just RealT))) t)) = "durations"
+         getter (ListT (PairT (NumT (Just RealT)) t)) = "events"
+         getter t = "durations"
          ind = replicate 3 ' '   
          ind2 = ind++ind 
+         ind3 = ind2++ind 
+         mksess = intercalate " " [ "NonInitialisedParam " | 
+                                    RVar nm _ _ <-allrvs, not $ hasExclaim nm ]
+         getRunner = "Parrunning "++concatMap (mkval "during [r]") (inLevel "running" allrvs)
+         mkval during (RVar nm t e) | hasExclaim nm && getter t == "durations" 
+                                 = "(snd $ head $ "++during++" "++noExclaim nm++") "
+                              | hasExclaim nm = "("++during++" "++noExclaim nm++") "
+                              | otherwise = "NonInitialisedParam "
+         mkval _ _ = ""
+                       
+
+initialStuff = 
+  unlines ["module Main where",
+           "import EvalM",
+           "import System.Environment",
+           "import Data.List",
+           "import Data.Maybe",
+           "import TNUtils",
+           "import Query ",
+           "import Control.Monad",
+           "import Math.Probably.Sampler",
+           "import Math.Probably.StochFun",
+           "import Math.Probably.MCMC",
+           "import qualified Math.Probably.PDF as P",
+           "import QueryTypes",
+           "import Math.Probably.FoldingStats",
+           "import PlotGnuplot",
+           "import QueryPlots",
+           "import QueryUtils hiding (groupBy)",
+           "import Database",
+           "import Data.Array.Vector",
+           "import qualified Data.Vector.Unboxed as U",
+           "import Data.Binary",
+           "import StatsModel",
+           "import Foreign.Storable",
+           "import Foreign.C",
+           "import Foreign.ForeignPtr",
+           "import Foreign.Ptr",
+           "import Control.Arrow",
+           "import FitGnuplot",
+           "import Debug.Trace",
+           "import Locust"]
+
+theGibbs allrvs = ("thegibbs = "++) $ intercalate " >-> " $ map f $ allNoExclaim allrvs
+         where f path = let RVar nm t e = last path
+                            outerPath = reverse [dnm | InEvery dnm rvs <- path]
+                        in "update_"++(concat $ map (++"_") outerPath)++nm
+
+themain = 
+   unlines ["main = do",
+            "  justData <- loadData",
+            "  let baymarkov = Mrkv (condSampler thegibbs) (justData) id",
+            "  ps <- take 1 `fmap` runMarkovIO baymarkov",
+            "  return ()",
+            "  ---writeFile (filenm++\"_parnames.mcmc\") $ show parNames "]
+
 
 {-last2 [] = []
 last2 [x] = [x]
@@ -224,7 +299,5 @@ unPex outer notThese rvs = mapE f
 plan :
 
 -ML estimator
--each updater
--load data
 
 -}
