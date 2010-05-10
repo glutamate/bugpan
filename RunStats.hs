@@ -119,27 +119,31 @@ ppUpdaters outerPath allrvs rs@((InEvery durnm rvs):rest) =
     ppUpdaters (durnm:outerPath) allrvs rvs ++ ppUpdaters outerPath allrvs rest
 ppUpdaters outerPath allrvs ((RVar vnm t ex):rest) = 
     if (hasExclaim vnm) then "" else alllines 
-    where alllines = unlines [updName++" allPars = do",
+    where alllines = unlines [thetype, updName++" allPars = do",
              ind++"new"++vnm++" <- "++smany++" metSampleP "++show vnm++" (\\"++vnm++" -> ",
              intercalate "+\n" $ map (((ind++ind)++) . pp) dists,
              ind++ind++") $ "++parpath, -- vnm++" $ " ++concatMap (++" $") outerPath ++" allpars",
              ind++"return $ "++retval++"\n" -- children: "++show (childrenOf vnm allrvs)++"\n"
             ] ++ ppUpdaters outerPath allrvs rest
           updName = "update_"++(concat $ map (++"_") outerPath)++vnm
+          thetype = "update_"++(concat $ map (++"_") outerPath)++vnm++" :: AllPars -> Sampler AllPars"
           smany = case outerPath of
-                    [] -> "" -- forIdx2' (session allpars) running
-                    [p] -> "sampleMany $ forIdx ("++p++" allPars) $ \\"++p++"-> "
-                    [p1,p2] -> "sampleMany2 $ forIdx2' (" ++p2++" allPars) "++p1++" $ \\"++p2++" "++p1++"-> "
+                    [] -> "" -- for2 (session allpars) running
+                    [p] -> "sampleMany $ for ("++p++" allPars) $ \\"++p++"-> "
+                    [p1,p2] -> "sampleMany2 $ for2' (" ++p2++" allPars) "++p1++" $ \\"++p2++" "++p1++"-> "
           retval = case outerPath of
                     [] -> "allPars { "++vnm++" = new"++vnm++" }"
-                    [p] -> "allPars { "++p++" = map ("++p++" allPars) $ \\r -> r { "++vnm++" = new"++vnm++" } }"
-                    [p2, p1] -> "allPars { "++p1++" = map ("++p1++" allPars) $ \\r1 -> r1 { "++p2++" = map ("++p2++" r1) $ \\r2 -> r2 { "++vnm ++" = new"++vnm++" } } }"
+                    [p] -> "allPars { "++p++" = for (zip ("++p++" allPars) new"++vnm++") $ \\(s,n) -> s { "++vnm++" = n } }"
+                    [p2, p1] -> "allPars { "++p1++" = for (zip ("++p1++" allPars) new"++vnm++") $ \\(s,nvs) -> s { "++p2++" = for (zip ("++p2++" s) nvs) $ \\(r,n) -> r { "++vnm ++" = n } } }"
           ind = replicate 4 ' '
           ppath myout cnm = (pathE $ pathOf myout cnm allrvs)
+          distSum :: [String] -> [String] -> E
           distSum myout [cnm] = unPex myout [vnm] allrvs $ distE $ childDist cnm
-          distSum myout (cnm:cnms) = Var "sum" $> 
-                                     ((Var "for" $> ppath myout cnm) $> 
-                                     Lam cnm UnspecifiedT (distSum (cnm:myout) cnms))
+          distSum myout (cnm:cnms) | cnm `elem` myout = distSum (myout) cnms
+                                   | otherwise = Var "sum" $> 
+                                       ((Var "for" $> ppath myout cnm) $> 
+                                       Lam cnm UnspecifiedT (distSum (cnm:myout) cnms))
+          
           childDist cnm = ($>(Var cnm)) $ lookupDist allrvs cnm
           lh = distE (ex $> Var vnm)
           parpath = pp $ pathE $ pathOf outerPath vnm allrvs
@@ -158,6 +162,9 @@ pathE = pathE' . reverse
               pathE' (x:xs) = Var x $> (pathE' xs)
               pathE' [] = Nil
 
+takeWhilePlusOne _ [] = []
+takeWhilePlusOne p (x:xs) | p x = x : takeWhilePlusOne p xs 
+                          | otherwise = x:[]
 
 pathOf :: [String] -> String -> [RVar] -> [String]
 pathOf outerPath nm rvs = case pathOf' nm rvs of
@@ -165,7 +172,7 @@ pathOf outerPath nm rvs = case pathOf' nm rvs of
                             [] -> error $ "can't find path to "++nm
     where --blockOuter [] fullPath = [] -- fullPath
           blockOuter outer full =  if any (`elem` outer) full
-                                      then [head outer] ++ (reverse $ takeWhile (not . (`elem` outer)) $ reverse full) 
+                                      then {-[head outer] ++ -} (reverse $ takeWhilePlusOne (not . (`elem` outer)) $ reverse full) 
                                       else full
 
 pathOf' :: String -> [RVar] -> [[String]]
@@ -192,7 +199,7 @@ mlGlobalEstimator path = "mlGlobalEstimator allpars = do\n  return ()\n"
 loadData filtr allrvs =           
    unlines ["loadData :: IO AllPars",
             "loadData = do",
-            ind++"sessVls <- fmap catMaybes $ manySessionData $ do",
+            ind++"sessVls <- manySessionData $ do",
             ind2++"running <- durations \"running\" ()",
             ind2++"modNm <- durations \"moduleName\" \"foo\"",
             ind2++"sess <- sessionDur"]++
@@ -289,9 +296,10 @@ unPex outer notThese rvs = mapE f
         where f (Var nm) | hasExclaim nm = pathE $ pathOf outer nm rvs
                          | nm `elem` [vnm | RVar vnm _ _ <- flattenRVars rvs] &&
                            not (nm `elem` notThese) 
-                             = (App (Var "unP") $ pathE $ pathOf outer nm rvs)
+                             = (App (Var $"unP "++thecomment nm) $ pathE $ pathOf outer nm rvs)
                          | otherwise = Var nm
               f e = e
+              thecomment nm = "{-"++show (outer, pathOf' nm rvs)++"-}" 
 
 
 {-

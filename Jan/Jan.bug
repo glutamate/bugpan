@@ -8,8 +8,8 @@ tau1sd ~ unknown 0.002
 --amp1m ~ N tau1m tau1sd 
 --amp1sd ~ unknown 0.5
 
---tau2m ~ unknown  0.2
---tau2sd ~ unknown 0.02
+tau2m ~ unknown  0.2
+tau2sd ~ unknown 0.02
 --amp2m ~ unknown 5
 --amp2sd ~ unknown 0.5
 
@@ -22,10 +22,11 @@ _dt = 0.02
 _tmax = 2
 inevery t <- session 1 where
   taus ~ N tau1m tau1sd
-
+  taussd ~ N tau2m tau2sd
+  
   inevery t <- running 10 where
-     tau1 ~ N taus tau1sd
-     tau2! ~ N tau1 tau1sd
+     tau1 ~ N taus taussd
+     tau2! ~ N tau1 tau2sd
 --     amp1 ~ N amp1m amp1sd
 
 --     tau2 ~ N tau2m tau2sd

@@ -317,8 +317,8 @@ lastn n xs = let len = length xs
 --mapIdx :: (Int -> b) -> [a] -> [b]
 --mapIdx f xs = map f [0..length xs-1]
 
-forIdx2' :: [a] -> (a->[b]) -> (a -> b -> c) -> [[c]]
-forIdx2' xs f g = map (\x-> map (g x) $ f x) xs
+for2' :: [a] -> (a->[b]) -> (a -> b -> c) -> [[c]]
+for2' xs f g = map (\x-> map (g x) $ f x) xs
 
 sampleMany :: [Sampler a] -> Sampler [a]
 sampleMany = sequence
