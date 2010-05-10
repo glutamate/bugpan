@@ -118,6 +118,9 @@ subVar n es e = mapE f e where
                | otherwise = Var n'
     f x = x
 
+subMany [] e = e
+subMany ((n,sube):env) e = subMany env $ subVar n sube e
+
 instance Num E where
 	e1 + e2 = M2 Add e1 e2
 	e1 - e2 = M2 Sub e1 e2

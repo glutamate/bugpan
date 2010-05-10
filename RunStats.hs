@@ -50,10 +50,11 @@ dispatch ("estimate":filenm:rest) = do
   let tmax = unsafeReify $ unConst $ fromJust $ lookup "_tmax" $ declsToEnv ds
   let dt = unsafeReify $ unConst $ fromJust $ lookup "_dt" $ declsToEnv ds
   let es = EvalS dt tmax Nothing []
-  let rvs = rvars ds
+  let rvs = fillSigs tmax dt $ rvars ds
   let filtr = case rest of
                    [] -> "[()]"
                    s:_ -> s
+  --mapM print rvs
                           
   let prog =  
        unlines [initialStuff,
@@ -66,7 +67,8 @@ dispatch ("estimate":filenm:rest) = do
                 loadData filtr rvs,
 
                 theGibbs rvs,
-                themain]
+                themain,
+                initialise rvs] 
 
   writeFile ("Estimator.hs") prog
 
@@ -79,6 +81,22 @@ data RVar = RVar String T E
           | InEvery String [RVar]
           deriving Show
 
+mapEinRVars :: (E->E) -> [RVar] -> [RVar]
+mapEinRVars f = map g
+    where g (RVar nm t e) = RVar (nm) t (mapE f e) 
+          g (InEvery nm rvs) = InEvery nm $ mapEinRVars f rvs
+
+--fillSig :: Storable a => Double -> Double -> Double -> (Double -> a) -> Signal a
+fillSigs :: Double -> Double -> [RVar] -> [RVar]
+fillSigs tmax dt allrvs = mapEinRVars f allrvs
+  where f (Sig se) = Var "fillSig" $> 0 $> Const (pack tmax) $> 
+                        Const (pack dt) $> Lam "seconds" UnspecifiedT (mapE g se)
+        f e = e
+        g (SigVal (Var "seconds")) = Var "seconds"
+        g e = e
+        
+
+
 rvarName (RVar nm _ _) = nm
 
 flattenRVars :: [RVar] -> [RVar]
@@ -87,10 +105,14 @@ flattenRVars (r@(RVar _ _ _):rs) = r : flattenRVars rs
 flattenRVars (r@(InEvery _ subs):rs) = r : (flattenRVars subs ++ flattenRVars rs)
 
 rvars :: [Declare] -> [RVar]
-rvars = concatMap rvar 
-   where rvar (Distribute p e) = [RVar (unsafePatToNameWithBang p) (typeOfDist e) e]
-         rvar (Every p dure decls) = [InEvery (durExprToName dure) $ concatMap rvar decls]
-         rvar _ = []
+rvars = rvar []
+   where rvar env ((Distribute p e'):ds) = 
+             let e = subMany env e' in
+             RVar (unsafePatToNameWithBang p) (typeOfDist e) e : rvar env ds
+         rvar env ((Every p dure decls):ds) = 
+             (InEvery (durExprToName dure) $ rvar env decls) : rvar env ds
+         rvar env ((Let p e):ds) = rvar ((unsafePatToName p, e):env) ds
+         rvar env [] = []
 
 typeOfDist (App (App (Var "N") _) _) = NumT (Just RealT)
 typeOfDist (App (App (Var "uniform") _) _) = NumT (Just RealT)
@@ -107,7 +129,7 @@ ppParamTypes rs =
     in ppSubParStype "AllPars" rs++concat topPars
 
 ppSubParStype :: String -> [RVar] -> String
-ppSubParStype nm rvs = "data "++nm++" = "++nm++" {\n"++(intercalate ",\n" $ map pprv rvs)++"}\n\n"
+ppSubParStype nm rvs = "data "++nm++" = "++nm++" {\n"++(intercalate ",\n" $ map pprv rvs)++"} deriving Show\n\n"
     where ind = replicate 4 ' '
           pprv (RVar vnm t _ ) | hasExclaim vnm =  ind ++noExclaim vnm++" :: "++haskTypeString t
                                | otherwise =  ind ++vnm++" :: Param "++haskTypeString t
@@ -152,6 +174,8 @@ ppUpdaters outerPath allrvs ((RVar vnm t ex):rest) =
 distE (App (App (Var "unknown") _) _)= 1
 --distE (App (App (Var "N") mue) sde) = Var "P.logGaussD" $> mue $> sde
 distE (App (App (App (Var "N") mue) sde) xe) = Var "P.logGaussD" $> mue $> sde $> xe
+distE (App (App (App (Var "uniform") loe) hie) xe) = Var "P.uniform" $> loe $> hie $> xe
+distE (App (App (App (Var "RandomSignal") wfe) noisee) sige) = Var "pdf" $> (Var "RandomSignal" $> wfe $> noisee) $> sige
 distE d = error $ "distE: "++show d
 lookupDist :: [RVar] -> String -> E
 lookupDist rvars nm = head $ [e | RVar nm' t e <- flattenRVars rvars, nm' ==nm]
@@ -219,6 +243,7 @@ loadData filtr allrvs =
          proxy (NumT (Just RealT)) = "(1::Double)"
          proxy (ListT (PairT (NumT (Just RealT)) t)) = proxy t
          proxy (UnitT) = "()"
+         proxy (SignalT (NumT (Just RealT))) = ""
          getter (SignalT (NumT (Just RealT))) = "signalsDirect"
          getter (ListT (PairT (PairT (NumT (Just RealT)) 
                               (NumT (Just RealT))) t)) = "durations"
@@ -231,9 +256,11 @@ loadData filtr allrvs =
                                     RVar nm _ _ <-allrvs, not $ hasExclaim nm ]
          getRunner = "Parrunning "++concatMap (mkval "during [r]") (inLevel "running" allrvs)
          mkval during (RVar nm t e) | hasExclaim nm && getter t == "durations" 
-                                 = "(snd $ head $ "++during++" "++noExclaim nm++") "
-                              | hasExclaim nm = "("++during++" "++noExclaim nm++") "
-                              | otherwise = "NonInitialisedParam "
+                                        = "(snd $ head $ "++during++" "++noExclaim nm++") "
+                                    | hasExclaim nm && getter t == "signalsDirect" 
+                                        = "(head $ "++during++" "++noExclaim nm++") "
+                                    | hasExclaim nm = "("++during++" "++noExclaim nm++") "
+                                    | otherwise = "NonInitialisedParam "
          mkval _ _ = ""
                        
 
@@ -247,6 +274,7 @@ initialStuff =
            "import Query ",
            "import Control.Monad",
            "import Math.Probably.Sampler",
+           "import Math.Probably.Distribution",
            "import Math.Probably.StochFun",
            "import Math.Probably.MCMC",
            "import qualified Math.Probably.PDF as P",
@@ -260,13 +288,14 @@ initialStuff =
            "import qualified Data.Vector.Unboxed as U",
            "import Data.Binary",
            "import StatsModel",
+           "import ReactiveDistributions",
            "import Foreign.Storable",
            "import Foreign.C",
            "import Foreign.ForeignPtr",
            "import Foreign.Ptr",
            "import Control.Arrow",
            "import FitGnuplot",
-           "import Debug.Trace",
+           "import NewSignal",
            "import Locust"]
 
 theGibbs allrvs = ("thegibbs = "++) $ intercalate " >-> " $ map f $ allNoExclaim allrvs
@@ -278,10 +307,18 @@ themain =
    unlines ["main = do",
             "  justData <- loadData",
             "  let baymarkov = Mrkv (condSampler thegibbs) (justData) id",
-            "  ps <- take 1 `fmap` runMarkovIO baymarkov",
+            "  ps <- take 10 `fmap` runMarkovIO baymarkov",
+            "  print $ last ps",
             "  return ()",
             "  ---writeFile (filenm++\"_parnames.mcmc\") $ show parNames "]
 
+
+initialise allrvs = 
+   unlines ["initialise :: AllPars -> AllPars",
+            "initialise justData = AllPars "++concatMap (par []) allrvs]
+  where par path (RVar vnm t e) | hasExclaim vnm = "("++noExclaim vnm++"$  "++concatMap (++"$") path++" justData) "
+                                | otherwise = "1 "
+        par path (InEvery durnm rvs) = "(Par"++durnm++" "++concatMap (par (durnm:path)) rvs++")"
 
 {-last2 [] = []
 last2 [x] = [x]
@@ -296,16 +333,17 @@ unPex outer notThese rvs = mapE f
         where f (Var nm) | hasExclaim nm = pathE $ pathOf outer nm rvs
                          | nm `elem` [vnm | RVar vnm _ _ <- flattenRVars rvs] &&
                            not (nm `elem` notThese) 
-                             = (App (Var $"unP "++thecomment nm) $ pathE $ pathOf outer nm rvs)
+                             = (App (Var "unP") $ pathE $ pathOf outer nm rvs)
                          | otherwise = Var nm
               f e = e
-              thecomment nm = "{-"++show (outer, pathOf' nm rvs)++"-}" 
+              --thecomment nm = "{-"++show (outer, pathOf' nm rvs)++"-}" 
 
 
 {-
-
 plan :
 
+-stupid initialiser
+-run it!
+-ofInterest
 -ML estimator
-
 -}

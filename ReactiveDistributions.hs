@@ -34,3 +34,8 @@ instance ProperDistribution RandomSignal where
             return $ Signal t1 t2 dt (SV.pack $ toList v) Eq
     estimator = undefined
 
+data InhomogeneousPoisson = InhomogeneousPoisson (Signal Double)
+instance Distribution InhomogeneousPoisson where
+    type Elem InhomogeneousPoisson = [(Double,())]
+    pdf (InhomogeneousPoisson rateSig) _ = 1
+
