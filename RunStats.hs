@@ -63,6 +63,7 @@ dispatch ("estimate":filenm:rest) = do
                 ppUpdaters [] rvs rvs,
 
                 mlEstimators rvs,
+                thetmaxdt tmax dt, 
 
                 loadData filtr rvs,
 
@@ -72,11 +73,15 @@ dispatch ("estimate":filenm:rest) = do
                 ppOfInterest rvs] 
 
   writeFile ("Estimator.hs") prog
+  --sh "ghc --make -O2 Estimator"
 
   return ()
 
-
 dispatch _ = help
+
+
+thetmaxdt tmax dt = "thetmax = "++show tmax ++"\nthedt="++show dt++"\n\n"
+
 
 data RVar = RVar String T E
           | InEvery String [RVar]
@@ -90,8 +95,8 @@ mapEinRVars f = map g
 --fillSig :: Storable a => Double -> Double -> Double -> (Double -> a) -> Signal a
 fillSigs :: Double -> Double -> [RVar] -> [RVar]
 fillSigs tmax dt allrvs = mapEinRVars f allrvs
-  where f (Sig se) = Var "fillSig" $> 0 $> Const (pack tmax) $> 
-                        Const (pack dt) $> Lam "seconds" UnspecifiedT (mapE g se)
+  where f (Sig se) = {- Var "fillSig" $> 0 $> Const (pack tmax) $> 
+                        Const (pack dt) $> -} Lam "seconds" UnspecifiedT (mapE g se)
         f e = e
         g (SigVal (Var "seconds")) = Var "seconds"
         g e = e
@@ -176,7 +181,7 @@ distE (App (App (Var "unknown") _) _)= 1
 --distE (App (App (Var "N") mue) sde) = Var "P.logGaussD" $> mue $> sde
 distE (App (App (App (Var "N") mue) sde) xe) = Var "P.logGaussD" $> mue $> sde $> xe
 distE (App (App (App (Var "uniform") loe) hie) xe) = Var "P.uniform" $> loe $> hie $> xe
-distE (App (App (App (Var "RandomSignal") wfe) noisee) sige) = Var "pdf" $> (Var "RandomSignal" $> wfe $> noisee) $> sige
+distE (App (App (App (Var "RandomSignal") wfe) noisee) sige) = Var "pdf" $> (Var "RandomSignalFast" $> wfe $> noisee) $> sige
 distE d = error $ "distE: "++show d
 lookupDist :: [RVar] -> String -> E
 lookupDist rvars nm = head $ [e | RVar nm' t e <- flattenRVars rvars, nm' ==nm]
@@ -311,7 +316,7 @@ themain =
             "  justData <- fmap initialise loadData",
             "  let baymarkov = Mrkv (condSampler thegibbs) (justData) id",
             "  ps <- take (read countStr) `fmap` runMarkovIO baymarkov",
-            "  writeInChunks (filenm++\"_chain0\") 5000 $ map ofInterest ps",
+            "  writeInChunks (filenm++\"_chain0\") 20000 $ map ofInterest ps",
             --"  mapM print $ zip parNames $ ofInterest (last ps)",
             "  return ()",
             "  ---writeFile (filenm++\"_parnames.mcmc\") $ show parNames "]

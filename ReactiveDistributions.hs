@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies, FunctionalDependencies, MultiParamTypeClasses, FlexibleInstances, GADTs #-}
+{-# LANGUAGE TypeFamilies, FunctionalDependencies, MultiParamTypeClasses, FlexibleInstances, GADTs, BangPatterns #-}
 
 module ReactiveDistributions where
 
@@ -20,11 +20,12 @@ data RandomSignal = RandomSignal (Signal Double) Double
 
 instance Distribution RandomSignal where
     type Elem RandomSignal = Signal Double
-    pdf (RandomSignal meansig noise) = 
-      let mu = sigToVector $ forceSigEq meansig
+    pdf (RandomSignal (Signal _ _ _ muArr Eq) noise) (Signal _ _ _ obsArr Eq) = 
+      {-let mu = sigToVector $ forceSigEq meansig
           k = dim mu
           sigma = (realToFrac noise) * ident k
-      in \obsSig -> P.multiNormal mu sigma $ sigToVector $ forceSigEq obsSig
+      in \obsSig -> P.multiNormal mu sigma $ sigToVector $ forceSigEq obsSig -}
+       SV.foldl1' (+) $ SV.zipWith (\muval obsVal -> P.logGaussD muval noise obsVal) muArr obsArr
 
 instance ProperDistribution RandomSignal where
     sampler (RandomSignal meansig@(Signal t1 t2 dt _ _) noise) = 
@@ -35,15 +36,19 @@ instance ProperDistribution RandomSignal where
             return $ Signal t1 t2 dt (SV.pack $ toList v) Eq
     estimator = undefined
 
-{-data RandomSignalFast = RandomSignalFast Double Double (Double->Double) Double
+data RandomSignalFast = RandomSignalFast (Double->Double) Double
 
 instance Distribution RandomSignalFast where
     type Elem RandomSignalFast = Signal Double
-    pdf (RandomSignalFast tmax dt meansigf noise) = 
-      let k = round $ tmax/dt
+    pdf (RandomSignalFast meansigf noise) (Signal t1 t2 dt obsArr Eq)= 
+      {-let k = round $ tmax/dt 
           mu = buildVector k $ meansigf . (*dt) . realToFrac
           sigma = (realToFrac noise) * ident k
-      in \obsSig -> P.multiNormal mu sigma $ sigToVector $ forceSigEq obsSig -}
+      in \Signal _ _ _ arr Eq) -> sum P.multiNormal mu sigma $ sigToVector $ forceSigEq obsSig  -}
+        let tmax = t2 - t1
+            f i obsVal = P.logGaussD (meansigf . (*dt) . realToFrac $ i) noise obsVal
+            facc (!sm, !i) obsVal = (sm+P.logGaussD (meansigf . (*dt) . realToFrac $ i) noise obsVal, i+1)
+        in SV.foldl1' (+) $ SV.mapIndexed f obsArr
 
 --buildVector :: Element a => Int -> (Int -> a) -> Vector a
                     
