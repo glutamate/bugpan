@@ -306,11 +306,13 @@ theGibbs allrvs = ("thegibbs = "++) $ intercalate " >-> " $ map f $ allNoExclaim
 
 themain = 
    unlines ["main = do",
-            "  countStr:_ <- getArgs",
+            "  countStr:filenm:_ <- getArgs",
+            "  writeFile (filenm++\"_parnames.mcmc\") $ show parNames", 
             "  justData <- fmap initialise loadData",
             "  let baymarkov = Mrkv (condSampler thegibbs) (justData) id",
             "  ps <- take (read countStr) `fmap` runMarkovIO baymarkov",
-            "  mapM print $ zip parNames $ ofInterest (last ps)",
+            "  writeInChunks (filenm++\"_chain0\") 5000 $ map ofInterest ps",
+            --"  mapM print $ zip parNames $ ofInterest (last ps)",
             "  return ()",
             "  ---writeFile (filenm++\"_parnames.mcmc\") $ show parNames "]
 
