@@ -68,7 +68,8 @@ dispatch ("estimate":filenm:rest) = do
 
                 theGibbs rvs,
                 themain,
-                initialise rvs] 
+                initialise rvs,
+                ppOfInterest rvs] 
 
   writeFile ("Estimator.hs") prog
 
@@ -258,7 +259,7 @@ loadData filtr allrvs =
          mkval during (RVar nm t e) | hasExclaim nm && getter t == "durations" 
                                         = "(snd $ head $ "++during++" "++noExclaim nm++") "
                                     | hasExclaim nm && getter t == "signalsDirect" 
-                                        = "(head $ "++during++" "++noExclaim nm++") "
+                                        = "(sigZero $ head $ "++during++" "++noExclaim nm++") "
                                     | hasExclaim nm = "("++during++" "++noExclaim nm++") "
                                     | otherwise = "NonInitialisedParam "
          mkval _ _ = ""
@@ -305,25 +306,40 @@ theGibbs allrvs = ("thegibbs = "++) $ intercalate " >-> " $ map f $ allNoExclaim
 
 themain = 
    unlines ["main = do",
-            "  justData <- loadData",
+            "  countStr:_ <- getArgs",
+            "  justData <- fmap initialise loadData",
             "  let baymarkov = Mrkv (condSampler thegibbs) (justData) id",
-            "  ps <- take 10 `fmap` runMarkovIO baymarkov",
-            "  print $ last ps",
+            "  ps <- take (read countStr) `fmap` runMarkovIO baymarkov",
+            "  mapM print $ zip parNames $ ofInterest (last ps)",
             "  return ()",
             "  ---writeFile (filenm++\"_parnames.mcmc\") $ show parNames "]
 
 
 initialise allrvs = 
    unlines ["initialise :: AllPars -> AllPars",
-            "initialise justData = AllPars "++concatMap (par []) allrvs]
-  where par path (RVar vnm t e) | hasExclaim vnm = "("++noExclaim vnm++"$  "++concatMap (++"$") path++" justData) "
-                                | otherwise = "1 "
-        par path (InEvery durnm rvs) = "(Par"++durnm++" "++concatMap (par (durnm:path)) rvs++")"
+            "initialise justData = AllPars "++par [] ["justData"] allrvs]
+  where par env path ((RVar vnm t e):rest) | hasExclaim vnm = 
+                                               "("++ppath (noExclaim vnm:path)++") "++ par env path rest
+                                           | otherwise = let v = distToInit env e in
+                                                         "(newParam "++(ppVal v)++") "++ 
+                                                         par ((vnm, v):env) path rest
+        par env path ((InEvery durnm rvs):rest) = "(for ("++ppath (durnm:path)++") $ \\"++durnm++"-> Par"++ durnm ++" "++par env (durnm:path) rvs++")"++par env path rest
+        par _ _ [] = ""
+        ppath path = intercalate "$" $ take 2 path
+
+eval' env e = unEvalM $ eval (extsEnv env emptyEvalS) e
+
+distToInit env (App (Var "unknown") e)=  eval' env e 
+distToInit env (App (App (Var "N") me) se) = eval' env me
+distToInit env (App (App (Var "uniform") loe) hie) = eval' env loe
 
 {-last2 [] = []
 last2 [x] = [x]
 last2 [x,y] = [x,y]
 last2 (x:xs) = last2 xs -}
+
+ppOfInterest rvs = "ofInterest allPars = ["++ intercalate ", " ["unP $ "++vnm++" allPars" | RVar vnm _ _ <- rvs]++
+                   "]\nparNames = "++show [vnm | RVar vnm _ _ <- rvs]
 
 childrenOf :: String -> [RVar] -> [[String]]
 childrenOf nm rvs = 
