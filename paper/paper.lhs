@@ -56,14 +56,14 @@ observation and calculation of the mathematical objects that
 constitute physiological evidence.
 
 What is an experiment? Whether they are carried out by humans or by
-automated equipment, experiments can be seen as \emph{programs} that
-manipulate and observe the real world. This definition suggests that
-experiment descriptions must resemble programming languages, and that
-a referentially transparent calculus of experiments could come from
-programming language theory. Functional Reactive Programming
+automated equipment, some experiments can be seen as \emph{programs}
+that manipulate and observe the real world. This definition suggests
+that experiment descriptions must resemble programming languages, and
+that a referentially transparent calculus of experiments could come
+from programming language theory. Functional Reactive Programming
 \citep[FRP;][]{Elliott1997, Nilsson2002} is an elegant approach for
-purely mathematical transformations to interact with the physical world;
-here we show that the semantics of FRP provide a structure for
+purely mathematical transformations to interact with the physical
+world; here we show that the semantics of FRP provide a structure for
 physiological evidence. We have implemented this calculus of evidence
 in a concrete programming language and used it for neurophysiological
 experiments, simulations and data analysis. Observations defined in
@@ -103,22 +103,24 @@ these types. We then describe how values of of these types can be
 observed, and how fuctions can be used to refine existing observations
 or generate stimuli for experiments.
 
-\subsubsection*{Types}
+\subsubsection*{What is physiological evidence?}
 
 What kinds of mathematical objects can count as physiological
 evidence? We answer this question within simple type theory (Ref),
-which assigns to every object a \emph{type}. The types include base
+which assigns to every object a \emph{type}. These types include base
 types, such as integers, real numbers and text strings. In addition,
 types can be arbitrarily combined in several ways, such that if
 |alpha| and |beta| are types, the type |alpha times beta| is the pair
 formed by an element of |alpha| and one of |beta|; |[alpha]| is a list
 of |alpha|s; and |alpha -> beta| is a function from |alpha| to
-|beta|. Types can be defined with to reference arbitrary types; for
+|beta|. Types can be defined with references to arbitrary types; for
 instance, |withIntegers alpha = [(Z, alpha)]| denotes for any type
-|alpha| the list of pairs of integers and |alpha|s. The ability to
-build flexible type schemata in this manner and write generic function
-over them (``parametric polymorphism'') is essential for the ability
-to represent \emph{all} physiological quantities. 
+|alpha| the list of pairs of integers and |alpha|s. This hole in the
+type definition can then be filled in to form a concrete type, for
+instance |withIntergers String|. The ability to build flexible type
+schemata in this manner and define generic function over them
+(``parametric polymorphism'') is essential for representing \emph{all}
+physiological quantities.
 
 FRP introduces two types of values to place information in a temporal
 context: Signals, which represent continuously varying quantities, and
@@ -161,15 +163,15 @@ events may not have a value of interest to associate with the
 time point at which it occurred, in which case we can use the unit type
 |()| which has only one element (that is, no information).
 
-A third kind of information describes the properties of whole
-``trials'', i.e. periods during which the system was exposed to a
-controlled stimulus. Signals (which change from one time point to
-another) and events (pertaining only to an instant) are unsuitable for
-representing this information. What is needed is a type for
-representing values associated with temporal extents. We define a
-duration of type |alpha| as a set of triples, of which the first two
-components denote  a start time and an end time. The last component is
-again a value of any type |alpha|:
+A third kind of information describes the properties of whole periods
+during which the system was exposed to a controlled stimulus. Signals
+(which change from one time point to another) and events (pertaining
+only to an instant) are unsuitable for representing this
+information. What is needed is a type for representing values
+associated with temporal extents. We define a duration of type |alpha|
+as a set of triples, of which the first two components denote a start
+time and an end time. The last component is again a value of any type
+|alpha|:
 \begin{code}
 Duration alpha = {Time times Time times alpha}
 \end{code}
