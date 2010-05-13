@@ -148,9 +148,10 @@ ppUpdaters outerPath allrvs rs@((InEvery durnm rvs):rest) =
 ppUpdaters outerPath allrvs ((RVar vnm t ex):rest) = 
     if (hasExclaim vnm) then "" else alllines 
     where alllines = unlines [thetype, updName++" allPars = do",
-             ind++"new"++vnm++" <- "++smany++" metSampleP "++show vnm++" (\\"++vnm++" -> ",
-             intercalate "+\n" $ map (((ind++ind)++) . pp) dists,
-             ind++ind++") $ "++parpath, -- vnm++" $ " ++concatMap (++" $") outerPath ++" allpars",
+             ind++"new"++vnm++" <- "++smany++ppSamplerE vnm parpath dists, {-" metSampleP "++show vnm++" (\\"++vnm++" -> ",
+--             intercalate "+\n" $ map (((ind++ind)++) . pp) dists,
+             ind++ind++pp (simplifyDist vnm $ foldl1 (+) dists),
+             ind++ind++") $ "++parpath, -} -- vnm++" $ " ++concatMap (++" $") outerPath ++" allpars",
              ind++"return $ "++retval++"\n" -- children: "++show (childrenOf vnm allrvs)++"\n"
             ] ++ ppUpdaters outerPath allrvs rest
           updName = "update_"++(concat $ map (++"_") outerPath)++vnm
@@ -174,7 +175,7 @@ ppUpdaters outerPath allrvs ((RVar vnm t ex):rest) =
           
           childDist cnm = ($>(Var cnm)) $ lookupDist allrvs cnm
           lh = distE (ex $> Var vnm)
-          parpath = pp $ pathE $ pathOf outerPath vnm allrvs
+          parpath = pathE $ pathOf outerPath vnm allrvs
           dists = unPex outerPath [vnm] allrvs lh : (map (distSum outerPath) $ childrenOf vnm allrvs)
 
 distE (App (App (Var "unknown") _) _)= 1
@@ -185,6 +186,20 @@ distE (App (App (App (Var "RandomSignal") wfe) noisee) sige) = Var "pdf" $> (Var
 distE d = error $ "distE: "++show d
 lookupDist :: [RVar] -> String -> E
 lookupDist rvars nm = head $ [e | RVar nm' t e <- flattenRVars rvars, nm' ==nm]
+
+simplifyDist v (M2 Add e1 e2) | isConstWrt v e1 = simplifyDist v e2
+                              | isConstWrt v e2 = simplifyDist v e1
+                              | otherwise = M2 Add (simplifyDist v e1) (simplifyDist v e2)
+simplifyDist v e = e
+
+isConstWrt nm (Const _) = True
+isConstWrt nm (M1 _ e) =  isConstWrt nm e
+isConstWrt nm (M2 _ e1 e2) =  isConstWrt nm e1 && isConstWrt nm e2
+isConstWrt nm (Var vnm)= nm /= vnm 
+isConstWrt nm _ = False
+
+ppSamplerE vnm path dists = pp $ samplerE vnm path $ simplifyDist vnm $ sum dists
+samplerE vnm path distE = Var "metSampleP" $> Const (StringV vnm) $> Lam vnm UnspecifiedT distE $> path
 
 pathE :: [String] -> E
 pathE = pathE' . reverse
@@ -338,7 +353,7 @@ eval' env e = unEvalM $ eval (extsEnv env emptyEvalS) e
 
 distToInit env (App (Var "unknown") e)=  eval' env e 
 distToInit env (App (App (Var "N") me) se) = eval' env me
-distToInit env (App (App (Var "uniform") loe) hie) = eval' env loe
+distToInit env (App (App (Var "uniform") loe) hie) = eval' env $ (loe+hie)/2
 
 {-last2 [] = []
 last2 [x] = [x]
