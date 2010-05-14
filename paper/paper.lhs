@@ -41,19 +41,17 @@ not by conventional programming languages.
 
 Although we can describe quantitative scientific models rigorously,
 there are few formalisms to describe how evidence for or against these
-models is obtained and evaluated. Today, most experiments are executed
-by \emph{ad hoc} computer code, and communicated in natural
-language. A more explicit approach to experimentation could facilitate
-replication and meta-analysis, permit a better understanding of
-apparent inconsistencies between studies and a clearer formulation of
-what constitutes sound scientific practice.  Here, we propose a
-calculus of physiological evidence that can describe an experiment
-such that it can be unambiguously replicated and be inspected to
-certify whether analysis procedures are applicable. This framework
-does not describe the physical components of an animal; there are no
-concepts of organ systems, cells or proteins. Instead it describes
-observation and calculation of the mathematical objects that
-constitute physiological evidence.
+models is obtained and evaluated. A mathematical approach approach to
+experimentation itself could facilitate replication and meta-analysis,
+permit a better understanding of apparent inconsistencies between
+studies and a clearer formulation of what constitutes sound scientific
+practice.  Here, we propose a calculus of physiological evidence that
+can describe an experiment such that it can be unambiguously
+replicated and be inspected to certify whether analysis procedures are
+applicable. This framework does not describe the physical components
+of an animal; there are no concepts of organ systems, cells or
+proteins. Instead it describes observation and calculation of the
+mathematical objects that constitute physiological evidence.
 
 What is an experiment? Whether they are carried out by humans or by
 automated equipment, some experiments can be seen as \emph{programs}
@@ -113,14 +111,16 @@ types can be arbitrarily combined in several ways, such that if
 |alpha| and |beta| are types, the type |alpha times beta| is the pair
 formed by an element of |alpha| and one of |beta|; |[alpha]| is a list
 of |alpha|s; and |alpha -> beta| is a function from |alpha| to
-|beta|. Types can be defined with references to arbitrary types; for
-instance, |withIntegers alpha = [(Z, alpha)]| denotes for any type
-|alpha| the list of pairs of integers and |alpha|s. This hole in the
-type definition can then be filled in to form a concrete type, for
-instance |withIntergers String|. The ability to build flexible type
-schemata in this manner and define generic function over them
-(``parametric polymorphism'') is essential for representing \emph{all}
-physiological quantities.
+|beta|. Here, we use the convention that greek letters stand for type
+variables, which can be substituted by any concrete type, such as a base
+type or a compound type. Types can be defined with references to
+arbitrary types; for instance, |withIntegers alpha = [(Z, alpha)]|
+denotes for any type |alpha| the list of pairs of integers and
+|alpha|s. This hole in the type definition can then be filled in to
+form a concrete type, for instance |withIntergers String|. The ability
+to build flexible type schemata in this manner and define generic
+function over them (``parametric polymorphism'') is essential for
+representing \emph{all} physiological quantities.
 
 FRP introduces two types of values to place information in a temporal
 context: Signals, which represent continuously varying quantities, and
@@ -547,12 +547,10 @@ defined by the cell parameters and the synaptic input. For a
 compartment with parallel resistance |rin|, capacitance |cm|, and
 time-varying conductance |gcell|, cellOde takes the form
 \begin{code}
-cellOde = \v->{: (-<: gcell :>*v - ((v-vrest)/rin))/cm :}
+cellOde = \v->{: -(<: gcell :>*v + ((v-vrest)/rin))/cm :}
 \end{code}
-Thus, the signal |gcell| determines the input to the cell, and for
-fixed rin, cm, vrest, refrac_time the simulation can be seen as a function from
-the conductance signal to the simulated spike train or membrance
-voltage.
+
+
 
 -fig:
 - A step response with vm
@@ -566,57 +564,104 @@ voltage.
 
 \section*{Discussion}
 
-summary
+We propose that three types, signals, events and durations, are
+sufficient to represent physiological evidence when they can be
+parametrised by any other type. We show how observations and
+calculations of these types can be described in a mathematical
+framework based on the lambda calculus. Two examples from
+neurophysiology illustrate this approach: the \emph{in vivo} spike
+train response to a visual looming stimulus in locusts; and a
+simulation of synaptic integration in a simple model neuron. 
 
-No histograms, point estimators, data/meta-data distinction, work-flow
-engines.
+Our approach is an entirely new way of doing and communicating
+science. 
+-formal definition
+-total integration
 
-\subsection*{What is this thing?}
+What exactly is the thing that is described in this paper? First of
+all, it is a very practical tool: a collection of computer programs
+for executing experiments and analyses and organising
+data. Controlling every aspect of the scientific process with programs
+that share data formats is potentially efficient and eliminates many
+sources of human error. Secondly, beyond any particular
+implementation, we have described a framework for reasoning about and
+manipulating scientific experiments. Obtaining such an experiment
+definition is a necessary step in automating the experiment.  It also
+makes the conditions of the recording very explicit, and can serve as
+a unambiguous communication medium. Finally, the types we have
+presented form a linguistic framework and an ontology for
+physiology. This ontology can form the basis for the interchange of
+physiological data without imposing unnecessary constraints on what
+can be shared.
 
-\begin{itemize}
-\item practical tool
-\item description is a necessary step in automation
-\item framework for reasoning about experimentation
-\item ontology, linguistic framework
-\item calculus of physiological evidence.
-\end{itemize}
+We present the principal claim of this paper, that signals, events and
+durations can represent all physiological evidence, without a concrete
+proof. In one regard, this claim is trivially true: if a piece of
+evidence can be represented in a type |alpha|, then a value of type
+|Duration alpha| can be constructed by this function:
+\begin{code}
+dur x = [((-l, l),x)]
+\end{code}
+where l is a sufficiently large number, e.g. the age of the universe
+in seconds. A stronger claim is this: the types that fill the holes in
+signals, events and durations, will not contain references to
+time. Thus, our theory will be refuted by a single piece of evidence
+in a physiological experiment that has temporal information or context
+but is neither a signal, event or a duration, or is an event or a
+duration that has temporal information in the tag. We can already
+think of one such example: power-spectra can be thought of as values
+analogous to signals, but indexed by frequency rather than time. The
+most appropriate manner of extending our framework to include
+frequency-indexed and even spatial information must remain a topic for
+further research. On the other hand, the lack of linear algebra,
+... in our examples is \emph{not} to be taken as a limitation of our
+theory; representing these analyses in a mathematical framework is a
+solved problem and is not the topic of this paper.
 
-frequency domain
-no fancy analysis; not the point.
- 
+\subsection*{Statistics}
 
-\subsection*{relation to semantic web ontologies}
+\subsection*{Relation to existing technologies}
+
+signals in igor, spike2
+
+neuroinformatics: solve or immediately proposes solutions to many
+problems.
+
+No data/meta-data distinction, work-flow engines. Artificial
+constructs that are inessential to scientific inference, even in the
+large scale. (Only true because we can write generic functions over
+reactive types).
 
 completely orthogonal
 
 related work
 
 \subsection*{Representing scientific knowledge}
- How shall we represent scientific
-knowledge? There has recently been much progress in representing
-scientific information in a manner that facilitates machine inference
-(semantic web refs). But if we are to represent scientific knowledge -
-in the classical sense of true justified belief - we must include a
-description of how we came about this information. In particular, this
-must include a description of (i) the exact procedure carried out
-during the experiment (ii) the context in which the experiment was
-carried out (iii) the raw data collected during the experiment (iv)
-the analyses and statistical tests carried out after the
-experiment. Of these, (i) and (iv) are essentially executable programs
-and (iii) are values in an appropriate datatype, here signals, events
-or durations. (ii) is the most difficult to represent; here we make
-extensive use of durations, which can be instantiated with any data
-type; thus we can represent the sex of an experimental subject as a
-duration (lasting the entirety of the experiment) of a (Male/Female)
-type or, for a less typed approach, a string.
+
+How shall we represent scientific knowledge? There has recently been
+much progress in representing scientific information in a manner that
+facilitates machine inference (semantic web refs). But if we are to
+represent scientific knowledge - in the classical sense of true
+justified belief - we must include a description of how we came about
+this information. In particular, this must include a description of
+(i) the exact procedure carried out during the experiment (ii) the
+context in which the experiment was carried out (iii) the raw data
+collected during the experiment (iv) the analyses and statistical
+tests carried out after the experiment. Of these, (i) and (iv) are
+essentially executable programs and (iii) are values in an appropriate
+datatype, here signals, events or durations. (ii) is the most
+difficult to represent; here we make extensive use of durations, which
+can be instantiated with any data type; thus we can represent the sex
+of an experimental subject as a duration (lasting the entirety of the
+experiment) of a (Male/Female) type or, for a less typed approach, a
+string.
+
+value: of which type, programs
 
 \subsection*{Towards verified scientific inference}
 
 experiment description languages, and the reification of experimental
 observations into values of concrete types, form basis for inference.
-
-much easier with principle of likelihood: no need to represent the
-intention of the experimenter. 
 
 It will also permit the verification of statements about experiments,
 for instance that particular variables were randomly controlled and
@@ -628,6 +673,9 @@ and consistent units of measure \citep{Kennedy1997}; the absence of
 of these issues in relating atomic observations to parameter
 estimation and hypothesis testing, but not how those observations are
 obtained.
+
+much easier with principle of likelihood: no need to represent the
+intention of the experimenter. 
 
 relationship to automation.
 
@@ -663,17 +711,12 @@ front of a 22'' CRT monitor running with a vertical refresh rate of
 conversion were controlled by Bugpan programs running on a single
 computer.
 
-\subsection*{Statistical analysis}
-
-metropolis-within-Gibbs sampler, proposal: Gaussian tuned to 15-40\% acceptance
-rate. Uniform priors for mean and variance components. 
-
 \bibliographystyle{apalike}
 \bibliography{paper}
 
-%\includepdf[pages=-]{Figure1.pdf}
-%\includepdf[pages=-]{Figure2.pdf}
-%\includepdf[pages=-]{Figure3.pdf}
+\includepdf[pages=-]{Figure1.pdf}
+\includepdf[pages=-]{Figure2.pdf}
+\includepdf[pages=-]{FigureIF.pdf}
 %\includepdf[pages=-]{Figure4.pdf}
 \end{document}
  

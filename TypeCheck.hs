@@ -76,7 +76,7 @@ tyCheckD d@(Let (PatVar nm tp) e) =
                                          --traceM $ "checking: "++ppDecl d
                                          addTyConstraint (t,tcalc)
                                          addTyConstraint (t,tpn) -- ?
-                                         solveConstraints
+                                         solveConstraints nm
                                          applySolution
                                          markChange
                                          return ()
@@ -178,13 +178,14 @@ deriveTypeConstraints  = do decTys <- allDeclaredTypes
                                                 return ()
                                 Nothing -> return ()
 
-solveConstraints :: TravM ()
-solveConstraints = do constrs <- tyConstraints `fmap` get
-                      let constrs' = nub . map (\(n,t)-> (UnknownT n, t)) . solve {-. addRepetitions $ -} $ constrs 
+solveConstraints :: String -> TravM ()
+solveConstraints nm = 
+    do constrs <- tyConstraints `fmap` get
+       let constrs' = nub . map (\(n,t)-> (UnknownT n, t)) . solve nm {-. addRepetitions $ -} $ constrs 
                       --traceM ""
                       --traceM "solved repetitins"
                       --traceConstraints {-. addRepetitions $ -} constrs'
-                      setter $ \s-> s {tyConstraints = constrs'}
+       setter $ \s-> s {tyConstraints = constrs'}
 
 
 hasUnknownT t = not . null $ [() | UnknownT _ <- flatT t]
@@ -454,8 +455,8 @@ tyFail s = fail $ "Type check fails: "++concat s
 threeToPairR (a,b,c) = (a, (b,c))
 
 --plzoo poly
-solve :: [(T,T)] -> [(String,T)]
-solve eqs = solv eqs []
+solve :: String -> [(T,T)] -> [(String,T)]
+solve nm eqs = solv eqs []
     where solv :: [(T,T)] -> [(String,T)] -> [(String,T)]
           solv [] sbst = sbst
           solv ((PairT t1 t2, PairT t3 t4):eq) sbst = solv ((t1, t3):(t2,t4):eq) sbst
@@ -477,7 +478,7 @@ solve eqs = solv eqs []
           solv ((t1,t2):eq) sbst | t1 == t2 || 
                                    t1 `isSubtypeOf` t2 || 
                                    t2 `isSubtypeOf` t1 =  solv eq sbst
-                                 | otherwise = error $ "cannot unify: "++^t1 ++"="++^t2
+                                 | otherwise = error $ "cannot unify: "++^t1 ++"="++^t2++" in "++nm 
 
 
 s ++^ ty = s++(ppType ty) 
