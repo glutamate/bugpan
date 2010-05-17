@@ -24,14 +24,14 @@
 \section*{Introduction}
 
 Mechanical reasoning removes ambiguity and thus allows ideas to be
-formulated and communicated efficiently and for inferences to be
+formulated and communicated efficiently, and inferences to be
 scrutinised. Consequently, formal languages and calculi have had a
 profound impact on mathematics and the natural sciences. As
 examples we point to Leibniz's infinitesimals, vector notation in
 electromagnetism and Frege's first-order logic. These languages are
 useful because they allow us to calculate --- to re-arrange, isolate
 and substitute terms --- and by doing so, to prove general
-theorems. These symbolic calculations are possible because terms can
+theorems. These symbolic manipulations are possible because terms can
 be replaced by terms with identical meaning without changing the
 meaning of the context. For instance, no matter what $w$ refers to or
 where it appears, $w+w$ can always be substituted by $2w$. This
@@ -40,39 +40,34 @@ property, which is called referential transparency
 not by conventional programming languages.
 
 Although we can describe quantitative scientific models rigorously,
-there are few formalisms to describe how evidence for or against these
-models is obtained and evaluated. A mathematical approach approach to
-experimentation itself could facilitate replication and meta-analysis,
-permit a better understanding of apparent inconsistencies between
-studies and a clearer formulation of what constitutes sound scientific
-practice.  Here, we propose a calculus of physiological evidence that
-can describe an experiment such that it can be unambiguously
-replicated and be inspected to certify whether analysis procedures are
-applicable. This framework does not describe the physical components
-of an animal; there are no concepts of organ systems, cells or
-proteins. Instead it describes observation and calculation of the
-mathematical objects that constitute physiological evidence.
+there are few formalisms to fully describe how evidence for or against
+these models is obtained and evaluated. A mathematical approach
+approach to experimentation itself could facilitate replication and
+meta-analysis, permit a better understanding of apparent
+inconsistencies between studies and a clearer formulation of what
+constitutes sound scientific practice.  Here, we propose a calculus of
+physiological evidence that can describe an experiment such that it
+can be unambiguously replicated and be inspected to certify whether
+analysis procedures are applicable. This framework does not describe
+the physical components of biological organism; it has no concept
+of networks, cells or proteins. Instead it describes observation
+and calculation of the mathematical objects that constitute
+physiological evidence.
 
 What is an experiment? Whether they are carried out by humans or by
-automated equipment, some experiments can be seen as \emph{programs}
+automated equipment, many experiments can be seen as \emph{programs}
 that manipulate and observe the real world. This definition suggests
 that experiment descriptions must resemble programming languages, and
 that a referentially transparent calculus of experiments could come
 from programming language theory. Functional Reactive Programming
 \citep[FRP;][]{Elliott1997, Nilsson2002} is an elegant approach for
 purely mathematical transformations to interact with the physical
-world; here we show that the semantics of FRP provide a structure for
+world. Here we show that the semantics of FRP provide a structure for
 physiological evidence. We have implemented this calculus of evidence
-in a concrete programming language and used it for neurophysiological
-experiments, simulations and data analysis. Observations defined in
-such a language have a simple interpretation in hierarchical Bayesian
-models, a powerful framework for biological inference rarely used in
-physiological data analysis \citep[but see][]{Gelman1996}.
-
-We use a calculus of physiological evidence based on FRP to perform a
-several non-trivial experiments in neurophysiology. The definitions of
-these experiments and the data analysis procedure are contained within
-the main sections of this paper in a handful of equations.
+in a concrete programming language and used it for non-trivial
+neurophysiological experiments, simulations and data analysis. These
+protocol are defined unambiguously in a handful of equations; we show
+two such examples.
 
 \section*{The calculus of physiological evidence}
 
@@ -92,14 +87,21 @@ programming language, then can also be composed in a referentially
 transparent manner by combining elementary transformations of the
 whole input, including responses from the user, into the entire output
 from the program. When these transformations can be defined by purely
-mathematical functions, the resulting style is known as Functional
-Reactive Programming (Ref and inelegant). Here, we introduce a new
-formulation of FRP designed to describe scientific experiments,
-simulations and analyses. We begin by describing the types that are
-central to FRP, and how physiological quantities can be captured in
-these types. We then describe how values of of these types can be
-observed, and how fuctions can be used to refine existing observations
-or generate stimuli for experiments.
+mathematical functions, the resulting computational paradigm is known
+as Functional Reactive Programming (Ref and inelegant). FRP introduces
+two types of values to place information in a temporal context:
+Signals, which represent continuously varying quantities, and events
+representing distinct occurrences. These types are flexible, in that
+they can be instantiated with any other type. We show that there is
+significant overlap between these definitions of signals and events,
+and physiological evidence. Thus, definitions of experiments can be
+described concisely in a language based on the composition and
+calculuation of signals and events, such as one based on FRP.  We
+begin by describing the types that are central to FRP, and how
+physiological quantities can be captured in these types. We then
+describe how values of of these types can be observed, and how
+fuctions can be used to refine existing observations or generate
+stimuli for experiments.
 
 \subsubsection*{What is physiological evidence?}
 
@@ -110,31 +112,28 @@ types, such as integers, real numbers and text strings. In addition,
 types can be arbitrarily combined in several ways, such that if
 |alpha| and |beta| are types, the type |alpha times beta| is the pair
 formed by an element of |alpha| and one of |beta|; |[alpha]| is a list
-of |alpha|s; and |alpha -> beta| is a function from |alpha| to
-|beta|. Here, we use the convention that greek letters stand for type
-variables, which can be substituted by any concrete type, such as a base
-type or a compound type. Types can be defined with references to
-arbitrary types; for instance, |withIntegers alpha = [(Z, alpha)]|
-denotes for any type |alpha| the list of pairs of integers and
-|alpha|s. This hole in the type definition can then be filled in to
-form a concrete type, for instance |withIntergers String|. The ability
-to build flexible type schemata in this manner and define generic
-function over them (``parametric polymorphism'') is essential for
-representing \emph{all} physiological quantities.
+of |alpha|s; and |alpha -> beta| is the type of functions that
+calculate a value in the type |beta| from a value in |alpha|. Here, we
+use the convention that greek letters stand for type variables, which
+can be substituted by any concrete type, such as a base type or a
+compound type. Types can be defined with references to arbitrary
+types; for instance, |withIntegers alpha = [(Z, alpha)]| denotes for
+any type |alpha| the list of pairs of integers and |alpha|s. This hole
+in the type definition can then be filled in to form a concrete type,
+for instance |withIntergers String|. The ability to build flexible
+type schemata in this manner and define generic function over them
+(``parametric polymorphism''; REF) is essential for representing \emph{all}
+physiological quantities.
 
-FRP introduces two types of values to place information in a temporal
-context: Signals, which represent continuously varying quantities, and
-events representing distinct occurrences. These types are flexible, in
-that they can be instantiated with any other type. Here, we add a
-third type for information pertaining to temporal extents.
-
-In physiology, observed time-varying quantities often represent scalar
-quantities, such as membrane voltages or muscle force, but there are
-also examples of non-scalar signals such as the two- or three
-dimensional location of an animal or of a body part. Here, we
-generalise this notion such that for \emph{any} type |alpha|, a signal
-of |alpha| is defined as a function from time to a value in |alpha|,
-written formally as:
+What, then, are the types in which physiological evidence can be
+values? These types must be able to capture the notion of quantities
+that change in time. In physiology, observed time-varying quantities
+often represent scalar quantities, such as membrane voltages or muscle
+force, but there are also examples of non-scalar signals such as the
+two- or three dimensional location of an animal or of a body
+part. Here, we generalise this notion such that for \emph{any} type
+|alpha|, a signal of |alpha| is defined as a function from time to a
+value in |alpha|, written formally as:
 \begin{code}
 Signal alpha = Time -> alpha
 \end{code}
@@ -147,37 +146,36 @@ others as an elementary function of time --- but to satisfy this
 definition, there must exist an operation that, for any signal and for
 any time point, can yield a value.
 
-Unlike signals such as an extracellular potential or a membrane
-conductance, some observed quantities such as action potentials are
-discrete occurrences and are not associated with a new value at every
-time point. To represent this qualitatively different class of
-observations, we introduce events, defined as a set of pairs of
-time points and a value in a type |alpha|, called the ``tag'': 
+But not every physiological observation denotes continuous
+change. Some measurements are derived from an instant in time - such
+as the peak amplitude of an electrical potential - and others pertain
+to an exteded period of time. These qualitatively different classes of
+observations are represented by different types, which also gain
+flexibility from parametric polymorphism.
+
+FRP introduced events as a set of pairs of time points and a value in
+a type |alpha|, called the ``tag'':
 \begin{code}
 Event alpha = {Time times alpha}
 \end{code}
-For example, an event could be constructed from a
-scalar signal such that the time of the largest amplitude of a signal
-was associated with the signal amplitude at that time-point. Some
-events may not have a value of interest to associate with the
-time point at which it occurred, in which case we can use the unit type
-|()| which has only one element (that is, no information).
+For example, an event could be constructed from a scalar signal such
+that the time of the largest amplitude of a signal was associated with
+the signal amplitude at that time-point. Events that do not have a
+value of interest to associate with the time point at which it
+occurred, can be tagged with the unit type |()| which has only one
+element (that is, no information).
 
 A third kind of information describes the properties of whole periods
-during which the system was exposed to a controlled stimulus. Signals
-(which change from one time point to another) and events (pertaining
-only to an instant) are unsuitable for representing this
-information. What is needed is a type for representing values
-associated with temporal extents. We define a duration of type |alpha|
-as a set of triples, of which the first two components denote a start
-time and an end time. The last component is again a value of any type
-|alpha|:
+during which the system was exposed to a controlled stimulus. We
+define a duration of type |alpha| as a set of triples, of which the
+first two components denote a start time and an end time. The last
+component is again a value of any type |alpha|:
 \begin{code}
 Duration alpha = {Time times Time times alpha}
 \end{code}
-Durations are useful for information about whole trial or about an
-entire animal, but could also be observations in their own right, such
-as open times of individual ion channels, periods in which activity of
+Durations are useful for information about a whole trial or about an
+entire experiment, but could also be observations in their own right, such
+as open times of individual ion channels, or periods in which activity of
 a system exceeds a set threshold (e.g bursts). We have used durations
 to hold information about an entire experiment, for instance a session
 identifier or the animal strain. Lastly, durations could be used for
@@ -212,30 +210,29 @@ amplifiers or electronic detectors, but may need to be conditioned
 before any conclusions can be drawn from them. Values in other types
 can only be inferred from calculations on other observations. First we
 show how to build programs that calculate with signals and events;
-then we show how annotations allow these programs to stimulate
+then we show how annotations allow these programs to interact with
 external system and observe their responses.
 
 \subsubsection*{Calculating with signals and events}
 
-In addition to specifying the types of physiological observations, FRP
-provides the transformation facilities needed for data analysis. Thus
-one can process events and signals, create new events from signals,
-filter data and calculate statistics as necessary. These
-transformations are formulated in terms of the lambda calculus
-\citep{Church1941}, a formal language for referentially transparent
-computation based on evaluating purely mathematical functions. The
-lambda calculus allows the use of functions as first class entities:
-that is, they can be referenced by variables and passed as arguments
-to other functions (which then become higher-order functions). On the
-other hand, the lambda calculus excludes variable or state mutation,
-such that the meaning of variables are solely as references to
-values. These properties together mean that the lambda calculus
-combines verifiable correctness with a high level of abstraction,
-leading to programs that are in practise more concise (ref). The
-lambda calculus or variants thereof has been used as foundation for
-mathematics \citep{Martin-Lof1985}, classical \citep{Sussman2001} and
-quantum \citep{Karczmarczuk2003} mechanics, evolutionary biochemistry
-\citep{Fontana1994} and programming languages \citep{McCarthy1960}. 
+From the direct observations, one often needs to process events and
+signals, create new events from signals, filter data and calculate
+statistics. Here, we formulate these transformations in terms of the lambda
+calculus \citep{Church1941}, a formal language for referentially
+transparent computation based on evaluating purely mathematical
+functions. The lambda calculus allows the use of functions as first
+class entities: that is, they can be referenced by variables and
+passed as arguments to other functions (which then become higher-order
+functions). On the other hand, the lambda calculus excludes variable
+or state mutation, such that the meanings of variables are solely as
+references to values. These properties together mean that the lambda
+calculus combines verifiable correctness with a high level of
+abstraction, leading to programs that are in practise more concise
+(ref). The lambda calculus or variants thereof has been used as
+foundation for mathematics \citep{Martin-Lof1985}, classical
+\citep{Sussman2001} and quantum \citep{Karczmarczuk2003} mechanics,
+evolutionary biochemistry \citep{Fontana1994} and programming
+languages \citep{McCarthy1960}.
 
 In the simple lambda calculus, calculations are performed by function
 abstraction and application. |\x->e| denotes the function with
@@ -243,6 +240,9 @@ argument |x| and body |e|, and |f y| the application of
 the value |y| to the function |f|. For instance, the function |add2 =
 \x -> x+2| adds two to its argument; hence |add2 3 = (\x->x+2) 3 =
 3+2| by substituting arguments in the function body.
+
+let 
+if then else
 
 Here, we present a concrete syntax for a formal language, based on the
 lambda calculus and extended with first-class signals and events. Let
@@ -261,18 +261,6 @@ smap = \f -> \s -> sopen f <: s :> sclose
 transforms, for any two types |alpha| and |beta|, a signal of |alpha|
 into a signal of |beta| by applying the function |f| of type |alpha
 -> beta| to the value of the signal at every time point.
-
-Further primitives are needed to form signals that depend on the
-history of other signals. For any signal |s|, the expression |delay s|
-denotes the signal that is delayed by a small amount of time (in
-practise, one time step). 
-
-The differential operator |D| differentiates a real-valued signal with
-respect to time, such |D s| denote its first derivative |D D s| the
-second derivative of the signal |s|. Likewise, the differential
-operator can appear on the left side of a definition, in which case it
-introduces a differential equation. This is illustrated in example 2
-(see below)
 
 The simplest approach to constructing events, and that taken here, is
 to detect events from existing signals. For instance, a threshold
@@ -295,8 +283,21 @@ programming language. Thus, a large number of transformations can be
 defined with simple recursive equations including filters, folds and
 scans (refs).
 
-Thus, signals describe continuous changes and events discrete
-occurrences. Sometimes, one requires a continuous behaviour to change
+
+
+Further primitives are needed to form signals that depend on the
+history of other signals. For any signal |s|, the expression |delay s|
+denotes the signal that is delayed by a small amount of time (in
+practise, one time step). 
+
+The differential operator |D| differentiates a real-valued signal with
+respect to time, such |D s| denote its first derivative |D D s| the
+second derivative of the signal |s|. Likewise, the differential
+operator can appear on the left side of a definition, in which case it
+introduces a differential equation. This is illustrated in example 2
+(see below)
+
+Sometimes, one requires a continuous behaviour to change
 abruptly into a different mode. FRP provides a clever way of doing
 this: a special construct, |switch| changes the definition of signals
 depending of the occurrence of specified events. 
@@ -329,7 +330,7 @@ source binding construct defined a simple experiment:
 \begin{code}
 v <* ADC (0, 20000)
 \end{code}
-which describes the observation of the voltage signal on channel 0 on
+which describes the observation of the voltage signal on channel 0 of
 an analog-to-digital converter at 20kHz sampling rate.
 
 In addition to making appropriate observations, an experiment may also
@@ -368,25 +369,19 @@ distributions.
 
 \section*{Example 1}
 
-Although every animal species can benefit from a mechanism for
-detecting and moving away from obstacles and predators, the need for a
-collision avoidance system is particularly acute in social animals. A
-common component in such systems is a detector for looming objects. In
-locusts, a single neuron in each brain hemisphere, the Lobular Giant
-Movement Detector (LGMD), responds preferentially to looming stimuli
-\citep{Rind1992}. The response of the LGMD is known to be invariant to
-manipulations of the looming stimulus; for instance, a key property,
-the time of the peak firing rate with respect to the retinal angle of
-the looming stimulus, is insensitive to the colour, texture, size,
-velocity and azimuth of the approaching object when averaged over
-several approaches \citep{Gabbiani2001}. However, the reliability of
-the looming detector is not well understood. For instance, the amount
-and origin of variability in the response to repeated approaches of
-identical objects is important for the animal behaviour (ref?), but
-has not been quantified for this detector. In addition, a looming
-detector must be able to discriminate objects that are on collision
-course, but the efficiency of the LGMD in doing so has not been
-quantified.
+Most animal species can benefit from a mechanism for detecting and
+moving away from obstacles and predators. In addition, navigation in
+social animals are further constrained by the need avoiding collisions
+with conspecifics. A common component in such systems is a detector
+for looming objects. In locusts, a single neuron in each brain
+hemisphere, the Lobular Giant Movement Detector (LGMD), responds
+preferentially to looming stimuli \citep{Rind1992}. The response of
+the LGMD is known to be invariant to manipulations of many apsects of
+the looming stimulus. For instance, a key property, the time of the
+peak firing rate with respect to the retinal angle of the looming
+stimulus, is insensitive to the colour, texture, size, velocity and
+azimuth of the approaching object when averaged over several
+approaches \citep{Gabbiani2001}. Something here...
 
 We constructed several experiments in the calculus of physiological
 evidence to address these questions. Initially, we recorded the
@@ -412,10 +407,10 @@ green |g| and blue |b|. Additional constructors can be introduced for
 more complex stimuli, but these are sufficient for the experiments
 reported here. Since signals are entirely polymorphic containers, they
 can carry not just numeric values but also shapes, and we represent
-visual stimuli as values in |Signal Shape|. The looming stimulus for
-locusts consists of a cube of side length l approaching the viewer
-with constant velocity v. The time-varying distance from the observer
-to the cube in real-world coordinates is a real-valued signal:
+visual stimuli as values in |Signal Shape|. The looming stimulus
+consists of a cube of side length l approaching the viewer with
+constant velocity v. The time-varying distance from the observer to
+the cube in real-world coordinates is a real-valued signal:
 \begin{code}
 distance = sopen v * (5 - <: seconds :>) sclose 
 \end{code}
@@ -594,24 +589,23 @@ physiology. This ontology can form the basis for the interchange of
 physiological data without imposing unnecessary constraints on what
 can be shared.
 
-We present the principal claim of this paper, that signals, events and
-durations can represent all physiological evidence, without a concrete
-proof. In one regard, this claim is trivially true: if a piece of
-evidence can be represented in a type |alpha|, then a value of type
-|Duration alpha| can be constructed by this function:
+The principal claim of this paper, that signals, events and durations
+can represent all physiological evidence, is presented without a
+concrete proof. In one regard, the claim is trivially true: if a
+piece of evidence can be represented in a type |alpha|, then a value
+of type |Duration alpha| can be constructed by this function:
 \begin{code}
 dur x = [((-l, l),x)]
 \end{code}
-where l is a sufficiently large number, e.g. the age of the universe
-in seconds. A stronger claim is this: the types that fill the holes in
-signals, events and durations, will not contain references to
-time. Thus, our theory will be refuted by a single piece of evidence
-in a physiological experiment that has temporal information or context
-but is neither a signal, event or a duration, or is an event or a
-duration that has temporal information in the tag. We can already
-think of one such example: power-spectra can be thought of as values
-analogous to signals, but indexed by frequency rather than time. The
-most appropriate manner of extending our framework to include
+where l is a sufficiently large number. A stronger claim is this: all
+references to time are signals, events or durations. Thus, our theory
+will be refuted by a single piece of evidence in a physiological
+experiment that has temporal information or context but is neither a
+signal, event or a duration, or is an event or a duration that has
+temporal information in the tag. We can already think of one such
+example: power-spectra can be thought of as values analogous to
+signals, but indexed by frequency rather than time. The most
+appropriate manner of extending our framework to include
 frequency-indexed and even spatial information must remain a topic for
 further research. On the other hand, the lack of linear algebra,
 ... in our examples is \emph{not} to be taken as a limitation of our
@@ -648,13 +642,13 @@ this information. In particular, this must include a description of
 context in which the experiment was carried out (iii) the raw data
 collected during the experiment (iv) the analyses and statistical
 tests carried out after the experiment. Of these, (i) and (iv) are
-essentially executable programs and (iii) are values in an appropriate
-datatype, here signals, events or durations. (ii) is the most
-difficult to represent; here we make extensive use of durations, which
-can be instantiated with any data type; thus we can represent the sex
-of an experimental subject as a duration (lasting the entirety of the
-experiment) of a (Male/Female) type or, for a less typed approach, a
-string.
+essentially executable programs and (iii) consists of values in an
+appropriate datatype, here signals, events or durations. (ii) is the
+most difficult to represent; here we make extensive use of durations,
+which can be instantiated with any data type; thus we can represent
+the sex of an experimental subject as a duration (lasting the entirety
+of the experiment) of a (Male/Female) type or, for a less typed
+approach, a string.
 
 value: of which type, programs
 
@@ -692,7 +686,7 @@ programs that contain signals and events that are defined by mutual
 recursion, as is necessary for many of the simulations and experiments
 in this paper. For post-acquisition/simulation analysis, where one
 often merely wishes to calculate a new value from existing
-observations, we have implemented Bugpan as an domain-specific
+observations, we have implemented Bugpan as a domain-specific
 language embedded in the purely functional programming language
 Haskell.  OpenGL and Comedi.
 
@@ -700,7 +694,7 @@ Haskell.  OpenGL and Comedi.
 
 Recordings from the locust DCMD neurons were performed as previously
 described (ref). Briefly, locusts were fixed in plasticine with the
-abdomen upwards. The head was fixed with wax at an 90 degree angle and
+ventral side upwards. The head was fixed with wax at an 90 degree angle and
 the connectives were exposed. A pair of hook electrodes were placed
 underneath the connectives and the electrodes and connectives enclosed
 in petroleum jelly. The electrode signal was amplified 1000x and
