@@ -15,12 +15,6 @@
 
 \maketitle
 
-\subsection*{Alternative titles}
-\begin{description}
-\item Functional reactivity as a calculus of physiological evidence
-\item A functional calculus of physiological evidence
-\item Structure and interpretation of physiological evidence
-\end{description}
 \section*{Introduction}
 
 Mechanical reasoning removes ambiguity and thus allows ideas to be
@@ -28,7 +22,7 @@ formulated and communicated efficiently, and inferences to be
 scrutinised. Consequently, formal languages and calculi have had a
 profound impact on mathematics and the natural sciences. As
 examples we point to Leibniz's infinitesimals, vector notation in
-electromagnetism and Frege's first-order logic. These languages are
+electromagnetism and Frege's first-order logic. Such languages are
 useful because they allow us to calculate --- to re-arrange, isolate
 and substitute terms --- and by doing so, to prove general
 theorems. These symbolic manipulations are possible because terms can
@@ -108,11 +102,12 @@ stimuli for experiments.
 What kinds of mathematical objects can count as physiological
 evidence? We answer this question within simple type theory (Ref),
 which assigns to every object a \emph{type}. These types include base
-types, such as integers, real numbers and text strings. In addition,
-types can be arbitrarily combined in several ways, such that if
-|alpha| and |beta| are types, the type |alpha times beta| is the pair
-formed by an element of |alpha| and one of |beta|; |[alpha]| is a list
-of |alpha|s; and |alpha -> beta| is the type of functions that
+types, such as integers |Z|, real numbers |R|, text strings |String|
+and boolean type |Bool| with the two values |True| and |False|. In
+addition, types can be arbitrarily combined in several ways, such that
+if |alpha| and |beta| are types, the type |alpha times beta| is the
+pair formed by an element of |alpha| and one of |beta|; |[alpha]| is a
+list of |alpha|s; and |alpha -> beta| is the type of functions that
 calculate a value in the type |beta| from a value in |alpha|. Here, we
 use the convention that greek letters stand for type variables, which
 can be substituted by any concrete type, such as a base type or a
@@ -122,39 +117,37 @@ any type |alpha| the list of pairs of integers and |alpha|s. This hole
 in the type definition can then be filled in to form a concrete type,
 for instance |withIntergers String|. The ability to build flexible
 type schemata in this manner and define generic function over them
-(``parametric polymorphism''; REF) is essential for representing \emph{all}
-physiological quantities.
+(``parametric polymorphism''; REF) is essential for representing
+\emph{all} physiological quantities.
 
 What, then, are the types in which physiological evidence can be
-values? These types must be able to capture the notion of quantities
-that change in time. In physiology, observed time-varying quantities
-often represent scalar quantities, such as membrane voltages or muscle
-force, but there are also examples of non-scalar signals such as the
-two- or three dimensional location of an animal or of a body
-part. Here, we generalise this notion such that for \emph{any} type
-|alpha|, a signal of |alpha| is defined as a function from time to a
-value in |alpha|, written formally as:
+values? We distinguish three type schemas that differ in relationship
+between measurements and their temporal context, but all derive their
+flexibility from parametric polymorphism. \emph{Signals} capture the
+notion of quantities that change in time. In physiology, observed
+time-varying quantities often represent scalar quantities, such as
+membrane voltages or muscle force, but there are also examples of
+non-scalar signals such as the two- or three dimensional location of
+an animal or of a body part. Here, we generalise this notion such that
+for \emph{any} type |alpha|, a signal of |alpha| is defined as a
+function from time to a value in |alpha|, written formally as:
 \begin{code}
 Signal alpha = Time -> alpha
 \end{code}
 Signals can thus take a new value for every different time point and
 represent quantities that vary continuously, although these values may
 be piecewise constant. For instance, the output of a differential
-voltage amplifier might be captured in a |Signal Real|. Signals may be
-stored in many different ways --- some signals as a sampled array,
-others as an elementary function of time --- but to satisfy this
-definition, there must exist an operation that, for any signal and for
-any time point, can yield a value.
+voltage amplifier might be captured in a |Signal Real|.
 
 But not every physiological observation denotes continuous
 change. Some measurements are derived from an instant in time - such
 as the peak amplitude of an electrical potential - and others pertain
-to an exteded period of time. These qualitatively different classes of
-observations are represented by different types, which also gain
-flexibility from parametric polymorphism.
+to an extended period of time. These qualitatively different classes
+of observations are represented by \emph{events} and \emph{durations},
+respectively. 
 
-FRP introduced events as a set of pairs of time points and a value in
-a type |alpha|, called the ``tag'':
+To model discrete occurences, FRP introduced events as a set of pairs
+of time points and a value in a type |alpha|, called the ``tag'':
 \begin{code}
 Event alpha = {Time times alpha}
 \end{code}
@@ -163,7 +156,10 @@ that the time of the largest amplitude of a signal was associated with
 the signal amplitude at that time-point. Events that do not have a
 value of interest to associate with the time point at which it
 occurred, can be tagged with the unit type |()| which has only one
-element (that is, no information).
+element (that is, no information). Therefore, events can represent
+both measurements where the principal information is \emph{when}
+something happend, and measurements concerning \emph{what} happened
+where the time is mostly contextual.
 
 A third kind of information describes the properties of whole periods
 during which the system was exposed to a controlled stimulus. We
@@ -236,13 +232,16 @@ languages \citep{McCarthy1960}.
 
 In the simple lambda calculus, calculations are performed by function
 abstraction and application. |\x->e| denotes the function with
-argument |x| and body |e|, and |f y| the application of
-the value |y| to the function |f|. For instance, the function |add2 =
-\x -> x+2| adds two to its argument; hence |add2 3 = (\x->x+2) 3 =
-3+2| by substituting arguments in the function body.
-
-let 
-if then else
+argument |x| and body |e|, and |f y| the application of the value |y|
+to the function |f|. For instance, the function |add2 = \x -> x+2|
+adds two to its argument; hence |add2 3 = (\x->x+2) 3 = 3+2| by
+substituting arguments in the function body. In addition we define a
+number of constructs to improve the readability of the language,
+although strictly they can be defined in terms of function application
+and abstraction. The expression |if p then c else a| evaluates to |c|
+if |p| is |True| and |a| if |a| is |False|. Similarly, |let y = e in
+w| defines a variable |y| with the value of the expression |e| that
+can be used as a value in the expression |w|. 
 
 Here, we present a concrete syntax for a formal language, based on the
 lambda calculus and extended with first-class signals and events. Let
@@ -283,8 +282,6 @@ programming language. Thus, a large number of transformations can be
 defined with simple recursive equations including filters, folds and
 scans (refs).
 
-
-
 Further primitives are needed to form signals that depend on the
 history of other signals. For any signal |s|, the expression |delay s|
 denotes the signal that is delayed by a small amount of time (in
@@ -301,8 +298,6 @@ Sometimes, one requires a continuous behaviour to change
 abruptly into a different mode. FRP provides a clever way of doing
 this: a special construct, |switch| changes the definition of signals
 depending of the occurrence of specified events. 
-
-...
 
 This small number of special constructors, along with the lambda
 calculus and the list semantics of events and durations, have allowed
@@ -381,15 +376,14 @@ the looming stimulus. For instance, a key property, the time of the
 peak firing rate with respect to the retinal angle of the looming
 stimulus, is insensitive to the colour, texture, size, velocity and
 azimuth of the approaching object when averaged over several
-approaches \citep{Gabbiani2001}. Something here...
+approaches \citep{Gabbiani2001}. 
 
-We constructed several experiments in the calculus of physiological
-evidence to address these questions. Initially, we recorded the
-response to visual stimuli representing identical objects approaching
-with different velocities; the stimuli were later modified to
-distinguish looming from nearly-looming objects. To generate these
-stimuli, we augmented the calculus of physiological evidence with
-primitive three-dimensional geometric shapes. Let the expression
+Here, we have constructed several experiments in the calculus of
+physiological evidence to recorded the neural response in locusts to
+visual stimuli representing identical objects approaching with
+different velocities. To generate these stimuli, we augmented the
+calculus of physiological evidence with primitive three-dimensional
+geometric shapes. Let the expression
 \begin{code}
 cube l
 \end{code}
@@ -545,17 +539,55 @@ time-varying conductance |gcell|, cellOde takes the form
 cellOde = \v->{: -(<: gcell :>*v + ((v-vrest)/rin))/cm :}
 \end{code}
 
+First, we examine the response to a step conductance. In that case,
+\begin{code}
+gcell = {: if between 0.01 0.09 <: seconds :> then a else 0 :}
+\end{code}
+which completes a definition of the integrate-and-fire simulation, for
+a particular value of |a|. |v_m| for this simulation is plotted in Fig
+3A, which shows a regular firing rhythm.
 
+A more biologically realistic input to the cell is a convolution of a
+presynaptic spike train with a unitary postsynaptic conductance
+waveform. First the preSpike events are bound from an event source
+sampling homogeneous poisson trains:
 
--fig:
-- A step response with vm
-- B synaptic input convolved
-- C vm response to syn input
-- D f-f curve.
+\begin{code}
+preSpike <* poissonTrain rate
+\end{code}
 
--quadratic/exponential integrate and fire
+Then we define the synaptic waveform with an alpha function
+\begin{code}
+alpha amp tau = {: amp*tau*tau*<:seconds:>*exp (-<:seconds:>*tau) :}
+gcell =  convolveSE (alpha amp tau) (tag 1 preSpike)
+\end{code}
+where |convolveSE| convolves a signal with an event, mutiplying the
+impulse response signal with tag of each event
+occurrence. |convolveES| is a library function defined with the
+previously described primitives. Figure 3B shows the convolved cell
+conductance and 3C |v_m| for particular values of |rate|, |amp| and
+|tau|.
 
--HH?
+By varying the value of |rate|, we can examine the input-output
+relationship of the model neuron. To plot this relationship
+quantitatively, we need a function to calculate the frequency of
+events in durations. |frequencyDuring| does this by exploiting the
+list semantics of both durations and events, using the familiar
+functions |map|, |filter| and |length|:
+
+\begin{code}
+frequencyDuring ds es = map f ds
+   where f ((t1,t2),_) =
+           let count = length (filter (between t1 t2 . fst) es)  
+           in ((t1,t2), count / t2-t1)
+\end{code}
+
+|frequencyDuring| retains the temporal context of the firing rate
+by returning a new duration, with the rate of the event as the tag. 
+
+Figure 3D shows a scatterplot of the postsynaptic against the
+presynaptic spike rate for 400 runs of the model each of 10 seconds,
+with input rates randomly distributed as U(0,450). ...
 
 \section*{Discussion}
 
@@ -568,10 +600,15 @@ neurophysiology illustrate this approach: the \emph{in vivo} spike
 train response to a visual looming stimulus in locusts; and a
 simulation of synaptic integration in a simple model neuron. 
 
-Our approach is an entirely new way of doing and communicating
-science. 
--formal definition
--total integration
+We present an entirely new approach to executing and communicating
+science. Our experiments, including the complex stimuli used to
+perturb external systems, are concisely and unambiguously defined  ...
+
+We can quibble about whether these definitions are simpler or clearer
+than a definition written in plain English. ...
+
+Secondly, the evidence gathered ... same types for stimulation and
+observation. ... 
 
 What exactly is the thing that is described in this paper? First of
 all, it is a very practical tool: a collection of computer programs
@@ -613,6 +650,11 @@ theory; representing these analyses in a mathematical framework is a
 solved problem and is not the topic of this paper.
 
 \subsection*{Statistics}
+
+-evidence only if for a particular model. 
+-haven't said anything
+-how to do classical
+-hierarchical bayesian
 
 \subsection*{Relation to existing technologies}
 
