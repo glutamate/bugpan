@@ -318,3 +318,17 @@ fillSig t1 t2 dt f = let vls = map f $ timePointsFromT1T2Dt t1 t2 dt
 fillSigOver :: Storable a => [((Double,Double), b)] -> Double -> (b-> Double -> a) -> [Signal a]
 fillSigOver durs dt f = map g durs
     where g ((t1,t2),v) = fillSig t1 t2 dt (\t -> f v (t-t1))
+
+smooth1 :: Signal Double -> Signal Double
+smooth1 (Signal t1 t2 dt arr Eq) = 
+    let f last this next = (last+2*this+next)/4
+        n = SV.length arr
+        a1 = SV.init $ SV.init $ arr
+        a2 = SV.init $ SV.tail $ arr
+        a3 = SV.tail $ SV.tail $ arr
+        newarr = SV.snoc (SV.cons (SV.head arr) $ SV.zipWith3 f a1 a2 a3 ) (SV.last arr)
+    in Signal (t1) (t2) dt (newarr) Eq
+
+
+smoothN :: Int -> [Signal Double] -> [Signal Double]
+smoothN n  = map ((!!n) . iterate smooth1 . forceSigEq)

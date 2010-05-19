@@ -459,6 +459,46 @@ lineType t = Lines [LineType t]
 pointSize t = Points [PointSize t]
 pointType t = Points [PointType t]
 
+data ScaleBars a = ScaleBars (Double, Double) (Double,String) (Double,String) a
+
+data LineAt a = LineAt (Double, Double) (Double, Double) a
+data ArrowAt a = ArrowAt (Double, Double) (Double, Double) a
+
+data TextAt a = TextAt (Double, Double) String a
+
+instance PlotWithGnuplot a => PlotWithGnuplot (TextAt a) where
+    multiPlot r (TextAt (x0,y0) s x) = do
+      let mklab = TopLevelGnuplotCmd ("set label "++show s++" at first "++show x0++","++show y0++" center front") 
+                                     "unset label"
+      px <- multiPlot r x
+      return $ map (\(r', pls) -> (r', mklab:pls)) px
+
+
+instance PlotWithGnuplot a => PlotWithGnuplot (LineAt a) where
+    multiPlot r (LineAt (x0,y0) (x1, y1) x) = do
+      let mklab = TopLevelGnuplotCmd ("set arrow from first "++show x0++","++show y0++" to first "++show x1++","++show y1++" nohead front") 
+                                     "unset arrow"
+      px <- multiPlot r x
+      return $ map (\(r', pls) -> (r', mklab:pls)) px 
+
+instance PlotWithGnuplot a => PlotWithGnuplot (ArrowAt a) where
+    multiPlot r (ArrowAt (x0,y0) (x1, y1) x) = do
+      let mklab = TopLevelGnuplotCmd ("set arrow from first "++show x0++","++show y0++" to first "++show x1++","++show y1++" heads front") 
+                                     "unset arrow"
+      px <- multiPlot r x
+      return $ map (\(r', pls) -> (r', mklab:pls)) px 
+
+
+instance PlotWithGnuplot a => PlotWithGnuplot (ScaleBars a) where
+    multiPlot r (ScaleBars (x0,y0) (xsz, xtxt) (ysz, ytxt) x) = do
+      let xtxtpos = (x0+xsz/2, y0 - ysz/4)
+      let ytxtpos = (x0+xsz/2, y0 + ysz/2)                                                             
+      multiPlot r $ LineAt (x0, y0) (x0, y0+ysz) 
+                  $ LineAt (x0, y0) (x0+xsz, y0) 
+                  $ TextAt xtxtpos xtxt 
+                  $ TextAt ytxtpos ytxt x
+
+
 
 instance PlotWithGnuplot a => PlotWithGnuplot (SubLabel a) where
     multiPlot r sl = do

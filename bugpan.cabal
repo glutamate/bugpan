@@ -23,7 +23,7 @@ Library
    if flag(nodaq)
      ghc-options:        -DNODAQ
    other-modules:    Parse, Types,Eval, Traverse, Transform, PrettyPrint, BNFC.LexBugpan, BNFC.ParBugpan, BNFC.SkelBugpan,BNFC.PrintBugpan,BNFC.LayoutBugpan ,BNFC.ErrM,UnitTesting, BNFC.AbsBugpan,BuiltIn, TypeCheck, CompiledSrcsSinks
-   Build-depends:    tnutils, probably, process, directory, regex-posix, random, base, bytestring, binary, old-time, storablevector, mtl, data-binary-ieee754, mersenne-random, storable-tuple, hmatrix, vector
+   Build-depends:    tnutils, probably, process, directory, regex-posix, random, base, bytestring, binary, old-time, storablevector>0.2.4, mtl, data-binary-ieee754, mersenne-random, storable-tuple, hmatrix, vector
 
 
 Executable bugsess   
@@ -32,12 +32,12 @@ Executable bugsess
    if flag(nodaq)
      ghc-options:    -DNODAQ
    other-modules:    EvalM, Parse, Types,Database,Eval,Expr, Traverse, Transform, HaskSyntaxUntyped, ValueIO, PrettyPrint, BNFC.LexBugpan, BNFC.ParBugpan, BNFC.SkelBugpan,BNFC.PrintBugpan,BNFC.LayoutBugpan ,BNFC.ErrM,UnitTesting, BNFC.AbsBugpan,BuiltIn, TypeCheck
-   Build-depends:    array, tnutils, probably, haskell98, process, directory, regex-posix, random, base>4.0, bytestring, binary, old-time, storablevector, mtl, data-binary-ieee754, SHA, mersenne-random, storable-tuple, syb
+   Build-depends:    array, tnutils, probably, haskell98, process, directory, regex-posix, random, base>4.0, bytestring, binary, old-time, storablevector>0.2.4, mtl, data-binary-ieee754, SHA, mersenne-random, storable-tuple, syb
 
 Executable buganal   
    Main-Is:          BugAnal.hs
    other-modules:    EvalM, Parse, Types,Database,Eval,Expr, Traverse, Transform, HaskSyntaxUntyped, ValueIO, PrettyPrint, BNFC.LexBugpan, BNFC.ParBugpan, BNFC.SkelBugpan,BNFC.PrintBugpan,BNFC.LayoutBugpan ,BNFC.ErrM,UnitTesting, BNFC.AbsBugpan,BuiltIn, TypeCheck
-   Build-depends:    array, tnutils, probably, haskell98, process, directory, regex-posix, random, base>4, bytestring, binary, old-time, storablevector, mtl, data-binary-ieee754, SHA, mersenne-random, storable-tuple, syb
+   Build-depends:    array, tnutils, probably, haskell98, process, directory, regex-posix, random, base>4, bytestring, binary, old-time, storablevector>0.2.4, mtl, data-binary-ieee754, SHA, mersenne-random, storable-tuple, syb
 
 Executable bugdriver   
    Main-Is:            Driver.hs
@@ -53,11 +53,11 @@ Executable bugdriver
    if flag(nogl)
        GHC-Options:       -DNOGL
        Build-depends:     array, tnutils, probably, haskell98, process, directory, regex-posix, 
-                          utility-ht, random, base>4, bytestring, binary, old-time, storablevector, 
+                          utility-ht, random, base>4, bytestring, binary, old-time, storablevector>0.2.4, 
                           mtl, data-binary-ieee754, stm, storable-tuple, syb
    else
        Build-depends:     array, tnutils, probably, haskell98, process, directory, regex-posix, 
-                          utility-ht, random, base>4, bytestring, binary, old-time, storablevector, 
+                          utility-ht, random, base>4, bytestring, binary, old-time, storablevector>0.2.4, 
                           mtl, data-binary-ieee754, GLFW>0.3, stm, OpenGL<2.4, storable-tuple, syb
 
 --   ghc-options:      -O2 -threaded -lcomedi Comedi/comedi_hs_helper.o
@@ -79,11 +79,11 @@ Executable runbugpan
    if flag(nogl)
        GHC-Options:       -DNOGL
        Build-depends:     array, tnutils, probably, haskell98, process, directory, regex-posix, 
-                          utility-ht, random, base>4, bytestring, binary, old-time, storablevector, 
+                          utility-ht, random, base>4, bytestring, binary, old-time, storablevector>0.2.4, 
                           mtl, data-binary-ieee754,  stm, storable-tuple, syb
    else
        Build-depends:     array, tnutils, probably, haskell98, process, directory, regex-posix, 
-                          utility-ht, random, base>4, bytestring, binary, old-time, storablevector, 
+                          utility-ht, random, base>4, bytestring, binary, old-time, storablevector>0.2.4, 
                           mtl, data-binary-ieee754, GLFW>0.3, stm, OpenGL<2.4, storable-tuple, syb
 
 --

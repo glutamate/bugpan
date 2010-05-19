@@ -376,9 +376,9 @@ downSample n = map (downSample' (n `div` 2))
 
 downSample' :: (Ord a, Bounded a, Num a, Storable a) => Int -> Signal a -> Signal a
 --downSample' :: Int -> Signal Double -> Signal Double
-downSample' n sig@(Signal t1 t2 dt _ _) =
+downSample' n sig@(Signal t1 t2 dt arr _) =
     let x ./. y = realToFrac x / realToFrac y
-        npw = round $ (t2-t1)/dt
+        npw = SV.length arr --round $ (t2-t1)/dt
         chunkSize = floor (npw./. n)
         nChunks =  ceiling (npw ./. chunkSize)
         newDt = (t2-t1)/realToFrac (nChunks*2)
