@@ -538,6 +538,20 @@ instance PlotWithGnuplot a => PlotWithGnuplot (AxisLabels a) where
       px <- multiPlot r x
       return $ map (\(r', pls) -> (r', mklabs++pls)) px
 
+data Pad a = Pad Double a
+           | PadX Double a
+           | PadY Double a
+
+instance (PlotWithGnuplot a) => PlotWithGnuplot (Pad a) where
+    multiPlot r (Pad p x) = multiPlot r $ PadX p $ PadY p x
+    multiPlot (Rect (x0, y0) (x1,y1)) (PadX p x) = do
+      let xc = (x1 - x0) / p
+      px <- multiPlot (Rect (x0+xc,y0) (x1-xc, y1) ) x
+      return $ px
+    multiPlot (Rect (x0, y0) (x1,y1)) (PadY p x) = do
+      let yc = (y1 - y0) / p
+      px <- multiPlot ( Rect (x0,y0+yc) (x1, y1-yc) ) x
+      return $ px
 
 instance (PlotWithGnuplot a, PlotWithGnuplot b) => PlotWithGnuplot (a :||: b) where
     multiPlot r (xs :||: ys) = multiPlot r (50% xs :|: 50% ys)
