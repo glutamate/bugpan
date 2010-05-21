@@ -20,6 +20,11 @@
 >    notdisp20 ~ length $ stdDurL 20
 >    lov ~ accushow $ tagRange approachLoV
 
+> close
+
+> inSessionsWhere (=="gregarious")//morph
+
+> plot $ Histo 20 $ realToFrac <$$> countDuring (contains spikes $ noMove) spikes
 
 > close 
 

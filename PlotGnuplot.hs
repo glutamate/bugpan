@@ -460,6 +460,8 @@ pointSize t = Points [PointSize t]
 pointType t = Points [PointType t]
 
 data ScaleBars a = ScaleBars (Double, Double) (Double,String) (Double,String) a
+                 | XScaleBar (Double, Double) (Double,String) Double a
+                 | YScaleBar (Double, Double) (Double,String) Double a
 
 data LineAt a = LineAt (Double, Double) (Double, Double) a
 data ArrowAt a = ArrowAt (Double, Double) (Double, Double) a
@@ -490,12 +492,15 @@ instance PlotWithGnuplot a => PlotWithGnuplot (ArrowAt a) where
 
 
 instance PlotWithGnuplot a => PlotWithGnuplot (ScaleBars a) where
-    multiPlot r (ScaleBars (x0,y0) (xsz, xtxt) (ysz, ytxt) x) = do
-      let xtxtpos = (x0+xsz/2, y0 - ysz/4)
-      let ytxtpos = (x0+xsz/2, y0 + ysz/2)                                                             
+    multiPlot r (ScaleBars p0 (xsz, xtxt) (ysz, ytxt) x) = do
+      multiPlot r $ XScaleBar p0 (xsz, xtxt) (ysz/4) $ YScaleBar p0 (ysz, ytxt) (xsz/4) x     
+    multiPlot r (XScaleBar (x0,y0) (xsz, xtxt) yo x) = do
+      let xtxtpos = (x0+xsz/2, y0 - yo/4)
+      multiPlot r $ LineAt (x0, y0) (x0+xsz, y0) 
+                  $ TextAt xtxtpos xtxt x
+    multiPlot r (YScaleBar (x0,y0)  (ysz, ytxt) yo x) = do
+      let ytxtpos = (x0+yo, y0 + ysz/2)                                                             
       multiPlot r $ LineAt (x0, y0) (x0, y0+ysz) 
-                  $ LineAt (x0, y0) (x0+xsz, y0) 
-                  $ TextAt xtxtpos xtxt 
                   $ TextAt ytxtpos ytxt x
 
 

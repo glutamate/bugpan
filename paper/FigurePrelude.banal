@@ -1,5 +1,5 @@
 >> eq = nearly 1e-8 
->> everywhere displaced = (not . eq 0)//displacedAngle
+>> everywhere displaced = (not . between (-0.002) (0.002))//displacedAngle
 >> everywhere notDisplaced = notDuring displaced running
 >> everywhere longStop = (eq $ -0.17)//zStopDist
 >> everywhere shortStop = (eq $ -0.50)//zStopDist
