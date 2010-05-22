@@ -115,11 +115,11 @@ sel f = map $ onSnd f
 --http://www.wolframalpha.com/input/?i=a*(1-Exp[(x-t0)/t1])*((1-p)*Exp[(x-t0)/t2]%2Bp*Exp[(x-t0)/t3])
 integralR :: [Double]-> Double -> Double
 integralR pars@[amp, t0, tau1, tau2, tau3, pslowpar ] t 
-    | t>t0 = integralR pars t0 + 0.02 * (t-t0)
+    | t>t0 = integralR pars t0 + 0.05 * (t-t0)
     | otherwise = let pslow = sigmoid pslowpar 
                       bigterm tau = tau * exp ((tau1*t - t0*(tau1+tau)) /(tau1*tau)) * 
                                     ((tau1+tau)* exp (t0/tau1) - tau1 * exp (t/tau1)) / (tau1+tau) 
-		  in amp * (pslow * bigterm tau3 - (pslow-1) * bigterm tau2) 
+		  in amp * (pslow * bigterm tau3 - (pslow-1) * bigterm tau2) + 0.05*t
 
 
 sigmoid x = 1/(1+exp (-x))
@@ -128,8 +128,8 @@ r :: Double -> Double -> Double -> Double -> Double -> Double -> Double -> Doubl
 r amp t0 tau1 tau2 tau3 pslowpar  t 
     | t < t0 = let x = (-t+t0) 
                    pslow = sigmoid pslowpar
-               in amp*(1-exp(-x/tau1))*((1-pslow)*exp(-x/tau2)+pslow*exp(-x/tau3))
-    | otherwise = 0.02
+               in amp*(1-exp(-x/tau1))*((1-pslow)*exp(-x/tau2)+pslow*exp(-x/tau3))+0.05
+    | otherwise = 0.05
 
 alpha tau t = if t<0.0 then 0.0 else (t/tau) * exp(1 - t/tau)
 

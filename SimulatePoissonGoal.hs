@@ -66,7 +66,7 @@ betapslowsd   = 0.001
 
 realTs nms = zip (words nms) $ repeat realT
 
-main = forM_ [0..9] $ \i -> do
+main = forM_ [0..3] $ \i -> do
  deleteSessionIfExists $ "poisson"++show i
  inApproxSession ("new:poisson"++show i) $ do          
     simspikes <- useFile "SimulatePoissonSpikes" 
@@ -88,7 +88,7 @@ main = forM_ [0..9] $ \i -> do
     betatau3 <- sampleQ $ gauss betatau3mean betatau3sd
     betapslow <- sampleQ $ gauss betapslowmean betapslowsd
 
-    ntrials <- sampleQ $ oneOf [50..200]
+    ntrials <- sampleQ $ oneOf [40..80]
 
     times ntrials $ do 
       --lov <- sampleQ $ oneOf [0.01, 0.015, 0.02, 0.025, 0.03, 0.035, 0.04, 0.045, 0.05]

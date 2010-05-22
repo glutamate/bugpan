@@ -32,11 +32,13 @@ main = do
     1 -> main0
     2 -> main1
     3 -> main2
+    4 -> main3
 
 help = do
   putStrLn "MCPlot {chain name}"
   putStrLn "MCPlot {chain name} {parameter name}"
   putStrLn "MCPlot {chain name} {parameter name} {parameter name}" 
+  putStrLn "MCPlot {chain name} {parameter name} {nthin} {nfiles}"
 
 
 main0 = do
@@ -72,6 +74,26 @@ main1 = do
           fmap concat $ forM fls $ \fl-> do
 --             fmap (map (!!parIdx) . thin 100) $ safeLoad (unparseFileName nm c fl)
             fmap (map (!!parIdx1)) $ safeLoad (unparseFileName nm c fl)
+
+  let initvs = map (take 1) (cs::[[Double]])
+  gnuplotOnScreen $ map (GnuplotBox . 
+                         AxisLabels "iteration" parnm1 . 
+                         Lines [] .  
+                         zip [(0::Double)..]) cs
+
+
+main3 = do
+  nm:parnm1:thinStr:fileNstr:_ <- getArgs
+  parstr <- readFile (nm++"_parnames.mcmc") 
+  let Just parIdx1 = fmap snd $ find ((==parnm1) . fst) $ zip (read parstr) [0..]
+  files <- getFiles nm
+  let chains = nub . fst $ unzip files
+  --mapM print files
+  cs <- forM chains $ \c-> do
+          let fls = take (read fileNstr) $ sort $ lookupMany c files
+          fmap concat $ forM fls $ \fl-> do
+--             fmap (map (!!parIdx) . thin 100) $ safeLoad (unparseFileName nm c fl)
+            fmap (map (!!parIdx1). thin (read thinStr)) $ safeLoad (unparseFileName nm c fl)
 
   let initvs = map (take 1) (cs::[[Double]])
   gnuplotOnScreen $ map (GnuplotBox . 

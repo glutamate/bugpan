@@ -103,6 +103,12 @@ samOp2 op (Samples xs) (Samples ys) = Samples $ zipWith op xs ys
 
 thinSamples n = Samples . thin n . unSamples
 
+samplesGaussian (Samples xs)= 
+                let (mu,sd) = runStat meanSDF xs
+                    gaussian = P.gauss mu sd
+                    dx = 6*sd/100
+                in  for [0..99] $ \i-> let x = i*dx+(mu-3*sd) in (x, gaussian $ i*dx+(mu-3*sd))
+
 instance Num a => Num (Samples a) where
     (+) = samOp2 (+)
     (*) = samOp2 (*)
@@ -120,6 +126,8 @@ onlyKeys ks = filter ((`elem` ks) . fst)
 
 mapScat :: [String] -> [Samples Double] -> CatScat
 mapScat nms sams = CatScat $ zip nms $ map unSamples sams
+
+
 
 
 
