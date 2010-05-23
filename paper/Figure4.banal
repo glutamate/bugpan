@@ -5,18 +5,23 @@
 >> chn = \xs -> map (onSnd (*100)) $ samplesGaussian xs -- histValues 20 $ unSamples xs
 >> lns = \pts -> Lines [LineType 1, LineWidth 2] pts
 
->> chains ../real 0 0 0 2000 3000 
+>> chains ../realthin 0 0 0 2000 3000 
 
-%>> yrep = unsafeYrep realoffthin 5000
+>> yrep = unsafeYrep realthin 50
 
 >> measNms = words "t_{peak} amp nspikes"
 
-%>> vardata = transpose $ sampleN 30 $ withinAndAcrossVariability 0.02 20 20 realoffthin
+>> vardata = transpose $ sampleN 30 $ withinAndAcrossVariability 0.02 20 20 realthin
 
 >> plot ("amp", chn $ ampbeta/amp)
 
 >> plot ("t0", chn $ t0beta/t0)
 
+>> plot ("tau2", chn $ tau2beta/tau2)
+
+>> plot ("tau3", chn $ tau3beta/tau3)
+
+>> plot ("pslow", chn $ pslowbeta/pslow)
 
 >> plot $ (YLabel "ignore me" $ (lns $ chn $ ampbeta/amp) :+: 
 >>        (lns $ shiftys 550 $ chn $ t0beta/t0) :+: 
@@ -24,9 +29,9 @@
 >>        (lns $ shiftys 1650 $ chn $ tau2beta/tau2) :+:
 >>        (lns $ shiftys 2200 $ chn $ tau3beta/tau3) :+:
 >>        (lns $ shiftys 2750 $ chn $ pslowbeta/pslow) :+:
->>        Lines [LineType 2, LineWidth 2, LineColor "black" ] [(0::Double, 0::Double), (0,3200)])
-%>>        (Points [PointType 0] $ Vplots [GnuplotBox $ YLabel "t_{peak}" $ sel fst3 yrep, 
-%>>          GnuplotBox $ YLabel "amp" $ sel snd3 yrep, GnuplotBox $ YLabel "nspikes" $sel trd3 yrep])
+>>        Lines [LineType 2, LineWidth 2, LineColor "black" ] [(0::Double, 0::Double), (0,3200)]) :||:
+>>        (Points [PointType 0] $ Vplots [GnuplotBox $ YLabel "t_{peak}" $ sel fst3 yrep, 
+>>          GnuplotBox $ YLabel "amp" $ sel snd3 yrep, GnuplotBox $ YLabel "nspikes" $sel trd3 yrep])
 
 %>>        (lns $ shiftxs 3500 $ chn $ zipWith (/) pslowbeta pslow) :+: 
 %>>        (lns $ shiftxs 400 $ chn $ zipWith (/) pslowbeta pslow) :+: 
@@ -58,9 +63,9 @@ coefficient of variation for rate function parameters.
 Note: simulated data!
 
 
-%> unlines $ map accushow $ unsafeRepPars realoffthin 10
+%> unlines $ map accushow $ unsafeRepPars realthin 10
 
-%> sigs = sampleN 10 $replicateRsigs realoffthin
+%> sigs = sampleN 10 $replicateRsigs realthin
 
 %> plot$ map snd sigs
 

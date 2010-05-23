@@ -13,7 +13,7 @@ import System.IO.Unsafe
 import Math.Probably.FoldingStats
 import Math.Probably.Distribution
 import ReactiveDistributions
-
+import Data.List
 type TPeak = Double
 type Amp = Double
 type NSpikes = Int
@@ -26,7 +26,9 @@ parsWith s = map (++s) basePars
 
 replicateAnimal :: [(String, [Double])] -> Sampler ([Double], [Double], [Double])
 replicateAnimal sams = do 
-  vs <- forM sams $ \(s,xs)-> fmap ((,) s) $ oneOf xs
+  let vsMatrix = transpose $ map snd sams
+  let nms = map fst sams
+  vs <- zip nms `fmap` oneOf vsMatrix --forM sams $ \(s,xs)-> fmap ((,) s) $ uncurry (gaussD) $ runStat meanSDF xs
   alpha <- mapM2 gauss (takeMany vs $ parsWith "") (takeMany vs $ parsWith "sd")
   beta <- mapM2 gauss (takeMany vs $ parsWith "beta") (takeMany vs $ parsWith "betasd")
   return (alpha, beta, (takeMany vs $ parsWith "trsd"))
@@ -91,9 +93,9 @@ replicateData sams = do
   (lov, rsig) <- replicateRsigs sams
   let [(tpeak, peakamp)]  = peak [rsig]
   nspikes <- length `fmap` sIPevSam rsig
-  if tpeak >3  --FUDGE!!!! 
-     then nspikes `seq` tpeak `seq` peakamp `seq` return (lov, (tpeak,peakamp, nspikes))
-     else replicateData sams
+  --if tpeak >3  --FUDGE!!!! 
+  nspikes `seq` tpeak `seq` peakamp `seq` return (lov, (tpeak,peakamp, nspikes))
+     --else replicateData sams
 
 unsafeYrep :: [(String, [Double])] -> Int -> [(LoV, (TPeak,Amp,NSpikes))]
 unsafeYrep mp n = unsafePerformIO $ fmap (take n) $ runSamplerIO $ replicateData mp
