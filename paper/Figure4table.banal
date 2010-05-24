@@ -18,7 +18,10 @@
 >    notdisp40 ~ length $ stdDurL 40
 >    notdisp10 ~ length $ stdDurL 10
 >    notdisp20 ~ length $ stdDurL 20
->    lov ~ accushow $ tagRange approachLoV
+>    monPosns ~ length $ monitorMoveTo
+
+%>    lov ~ accushow $ tagRange approachLoV
+
 
 > close
 

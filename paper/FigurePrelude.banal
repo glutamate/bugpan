@@ -1,4 +1,9 @@
 >> eq = nearly 1e-8 
+
+%>> everywhere zStopDist = []::[Duration Double]
+%>> everywhere monitorMoveTo = []::[Event Double]
+%>> everywhere morph = []::[Duration String]
+
 >> everywhere displaced = (not . between (-0.002) (0.002))//displacedAngle
 >> everywhere notDisplaced = notDuring displaced running
 >> everywhere longStop = (eq $ -0.17)//zStopDist

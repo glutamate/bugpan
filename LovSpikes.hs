@@ -297,6 +297,7 @@ main3 = do
   --let (fp, n1, n2) = SVB.toForeignPtr arr
   --SVB.withStartPtr arr $ \p n -> do
   --  print $ test_sum p $ fromIntegral n
+  print sess
 
   let segs = (distinct running) `within` (distinct sess)
   --let lh = undefined -- manyLikeH segs likelihoodH id (toU spikes)

@@ -289,10 +289,21 @@ main3 = do
            morph <- durations "morph" ""
            loom <- durations "displacedLoom" ()
            approachLoV <- extendDur 1 `fmap` durations "approachLoV" (1::Double)
-           displaced <- extendDur 1 `fmap` durations "displacedAngle" (1::Double)
+           displacedAngle <- extendDur 1 `fmap` durations "displacedAngle" (1::Double)
            sess <- sessionDur
+           monitorMoveTo <- events "monitorMoveTo" double
+           zStopDist <- durations "zStopDist" double
+           let eq = nearly 1e-8 
+               monitorPos = hold monitorMoveTo
+               displaced = (not . between (-0.002) (0.002))//displacedAngle
+               notDisplaced = notDuring displaced running
+               shortStop = (eq $ -0.50)//zStopDist
+               notShortNotDisplaced = notDuring shortStop notDisplaced    
+               noMove = notDuring ((not . eq 0)//monitorPos) notShortNotDisplaced
+               anySpeed = extendDur 1 $ contains spikes $ noMove
+
            whenMaybe (not . null $ (=="gregarious")//morph) $ 
-                     return (spikes, running, sess, approachLoV, displaced) 
+                     return (spikes, anySpeed, sess, approachLoV, displaced) 
 --  (spikes, running, sess) <- inApproxSession "poisson0" $ do
                                
   --print $ length $ spikes
@@ -302,13 +313,13 @@ main3 = do
   --SVB.withStartPtr arr $ \p n -> do
   --  print $ test_sum p $ fromIntegral n
 
-  let isDisplaced = (not . nearly 1e-8 0)//displaced
-  let notDisplaced = contains spikes$ notDuring isDisplaced running
+  --let isDisplaced = (not . nearly 1e-8 0)//displaced
+  --let notDisplaced = contains spikes$ notDuring isDisplaced running
 
   forM_ sess $ \s-> do print s
-                       print $ length $ during [s] notDisplaced
+                       print $ length $ during [s] running
 
-  let segs = (distinct notDisplaced) `within` (distinct sess)
+  let segs = (distinct running) `within` (distinct sess)
   --let lh = undefined -- manyLikeH segs likelihoodH id (toU spikes)
   let thespikes = chopData2 segs (U.fromList $ map fst spikes)
       thelovs = map (map $ snd . head) $ chopData2 segs $ (\lov-> log (lov / 0.02) / log 2) <$$> approachLoV
