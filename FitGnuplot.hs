@@ -1,4 +1,4 @@
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GADTs, BangPatterns #-}
 module FitGnuplot where
 
 import PlotGnuplot
@@ -16,6 +16,7 @@ import qualified Control.Exception as C
 import Data.Maybe
 import System.IO.Unsafe
 import Control.Spoon
+import Control.Monad
 
 data Fit = Fit String [(String, Double)] (Signal Double)
          
@@ -75,16 +76,29 @@ fitG1 f inits penalty sig@(Signal t1 t2 dt arr Eq) =
        square x = x*x
        predarr arg = SV.sample n (\i->f arg (realToFrac i*dt))
        g arg = penalty arg + (SV.foldl1' (+) $ SV.zipWith (\x y -> square(x-y)) (predarr arg) arr)
-       soln = spoon $ fst $  minimize NMSimplex2 2E-5 300 (map (/10) inits) g inits
-                                        -- (\e-> const (return Nothing) (e::C.SomeException))
+       {-soln = unsafePerformIO $ C.catch (return $ Just $ minimize NMSimplex2 2E-5 300 (map (/10) inits) g inits)
+                                        (\e-> const (return Nothing) (e::C.SomeException)) -}
+       soln =Just $ myMinimise 2E-5 300 (map (/10) inits) g inits
+                                        
        --soln = Just $ minimize NMSimplex2 1E-5 500 (map (/10) inits) g inits
    in case soln of
-        Just s -> Just ( s, Signal t1 t2 dt (predarr $  s) Eq, g $  s)
+        Just s -> Just (s, Signal t1 t2 dt (predarr $ s) Eq, g $ s)
         Nothing -> Nothing
 fitG1 f inits penalty sig = fitG1 f inits penalty $ forceSigEq sig
 
 fitS :: ([Double] -> Double -> Double) -> Sampler [Double] -> [Signal Double] -> [Signal Double]
 fitS f initsam sigs = map (snd3 . fitG' f initsam (const 0). forceSigEq) sigs
+
+myMinimise tol iters cv f init =
+    myMin (f init) init 0 
+          where myMin !curfit vals !iter 
+                    | curfit < tol = vals
+                    | iter > iters = vals
+                    | otherwise = let newvs = for (zip vals cv) $ \(v, cv) -> 
+                                                 head $ sampleN 1 $ gaussD v (v*cv)
+                                  in myMin (f newvs) newvs (iter+1)
+                  
+
 
 instance PlotWithGnuplot FitG where
     getGnuplotCmd (FitG f inits sig@(Signal t1 t2 dt _ _)) = 
