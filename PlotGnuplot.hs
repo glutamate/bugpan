@@ -280,7 +280,7 @@ gnuplotManyLatex opts nmbxs = do
   let start = "set datafile missing \"NaN\"\n"
   let h = optVal 'h' 480 opts
   let w = optVal 'w' 640 opts
-  let term = "set terminal epslatex color\n" -- size "++ show w++","++show h++" crop\n"
+  let term = "set terminal epslatex color font \",10\"\n" -- size "++ show w++","++show h++" crop\n"
   let cmds = start++term ++concatMap plotOne nmcmds
   execGP cmds
   forM_ nmcmds $ \(nm,cmd) -> do
@@ -467,10 +467,15 @@ data LineAt a = LineAt (Double, Double) (Double, Double) a
 data ArrowAt a = ArrowAt (Double, Double) (Double, Double) a
 
 data TextAt a = TextAt (Double, Double) String a
-
+              | TextAtLeft (Double, Double) String a
 instance PlotWithGnuplot a => PlotWithGnuplot (TextAt a) where
     multiPlot r (TextAt (x0,y0) s x) = do
       let mklab = TopLevelGnuplotCmd ("set label "++show s++" at first "++show x0++","++show y0++" center front") 
+                                     "unset label"
+      px <- multiPlot r x
+      return $ map (\(r', pls) -> (r', mklab:pls)) px
+    multiPlot r (TextAtLeft (x0,y0) s x) = do
+      let mklab = TopLevelGnuplotCmd ("set label "++show s++" at first "++show x0++","++show y0++" left front") 
                                      "unset label"
       px <- multiPlot r x
       return $ map (\(r', pls) -> (r', mklab:pls)) px
@@ -493,9 +498,9 @@ instance PlotWithGnuplot a => PlotWithGnuplot (ArrowAt a) where
 
 instance PlotWithGnuplot a => PlotWithGnuplot (ScaleBars a) where
     multiPlot r (ScaleBars p0 (xsz, xtxt) (ysz, ytxt) x) = do
-      multiPlot r $ XScaleBar p0 (xsz, xtxt) (ysz/4) $ YScaleBar p0 (ysz, ytxt) (xsz/4) x     
+      multiPlot r $ XScaleBar p0 (xsz, xtxt) (ysz/4) $ YScaleBar p0 (ysz, ytxt) (xsz/2) x     
     multiPlot r (XScaleBar (x0,y0) (xsz, xtxt) yo x) = do
-      let xtxtpos = (x0+xsz/2, y0 - yo/4)
+      let xtxtpos = (x0+xsz/2, y0 - yo)
       multiPlot r $ LineAt (x0, y0) (x0+xsz, y0) 
                   $ TextAt xtxtpos xtxt x
     multiPlot r (YScaleBar (x0,y0)  (ysz, ytxt) yo x) = do
@@ -503,6 +508,24 @@ instance PlotWithGnuplot a => PlotWithGnuplot (ScaleBars a) where
       multiPlot r $ LineAt (x0, y0) (x0, y0+ysz) 
                   $ TextAt ytxtpos ytxt x
 
+data TicFont a = TicFont String a
+
+data CanvasScale a = CanvasScale Double Double a
+
+instance PlotWithGnuplot a => PlotWithGnuplot (CanvasScale a) where
+    multiPlot r (CanvasScale xsz ysz x) = do
+      let mklab = TopLevelGnuplotCmd ("set size "++show xsz++","++show ysz)
+                                     ""
+      px <- multiPlot r x
+      return $ map (\(r', pls) -> (r', mklab:pls)) px
+
+
+instance PlotWithGnuplot a => PlotWithGnuplot (TicFont a) where
+    multiPlot r (TicFont str x) = do
+      let mklab = TopLevelGnuplotCmd ("set tics font "++show str)
+                                     ""
+      px <- multiPlot r x
+      return $ map (\(r', pls) -> (r', mklab:pls)) px
 
 
 instance PlotWithGnuplot a => PlotWithGnuplot (SubLabel a) where
@@ -544,18 +567,19 @@ instance PlotWithGnuplot a => PlotWithGnuplot (AxisLabels a) where
       return $ map (\(r', pls) -> (r', mklabs++pls)) px
 
 data Pad a = Pad Double a
-           | PadX Double a
-           | PadY Double a
+           | PadX Double Double a
+           | PadY Double Double a
+
 
 instance (PlotWithGnuplot a) => PlotWithGnuplot (Pad a) where
-    multiPlot r (Pad p x) = multiPlot r $ PadX p $ PadY p x
-    multiPlot (Rect (x0, y0) (x1,y1)) (PadX p x) = do
-      let xc = (x1 - x0) / p
-      px <- multiPlot (Rect (x0+xc,y0) (x1-xc, y1) ) x
+    multiPlot r (Pad p x) = multiPlot r $ PadX p p $ PadY p p x
+    multiPlot (Rect (x0, y0) (x1,y1)) (PadX p1 p2 x) = do
+      let xw = (x1 - x0)
+      px <- multiPlot (Rect (x0+xw*p1,y0) (x1-xw*p2, y1) ) x
       return $ px
-    multiPlot (Rect (x0, y0) (x1,y1)) (PadY p x) = do
-      let yc = (y1 - y0) / p
-      px <- multiPlot ( Rect (x0,y0+yc) (x1, y1-yc) ) x
+    multiPlot (Rect (x0, y0) (x1,y1)) (PadY p1 p2 x) = do
+      let yh = (y1 - y0) 
+      px <- multiPlot ( Rect (x0,y0+yh*p1) (x1, y1-yh*p2) ) x
       return $ px
 
 instance (PlotWithGnuplot a, PlotWithGnuplot b) => PlotWithGnuplot (a :||: b) where

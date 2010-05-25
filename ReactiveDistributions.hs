@@ -10,6 +10,11 @@ import NewSignal
 import Numeric.LinearAlgebra
 import TNUtils
 import Data.Packed.Vector
+import QueryTypes
+import Database
+import Data.Maybe
+
+import Control.Monad
 import qualified Data.StorableVector as SV
 
 sigToVector :: Signal Double -> Vector Double
@@ -62,8 +67,38 @@ instance Distribution RandomSignalFast where
     estimator = undefined -}
 
 
-data InhomogeneousPoisson = InhomogeneousPoisson (Signal Double)
+data InhomogeneousPoisson = InhomogeneousPoisson (Signal Double) (Signal Double) 
+
 instance Distribution InhomogeneousPoisson where
     type Elem InhomogeneousPoisson = [(Double,())]
-    pdf (InhomogeneousPoisson rateSig) _ = 1
+    pdf (InhomogeneousPoisson rateSig intRate ) evs = 
+        (sum $ map (log . (rateSig `readSig`) . fst) evs) -(intRate`readSig`(sigT1 rateSig) - intRate`readSig`(sigT2 rateSig))
+
+
+instance ProperDistribution InhomogeneousPoisson where
+    sampler (InhomogeneousPoisson rateSig _) = sIPevSam rateSig
+    estimator = undefined
+
+
+simulateInhomogeneousPoisson ::[Duration a] -> (a -> Signal Double) -> S.Sampler [Event ()]
+simulateInhomogeneousPoisson durpars condRate = 
+    let bigsam = fmap concat $ forM durpars $ \((t1d, t2d),p)-> do
+                    evs <- sIPevSam $ condRate p
+                    return $ map (onFst (+t1d)) evs
+    in  bigsam
+
+sIPevSam :: Signal Double -> S.Sampler [Event ()]
+sIPevSam rate@(Signal t1 t2 dt _ _) = do
+{-  fmap catMaybes $ forM (sigTimePoints rate) $ \t-> do
+                          u <- S.unitSample
+                          if u<(rate `readSig` t) * dt
+                             then return $ Just (t,())
+                             else return Nothing -}
+  let isGo t = do u <- S.unitSample
+                  return $ u<(rate `readSig` t) * dt
+  fmap (map $ flip (,) ()) $ filterM isGo (sigTimePoints rate)
+
+--foo = filterM 
+
+test = simulateInhomogeneousPoisson [((10,13), 11), ((20,23), 20)] (\x-> x*sineSig)
 

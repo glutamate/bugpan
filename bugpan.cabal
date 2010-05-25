@@ -23,7 +23,7 @@ Library
    if flag(nodaq)
      ghc-options:        -DNODAQ
    other-modules:    Parse, Types,Eval, Traverse, Transform, PrettyPrint, BNFC.LexBugpan, BNFC.ParBugpan, BNFC.SkelBugpan,BNFC.PrintBugpan,BNFC.LayoutBugpan ,BNFC.ErrM,UnitTesting, BNFC.AbsBugpan,BuiltIn, TypeCheck, CompiledSrcsSinks
-   Build-depends:    tnutils, probably, process, directory, regex-posix, random, base, bytestring, binary, old-time, storablevector>0.2.4, mtl, data-binary-ieee754, mersenne-random, storable-tuple, hmatrix, vector
+   Build-depends:    tnutils, probably, process, directory, regex-posix, random, base, bytestring, binary, old-time, storablevector>0.2.4, mtl, data-binary-ieee754, mersenne-random, storable-tuple, hmatrix, vector, spoon
 
 
 Executable bugsess   

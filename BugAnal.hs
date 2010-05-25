@@ -54,7 +54,7 @@ ensurePostfix ext s | ext `isSuffixOf` s = s
 
 mkAnal :: [String] -> CodeWriterT IO ()
 mkAnal [] = return ()
-mkAnal (('%':_):ss) = mkAnal ss
+mkAnal (cl@('%':_):ss) = tellPrint cl >> mkAnal ss
 mkAnal ((">"):ss) = mkAnal ss
 mkAnal (('>':q):ss) = 
     let writeQ = head q /= '>'
