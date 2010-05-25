@@ -15,6 +15,7 @@ import qualified Data.StorableVector as SV
 import qualified Control.Exception as C
 import Data.Maybe
 import System.IO.Unsafe
+import Control.Spoon
 
 data Fit = Fit String [(String, Double)] (Signal Double)
          
@@ -74,11 +75,11 @@ fitG1 f inits penalty sig@(Signal t1 t2 dt arr Eq) =
        square x = x*x
        predarr arg = SV.sample n (\i->f arg (realToFrac i*dt))
        g arg = penalty arg + (SV.foldl1' (+) $ SV.zipWith (\x y -> square(x-y)) (predarr arg) arr)
-       soln = unsafePerformIO $ C.catch (return $ Just $ minimize NMSimplex2 2E-5 300 (map (/10) inits) g inits)
-                                        (\e-> const (return Nothing) (e::C.SomeException))
+       soln = spoon $ fst $  minimize NMSimplex2 2E-5 300 (map (/10) inits) g inits
+                                        -- (\e-> const (return Nothing) (e::C.SomeException))
        --soln = Just $ minimize NMSimplex2 1E-5 500 (map (/10) inits) g inits
    in case soln of
-        Just s -> Just (fst s, Signal t1 t2 dt (predarr $ fst s) Eq, g $ fst s)
+        Just s -> Just ( s, Signal t1 t2 dt (predarr $  s) Eq, g $  s)
         Nothing -> Nothing
 fitG1 f inits penalty sig = fitG1 f inits penalty $ forceSigEq sig
 
