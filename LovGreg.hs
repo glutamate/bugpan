@@ -57,9 +57,9 @@ type BigPar = ((PopMeansSds, TrialSDs, BetaMeansSds), SessMeans, SessBetas, AllT
 
 type TheData = [[(U.Vector Double, Double)]]
 
---[amp, t0, tau1, tau2, tau3, pslow, baseline]
-fixPars = [210, 4.9, 6.83e-2, 0.27,1,0.15]
-fixPopSds = [10, 0.01, 6.83e-3, 0.02, 0.1, 0.02]
+--[amp, t0, tau1, tau2,amp2 ]
+fixPars = [210, 4.9, 6.83e-2, 0.27,1]
+fixPopSds = [10, 0.01, 6.83e-3, 0.02, 0.1]
 
 allMul x = map (x*)
 
@@ -126,9 +126,9 @@ p_pop _ sds = sum $ map ling sds
 ling = const 1 --log . invGammaD 0.001 0.001
 
 
-likelihoodH1 spikes pars@[amp, t0, tau1, tau2, tau3, pslow] =
+likelihoodH1 spikes pars@[amp, t0, tau1, tau2, amp2] =
 --    likelihood (realToFrac rate) (realToFrac tau) (realToFrac baseline) (realToFrac t0) 
-    (U.sum $ (U.map (log. r amp t0 tau1 tau2 tau3 pslow ) spikes))- (integralR pars 6 - integralR pars 0)
+    (U.sum $ (U.map (log. r amp t0 tau1 tau2 amp2  ) spikes))- (integralR pars 6 - integralR pars 0)
 
 gibbsSF ::TheData -> StochFun BigPar BigPar 
 gibbsSF thedata = condSampler (up_trial thedata) >>> condSampler (up_session thedata) >>> condSampler (up_pop thedata )
@@ -141,9 +141,9 @@ gibbsSF thedata = condSampler (up_trial thedata) >>> condSampler (up_session the
 -- 2. fit
 
 trialParSampler = uniform 0.1 1 >>= \t1 -> 
-                  return [100, 5, t1, 0.5, 2, -2]
+                  return [100, 5, t1, 0.5, 2]
 
-penalty_tau1 [amp, t0, tau1, tau2, tau3, pslow] 
+penalty_tau1 [amp, t0, tau1, tau2, tau3] 
     | tau1 < 1e-2 = 5000000*abs (1e-2 - tau1)
     | otherwise = 0
             
@@ -153,7 +153,7 @@ penalty_pslow [amp, t0, tau1, tau2, tau3, pslow]
     | otherwise = 0
 
 
-penalty p = penalty_tau1 p -- + penalty_pslow p                                 
+penalty p = 0 -- penalty_tau1 p -- + penalty_pslow p                                 
 
 mlTrialPars :: [[(U.Vector Double, Double)]] -> [[(TrialPar, Double)]]
 mlTrialPars thedata = for2 thedata f
@@ -255,13 +255,13 @@ ofInterest ((popmeanssds, trialsds, betas), sessmeans, sessbetas, trialPars) =
 
 -- ++popsds -- ++trialsds
 
-parNames = words $ "amp t0 tau1 tau2 tau3 pslow "++
-                   "ampsd t0sd tau1sd tau2sd tau3sd pslowsd "++
-                   "ampbeta t0beta tau1beta tau2beta tau3beta pslowbeta "++
-                   "ampbetasd t0betasd tau1betasd tau2betasd tau3betasd pslowbetasd "++
-                   "amptrsd t0trsd tau1trsd tau2trsd tau3trsd pslowtrsd "++
-                   "amps1mean t0s1mean tau1s1mean tau2s1mean tau3s1mean pslows1mean "++ 
-                   "amps1tr1 t0s1tr1 tau1s1tr1 tau2s1tr1 tau3s1tr1 pslows1tr1"
+parNames = words $ "amp t0 tau1 tau2 amp2 "++
+                   "ampsd t0sd tau1sd tau2sd amp2sd "++
+                   "ampbeta t0beta tau1beta tau2beta amp2beta "++
+                   "ampbetasd t0betasd tau1betasd tau2betasd amp2betasd "++
+                   "amptrsd t0trsd tau1trsd tau2trsd amp2trsd "++
+                   "amps1mean t0s1mean tau1s1mean tau2s1mean amp2s1mean "++ 
+                   "amps1tr1 t0s1tr1 tau1s1tr1 tau2s1tr1 amp2s1tr1 "
 
 
 

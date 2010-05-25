@@ -70,19 +70,22 @@ fitG' f initsam penalty sig@(Signal t1 t2 dt arr Eq) =
 fitG' _ _ _ (ConstSig _) = error $ "fitG': constsig"
 fitG' f inits penalty sig = fitG' f inits penalty $ forceSigEq sig
 
+--foldl' :: Storable a => (b -> a -> b) -> b -> Vector a -> b
+
 fitG1 :: ([Double] -> Double -> Double) -> [Double] -> ([Double] -> Double) -> Signal Double -> Maybe ([Double], Signal Double, Double)
 fitG1 f inits penalty sig@(Signal t1 t2 dt arr Eq) = 
    let n = SV.length arr 
        square x = x*x
        predarr arg = SV.sample n (\i->f arg (realToFrac i*dt))
-       g arg = penalty arg + (SV.foldl1' (+) $ SV.zipWith (\x y -> square(x-y)) (predarr arg) arr)
-       {-soln = unsafePerformIO $ C.catch (return $ Just $ minimize NMSimplex2 2E-5 300 (map (/10) inits) g inits)
-                                        (\e-> const (return Nothing) (e::C.SomeException)) -}
-       soln =Just $ myMinimise 2E-5 300 (map (/10) inits) g inits
+       summer arg (!i,!sm) v = (i+1, sm + square (f arg (realToFrac i*dt) - v))
+       g arg = penalty arg + (snd $ SV.foldl' (summer arg) (0,0) arr)
+       soln = unsafePerformIO $ C.catch (return $ Just $ minimize NMSimplex2 2E-5 300 (map (/10) inits) g inits)
+                                        (\e-> const (return Nothing) (e::C.SomeException)) 
+       --soln =Just $ myMinimise 2E-5 300 (map (/10) inits) g inits
                                         
        --soln = Just $ minimize NMSimplex2 1E-5 500 (map (/10) inits) g inits
    in case soln of
-        Just s -> Just (s, Signal t1 t2 dt (predarr $ s) Eq, g $ s)
+        Just s -> Just (fst s, Signal t1 t2 dt (predarr $ fst s) Eq, g $ fst s)
         Nothing -> Nothing
 fitG1 f inits penalty sig = fitG1 f inits penalty $ forceSigEq sig
 
