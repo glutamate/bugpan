@@ -278,6 +278,15 @@ evalSigLimits = mapD eSSA
             return (Let nm (Forget (Const clim) e))
           eSSA e = return e 
 
+substInferredTypesInPatterns :: TravM ()
+substInferredTypesInPatterns = mapD sITIP
+    where sITIP (Let (PatVar nm UnspecifiedT) e) = do
+                 ds <- decls `fmap` get
+                 case [t | DeclareType nm' t <- ds, nm == nm' ] of
+                    t:_ -> return $ Let (PatVar nm t) e
+                    [] -> return $ Let (PatVar nm UnspecifiedT) e
+          sITIP d = return d
+
 removePatDerivs :: TravM ()
 removePatDerivs = mapD rTLPD >>  mapDE (mapEM rPD)
     where rTLPD (Let p@(PatDeriv _) e) =
@@ -500,6 +509,7 @@ ack str = (traceM str >>)
 
 transforms =   [(typeCheck, "typeCheck")
                 ,(removePatDerivs, "removePatDerivs")
+                ,(substInferredTypesInPatterns, "substInferredTypesInPatterns")
                 ,(connectsLast, "connectsLast")
                 ,(floatConnectedSignals, "floatConnectedSignals")
                 ,(whileChanges substHasSigs, "substHasSigs")

@@ -1,0 +1,11 @@
+module Test where
+
+alpha tau t = if t<0.0 then 0.0 else (t/tau)*exp (1-t/tau)
+
+x = {: 1 :}
+
+y = {: 2 + <: x :> :}
+
+D w = 4 fby y
+
+w *> store "" 
