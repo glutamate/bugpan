@@ -105,7 +105,7 @@ queryManyGnuBoxLit gpbxs opts = do
                                        --putStrLn $ "\\input{"++fnm++"}"
                                        return $ fnm
       gnuplotManyLatex opts $ zip fnms gpbxs 
-      return $ unlines $ map (\fn->"\\input{"++fn++"}") fnms
+      return $ unlines $ map (\fn->"\\includegraphics{"++fn++"}") fnms
 
 
 

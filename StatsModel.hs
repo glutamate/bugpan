@@ -36,6 +36,7 @@ import qualified Data.Binary as B
 import System.Directory
 import Text.Regex.Posix
 import Data.Maybe
+import Control.Monad.Trans
 --import qualified Data.Map as Map
 
 
@@ -76,17 +77,17 @@ takeRandomly :: Int -> [a] -> IO [a]
 takeRandomly n xs = do
   fmap (take n) $ runSamplerIO $ oneOf xs
 
-loadChainMap :: String -> Int -> (Int,Int) -> Int -> Int -> IO [(String,[Double])]
+loadChainMap :: MonadIO m => String -> Int -> (Int,Int) -> Int -> Int -> m [(String,[Double])]
 loadChainMap nm cnum (flo, fhi) takeN dropN = do
-  parstrs <- fmap read $ readFile (nm++"_parnames.mcmc") 
+  parstrs <- liftIO $ fmap read $ readFile (nm++"_parnames.mcmc") 
   --let Just parIdx = fmap snd $ find ((==parnm) . fst) $ zip (read parstr) [0..]
-  xs <- forM [flo..fhi] $ \fnum-> do 
+  xs <- liftIO $ forM [flo..fhi] $ \fnum-> do 
           let file =(nm++"_chain"++show cnum++"_file"++show fnum++".mcmc")
 --          putStr $ file++" "
           ifM (doesFileExist file ) 
               (safeLoad file)             
               (return [])
-  xss <- runSamplerIO $ mapM (nOf takeN . drop dropN) $ transpose $ concat xs
+  xss <- liftIO$ runSamplerIO $ mapM (nOf takeN . drop dropN) $ transpose $ concat xs
   return $ zip parstrs $ head xss
       where nOf n lst = sequence $ replicate n $ oneOf lst
             joinMap k mv = fmap ((,) k) mv 

@@ -27,7 +27,7 @@ saveEnv sessBase tmax dt ((nm, v):rest) | "session" `isPrefixOf` nm = do
   let sessNm = sessBase++drop 7 nm
   deleteSessionIfExists sessNm
   inApproxSession ("new:"++sessBase++drop 7 nm) $ saveSess tmax dt v
-  return ()
+  saveEnv sessBase tmax dt rest
 saveEnv sB tmax dt (_:rest) = saveEnv sB tmax dt rest
 
 saveSess :: Double -> Double -> V -> QueryM ()

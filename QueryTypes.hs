@@ -96,6 +96,7 @@ getSessionName = do Session bdir _ <- getSession
 
 openReplies = modify (\s-> s { shArgs = "-o" : shArgs s })
 plotSize w h = modify (\s-> s { shArgs = ("-h"++show h) : ("-w"++show w): shArgs s })
+fontSize f= modify (\s-> s { shArgs = ("-f"++show f) : shArgs s })
 
 setForLiterate = modify (\s-> s { forLiterate = True})
 setForTable = modify (\s-> s { forTable = True})
@@ -252,11 +253,11 @@ ask qx = do
   liftIO $ putStrLn $ qos
   return qos
 
-askForLiterate :: (QueryResult a, MonadIO m) => a ->  m ()
+--askForLiterate :: (QueryResult a, MonadIO m) => a ->  m ()
 askForLiterate qx = do
 --  modify (\s-> s { shArgs = "-litlatex" : shArgs s })
 --  x <- qResThroughSession qx
-  args <- liftIO $ getArgs -- shArgs `fmap` get
+  args <- shArgs `fmap` get
   str <- liftIO $ qReply qx ("-litlatex" : args)
   --let str = unlines $ [s | QString s <- qos ]
   --liftIO $ putStr "askForLiterate"

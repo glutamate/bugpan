@@ -314,6 +314,9 @@ procQ writeQ s
     | s =~ "^\\s*plotSize\\s*(.+)x(.+)" = 
            let [[all, h, w]] = (s =~ "^\\s*plotSize\\s*(.+)x(.+)")::[[String]]
            in tell $ "plotSize "++h++" "++w
+    | s =~ "^\\s*fontSize\\s*(.+)" = 
+           let [[all, h]] = (s =~ "^\\s*fontSize\\s*(.+)")::[[String]]
+           in tell $ "fontSize "++h
     | s =~ "^\\s*close\\s*" = do tell "return ()"
                                  indentAbs $ 3
     | s =~ "^\\s*break\\s*" = tellPrint "\\pagebreak"

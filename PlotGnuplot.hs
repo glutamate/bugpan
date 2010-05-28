@@ -280,14 +280,15 @@ gnuplotManyLatex opts nmbxs = do
   let start = "set datafile missing \"NaN\"\n"
   let h = optVal 'h' 480 opts
   let w = optVal 'w' 640 opts
-  let term = "set terminal epslatex color font \",10\"\n" -- size "++ show w++","++show h++" crop\n"
+  let fs = optVal 'f' 16 opts
+  let term = "set terminal postscript eps enhanced color \"Helvetica\" "++show fs++"\n" -- size "++ show w++","++show h++" crop\n"
   let cmds = start++term ++concatMap plotOne nmcmds
   execGP cmds
   forM_ nmcmds $ \(nm,cmd) -> do
     system $ "epstopdf "++nm++".eps"
     cleanupCmds $ map snd cmd
   return ()
-    where plotOne (fp, plines) = "set output '"++fp++".tex'\n"++
+    where plotOne (fp, plines) = "set output '"++fp++".eps'\n"++
                                  (showMultiPlot plines)
  
 
