@@ -360,8 +360,20 @@ last2 [x] = [x]
 last2 [x,y] = [x,y]
 last2 (x:xs) = last2 xs -}
 
-ppOfInterest rvs = "ofInterest allPars = ["++ intercalate ", " ["unP $ "++vnm++" allPars" | RVar vnm _ _ <- rvs]++
-                   "]\nparNames = "++show [vnm | RVar vnm _ _ <- rvs]
+nmsFromRvars rvs = [vnm | RVar vnm _ _ <- rvs]
+
+ppOfInterest rvs =
+    let tlvars = nmsFromRvars rvs
+        tlvarsPath = map (\vnm-> "unP $ "++vnm++" allPars") tlvars
+        sessvarNms = filter (not . hasExclaim) $ nmsFromRvars $ concat $ [svars | InEvery "session" svars <- rvs]
+        trialvarNms = filter (not . hasExclaim) $ nmsFromRvars $ concat $ [trvars | InEvery "session" svars <- rvs, 
+                                                        InEvery "running" trvars <- svars]
+        sessvarsPath = map (\vnm-> "unP $ "++vnm++" $ head $ session allPars") sessvarNms
+        trialvarsPath = map (\vnm-> "unP $ "++vnm++" $ head $ running $ head $ session allPars") trialvarNms
+        withSessId = map (++"s0")
+        withTrId = map (++"s0tr0")
+    in "ofInterest allPars = ["++ intercalate ", " (tlvarsPath++sessvarsPath++trialvarsPath)++
+                   "]\nparNames = "++show (tlvars++withSessId sessvarNms++withTrId trialvarNms)
 
 childrenOf :: String -> [RVar] -> [[String]]
 childrenOf nm rvs = 
