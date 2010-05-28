@@ -248,7 +248,7 @@ loadData filtr allrvs =
             ind2++"running <- durations \"running\" ()",
             ind2++"modNm <- durations \"moduleName\" \"foo\"",
             ind2++"sess <- sessionDur",
-            ind2++"liftIO $ putStrLn $ snd $ head sess"]++
+            ind2++"io $ putStrLn $ snd $ head sess"]++
    (concatMap showGetter $ allExclaim allrvs)++
    unlines [ind2++"let runners = for running $ \\r-> "++getRunner,
             ind2++"let sessVal = Parsession "++

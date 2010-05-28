@@ -14,10 +14,12 @@ amp2sd ~ unknown 0.5 -}
 
 tau1m ~ unknown 0.06
 tau2m ~ unknown 0.2
+tau3m ~ unknown 2
 tausd ~ unknown 0.01
 
 amp1m ~ unknown 25
 amp2m ~ unknown 5
+amp3m ~ unknown 2
 ampsd ~ unknown 0.5
 
 offm ~ unknown 95
@@ -34,9 +36,11 @@ _tmax = 2
 inevery t <- session 7 where
   amp1sm ~ N amp1m ampsd
   amp2sm ~ N amp2m ampsd
+  amp3sm ~ N amp3m ampsd
 
   tau1sm ~ N tau1m tausd
   tau2sm ~ N tau2m tausd
+  tau3sm ~ N tau3m tausd
 
   offsm ~ N offm offsd
 
@@ -46,11 +50,15 @@ inevery t <- session 7 where
 
      tau2 ~ N tau2sm tautrsd
      amp2 ~ N amp2sm amptrsd
+
+     tau3 ~ N tau3sm tautrsd
+     amp3 ~ N amp3sm amptrsd
+
      offset ~ N offsm offtrsd
 
      t0 ~ uniform 0.1 0.12
 
-     waveform = {: offset - amp1 * alpha tau1 (<:seconds:>-t0) - amp2 * alpha tau2 (<:seconds:>-t0) :} 
+     waveform = {: offset - amp1 * alpha tau1 (<:seconds:>-t0) - amp2 * alpha tau2 (<:seconds:>-t0) - amp3 * alpha tau3 (<:seconds:>-t0) :} 
      angle! ~ RandomSignal waveform noise
 
    

@@ -12,6 +12,7 @@ import TNUtils
 import System.IO.Unsafe
 import Math.Probably.FoldingStats
 import Math.Probably.Distribution
+import Math.Probably.GlobalRandoms
 import ReactiveDistributions
 import Data.List
 type TPeak = Double
@@ -162,3 +163,24 @@ janSampler tau2mean = do
   let waveform t = offset - amp1 * alpha tau1 (t-(0.1+t0')) - amp2 * alpha tau2 (t-(0.1+t0'))
   let sig = fillSig 0 2 0.02 waveform
   sampler $ RandomSignal sig noise
+
+{-janFig = do 
+  mp <- loadChainMap "jan" 0 (0,0) 200 200
+  let sigs  = sampleN 100 $ janParSampler mp
+  
+-}
+janParSampler :: [(String, [Double])] -> Sampler (Signal Double)
+janParSampler sams = do
+  let vsMatrix = transpose $ map snd sams
+  let nms = map fst sams
+  vs <- zip nms `fmap` oneOf vsMatrix
+  let wfpars = map (vs!!!) $ words "offsets0tr0 amp1s0tr0 tau1s0tr0 amp2s0tr0 tau2s0tr0 amp3s0tr0 tau3s0tr0 t0s0tr0"
+  let wfsig= fillSig 0 10 0.002 $ wf wfpars 
+
+  return $ wfsig
+  
+  
+--first is (locally) 090319
+
+
+wf [off, amp1, tau1, amp2, tau2, amp3, tau3, t0] t = off - amp1*alpha tau1 (t-t0) - amp2 * alpha tau2 (t-t0) - amp3 * alpha tau3 (t-t0)
