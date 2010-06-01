@@ -4,9 +4,9 @@
 >> pts = \c ty sz -> Points [PointType ty, PointSize sz, LineColor c]  
 
 
->> chains ../janReal3thin 0 0 0 500 300
+>> chains janRealthin 0 0 0 500 300
 
->> predsigs = sampleN 100 $ janParSampler janReal3thin
+>> predsigs = sampleN 100 $ janParSampler janRealthin
 
 > plot $ (during [((0,0.5),())] predsigs) :+: pts "black" 4 2 (during [((0,0.5),())] [head angle])
 
@@ -14,10 +14,13 @@
 
 > plot $ (during [((0,6),())] predsigs) :+: lns "black" 2 (during [((0,6),())] [head angle])
 
+%> plot $ FunSeg 0 2 $ expStep 0.2 20
+
+> plot $ FunSeg 0 2 $ wf [88.6,24.4,0.06,3.3,0.2, 0.114, 1]
 
 > plot $ [head angle]
 
-> plot GnuplotTest
+%> plot GnuplotTest
 
 >> waveform = \t -> negate $ alpha 0.06 (t-0.1)
 
