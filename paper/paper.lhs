@@ -602,13 +602,20 @@ simulation of synaptic integration in a simple model neuron.
 
 We present an entirely new approach to executing and communicating
 science. Our experiments, including the complex stimuli used to
-perturb external systems, are concisely and unambiguously defined  ...
+perturb external systems, are concisely and unambiguously defined in a
+formal and referentially transparent language. This makes it possible
+to ... We can quibble about whether these definitions are simpler or
+clearer than a definition written in plain English or are easier to
+produce than clicking buttons in a graphical user interface. But they
+are certainly more unambiguous and powerful than either of those
+alternatives. ...
 
-We can quibble about whether these definitions are simpler or clearer
-than a definition written in plain English. ...
-
-Secondly, the evidence gathered ... same types for stimulation and
-observation. ... 
+To our knowledge this is the first explicit use of type theory to
+classify evidence in a experimental scientific field. 
+1. parametric
+2. same types for stimulation and observation.
+3. same for other fields
+4. more complicated aspect of type theory necessary for other fields?
 
 What exactly is the thing that is described in this paper? First of
 all, it is a very practical tool: a collection of computer programs
@@ -645,11 +652,16 @@ signals, but indexed by frequency rather than time. The most
 appropriate manner of extending our framework to include
 frequency-indexed and even spatial information must remain a topic for
 further research. On the other hand, the lack of linear algebra,
-... in our examples is \emph{not} to be taken as a limitation of our
-theory; representing these analyses in a mathematical framework is a
-solved problem and is not the topic of this paper.
+higher order statistics, information theoretic analysis etc. etc. in
+our examples is \emph{not} to be taken as a limitation of our theory;
+representing these analyses in a mathematical framework is a solved
+problem and is not the topic of this paper.
 
 \subsection*{Statistics}
+
+We have used the word ``evidence'' to mean direct observations and
+calculated values from experiments. In another sense of the word,
+evidence has information relevant for a statistical model.
 
 -evidence only if for a particular model. 
 -haven't said anything
