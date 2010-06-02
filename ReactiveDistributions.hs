@@ -45,15 +45,36 @@ data RandomSignalFast = RandomSignalFast (Double->Double) Double
 
 instance Distribution RandomSignalFast where
     type Elem RandomSignalFast = Signal Double
-    pdf (RandomSignalFast meansigf noise) (Signal t1 t2 dt obsArr Eq)= 
+    --pdf (RandomSignalFast meansigf noise) (Signal t1 t2 dt obsArr Eq)= 
       {-let k = round $ tmax/dt 
           mu = buildVector k $ meansigf . (*dt) . realToFrac
           sigma = (realToFrac noise) * ident k
       in \Signal _ _ _ arr Eq) -> sum P.multiNormal mu sigma $ sigToVector $ forceSigEq obsSig  -}
-        let tmax = t2 - t1
-            f i obsVal = P.logGaussD (meansigf . (*dt) . realToFrac $ i) noise obsVal
-            facc (!sm, !i) obsVal = (sm+P.logGaussD (meansigf . (*dt) . realToFrac $ i) noise obsVal, i+1)
+    pdf = altPdfRSF1 -- longPdfRSF
+
+altPdfRSF1 :: RandomSignalFast -> Signal Double -> Double
+altPdfRSF1 (RandomSignalFast meansigf noise) (Signal t1 t2 dt obsArr Eq)= 
+        let f i obsVal = P.logGaussD (meansigf . (*dt) . realToFrac $ i) noise obsVal
         in SV.foldl1' (+) $ SV.mapIndexed f obsArr
+
+altPdfRSF :: RandomSignalFast -> Signal Double -> Double
+altPdfRSF (RandomSignalFast meansigf noise) (Signal t1 t2 dt obsArr Eq)= 
+        let facc  obsVal (sm, i) = (sm+P.logGaussD (meansigf . (*dt) . realToFrac $ i) noise obsVal, i+1)
+        in fst $ SV.foldr facc (0,0) obsArr
+
+longPdfRSF :: RandomSignalFast -> Signal Double -> Double
+longPdfRSF  (RandomSignalFast meansigf noise) obsSig@(Signal t1 t2 dt obsArr Eq)= 
+      let meansig = fillSig t1 t2 dt meansigf
+          mu = sigToVector $ forceSigEq meansig
+          k = dim mu
+          sigma = (realToFrac noise) * ident k
+      in log $ P.multiNormal mu sigma $ sigToVector $ forceSigEq obsSig 
+
+
+testw = fillSig 0 2 0.001 id
+testRS = RandomSignalFast id 0.1
+
+testm = (realToFrac 3.2 * ident 10):: Matrix Double
 
 --buildVector :: Element a => Int -> (Int -> a) -> Vector a
                     
@@ -72,7 +93,7 @@ data InhomogeneousPoisson = InhomogeneousPoisson (Signal Double) (Signal Double)
 instance Distribution InhomogeneousPoisson where
     type Elem InhomogeneousPoisson = [(Double,())]
     pdf (InhomogeneousPoisson rateSig intRate ) evs = 
-        (sum $ map (log . (rateSig `readSig`) . fst) evs) -(intRate`readSig`(sigT1 rateSig) - intRate`readSig`(sigT2 rateSig))
+        (sum $ map (log . (rateSig `readSig`) . fst) evs) -log (intRate`readSig`(sigT1 rateSig) - intRate`readSig`(sigT2 rateSig))
 
 
 instance ProperDistribution InhomogeneousPoisson where

@@ -2,7 +2,7 @@ module Jan where
 
 alpha tau t = if t<0.0 then 0.0 else (t/tau)*exp (1-t/tau)
 
-expStep etau eamp t = if t>0.0 then (exp((0-t)/etau) - 1)*eamp else 0
+expStep etau t =  if t<0.0 then 0.0 else ((exp((0-t)/etau)) -1) 
 
 tau1m ~ unknown 0.06
 tau2m ~ unknown 0.2
@@ -16,7 +16,7 @@ startm ~ unknown 95
 startsd ~ unknown 2
 starttrsd ~ unknown 0.3
 
-offm ~ unknown 1
+offm ~ unknown 5
 offsd ~ unknown 2
 offtrsd ~ unknown 0.3
 
@@ -49,7 +49,9 @@ inevery t <- session 7 where
 
      t0 ~ uniform 0.1 0.12
 
-     waveform = {: start - amp1 * alpha tau1 (<:seconds:>-t0) - amp2 * alpha tau2 (<:seconds:>-t0) + expStep tau2 off (<:seconds:>-t0) :} 
+     waveform = {: start - amp1 * alpha tau1 (<:seconds:>-t0)  
+     	                 - amp2 * alpha tau2 (<:seconds:>-t0) 
+			 + off* (expStep 0.2 (<:seconds:>-t0)) :} 
      angle! ~ RandomSignal waveform noise
 
    

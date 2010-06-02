@@ -22,12 +22,13 @@ import Data.Maybe
 import Stats.Simulate
 import Types
 import PrettyPrint
+import System.Cmd
 --ideas:
 -- exclamation mark for saving values in simfakes 
 
 help = putStrLn $ unlines [
         "runstats simfakes {model file} {session base} {session count}",
-        "runstats estimate {model file} {session filter}\n"
+        "runstats estimate {model file} {niters} {chainName} {session filter}\n"
         ]       
 
 main = getArgs >>= dispatch
@@ -45,7 +46,7 @@ dispatch ("simfakes":filenm:sessBase:_) = do
   saveEnv sessBase tmax dt $ fakeenv
   return ()
 
-dispatch ("estimate":filenm:rest) = do
+dispatch ("estimate":filenm:iterStr:chainNm:rest) = do
   ds <- fileDecls filenm []
   let tmax = unsafeReify $ unConst $ fromJust $ lookup "_tmax" $ declsToEnv ds
   let dt = unsafeReify $ unConst $ fromJust $ lookup "_dt" $ declsToEnv ds
@@ -73,7 +74,8 @@ dispatch ("estimate":filenm:rest) = do
                 ppOfInterest rvs] 
 
   writeFile ("Estimator.hs") prog
-  --sh "ghc --make -O2 Estimator"
+  system "ghc --make -Odph -O2 Estimator"
+  system $ "./Estimator "++iterStr++" "++chainNm
 
   return ()
 
