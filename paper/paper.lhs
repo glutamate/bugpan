@@ -652,25 +652,45 @@ signals, but indexed by frequency rather than time. The most
 appropriate manner of extending our framework to include
 frequency-indexed and even spatial information must remain a topic for
 further research. On the other hand, the lack of linear algebra,
-higher order statistics, information theoretic analysis etc. etc. in
-our examples is \emph{not} to be taken as a limitation of our theory;
-representing these analyses in a mathematical framework is a solved
-problem and is not the topic of this paper.
+higher order statistics, information theoretic analysis et cetera, et
+cetera in our examples is \emph{not} to be taken as a limitation of
+our theory; representing these analyses in a mathematical framework is
+a solved problem and is not the topic of this paper.
 
 \subsection*{Statistics}
 
 We have used the word ``evidence'' to mean direct observations and
 calculated values from experiments. In another sense of the word,
-evidence has information relevant for a statistical model.
+evidence carries information that is relevant for a particular
+statistical model. Here we discuss some ideas as to how values with
+signal, event or duration types can be combined with statistical
+models. First, a conservative approach is to take measurements on
+signals and events - for instance, the amplitude of signal
+deflections, event frequencies etc - and store these in durations. The
+language of event detectors and list semantics for durations and
+events may be sufficiently rich to describe these measurements, as we
+have demonstrated for the limited examples in this paper. It is then
+straightforward to use the tags of durations representing measurements
+in classical null-hypothesis significance tests such as the General
+Linear Model. This approach differs little from the way data is
+analysed today in physiology, but a lightweight and executable
+formalism for describing these analyses would make it easier to handle
+large amounts of data and reduce the risk of human error.
 
--evidence only if for a particular model. 
--haven't said anything
--how to do classical
--hierarchical bayesian
+A more intriguing possibility is to build statistical models for the
+directly observed data, and to use durations to describe a
+hierarchical organisation of conditional dependences amongst
+parameters in such a model. ...
 
 \subsection*{Relation to existing technologies}
 
-signals in igor, spike2
+It should be no surprise that some notion of signals and events can
+play a central role in physiology. Existing software packages that are
+popular in the acquisition and analysis of physiological data have
+signal-like (Igor Pro, Spike 2), and event-like (Spike 2) data
+structures at the core of their operations. Although these package
+have some flexibility in the information that can be carried by
+signals and events, they do not offer fully polymorphism.
 
 neuroinformatics: solve or immediately proposes solutions to many
 problems.
@@ -683,28 +703,6 @@ reactive types).
 completely orthogonal
 
 related work
-
-\subsection*{Representing scientific knowledge}
-
-How shall we represent scientific knowledge? There has recently been
-much progress in representing scientific information in a manner that
-facilitates machine inference (semantic web refs). But if we are to
-represent scientific knowledge - in the classical sense of true
-justified belief - we must include a description of how we came about
-this information. In particular, this must include a description of
-(i) the exact procedure carried out during the experiment (ii) the
-context in which the experiment was carried out (iii) the raw data
-collected during the experiment (iv) the analyses and statistical
-tests carried out after the experiment. Of these, (i) and (iv) are
-essentially executable programs and (iii) consists of values in an
-appropriate datatype, here signals, events or durations. (ii) is the
-most difficult to represent; here we make extensive use of durations,
-which can be instantiated with any data type; thus we can represent
-the sex of an experimental subject as a duration (lasting the entirety
-of the experiment) of a (Male/Female) type or, for a less typed
-approach, a string.
-
-value: of which type, programs
 
 \subsection*{Towards verified scientific inference}
 
