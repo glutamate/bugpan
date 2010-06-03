@@ -37,6 +37,7 @@ import System.Directory
 import Text.Regex.Posix
 import Data.Maybe
 import Control.Monad.Trans
+import ValueIO
 --import qualified Data.Map as Map
 
 
@@ -57,8 +58,8 @@ getFiles nm = (catMaybes .
 
 
 
-safeLoad :: Binary a => String -> IO [a]
-safeLoad file = C.catch (loadBinary file)
+safeLoad :: String -> IO [[Double]]
+safeLoad file = C.catch (fmap (map SV.unpack) $ loadVectors file)
                         (\e->return $ const [] (e::C.SomeException))
 
 loadChain :: String -> String -> Int -> (Int,Int) -> IO [Double]
@@ -156,13 +157,30 @@ writeInChunksK = writeInChunks' 0
             hClose h
             writeInChunks' (counter+1) fnm chsize k rest
 
-writeInChunks :: (Binary a) => String -> Int ->   [a] -> IO ()
+--writeInChunks :: (Binary a) => String -> Int ->   [Int] -> IO ()
+writeInChunks ::  String -> Int ->   [[Double]] -> IO ()
 writeInChunks = writeInChunks' 0
     where writeInChunks' _ _ _  [] = return ()
           writeInChunks' counter fnm chsize xs = do
             let (out, rest) = splitAt chsize xs
-            saveBinary (fnm++"_file"++(show counter)++".mcmc") out
+            saveVectors (fnm++"_file"++(show counter)++".mcmc") $ map SV.pack out
             writeInChunks' (counter+1) fnm chsize rest
+
+saveVectors :: String -> [SV.Vector Double] -> IO ()
+saveVectors nm svs = do
+    h <- openBinaryFile nm WriteMode
+    putInt h (length svs)
+    mapM (\sv-> putInt h (SV.length sv) >> SV.hPut h sv) svs
+    hClose h 
+
+putInt h = L.hPut h . encode
+getInt h = idInt `fmap` binGet h 8
+
+loadVectors :: String -> IO [SV.Vector Double]
+loadVectors nm = withBinaryFile nm ReadMode $ \h->  do 
+    nvecs <- getInt h
+    forM [1..nvecs] $ \i -> do nelems <- getInt h
+                               SV.hGet h nelems
 
 mapMretLast :: Monad m => (a-> m b) -> [a] -> m a
 mapMretLast f [x] = f x >> return x

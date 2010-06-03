@@ -18,6 +18,7 @@ data Declare =
  | DStageNeg BIdent Integer
  | DEvery Pat Exp [Declare]
  | DDist Pat Exp
+ | DPragma BIdent Exp
   deriving (Eq,Ord,Show)
 
 data Exp =

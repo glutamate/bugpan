@@ -42,7 +42,7 @@ tellEverywheres = do
   mapM_ (tell . ("let "++)) $ reverse dfns 
 
 modimport :: Monad m => String -> CodeWriterT m () 
-modimport s = tell $ "import "++s
+modimport s = tellNoindent $ "import "++s
 
 chomp :: String -> String
 chomp s = dropWhile (==' ') s

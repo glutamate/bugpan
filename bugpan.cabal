@@ -17,15 +17,21 @@ Flag NoDaq
   Description: Disable Comedi DAQ
   Default:     False
 
+Flag OnlyLib
+  Description: Only build library
+  Default:     False
+
+
 Library
    Exposed-modules:  Query, QueryTypes, QueryUtils, Numbers, PlotGnuplot, EvalM, Database, HaskShapes, RandomSources, QueryPlots, Expr, ValueIO, HaskSyntaxUntyped, NewSignal, FitGnuplot, StatsModel, Locust, ReactiveDistributions, PrettyPrint, Types, Transform, Statement, Traverse, Parse
    ghc-options:        -O2
    if flag(nodaq)
      ghc-options:        -DNODAQ
    other-modules:    Eval,  BNFC.LexBugpan, BNFC.ParBugpan, BNFC.SkelBugpan,BNFC.PrintBugpan,BNFC.LayoutBugpan ,BNFC.ErrM,UnitTesting, BNFC.AbsBugpan,BuiltIn, TypeCheck, CompiledSrcsSinks
-   Build-depends:    tnutils, probably, process, directory, regex-posix, random, base, bytestring, binary, old-time, storablevector>0.2.4, mtl, data-binary-ieee754, mersenne-random, storable-tuple, hmatrix, vector, spoon
+   Build-depends:    tnutils, probably, process, directory, regex-posix, random, base, bytestring, binary, old-time, storablevector>0.2.4, mtl, data-binary-ieee754, mersenne-random, storable-tuple, hmatrix, vector
 
 
+--if !flag(onlylib)
 Executable bugsess   
    Main-Is:          BugSess.hs
    ghc-options:      -O2 -threaded

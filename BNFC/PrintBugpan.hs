@@ -104,6 +104,7 @@ instance Print Declare where
    DStageNeg bident n -> prPrec i 0 (concatD [doc (showString "stage") , prt 0 bident , doc (showString "-") , prt 0 n])
    DEvery pat exp declares -> prPrec i 0 (concatD [doc (showString "inevery") , prt 0 pat , doc (showString "<-") , prt 0 exp , doc (showString "where") , doc (showString "{") , prt 0 declares , doc (showString "}")])
    DDist pat exp -> prPrec i 0 (concatD [prt 0 pat , doc (showString "~") , prt 0 exp])
+   DPragma bident exp -> prPrec i 0 (concatD [doc (showString "^^") , prt 0 bident , prt 0 exp])
 
   prtList es = case es of
    [] -> (concatD [])

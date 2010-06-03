@@ -35,6 +35,7 @@ convDecl (B.DStage (B.BIdent b) si) = Stage (ident b) $ fromInteger si
 convDecl (B.DStageNeg (B.BIdent b) nsi) = Stage (ident b) . negate $ fromInteger nsi
 convDecl (B.DDist pat diste) = Distribute (cPat pat) (cE diste)
 convDecl (B.DEvery pat src decls) = Every (cPat pat) (cE src) $ map convDecl decls
+convDecl (B.DPragma (B.BIdent nm) e) = Pragma (ident nm) (cE e) 
 --convDecl b = error $"convDecl: "++show b
 
 unSubst (B.ImpSubstLine (B.BIdent b) e) = (ident b, cE e)

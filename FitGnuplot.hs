@@ -15,7 +15,6 @@ import qualified Data.StorableVector as SV
 import qualified Control.Exception as C
 import Data.Maybe
 import System.IO.Unsafe
-import Control.Spoon
 import Control.Monad
 
 data Fit = Fit String [(String, Double)] (Signal Double)

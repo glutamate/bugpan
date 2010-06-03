@@ -14,6 +14,8 @@ DStageNeg.Declare ::= "stage" BIdent "-" Integer;
 DEvery.Declare ::= "inevery" Pat "<-" Exp "where" "{" [Declare] "}"  ;
 
 DDist. Declare ::= Pat "~" Exp ;
+DPragma. Declare ::= "^^" BIdent Exp ;
+
 
 
 Add. Exp2 ::= Exp2 "+" Exp3 ;

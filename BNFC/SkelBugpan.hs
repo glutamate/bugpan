@@ -31,6 +31,7 @@ transDeclare x = case x of
   DStageNeg bident n  -> failure x
   DEvery pat exp declares  -> failure x
   DDist pat exp  -> failure x
+  DPragma bident exp  -> failure x
 
 
 transExp :: Exp -> Result

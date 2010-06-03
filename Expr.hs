@@ -75,7 +75,8 @@ data Declare
         | Stage String Int
         | Comment String
         | Every Pat E [Declare]
-        | Distribute Pat E
+        | Distribute Pat E 
+        | Pragma String E
         | Nop
 	deriving (Show, Eq, Read)
 
