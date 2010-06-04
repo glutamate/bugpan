@@ -604,18 +604,26 @@ We present an entirely new approach to executing and communicating
 science. Our experiments, including the complex stimuli used to
 perturb external systems, are concisely and unambiguously defined in a
 formal and referentially transparent language. This makes it possible
-to ... We can quibble about whether these definitions are simpler or
-clearer than a definition written in plain English or are easier to
-produce than clicking buttons in a graphical user interface. But they
-are certainly more unambiguous and powerful than either of those
-alternatives. ...
+to not only repeat or undertand experiments, but also to formally
+prove logic statements about the experiment. We can quibble about
+whether these definitions are simpler or clearer than a definition
+written in plain English or are easier to produce than clicking
+buttons in a graphical user interface. But they are certainly more
+unambiguous and powerful than either of those alternatives.
 
 To our knowledge this is the first explicit use of type theory to
-classify evidence in a experimental scientific field. 
-1. parametric
-2. same types for stimulation and observation.
-3. same for other fields
-4. more complicated aspect of type theory necessary for other fields?
+classify evidence in a experimental scientific field. We find that
+parametric polymorphism is critical in modelling a wide repertoire of
+evidence. We also surprisingly found that the there is broad overlap
+between the types that hold stimuli, observations and calculated
+values. This may be not be the case in other fields. For instance, in
+anatomy, the direct observations may be mediated by images and
+inferences mainly made about graph structures. (We don't know how to
+represent the stimuli.) A wider question is which type theories can
+support evidence from many different fields. For physiology, we have
+found that simple type theory \citep{Pierce2002} is sufficient. Richer
+type theories including impredicativity and dependent types
+\citep{Pierce2002} may help capture aspects of evidence in other fields.
 
 What exactly is the thing that is described in this paper? First of
 all, it is a very practical tool: a collection of computer programs
