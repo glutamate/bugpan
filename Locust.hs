@@ -174,7 +174,7 @@ janParSampler sams = do
   let vsMatrix = transpose $ map snd sams
   let nms = map fst sams
   vs <- zip nms `fmap` oneOf vsMatrix
-  let wfpars = map (vs!!!) $ words "starts0tr0 amp1s0tr0 tau1s0tr0 amp2s0tr0 tau2s0tr0 t0s0tr0 offs0tr0"
+  let wfpars = map (vs!!!) $ words "starts0tr0 amp1s0tr0 tau1s0tr0 amp2s0tr0 tau2s0tr0 amp3s0tr0 tau3s0tr0 t0s0tr0 offs0tr0"
   let wfsig= fillSig 0 10 0.002 $ wf wfpars 
 
   return $ wfsig
@@ -183,7 +183,11 @@ janParSampler sams = do
 --first is (locally) 090319
 
 
-wf [start, amp1, tau1, amp2, tau2, t0, off] t = start - amp1*alpha tau1 (t-t0) - amp2 * alpha tau2 (t-t0) + expStep tau2 off (t-t0)
+wf [start, amp1, tau1, amp2, tau2, amp3, tau3, t0, off] t = start - amp1*alpha tau1 (t-t0) - 
+                                                                    amp2 * alpha tau2 (t-t0) - 
+                                                                    amp3 * alpha tau3 (t-t0) + 
+                                                                    expStep 0.2 off (t-t0)
+wf lst t = error$ "wf: got list "++show lst
 
 expStep tau amp t = if t>0 then (exp((0-t)/tau) - 1)*amp else 0
 

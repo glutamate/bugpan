@@ -80,6 +80,11 @@ data Declare
         | Nop
 	deriving (Show, Eq, Read)
 
+hasPragma ds nm = not $ null [() | Pragma nm' _ <- ds, nm==nm']
+pragmaOr ds nm v = case [n | Pragma nm' (Const n) <- ds, nm==nm'] of
+                       x:_ -> x
+                       [] -> v
+
 
 isSubTermIn :: E-> E-> Bool
 isSubTermIn small big = not . null $ queryE tst big

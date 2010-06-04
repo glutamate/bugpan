@@ -4,11 +4,11 @@
 >> pts = \c ty sz -> Points [PointType ty, PointSize sz, LineColor c]  
 
 
->> chains janRealthin 0 0 0 500 300
+>> chains ../jan5thin 0 0 0 500 30
 
->> predsigs = sampleN 100 $ janParSampler janRealthin
+>> predsigs = sampleN 100 $ janParSampler jan5thin
 
-> plot $ (during [((0,0.5),())] predsigs) :+: pts "black" 4 2 (during [((0,0.5),())] [head angle])
+> plot $ (during [((0,0.2),())] predsigs) :+: pts "black" 4 2 (during [((0,0.2),())] [head angle])
 
 > plot $ (during [((0,2),())] predsigs) :+: pts "black" 4 2 (during [((0,2),())] [head angle])
 
@@ -16,9 +16,32 @@
 
 %> plot $ FunSeg 0 2 $ expStep 0.2 20
 
-> plot $ FunSeg 0 2 $ wf [88.6,24.4,0.06,3.3,0.2, 0.114, 1]
+%> plot $ FunSeg 0 2 $ wf [88.6,24.4,0.06,3.3,0.2, 0.114, 1]
 
 > plot $ [head angle]
+
+
+> p1 = pdf (RandomSignalFast id 0.1) $ fillSig 0 2 0.01 id
+
+> p2= pdf (RandomSignalFast id 0.1) $ fillSig 0 2 0.01 $ (+0.05) . id
+
+
+> p3= altPdfRSF1 (RandomSignalFast id 0.1) $ fillSig 0 2 0.01 id
+
+> p4= altPdfRSF1 (RandomSignalFast id 0.1) $ fillSig 0 2 0.01 $ (+0.05) . id
+
+
+> show $ p2/p1
+
+> show $ p4/p3
+
+
+> show p1
+
+> show p3
+
+> show testm
+
 
 %> plot GnuplotTest
 

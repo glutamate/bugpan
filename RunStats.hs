@@ -1,3 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Main where
 
 import Parse
@@ -64,14 +66,14 @@ dispatch ("estimate":filenm:iterStr:chainNm:rest) = do
                 ppUpdaters [] rvs rvs,
 
                 mlEstimators rvs,
-                thetmaxdt tmax dt, 
+                --thetmaxdt tmax dt, 
 
                 loadData filtr rvs,
 
                 theGibbs rvs,
-                themain,
+                themain ds,
                 initialise rvs,
-                ppOfInterest rvs] 
+                ppOfInterest ds rvs] 
 
   writeFile ("Estimator.hs") prog
   system "ghc --make -Odph -O2 Estimator"
@@ -82,7 +84,7 @@ dispatch ("estimate":filenm:iterStr:chainNm:rest) = do
 dispatch _ = help
 
 
-thetmaxdt tmax dt = "thetmax = "++show tmax ++"\nthedt="++show dt++"\n\n"
+--thetmaxdt tmax dt = "thetmax = "++show tmax ++"\nthedt="++show dt++"\n\n"
 
 
 data RVar = RVar String T E
@@ -120,6 +122,7 @@ rvars = rvar []
          rvar env ((Every p dure decls):ds) = 
              (InEvery (durExprToName dure) $ rvar env decls) : rvar env ds
          rvar env ((Let p e):ds) = rvar ((unsafePatToName p, e):env) ds
+         rvar env (_:ds) = rvar env ds
          rvar env [] = []
 
 typeOfDist (App (App (Var "N") _) _) = NumT (Just RealT)
@@ -327,18 +330,23 @@ theGibbs allrvs = ("thegibbs = "++) $ intercalate " >-> " $ map f $ allNoExclaim
                             outerPath = reverse [dnm | InEvery dnm rvs <- path]
                         in "update_"++(concat $ map (++"_") outerPath)++nm
 
-themain = 
+themain ds = 
    unlines ["main = do",
             "  countStr:filenm:_ <- getArgs",
             "  writeFile (filenm++\"_parnames.mcmc\") $ show parNames", 
             "  justData <- fmap initialise loadData",
             "  let baymarkov = Mrkv (condSampler thegibbs) (justData) id",
             "  ps <- take (read countStr) `fmap` runMarkovIO baymarkov",
-            "  writeInChunks (filenm++\"_chain0\") 20000 $ map ofInterest ps",
+            writer,
             --"  mapM print $ zip parNames $ ofInterest (last ps)",
             "  return ()",
             "  ---writeFile (filenm++\"_parnames.mcmc\") $ show parNames "]
-
+   where writer | hasPragma ds "thin" 
+                    = let tn = ppVal $ pragmaOr ds "thin" 100 in
+                      "  writeInChunks (filenm++\"_chain0\") "++cnkSz++" $ map ofInterest $ thin "++tn++" ps"
+                | otherwise 
+                    = "  writeInChunks (filenm++\"_chain0\") "++cnkSz++" $ map ofInterest ps"
+         cnkSz = ppVal $ pragmaOr ds "chunkSize" 20000
 
 initialise allrvs = 
    unlines ["initialise :: AllPars -> AllPars",
@@ -365,18 +373,29 @@ last2 (x:xs) = last2 xs -}
 
 nmsFromRvars rvs = [vnm | RVar vnm _ _ <- rvs]
 
-ppOfInterest rvs =
+ppOfInterest ds rvs =
     let tlvars = nmsFromRvars rvs
         tlvarsPath = map (\vnm-> "unP $ "++vnm++" allPars") tlvars
         sessvarNms = filter (not . hasExclaim) $ nmsFromRvars $ concat $ [svars | InEvery "session" svars <- rvs]
         trialvarNms = filter (not . hasExclaim) $ nmsFromRvars $ concat $ [trvars | InEvery "session" svars <- rvs, 
                                                         InEvery "running" trvars <- svars]
-        sessvarsPath = map (\vnm-> "unP $ "++vnm++" $ head $ session allPars") sessvarNms
-        trialvarsPath = map (\vnm-> "unP $ "++vnm++" $ head $ running $ head $ session allPars") trialvarNms
-        withSessId = map (++"s0")
-        withTrId = map (++"s0tr0")
-    in "ofInterest allPars = ["++ intercalate ", " (tlvarsPath++sessvarsPath++trialvarsPath)++
-                   "]\nparNames = "++show (tlvars++withSessId sessvarNms++withTrId trialvarNms)
+        sessvarsPath i = map (\vnm-> "unP $ "++vnm++" $ (!! "++showInt i++") $ session allPars") sessvarNms
+        trialvarsPath is itr = map (\vnm-> "unP $ "++vnm++" $ (!! "++showInt itr++") $ running $ (!! "++showInt is++") $ session allPars") trialvarNms
+        withSessId i = map (++("s"++showInt i))
+        withTrId is itr= map (++("s"++showInt is++"tr"++showInt itr))
+        monitSessns::[Int] = catMaybes [reify v | Pragma "monitorSession" (Const v) <- ds]
+        monitTrials::[(Int,Int)] 
+                 = catMaybes [liftM2 (,) (reify  p1) (reify p2) 
+                                 | Pragma "monitorTrial" (Pair (Const p1) (Const p2)) <- ds]
+        sesspaths = concatMap sessvarsPath monitSessns
+        trialpaths = concatMap (uncurry trialvarsPath) monitTrials
+        sessnames = concatMap (\i->withSessId i sessvarNms) monitSessns
+        trialnames = concatMap (\(itr, is)-> withTrId itr is trialvarNms) monitTrials
+    in "ofInterest allPars = ["++ intercalate ", " (tlvarsPath++sesspaths++trialpaths)++
+       "]\nparNames = "++show (tlvars++sessnames++trialnames)
+
+showInt :: Int -> String
+showInt = show
 
 childrenOf :: String -> [RVar] -> [[String]]
 childrenOf nm rvs = 
