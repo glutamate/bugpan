@@ -507,7 +507,7 @@ An important property studied in computational neuroscience is the
 input-output relationships of neurons. Given a stimulus, e.g. injected
 current waveform or pattern of synaptic input, what is the membrance
 voltage trajectory and firing rate response of a particular neuron?
-This question can be addressed with experiements or simulations; here
+This question can be addressed with experiments or simulations; here
 we show how the calculus of physiological evidence can be used to
 construct simple models of spiking neurons concisely. 
 
@@ -600,16 +600,15 @@ neurophysiology illustrate this approach: the \emph{in vivo} spike
 train response to a visual looming stimulus in locusts; and a
 simulation of synaptic integration in a simple model neuron. 
 
-We present an entirely new approach to executing and communicating
-science. Our experiments, including the complex stimuli used to
-perturb external systems, are concisely and unambiguously defined in a
-formal and referentially transparent language. This makes it possible
-to not only repeat or undertand experiments, but also to formally
-prove logic statements about the experiment. We can quibble about
-whether these definitions are simpler or clearer than a definition
-written in plain English or are easier to produce than clicking
-buttons in a graphical user interface. But they are certainly more
-unambiguous and powerful than either of those alternatives.
+We present an entirely new approach to performing and communicating
+science. Here, both stimuli and observations are defined concisely and
+unambiguously by mathematical \emph{equations}. This makes it possible
+to not only repeat, manipulate and reson about experiments in a formal
+framework. We can quibble about whether these definitions are simpler
+or clearer than a definition written in plain English or are easier to
+produce than clicking buttons in a graphical user interface. But they
+are certainly less ambiguous and more powerful than either of those
+alternatives.
 
 To our knowledge this is the first explicit use of type theory to
 classify evidence in a experimental scientific field. We find that
@@ -687,8 +686,11 @@ large amounts of data and reduce the risk of human error.
 
 A more intriguing possibility is to build statistical models for the
 directly observed data, and to use durations to describe a
-hierarchical organisation of conditional dependences amongst
-parameters in such a model. ...
+hierarchical organisation of conditional dependencies amongst
+parameters in such a model. Although probabilistic models for direct
+observations can be built in physics \citep{Daniell1991}, the flexible
+construction of such models for biological organisms may depend on the
+development of new programming languages.
 
 \subsection*{Relation to existing technologies}
 
@@ -698,40 +700,96 @@ popular in the acquisition and analysis of physiological data have
 signal-like (Igor Pro, Spike 2), and event-like (Spike 2) data
 structures at the core of their operations. Although these package
 have some flexibility in the information that can be carried by
-signals and events, they do not offer fully polymorphism.
+signals and events, they do not exploit full parametric polymorphism;
+the range of observations and stimuli that can be described with this
+more limited definition is smaller. For instance, the signal of shapes
+that describe a visual stimulus in Example 1, or the two- or three
+dimensional location of a moving animal \emph{cannot} be represented
+by a signal in these systems. Thus functions written over generic
+signals cannot be used in cases where such data are represented in a
+different data structure.
 
-neuroinformatics: solve or immediately proposes solutions to many
-problems.
+Our account of physiological evidence solves or immediately proposes
+solutions to many problems in neuroinformatics. One such problem is
+the difficulty of sharing primary data from neuroscientific
+experiments (REF). A repository of such data must answer the question
+``what kinds of things should be shared?'' We show here that fully
+polymorphic signals, events and durations can represent data across
+many aspects of neurophysiology, and can be the foundation for a very
+general database. Previous work on scientific knowledge representation
+has also suggested a possible role for ``meta-data'' to represent the
+context of an experiment (REFs). Here, we make no distinction between
+data and meta-data. All relevant information which can be represented
+by a value in some type can exist as signals, events and
+durations. There are important reasons to believe that there cannot
+exist a strict distinction between data and meta-data; is, for
+instance, the temperature at which an experiment is conducted, data or
+meta-data? That surely depends on the intention of the experimenter
+and whether it is manipulated, but also of the person who is analysing
+or meta-analysing the data. By not assigning data to different bins,
+but merely saying, ``there exists information about this experiment''
+we are not imposing any limits on the nature of this information. That
+does not imply that individual pieces of information have no
+context. Because every value has a temporal context, the entire
+context of that value can be retrieved by gathering other values with
+a similar or enclosing temporal context.
 
-No data/meta-data distinction, work-flow engines. Artificial
-constructs that are inessential to scientific inference, even in the
-large scale. (Only true because we can write generic functions over
-reactive types).
+There has been some work on formalising ``workflows'' and
+creating ``workflow engines'' for perform data analysis. In the
+contrasting approach here, all information about the experiment is
+defined by mathematical equations and exist as values of well-defined
+types. We are not excluding the possibility that an elaborate user
+interface can help formulate these equations, or construct new values
+in ad-hoc circumstances (we have used a simple interface to enter the
+thresholds for spike detections in Example 1). But such interfaces may
+be inessential to scientific inference, even in the large scale. This
+is especially likely to be the case when we can write generic
+functions over types with very flexible definitions.
 
-completely orthogonal
-
-related work
+Lastly, there has been much work on semantic web ontologies that
+describe results from biological experiments. While our approach is at
+variance with some of this work, in other respects it is 
+complementary. There is much relevant information about the
+experiments performed here that we have not represented; for instance,
+the exact position of the locust with respect to the screen, the anatomical
+location of the recording electrodes etc. Such information should be
+represented as a duration, but the question is what type the tag of
+the duration should have. On solution is to allow tags to take values
+that correspond to subjects or relations in a semantic web ontology.
 
 \subsection*{Towards verified scientific inference}
 
-experiment description languages, and the reification of experimental
-observations into values of concrete types, form basis for inference.
-
-It will also permit the verification of statements about experiments,
-for instance that particular variables were randomly controlled and
-not observed; outcomes have not gained correlation due to the analysis
-procedure; missing data is accounted for by the statistical model
+Whether the natural sciences are socially constructed remain an open
+question in the philosophy of science. If we seriously entertain the
+notion that science is instead based on logic \citep{Jaynes2003}, it
+must be possible in principle to mechanically verify scientific
+inference, just as mathematical proofs can be verified by a proof
+checker (ref). It is of course not possible to verify particular
+hypotheses about the physical world, or a biological organism. What
+can be verified are statements about experiments, for instance that
+particular variables were randomly controlled and not observed;
+outcomes have not gained correlation due to the analysis procedure;
+missing data is accounted for by the statistical model
 \citep{Gelman2003}; correct propagation of errors \citep{Taylor1997}
 and consistent units of measure \citep{Kennedy1997}; the absence of
-``double dipping'' \citep{Kriegeskorte2009}. Statistics addresses some
-of these issues in relating atomic observations to parameter
-estimation and hypothesis testing, but not how those observations are
-obtained.
+``double dipping'' \citep{Kriegeskorte2009}; and ultimately, whether
+the gathered data support the conclusion. Statistics addresses some of
+these issues in relating atomic observations to parameter estimation
+and hypothesis testing, but not how those observations are
+obtained. Experiment description languages, and the reification of
+experimental observations into values of concrete types (which may not
+always be the type of real numbers), can play an important role in
+such inference. But the statistical framework within which such
+inferences take place impact the amount of information that must be
+analysed; for instance, if we accept the likelihood principle
+\citep{Jaynes2003}, we can safely ignore the intention of the
+experimenter. 
 
-much easier with principle of likelihood: no need to represent the
-intention of the experimenter. 
-
-relationship to automation.
+There has been substantial progress in \emph{automation} in the
+experimental sciences, which has substatially accelerated the
+acquisition of knowledge. In contrast, there has been almost no work
+in verification, a seperate but overlapping application of calculating
+machines to science.
 
 \section*{Methods}
 
