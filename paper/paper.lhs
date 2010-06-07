@@ -100,36 +100,37 @@ stimuli for experiments.
 \subsubsection*{What is physiological evidence?}
 
 What kinds of mathematical objects can count as physiological
-evidence? We answer this question within simple type theory (Ref),
-which assigns to every object a \emph{type}. These types include base
-types, such as integers |Z|, real numbers |R|, text strings |String|
-and boolean type |Bool| with the two values |True| and |False|. In
-addition, types can be arbitrarily combined in several ways, such that
-if |alpha| and |beta| are types, the type |alpha times beta| is the
-pair formed by an element of |alpha| and one of |beta|; |[alpha]| is a
-list of |alpha|s; and |alpha -> beta| is the type of functions that
-calculate a value in the type |beta| from a value in |alpha|. Here, we
-use the convention that greek letters stand for type variables, which
-can be substituted by any concrete type, such as a base type or a
-compound type. Types can be defined with references to arbitrary
-types; for instance, |withIntegers alpha = [(Z, alpha)]| denotes for
-any type |alpha| the list of pairs of integers and |alpha|s. This hole
-in the type definition can then be filled in to form a concrete type,
-for instance |withIntergers String|. The ability to build flexible
-type schemata in this manner and define generic function over them
-(``parametric polymorphism''; REF) is essential for representing
+evidence? We answer this question within simple type theory
+\citep{Pierce2002}, which assigns to every object a \emph{type}. These
+types include base types, such as integers |Integer|, real numbers
+|Real|, text strings |String| and boolean type |Bool| with the two
+values |True| and |False|. In addition, types can be arbitrarily
+combined in several ways, such that if |alpha| and |beta| are types,
+the type |alpha times beta| is the pair formed by an element of
+|alpha| and one of |beta|; |[alpha]| is a list of |alpha|s; and |alpha
+-> beta| is the type of functions that calculate a value in the type
+|beta| from a value in |alpha|. Here, we use the convention that greek
+letters stand for type variables, which can be substituted by any
+concrete type, such as a base type or a compound type. Types can be
+defined with references to arbitrary types; for instance,
+|withIntegers alpha = [(Integer, alpha)]| denotes for any type |alpha|
+the list of pairs of integers and |alpha|s. This hole in the type
+definition can then be filled in to form a concrete type, for instance
+|withIntergers String|. The ability to build flexible type schemata in
+this manner and define generic function over them \citep[``parametric
+  polymorphism'';][]{Pierce2002} is essential for representing
 \emph{all} physiological quantities.
 
 What, then, are the types in which physiological evidence can be
-values? We distinguish three type schemas that differ in relationship
-between measurements and their temporal context, but all derive their
-flexibility from parametric polymorphism. \emph{Signals} capture the
-notion of quantities that change in time. In physiology, observed
-time-varying quantities often represent scalar quantities, such as
-membrane voltages or muscle force, but there are also examples of
-non-scalar signals such as the two- or three dimensional location of
-an animal or of a body part. Here, we generalise this notion such that
-for \emph{any} type |alpha|, a signal of |alpha| is defined as a
+values? We distinguish three type schemas that differ in the
+relationship between measurements and their temporal context, but all
+derive their flexibility from parametric polymorphism. \emph{Signals}
+capture the notion of quantities that change in time. In physiology,
+observed time-varying quantities often represent scalar quantities,
+such as membrane voltages or muscle force, but there are also examples
+of non-scalar signals such as the two- or three dimensional location
+of an animal or of a body part. Here, we generalise this notion such
+that for \emph{any} type |alpha|, a signal of |alpha| is defined as a
 function from time to a value in |alpha|, written formally as:
 \begin{code}
 Signal alpha = Time -> alpha
@@ -170,13 +171,15 @@ component is again a value of any type |alpha|:
 Duration alpha = {Time times Time times alpha}
 \end{code}
 Durations are useful for information about a whole trial or about an
-entire experiment, but could also be observations in their own right, such
-as open times of individual ion channels, or periods in which activity of
-a system exceeds a set threshold (e.g bursts). We have used durations
-to hold information about an entire experiment, for instance a session
-identifier or the animal strain. Lastly, durations could be used for
-information that spans multiple trials but not an entire experiment -
-for instance, the presence of a drug.
+entire experiment, but could also be observations in their own right,
+such as open times of individual ion channels, or periods in which
+activity of a system exceeds a set threshold (e.g bursts). We have
+used durations to hold information about an entire experiment, for
+instance a session identifier or the animal strain. In that case, the
+duration set contains a single element, with the start and end of the
+experiement as start and end time, respectively. Lastly, durations
+could be used for information that spans multiple trials but not an
+entire experiment - for instance, the presence of a drug.
 
 Since signals, events and durations can be instantiated for any type,
 they form a simple but flexible framework for representing many
@@ -201,10 +204,10 @@ drawn from neurophysiology here: \vskip1ex
 \end{tabular}
 \vskip1ex 
 
-Some of these values are directly observed from equipment such as
+Some of these quantities are directly observed from equipment such as
 amplifiers or electronic detectors, but may need to be conditioned
-before any conclusions can be drawn from them. Values in other types
-can only be inferred from calculations on other observations. First we
+before any conclusions can be drawn from them. Other quantities can
+only be inferred from calculations on other observations. First we
 show how to build programs that calculate with signals and events;
 then we show how annotations allow these programs to interact with
 external system and observe their responses.
@@ -213,19 +216,18 @@ external system and observe their responses.
 
 From the direct observations, one often needs to process events and
 signals, create new events from signals, filter data and calculate
-statistics. Here, we formulate these transformations in terms of the lambda
-calculus \citep{Church1941}, a formal language for referentially
-transparent computation based on evaluating purely mathematical
-functions. The lambda calculus allows the use of functions as first
-class entities: that is, they can be referenced by variables and
-passed as arguments to other functions (which then become higher-order
-functions). On the other hand, the lambda calculus excludes variable
-or state mutation, such that the meanings of variables are solely as
-references to values. These properties together mean that the lambda
-calculus combines verifiable correctness with a high level of
-abstraction, leading to programs that are in practise more concise
-(ref). The lambda calculus or variants thereof has been used as
-foundation for mathematics \citep{Martin-Lof1985}, classical
+statistics. Here, we formulate these transformations in terms of the
+lambda calculus \citep{Church1941}, a formal language for
+referentially transparent computation based on evaluating purely
+mathematical functions. The lambda calculus allows the use of
+functions as first class entities: that is, they can be referenced by
+variables and passed as arguments to other functions (which then
+become higher-order functions). On the other hand, the lambda calculus
+excludes variable or state mutation. These properties together mean
+that the lambda calculus combines verifiable correctness with a high
+level of abstraction, leading to programs that are in practise more
+concise (ref). The lambda calculus or variants thereof has been used
+as a foundation for mathematics \citep{Martin-Lof1985}, classical
 \citep{Sussman2001} and quantum \citep{Karczmarczuk2003} mechanics,
 evolutionary biochemistry \citep{Fontana1994} and programming
 languages \citep{McCarthy1960}.
@@ -246,9 +248,9 @@ can be used as a value in the expression |w|.
 Here, we present a concrete syntax for a formal language, based on the
 lambda calculus and extended with first-class signals and events. Let
 the construct |sopen e sclose| create a signal with the value of the
-expression e at every time point, and |<: s :>| yield the current
-value of the signal s in the temporal context created by the
-surrounding |sopen ... sclose| braces. For instance, 
+expression |e| at every time point, and |<: s :>| yield the current
+value of the signal |s| in the temporal context created by the
+surrounding |sopen  sclose| braces. For instance, 
 \begin{code}
 sopen 1 sclose
 \end{code}
@@ -260,6 +262,22 @@ smap = \f -> \s -> sopen f <: s :> sclose
 transforms, for any two types |alpha| and |beta|, a signal of |alpha|
 into a signal of |beta| by applying the function |f| of type |alpha
 -> beta| to the value of the signal at every time point.
+
+The differential operator |D| differentiates a real-valued signal with
+respect to time, such |D s| denote its first derivative |D D s| the
+second derivative of the signal |s|. Likewise, the differential
+operator can appear on the left side of a definition, in which case it
+introduces a differential equation by pattern matching (ref) on the
+derivative of a signal (see example 2 below).
+
+Further primitives are needed to form signals that depend on the
+history of other signals. For any signal |s|, the expression |delay s|
+denotes the signal that is delayed by a small amount of time (in
+practise, one time step). Other FRP implementations have other
+primitives, in particular a |switch| statement that changes the
+definition of a signal depending on the occurrence of specific
+events. We have not needed such a construct in the experiments
+described here.
 
 The simplest approach to constructing events, and that taken here, is
 to detect events from existing signals. For instance, a threshold
@@ -281,23 +299,6 @@ should be manipulated as if they were lists in a functional
 programming language. Thus, a large number of transformations can be
 defined with simple recursive equations including filters, folds and
 scans (refs).
-
-Further primitives are needed to form signals that depend on the
-history of other signals. For any signal |s|, the expression |delay s|
-denotes the signal that is delayed by a small amount of time (in
-practise, one time step). 
-
-The differential operator |D| differentiates a real-valued signal with
-respect to time, such |D s| denote its first derivative |D D s| the
-second derivative of the signal |s|. Likewise, the differential
-operator can appear on the left side of a definition, in which case it
-introduces a differential equation. This is illustrated in example 2
-(see below)
-
-Sometimes, one requires a continuous behaviour to change
-abruptly into a different mode. FRP provides a clever way of doing
-this: a special construct, |switch| changes the definition of signals
-depending of the occurrence of specified events. 
 
 This small number of special constructors, along with the lambda
 calculus and the list semantics of events and durations, have allowed
@@ -406,7 +407,7 @@ consists of a cube of side length l approaching the viewer with
 constant velocity v. The time-varying distance from the observer to
 the cube in real-world coordinates is a real-valued signal:
 \begin{code}
-distance = sopen v * (5 - <: seconds :>) sclose 
+distance = sopen v * (<: seconds :> - 5) sclose 
 \end{code}
 
 The |distance| signal is the basis of shape-valued signal for the
@@ -425,23 +426,13 @@ collision. In order not to evoke a large OFF response from the LGMD
 \citep{O'shea1976} immediately after collision, the object is frozen
 in space as it reaches the plane of the surface onto which the
 animation is projected \citep{Hatsopoulos1995}. To achieve this
-effect, first we define an event for the collision of the object and
-the screen
-
+effect, we define a new signal that has a lower bound of the distance
+from the eye to the screen |zscreen|
 \begin{code}
-hit = (\z->z<zscreen) ?? distance
+distance' = sopen max (zscreen, <: distance :> ) sclose
 \end{code}
-and |switch| a new distance signal, |distance'|, based on the
-occurrence of |hit|.
-\begin{code}
-distance' = switch {  _    ~>  distance, 
-                      hit  ~>  \ (thit, zhit) -> sopen zhit sclose } 
-\end{code}
-This statement creates a new signal |distance'| which is identical to
-the |distance| signal until an occurrence of a |hit| event, at which
-point the distance is a constant, |zhit| (which equals $z_{screen}$.)
 |loomingSquare'| is identical to |loomingSquare| except for the use of
-|distance'|, and is connected to the |screen| sink.
+|distance'|.
 
 Finally, |loomingSquare'| is connected to a screen signal sink that
 represents an abstract visual display unit capable of projecting
@@ -536,12 +527,12 @@ defined by the cell parameters and the synaptic input. For a
 compartment with parallel resistance |rin|, capacitance |cm|, and
 time-varying conductance |gcell|, cellOde takes the form
 \begin{code}
-cellOde = \v->{: -(<: gcell :>*v + ((v-vrest)/rin))/cm :}
+cellOde = \v->sopen -(<: gcell :>*v + ((v-vrest)/rin))/cm sclose
 \end{code}
 
 First, we examine the response to a step conductance. In that case,
 \begin{code}
-gcell = {: if between 0.01 0.09 <: seconds :> then a else 0 :}
+gcell = sopen if between 0.01 0.09 <: seconds :> then a else 0 sclose
 \end{code}
 which completes a definition of the integrate-and-fire simulation, for
 a particular value of |a|. |v_m| for this simulation is plotted in Fig
@@ -558,12 +549,12 @@ preSpike <* poissonTrain rate
 
 Then we define the synaptic waveform with an alpha function
 \begin{code}
-alpha amp tau = {: amp*tau*tau*<:seconds:>*exp (-<:seconds:>*tau) :}
+alpha amp tau = sopen amp*tau*tau*<:seconds:>*exp (-<:seconds:>*tau) sclose
 gcell =  convolveSE (alpha amp tau) (tag 1 preSpike)
 \end{code}
 where |convolveSE| convolves a signal with an event, mutiplying the
 impulse response signal with tag of each event
-occurrence. |convolveES| is a library function defined with the
+occurrence. |convolveSE| is a library function defined with the
 previously described primitives. Figure 3B shows the convolved cell
 conductance and 3C |v_m| for particular values of |rate|, |amp| and
 |tau|.
@@ -789,7 +780,9 @@ There has been substantial progress in \emph{automation} in the
 experimental sciences, which has substatially accelerated the
 acquisition of knowledge. In contrast, there has been almost no work
 in verification, a seperate but overlapping application of calculating
-machines to science.
+machines to science. Nevertheless, if such verification is possible it
+may lead to a much more radical change in the way scientific research
+is conducted.
 
 \section*{Methods}
 

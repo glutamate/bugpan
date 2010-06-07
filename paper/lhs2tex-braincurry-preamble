@@ -9,6 +9,7 @@
 %format beta = "\beta"
 %format times = "\!\!\times\!\!"
 %format Real = "\mathbb{R}"
+%format Integer = "\mathbb{Z}"
 %format sopen = "\{\!:\!"
 %format sclose = "\!:\!\}"
 %format <: = "\langle:"

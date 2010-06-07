@@ -1,0 +1,47 @@
+module Intfire where
+
+use Prelude
+
+rate = 200
+rin=1.0e9
+
+vrest = -0.080
+
+cm = 2.5e-12
+
+stepAmp = 0 
+
+_dt = 4.0e-5
+_tmax= 0.1
+
+gcell :: Signal Real
+gcell = {: if between 0.01 0.09 <:seconds:> then stepAmp else 0:}
+
+--cellOde = \v->{: ((<: gcell :>*(0-v)) - ((v-vrest)/rin))/cm :} 
+
+
+D vm = vrest fby  {: ((<: gcell :>*(0-<:vm:>)) - 
+                      ((<:vm:>-vrest)/rin) -
+                      (gmaxk * cube <:act:> * <:inact:>*(0.09+<:vm:>)))/cm :} 
+
+D act = 0 fby {: (aact <: vm:>) * ( 1-<:act:>) -
+                 (bact <:vm:>) * <: act :> :}
+
+D inact = 0 fby {: (ainact <: vm:>) * ( 1-<:inact:>) -
+                   (binact <: vm:>) * <: inact :> :}
+
+
+aact v = 0.35*exp(0.039*(V+70))
+ainact v = 0.175*exp(-0.02*(V+80))
+
+bact v = 0.35*exp(-0.091*(V+70))
+binact v = 0.175*exp(0.18*(V+80))
+
+cube x = x*x*x
+
+spike :: [(Real, ())]
+spike = crosses (0) vm
+
+gcell *> store ""
+vm *> store ""
+spike *> store ""
