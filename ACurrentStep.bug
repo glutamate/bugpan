@@ -1,4 +1,4 @@
-module Intfire where
+module ACurrentStep where
 
 use Prelude
 
@@ -9,39 +9,53 @@ vrest = -0.080
 
 cm = 2.5e-12
 
+gmaxk = 0
+
 stepAmp = 0 
 
-_dt = 4.0e-5
-_tmax= 0.1
+_dt = 2.0e-5
+_tmax= 2
 
 gcell :: Signal Real
-gcell = {: if between 0.01 0.09 <:seconds:> then stepAmp else 0:}
+gcell = {: if between 0.1 1.9 <:seconds:> then stepAmp else 0:}
 
 --cellOde = \v->{: ((<: gcell :>*(0-v)) - ((v-vrest)/rin))/cm :} 
 
+vm :: Signal Real
+act :: Signal Real
+inact :: Signal Real
 
-D vm = vrest fby  {: ((<: gcell :>*(0-<:vm:>)) - 
+D vm = vrest fby  ({: ((<: gcell :>*(0-<:vm:>)) - 
                       ((<:vm:>-vrest)/rin) -
-                      (gmaxk * cube <:act:> * <:inact:>*(0.09+<:vm:>)))/cm :} 
+                      (gmaxk * pow3 <:act:> * <:inact:>*(0.09+<:vm:>)))/cm :} )
 
-D act = 0 fby {: (aact <: vm:>) * ( 1-<:act:>) -
-                 (bact <:vm:>) * <: act :> :}
+D act = 0 fby ({: (aact <: vm:>) * ( 1-<:act:>) -
+                  (bact <:vm:>) * <: act :> :})
 
-D inact = 0 fby {: (ainact <: vm:>) * ( 1-<:inact:>) -
-                   (binact <: vm:>) * <: inact :> :}
+D inact = 0 fby ({: (ainact <: vm:>) * ( 1-<:inact:>) -
+                    (binact <: vm:>) * <: inact :> :})
+
+aact :: Real -> Real
+ainact :: Real -> Real
+bact :: Real -> Real
+binact :: Real -> Real
+pow3 :: Real -> Real
 
 
-aact v = 0.35*exp(0.039*(V+70))
-ainact v = 0.175*exp(-0.02*(V+80))
+aact v = 0.35*exp(0.039*((v*1000)+70))
+ainact v = 0.175*(exp((0-0.02)*((v*1000)+80)))
 
-bact v = 0.35*exp(-0.091*(V+70))
-binact v = 0.175*exp(0.18*(V+80))
+bact v = 0.35*exp((0-0.091)*((v*1000)+70))
+binact v = 0.175*(exp(0.18*((v*1000)+80)))
 
-cube x = x*x*x
+pow3 x = x*x*x
 
 spike :: [(Real, ())]
 spike = crosses (0) vm
 
 gcell *> store ""
 vm *> store ""
+act *> store ""
+inact *> store ""
+
 spike *> store ""
