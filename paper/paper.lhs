@@ -40,13 +40,13 @@ approach to experimentation itself could facilitate replication and
 meta-analysis, permit a better understanding of apparent
 inconsistencies between studies and a clearer formulation of what
 constitutes sound scientific practice.  Here, we propose a calculus of
-physiological evidence that can describe an experiment such that it
-can be unambiguously replicated and be inspected to certify whether
-analysis procedures are applicable. This framework does not describe
-the physical components of biological organism; it has no concept
-of networks, cells or proteins. Instead it describes observation
-and calculation of the mathematical objects that constitute
-physiological evidence.
+physiological evidence that can describe an experiment on a biological
+organism such that it can be unambiguously replicated and be inspected
+to certify whether analysis procedures are applicable. This framework
+does not describe the physical components of biological organism; it
+has no concept of networks, cells or proteins. Instead it describes the
+observation and calculation of the mathematical objects that
+constitute physiological evidence.
 
 What is an experiment? Whether they are carried out by humans or by
 automated equipment, many experiments can be seen as \emph{programs}
@@ -59,7 +59,7 @@ purely mathematical transformations to interact with the physical
 world. Here we show that the semantics of FRP provide a structure for
 physiological evidence. We have implemented this calculus of evidence
 in a concrete programming language and used it for non-trivial
-neurophysiological experiments, simulations and data analysis. These
+neurophysiological experiments and data analysis. These
 protocol are defined unambiguously in a handful of equations; we show
 two such examples.
 
@@ -82,11 +82,11 @@ transparent manner by combining elementary transformations of the
 whole input, including responses from the user, into the entire output
 from the program. When these transformations can be defined by purely
 mathematical functions, the resulting computational paradigm is known
-as Functional Reactive Programming (Ref and inelegant). FRP introduces
+as Functional Reactive Programming. FRP introduces
 two types of values to place information in a temporal context:
 Signals, which represent continuously varying quantities, and events
 representing distinct occurrences. These types are flexible, in that
-they can be instantiated with any other type. We show that there is
+they can carry information of any other type. We show that there is
 significant overlap between these definitions of signals and events,
 and physiological evidence. Thus, definitions of experiments can be
 described concisely in a language based on the composition and
@@ -113,7 +113,7 @@ the type |alpha times beta| is the pair formed by an element of
 letters stand for type variables, which can be substituted by any
 concrete type, such as a base type or a compound type. Types can be
 defined with references to arbitrary types; for instance,
-|withIntegers alpha = [(Integer, alpha)]| denotes for any type |alpha|
+|withIntegers alpha = [Integer times alpha]| denotes for any type |alpha|
 the list of pairs of integers and |alpha|s. This hole in the type
 definition can then be filled in to form a concrete type, for instance
 |withIntergers String|. The ability to build flexible type schemata in
@@ -311,15 +311,15 @@ in this library.
 In the previous examples, signals, events and durations exist as
 purely mathematical objects. In order to describe experiments, it must
 also be possible to observe these values from real-world systems, and
-to create controlled stimuli. For this purpose, we introduce
-\emph{sources} and \emph{sinks} that bridge variables in purely
-mathematical equations with the physical world.
+to create controlled stimuli to perturn these systems. For this
+purpose, we introduce \emph{sources} and \emph{sinks} that bridge
+variables in purely mathematical equations with the physical world.
 
 Using the construct
 \begin{code}
 identifier <* source parameter
 \end{code}
-we bind the signal yielded by a \emph{paramet}rised \emph{source} to
+we bind the signal yielded by a parametrised \emph{source} to
 the variable \emph{identifier}. This variable will hold the
 whole signal observed during the course of the experiment. The signal
 source binding construct defined a simple experiment:
