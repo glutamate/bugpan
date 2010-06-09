@@ -2,7 +2,7 @@ module ACurrentStep where
 
 use Prelude
 
-rate = 200
+rate = 0
 rin=1.0e9
 
 vrest = -0.080
@@ -13,46 +13,55 @@ gmaxk = 0
 
 stepAmp = 0 
 
-_dt = 5.0e-4
-_tmax= 1.2
+_dt = 1.0e-5
+_tmax= 2
+
+rndSpike :: [(Real, ())]
+rndSpike <* poisson rate
+alpha tau t = if t<0.0 then 0.0 else tau*tau*t*(exp (-t*tau)) 
+
+gsynmul = 1.0e-12
+
+gsyn = {: gsynmul * (alpha 1485 <: seconds:>) #0.02:}
+
+stage gsyn -1
+
+gsyncell = (convolve gsyn) (forget 0.02 rndSpike )
+
 
 gcell :: Signal Real
 gcell = {: if between 0.1 1.9 <:seconds:> then stepAmp else 0:}
-
---cellOde = \v->{: ((<: gcell :>*(0-v)) - ((v-vrest)/rin))/cm :} 
 
 vm :: Signal Real
 a :: Signal Real
 b :: Signal Real
 
+cellOde = \v -> {: ((<: gcell :>*(0-v)) - 
+                      ((v-vrest)/rin) - 
+		      <: delay ika 0:> -
+		      (<: gsyncell :>*v))/cm :} 
 
-{-D vm = vrest fby  ({: ((<: gcell :>*(0-<:vm:>)) - 
-                      ((<:vm:>-vrest)/rin) -
-                      <:ika:>)/cm :} ) -}
+vm = switch 
+	    (solveOde cellOde) vrest
+	    spike ~> \_->\_->{: vrest :}
+	    refrac_end ~> \tsp->\_-> solveOdeFrom (tsp+dt) cellOde vrest
 
-stepSig t0 t1 amp = {: if between t0 t1 <:seconds:> then amp else 0 :}
-
-vm = {: let t = <:seconds:> 
+{-vm = {: let t = <:seconds:> 
      	in if t <0.999 then (0-0.12) 
               else (if t > 1.001 then 0 
-                       else (((t-0.999)*0.12/0.002) -0.12)) :}
+                       else (((t-0.999)*0.12/0.002) -0.12)) :} -}
 
 ika :: Signal Real
-ika = {: gmaxk * <:a:> * <:b:>*(0.09+<:vm:>) :}
+ika = {: gmaxk * <:a:> * <:b:>*(0.08+<:vm:>) :}
 
 
-D a = 0 fby ({: 1000*(((alphaa ((<: vm:>*1000)+80))* ( 1-<:a:>)) -
-                ((betaa ((<:vm:>*1000)+80)) * <: a :>)) :})
+D a = 0 fby ({: 1000*(((alphaa ((<: vm:>*1000)+60))* ( 1-<:a:>)) -
+                ((betaa ((<:vm:>*1000)+60)) * <: a :>)) :})
 
-D b = 0 fby ({: 1000*(((alphab ((<: vm:>*1000)+80)) * ( 1-<:b:>)) -
-                ((betab ((<:vm:>*1000)+80)) * <: b :>)) :})
+D b = 0 fby ({: 1000*(((alphab ((<: vm:>*1000)+60)) * ( 1-<:b:>)) -
+                ((betab ((<:vm:>*1000)+60)) * <: b :>)) :})
 
 
-aact :: Real -> Real
-ainact :: Real -> Real
-bact :: Real -> Real
-binact :: Real -> Real
-pow3 :: Real -> Real
 
 alphaa :: Real -> Real
 betaa :: Real -> Real
@@ -60,29 +69,22 @@ alphab :: Real -> Real
 betab :: Real -> Real
 
 
-
-{-aact v = 0.35*exp(0.039*((v*1000)+70))
-ainact v = 0.175*(exp((0-0.02)*((v*1000)+80)))
-
-bact v = 0.35*exp((0-0.091)*((v*1000)+70))
-binact v = 0.175*(exp(0.18*((v*1000)+80))) -}
-
 alphaa v = (0.02*(13.1-v))/((exp ((13.1 -v)/10)) -1)
 betaa v =  (0.0175*(v-40.1))/((exp ((v-40.1)/10))-1)
 
 alphab v = 0.0016*exp((0-13-v)/18)
 betab v = 0.05/(1+(exp((10.1-v)/5)))
 
-pow3 x = x*x*x
-
 spike :: [(Real, ())]
-spike = crosses (0) vm
+spike = crosses (-0.05) vm
+
+refrac_end :: [(Real, ())]
+refrac_end = later 2.5e-3 spike
 
 gcell *> store ""
 vm *> store ""
 a *> store ""
 b*> store ""
 ika *> store ""
-
 
 spike *> store ""
