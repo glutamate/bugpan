@@ -17,6 +17,7 @@ import QueryUtils
 import QueryTypes
 import PlotGnuplot
 import QueryPlots
+import NewSignal
 
 {-
 
@@ -35,13 +36,16 @@ main = do
     determineS step [("stepAmp", return 6.05e-10),
                      ("gmaxk",return 1e-7)]
 
-    determineS step [("stepAmp", return 6.05e-10),
-                     ("gmaxk",return 0)]
+{-    determineS step [("stepAmp", return 6.05e-10),
+                     ("gmaxk",return 0)] -}
   inApproxSession "acurrent" $ do
          vm <- signalsDirect "vm"
-         act <- signalsDirect "act"
-         inact <- signalsDirect "inact"
-         io $ gnuplotOnScreen $ alignBy sigStart vm 
+         act <- signalsDirect "a"
+         inact <- signalsDirect "b"
+         ika <- signalsDirect "ika"
+         let t0 = sigT1 $ head ika
+         let showDur = [((t0+0.99, t0+1.1), ())]
+         io $ gnuplotOnScreen $ during showDur vm :==: during showDur ika
     
 
   
