@@ -28,6 +28,7 @@ data CType = CIntT
 bugTyToCTy (NumT (Just RealT)) = CDoubleT
 bugTyToCTy (ListT (PairT (NumT (Just RealT)) UnitT)) = CPtrT $ CStructT "event_unit"
 bugTyToCTy (SignalT t) = bugTyToCTy t
+bugTyToCTy (EventT t) = CPtrT $ CStructT "event_unit"
 bugTyToCTy (StringT) = CStringT
 
 bugTyToCTy t = error2 "bugTyToCTy: "  t

@@ -6,6 +6,7 @@ gsyn = {: 1.0e-12 * (alpha 1485 <: seconds:>) :}
 
 stage gsyn -1
 
+gcell = (convolveC gsyn) (forget 0.02 rndSpike )
 
 rate = 200
 

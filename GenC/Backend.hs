@@ -36,7 +36,7 @@ compileToC fp dt tmax ds params = do
   --putStrLn "\n---------------\n"
   let (env:stageDs) = splitByStages ds
   putStrLn "\n---------------s0\n"
-  mapM print $ head stageDs
+  mapM print $ (!!1) stageDs
   let prg = ppCProg $ toC dt tmax ds params
   writeFile (fp) prg
   --putStrLn prg 
@@ -96,6 +96,8 @@ globals ds = concat(nub $ map (gloVar ds) ds)++
               DeclareGlobal CLongT "i" (Just 0)]
 
 gloVar _ (Let (PatVar nm t) (Sig e)) = 
+          [DeclareGlobal (bugTyToCTy t) nm Nothing]
+gloVar _ (Let (PatVar nm t) (Forget tm e)) = 
           [DeclareGlobal (bugTyToCTy t) nm Nothing]
 gloVar _ (Let (PatVar nm t) (Const v)) = 
           [DeclareGlobal (bugTyToCTy t) nm (Just $Const v)]

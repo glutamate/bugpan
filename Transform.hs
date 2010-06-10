@@ -188,7 +188,7 @@ forgetFloating = mapDE forgetFl
           forgetFl e = mapEM forgetFloat e
           forgetFloat (Forget tm se) = do
             sn <- genSym "forgetFloat"
-            insertBefore [Let (PatVar sn UnspecifiedT) (Forget tm se)]
+            insertBefore [Let (PatVar sn (EventT UnitT)) (Forget tm se)] --FIXME: not necessarily unit t
             return (Var sn)
           forgetFloat (e) = return e
           

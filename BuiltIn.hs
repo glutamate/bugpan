@@ -44,6 +44,7 @@ bivs = [
                                                                           return $ sum $ map (\(PairV tev n) -> n) evvs
                                                                        ),-}
  BiV "convAux" (SignalT realT .->. (realT .->. (eventsT AnyT .->. SignalT realT))) (LamV $ \x->return Unit),
+ BiV "convolveC" (SignalT realT .->. (eventsT UnitT .->. SignalT realT)) (LamV $ \x->return Unit),
  BiV "seconds" (SignalT realT) Unit,
  BiV "tmax" realT Unit,
  BiV "dt" realT Unit]
