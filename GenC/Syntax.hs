@@ -92,7 +92,9 @@ ppCCmd (For ini tst incr cmds) =
                             
 
 ppEC (If p c a) = "("++ppEC p ++")?("++ppEC c ++"):("++ppEC a++")"
-ppEC a@(App (Var "sizeof") e2) = "sizeof("++ppEC e2++")"
+ppEC (App (Var "sizeof") e2) = "sizeof("++ppEC e2++")"
+ppEC (App (App (Var "ptr") (Var pnm)) (Var field)) = pnm++"->"++field
+ppEC (App (App (Var "dot") (Var pnm)) (Var field)) = pnm++"."++field
 ppEC a@(App e1 e2) = printCall $ flatApp a
 ppEC (Const x) = ppVal x
 ppEC (M1 Exp e1) = "exp("++ppEC e1++")"
