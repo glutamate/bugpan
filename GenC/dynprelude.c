@@ -50,7 +50,7 @@ double read_signal(struct signal_double *sig, double t) {
   return sig->arr[pnt];
 }
 
-double convolution(struct signal_double *sig, struct event_unit *evs, double forget, double tnow) {
+double convolution(struct signal_double *sig, struct event_unit *evs, double tnow) {
   double sum = 0;
   struct event_unit *head = evs; 
   while(head && (head->etime)<tnow) {
@@ -58,6 +58,13 @@ double convolution(struct signal_double *sig, struct event_unit *evs, double for
     head=head->next;
   }
   return sum;
+}
+
+struct event_unit* forget_events(struct event_unit *head, double tnow, double forget_tm) {
+  while(head && (head->etime)<tnow-forget_tm) {
+     head=head->next;
+  }
+  return head;
 }
 
 void write_word8(FILE* fp, unsigned char c) {

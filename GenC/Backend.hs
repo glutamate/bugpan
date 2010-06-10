@@ -34,9 +34,10 @@ compileToC fp dt tmax ds params = do
   --mapM print ds
 
   --putStrLn "\n---------------\n"
-  let (env:stageDs) = splitByStages ds
-  putStrLn "\n---------------s0\n"
-  mapM print $ (!!1) stageDs
+  let stgs@(env:stageDs) = splitByStages ds
+  forM stgs $ \ds-> do
+    putStrLn "\n---------------stage\n"
+    mapM print  ds
   let prg = ppCProg $ toC dt tmax ds params
   writeFile (fp) prg
   --putStrLn prg 
@@ -133,6 +134,8 @@ tyOf ds nm =  head $ [t | DeclareType nm' t <- ds, nm == nm' ]
 stepper (stage,ds) = [CFun CIntT ("step"++show stage) [] $ secs:(concat$ nub $map step ds)]
     where secs = DecVar CDoubleT "seconds" (Just $ Var "i"*Var "dt")
 step (Let (PatVar nm t) (Sig e)) = [Assign (Var (nm)) $ unVal e]
+step (Let (PatVar nm t) (Forget tm e)) = 
+          [Assign (Var (nm)) (Var "forget_events" $> e $> Var "seconds" $> tm)]
 step (SinkConnect (Var nm) ("store", _)) = [Assign (Var (nm++"Sig->arr[i]")) $ Var nm]
 step (Let (PatVar nm t) (SolveOde (SigFby v e))) = 
                     [Assign (Var (nm)) $ (Var nm) + Var "dt" * unVal e]
