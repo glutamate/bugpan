@@ -1,9 +1,8 @@
-#define IA 16807
-#define IM 2147483647
-#define AM (1.0/IM)
-#define IQ 127773
-#define IR 2836
-#define MASK 123459876
+#include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
+
+float ran0(long *);
 
 struct signal_double {
   double t1;
@@ -25,6 +24,18 @@ struct event_unit* cons_event(double thetime, struct event_unit *head) {
   return cell;
 }
 
+struct signal_double* create_sig(int npnts) {
+  struct signal_double* p;
+  p = malloc(sizeof(struct signal_double));
+  p->npts = npnts;
+  p->arr = malloc(npnts*sizeof(double));
+}
+
+void free_sig(struct signal_double* sig) {
+  free(sig->arr);
+  free(sig);
+}
+
 void free_events(struct event_unit *first) {
   struct event_unit *next_head, *head = first;
   while(head) {
@@ -35,7 +46,7 @@ void free_events(struct event_unit *first) {
 }
 
 double read_signal(struct signal_double *sig, double t) {
-  unsigned long pnt = (t-sig->t1)/dt;
+  unsigned long pnt = (t-sig->t1)/sig->dt;
   return sig->arr[pnt];
 }
 
@@ -46,10 +57,10 @@ double convolution(struct signal_double *sig, struct event_unit *evs, double for
     sum += read_signal(sig, tnow-head->etime);
     head=head->next;
   }
-  return sum
+  return sum;
 }
 
-void write_word8(FILE *fp, unsigned char c) {
+void write_word8(FILE* fp, unsigned char c) {
   fwrite(&c, 1, 1, fp);
 }
 
@@ -61,7 +72,7 @@ void write_double(FILE *fp, double c) {
   fwrite(&c, sizeof(double), 1, fp);
 }
 
-void write_signal(char *fnm, struct signal_double *sig) {
+int write_signal(char *fnm, struct signal_double *sig) {
  FILE *fp;
  
   /* open the file we are writing to */
@@ -83,43 +94,78 @@ void write_signal(char *fnm, struct signal_double *sig) {
   fwrite(sig->arr,sizeof(double), sig->npts,fp);
 
   fclose(fp);
+  return 0;
 
 }
+
+long count_events(struct event_unit *head) {
+  long len = 0;
+  while(head) {
+    head = head->next;
+    len++;
+  }
+}
+
+int write_events(char *fnm, struct event_unit *head) {
+ FILE *fp;
+ 
+  /* open the file we are writing to */
+  if(!(fp = fopen(fnm, "w")))
+     return 1;
+  write_int(fp, count_events(head));
+
+  while(head) {
+    write_double(fp, head->etime);
+    head = head->next;
+  }
+  fclose(fp);
+  return 0;
+
+}
+
+long seed = 0;
+double ran_poisson(double rate) {
+  double x = ran0(&seed);
+  return -(log(1-x))/rate;
+}
+
 
 struct event_unit *poisson_train(double rate, double tmax) {
   struct event_unit *head = NULL;
   double tlast = 0;
-  tlast=poisson(rate);
+  tlast=ran_poisson(rate);
   while(tlast<tmax) {
     head = cons_event(tlast, head);
-    tlast+=poisson(rate);
+    tlast+=ran_poisson(rate);
   }
   return head;
 }
 
-double ran_poisson(double rate) {
-  double x = ran0(seed);
-  return -(log(1-x))/rate;
-}
 
-long seed = 0;
+#define IA 16807
+#define IM 2147483647
+#define AM (1.0/IM)
+#define IQ 127773
+#define IR 2836
+#define MASK 123459876
 
-float ran0(long &idum)
-// "Minimal" random number generator of Park and Miller with
-// Bays-Durham shuffle and added safeguards. Returns a uniform random
-// deviate between 0.0 and 1.0. Set or reset idum to any integer value
-// (except the unlikely value MASK) to initialize the sequence; idum
-// must not be altered between calls for successive deviates in a sequence.
+float ran0(long *idum)
 {
-  long k;
-  float ans;
+        long k;
+        float ans;
 
-  idum ^= MASK;                   // XORing with MASK allows use of 0 and
-  k = idum/IQ;                    //     other simple bit patterns for idum.
-  idum = IA * (idum-k*IQ) - IR*k; // Compute idum = (IA*idum) % IM without
-  if (idum < 0) idum += IM;       //     overflows by Schrage's method.
-  ans = AM * idum;                // Convert idum to a floating result.
-  idum ^= MASK;                   // Unmask before return.
-  return ans;
+        *idum ^= MASK;
+        k=(*idum)/IQ;
+        *idum=IA*(*idum-k*IQ)-IR*k;
+        if (*idum < 0) *idum += IM;
+        ans=AM*(*idum);
+        *idum ^= MASK;
+        return ans;
 }
-
+#undef IA
+#undef IM
+#undef AM
+#undef IQ
+#undef IR
+#undef MASK
+/* (C) Copr. 1986-92 Numerical Recipes Software 02141.. */

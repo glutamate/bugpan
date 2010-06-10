@@ -5,6 +5,7 @@ import EvalM
 import PrettyPrint
 import Data.List
 import Numbers
+import TNUtils
 
 space = " "
 semicolon = ";"
@@ -14,22 +15,29 @@ inPar s = "("++s++")"
 ind s = "   "++s
 
 data CType = CIntT
+           | CLongT
            | CDoubleT
            | CArrayT (Maybe E) CType
            | CPtrT CType
            | CCharT
            | VoidT
-           deriving Show
+           | CStringT
+           | CStructT String
+           deriving (Show, Eq)
 
 bugTyToCTy (NumT (Just RealT)) = CDoubleT
+bugTyToCTy (ListT (PairT (NumT (Just RealT)) UnitT)) = CPtrT $ CStructT "event_unit"
 bugTyToCTy (SignalT t) = bugTyToCTy t
+bugTyToCTy (StringT) = CStringT
 
-bugTyToCTy t = error $ show t
+bugTyToCTy t = error2 "bugTyToCTy: "  t
 
-data TopDecl = CInclude String
+data TopDecl = CInclude Bool String
              | CDefine String E
              | DeclareGlobal CType String (Maybe E)
              | CFun CType String [(String, CType)] [CCmd]
+           deriving (Show, Eq)
+
 
 data CCmd = DecVar CType String (Maybe E)
           | Assign E E
@@ -37,10 +45,11 @@ data CCmd = DecVar CType String (Maybe E)
           | Return E
           | For CCmd E CCmd [CCmd]
           | Call String [E]
+           deriving (Show, Eq)
 
 forCount nm from to = For (Assign (Var nm) from) (Cmp Lt (Var nm) to) (Assign (Var nm) (Var nm+1))
 
-isInclude (CInclude _) = True
+isInclude (CInclude _ _) = True
 isInclude _ = False
 
 ppCProg :: [TopDecl] -> String
@@ -48,7 +57,8 @@ ppCProg prg =
         let (incls, rest) = partition isInclude prg
         in unlines $ concatMap ppCTop incls++concatMap ppCTop rest
         
-ppCTop (CInclude nm) = ["#include <"++nm++">"]
+ppCTop (CInclude True nm) = ["#include <"++nm++">"]
+ppCTop (CInclude False nm) = ["#include \""++nm++"\""]
 ppCTop (CDefine nm e) = [concat ["#define ",nm,ppEC e]]
 ppCTop (DeclareGlobal ty nm Nothing) = cline [ppCTy ty, space, nm] 
 ppCTop (DeclareGlobal ty nm (Just e)) = cline [ppCTy ty, space, nm, " = ", ppEC e] 
@@ -59,9 +69,13 @@ ppCTop (CFun ty nm args cmds) =
 parg (nm, ty) = ppCTy ty ++" "++nm
 
 ppCTy CIntT = "int"
+ppCTy CLongT = "long"
 ppCTy CDoubleT = "double"
 ppCTy CCharT = "char"
 ppCTy VoidT = "void" 
+
+ppCTy CStringT = "char *" 
+ppCTy (CStructT nm) = "struct "++nm 
 ppCTy (CArrayT (Just ne) t) = ppCTy t++"["++ppEC ne++"]"
 ppCTy (CArrayT (Nothing) t) = ppCTy t++"[]"
 ppCTy (CPtrT t) = ppCTy t ++"*"

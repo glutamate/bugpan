@@ -2,6 +2,13 @@ module Test where
 
 alpha tau t = if t<0.0 then 0.0 else (t/tau)*exp (1-t/tau)
 
+gsyn = {: 1.0e-12 * (alpha 1485 <: seconds:>) :}
+
+stage gsyn -1
+
+
+rate = 200
+
 x = {: 1 :}
 
 y = {: 2 + <: x :> :}
@@ -9,3 +16,6 @@ y = {: 2 + <: x :> :}
 D w = 4 fby y
 
 w *> store "" 
+
+rndSpike :: [(Real, ())]
+rndSpike <* poisson rate
