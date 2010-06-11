@@ -31,28 +31,36 @@ main = do
   deleteSessionIfExists "acurrent"
   inApproxSession "new:acurrent" $ do
     step <- useFile "ACurrentStep" 
-                         (realTs "stepAmp gmaxk rate") []
+                         (realTs "stepAmp gmaxk rate oneSpikeAmp") []
+    let runIt (stepAmp, gmaxk, rate, oneSpikeAmp) = do
+            determineS step [("stepAmp", return stepAmp),
+                             ("gmaxk",return gmaxk),
+                             ("rate",return rate), 
+                             ("oneSpikeAmp",return oneSpikeAmp)]
+            inLast ("stepAmp" := stepAmp)
+            inLast ("gmaxk" := gmaxk)
+            inLast ("rate" := rate)
+            inLast ("oneSpikeAmp" := oneSpikeAmp)
+    runIt (2e-10, 1e-8, 0, 0) --step, acurrent
+    runIt (2e-10, 0, 0, 0) --step, no acurrent
+    runIt (0, 1e-7, 0, 1.0e-12) --onesyn, acurrent
+    runIt (0, 0, 0, 1.0e-12) --onesyn, no acurrent
+    forM_ [10,20..600] $ \r -> do
+         runIt (0, 0, r, 0)
+         runIt (0, 1e-7, r, 0)
 
-    determineS step [("stepAmp", return 0),
-                     ("gmaxk",return 1e-7),
-                     ("rate",return 600)]
-
-    determineS step [("stepAmp", return 0),
-                     ("gmaxk",return 0),
-                     ("rate",return 600)]
-
-    {-determineS step [("stepAmp", return 6.05e-10),
-                     ("gmaxk",return 0)]  -}
-  inApproxSession "acurrent" $ do
+  {-inApproxSession "acurrent" $ do
          vm <- signalsDirect "vm"
          act <- signalsDirect "a"
          inact <- signalsDirect "b"
          ika <- signalsDirect "ika"
          let t0 = sigT1 $ head ika
          let showDur = [((t0, t0+0.1), ())]
-         io $ gnuplotOnScreen $ alignBy sigStart vm 
+         io $ gnuplotOnScreen $ alignBy sigStart vm -}
 
 -- alignBy sigStart vm --during showDur vm :==: during showDur ika
+
+
     
 
   

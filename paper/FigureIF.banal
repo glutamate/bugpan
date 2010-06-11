@@ -1,19 +1,26 @@
->> defineSession intfire SimIntfire
+%>> defineSession intfire SimIntfire
 
->> openSession intfire
+>> openSession acurrent
 
->> inrate = freqDuring (drop 1 running) rndSpike
+>> steps = (>1e-14)//stepAmp
+>> oneSyn = (>1e-14)//oneSpikeAmp
+>> ffcurve = (>0)//rate
 
->> outrate = freqDuring (drop 1 running) spike
 
->> ffcurve = scatter $ zipD inrate outrate
+%>> inrate = freqDuring (ffcurve) rndSpike
+
+%>> outrate = freqDuring (ffcurve) spike
+
+%>> ffscat = scatter $ zipD inrate outrate
 
 >> showDur =  restrictDur (0, 0.1) [running!!1]
  
->> spikes = tag 6e-10 $ during showDur rndSpike
+% >> spikes = tag 6e-10 $ during showDur rndSpike
 
-> plot $ (A [vm!!0] :||: B (during showDur gcell :+: spikes)) 
->        :==: (C (during showDur vm) :||: D ffcurve) 
+>> plot $ alignBy sigStart $ during steps vm
+
+%> plot $ (A [vm!!0] :||: B (during showDur gcell :+: spikes)) 
+%>        :==: (C (during showDur vm) :||: D ffcurve) 
 
 %> plot $ during showDur [gcell!!1] 
 %>        :==: spikes 

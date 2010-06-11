@@ -16,6 +16,8 @@ stepAmp = 0
 _dt = 1.0e-5
 _tmax= 2
 
+oneSpikeAmp = 1.0e-12
+
 rndSpike :: [(Real, ())]
 rndSpike <* poisson rate
 alpha tau t = if t<0.0 then 0.0 else tau*tau*t*(exp (-t*tau)) 
@@ -28,9 +30,11 @@ stage gsyn -1
 
 gsyncell = (convolve gsyn) (forget 0.02 rndSpike )
 
+goneSpike = {: oneSpikeAmp * (alpha 1485 (<: seconds:>-1)) :}
+
 
 gcell :: Signal Real
-gcell = {: if between 0.1 1.9 <:seconds:> then stepAmp else 0:}
+gcell = {: if between 0.1 1 <:seconds:> then stepAmp else 0:}
 
 vm :: Signal Real
 a :: Signal Real
@@ -39,7 +43,7 @@ b :: Signal Real
 cellOde = \v -> {: ((<: gcell :>*(0-v)) - 
                       ((v-vrest)/rin) - 
 		      <: delay ika 0:> -
-		      (<: gsyncell :>*v))/cm :} 
+		      ((<: gsyncell :>+<:goneSpike:>)*v))/cm :} 
 
 vm = switch 
 	    (solveOde cellOde) vrest
@@ -81,6 +85,7 @@ spike = crosses (-0.05) vm
 refrac_end :: [(Real, ())]
 refrac_end = later 2.5e-3 spike
 
+rndSpike *> store ""
 gcell *> store ""
 vm *> store ""
 a *> store ""
@@ -88,3 +93,4 @@ b*> store ""
 ika *> store ""
 
 spike *> store ""
+
