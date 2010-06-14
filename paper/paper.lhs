@@ -505,6 +505,40 @@ show how the calculus of physiological evidence can be used to
 formulate and execute (simulated, at least for now!) dynamic-clamp
 experiments on synaptic integration.
 
+A dynamic clamp experiment requires electrical access to the
+intracellular compartment, such that the cell membrane voltage can be
+recorded and current injected into the cell. As opposed to a standard
+current-clamp experiment, where the injected current waveform is known
+in advance, in the dynamic clamp setup the injected current is
+calculated near-instantaneously from the membrance voltage and a known
+conductance waveform by ohm's law, or by simulated
+Hodgkin-Huxley-style voltage-sensitive conductances.
+
+Dynamic clamp-experiments thus follow the same template --- the voltage
+is read and the (output) current calculated from the imposed
+conductance:
+\begin{code}
+v <* ADC (0,20000)
+
+i = sopen <: v :> * <: g :> sclose
+
+i *> DAC (0,20000)
+\end{code}
+The experiment is thus characterised by the signal $g$.
+
+In the simplest case, $g$ is independent of $v$; for instance, when
+considering linear synaptic conductances (Ref angus and simon). 
+
+-syn waveform
+-inject
+-convolve with poisson train
+
+-active conductances
+-a-current
+-equations
+-other traces
+-FF curve
+
 First, we examine the response to a step conductance. In that case,
 \begin{code}
 gcell = sopen if between 0.01 0.09 <: seconds :> then a else 0 sclose
