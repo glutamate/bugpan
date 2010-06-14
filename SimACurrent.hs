@@ -43,11 +43,11 @@ main = do
             inLast ("oneSpikeAmp" := oneSpikeAmp)
     runIt (2e-10, 1e-8, 0, 0) --step, acurrent
     runIt (2e-10, 0, 0, 0) --step, no acurrent
-    runIt (0, 1e-7, 0, 1.0e-12) --onesyn, acurrent
+    runIt (0, 1e-8, 0, 1.0e-12) --onesyn, acurrent
     runIt (0, 0, 0, 1.0e-12) --onesyn, no acurrent
     forM_ [10,20..600] $ \r -> do
+         runIt (0, 1e-8, r, 0)
          runIt (0, 0, r, 0)
-         runIt (0, 1e-7, r, 0)
 
   {-inApproxSession "acurrent" $ do
          vm <- signalsDirect "vm"
