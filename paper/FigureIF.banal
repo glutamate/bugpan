@@ -17,17 +17,12 @@
  
 % >> spikes = tag 6e-10 $ during showDur rndSpike
 
->> plot $ alignBy sigStart $ during steps vm
+>> stepsPlot = alignBy sigStart $ during steps vm
+>> oneSynPlot = during [((0.997,1.02),())] $ alignBy sigStart $ during oneSyn vm
+>> vmPlot = during [((1,1.1),())] $ alignBy sigStart $ take 2 $ drop 50 $ during ffcurve vm
 
->> plot $ during [((0.997,1.02),())] $ alignBy sigStart $ during oneSyn vm
-
->> plot $ during [((1,1.1),())] $ alignBy sigStart $ take 2 $ drop 50 $ during ffcurve vm
-
->> plot ffscat
-
-
-%> plot $ (A [vm!!0] :||: B (during showDur gcell :+: spikes)) 
-%>        :==: (C (during showDur vm) :||: D ffcurve) 
+> plot $ (A stepsPlot :||: B (oneSynPlot)) 
+>        :==: (C vmPlot :||: D ffscat) 
 
 %> plot $ during showDur [gcell!!1] 
 %>        :==: spikes 

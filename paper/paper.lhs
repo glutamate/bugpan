@@ -497,38 +497,13 @@ later with smaller values of $\frac{l}{v}$
 An important property studied in computational neuroscience is the
 input-output relationships of neurons. Given a stimulus, e.g. injected
 current waveform or pattern of synaptic input, what is the membrance
-voltage trajectory and firing rate response of a particular neuron?
-This question can be addressed with experiments or simulations; here
-we show how the calculus of physiological evidence can be used to
-construct simple models of spiking neurons concisely. 
-
-First, we consider the integrate-and-fire neuron. In this model, a
-cell changes between two modes (integration and refraction)
-\begin{code}
-v_m =  switch {  _, refrac_end  ~>  let D v = cellOde v in v
-                 spike          ~>  sopen v_rest sclose }
-\end{code}
-where
-\begin{code} 
-spike       = (\v->v>0.05) ?? v_m
-refrac_end  = later 0.002 spike
-\end{code}
-In this example, the temporal evolution of |v_m| will alternate
-between two modes: solving the differential equation given by
-|cellOde| and a constant value of |v_rest|. The first mode will be
-active initially (as indicated by |_|), and whenever the |refrac_end|
-event occurs (the end of the refractory period). When the |spike|
-event occurs, |v_m| will follow the constant signal |sopen v_rest
-sclose| until another event occurs.
-
-The above equations give the integrate-and-fire solution to the
-differential equation specified by cellOde, the form of which will be
-defined by the cell parameters and the synaptic input. For a
-compartment with parallel resistance |rin|, capacitance |cm|, and
-time-varying conductance |gcell|, cellOde takes the form
-\begin{code}
-cellOde = \v->sopen -(<: gcell :>*v + ((v-vrest)/rin))/cm sclose
-\end{code}
+voltage trajectory and firing rate response of a particular neuron? In
+particular, the cell properties such as the dendritic morphology or
+ionic conductances can profoundly influence this relationship. Such
+influences can be examined with experiments or simulations; here we
+show how the calculus of physiological evidence can be used to
+formulate and execute (simulated, at least for now!) dynamic-clamp
+experiments on synaptic integration.
 
 First, we examine the response to a step conductance. In that case,
 \begin{code}
