@@ -520,18 +520,49 @@ conductance:
 \begin{code}
 v <* ADC (0,20000)
 
-i = sopen <: v :> * <: g :> sclose
+i = sopen (<: v :> - E)* <: g :> sclose
 
 i *> DAC (0,20000)
 \end{code}
 The experiment is thus characterised by the signal $g$.
 
 In the simplest case, $g$ is independent of $v$; for instance, when
-considering linear synaptic conductances (Ref angus and simon). 
+considering linear synaptic conductances (Ref angus and simon). Here,
+we consider the addition of a simulated fast excitatory synaptic
+conductance to a real neuron. Simple neural models of often simulate
+synaptic excitation using an alpha function, which provides a
+relatively good fit to many synaptic processes.
+\begin{code}
+alpha amp tau = sopen amp*tau*tau*<:seconds:>*exp (-<:seconds:>*tau) sclose
+\end{code}
+Fig 3A shows the membrane voltage recorded from a XXX neuron in a
+dynamic clamp experiment where |g = sopen alpha Y Z <:seconds:>
+sclose|.
+ 
+A more realistic simulation of the input to a cell is the convolution
+of this signal with a presynaptic spike train. The spike train itself
+is first read from a source representing a random probability
+distribution, in this case series of recurrent events of type |Event
+()| for which the inter-occurrence interval is Poisson distributed.
+Secondly, our standard library contains a function |convolveSE| which
+convolves an impulse response signal with a numerically-tagged event,
+such that the impulse response is multiplied by the tag before
+convolution. 
+\begin{code}
+preSpike <* poissonTrain rate
+gsyn =  convolveSE (alpha amp tau) (tag 1 preSpike)
+\end{code}
+The new signal gsyn was used in a new dynamic clamp experiment, and
+the recorded membrane voltage (Fig 3B) showed considerable
+subthreshold fluctuations and some spikes. By changing |rate| and
+measuring the frequency of postsynaptic spikes (|frequencyDuring
+running ((\v->v>0) ?? v)|), we can plot the
+input-output relationship of the neuron (Fig 3C).
 
--syn waveform
--inject
--convolve with poisson train
+Both the subthreshold properties of a cell and its spiking rate can be
+regulated by active ionic conductances. One way to examine this
+regulation of synaptic integration is to impose an additional active
+conductance on cells with dynamic clamp.
 
 -active conductances
 -a-current
