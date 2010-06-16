@@ -1,4 +1,4 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving, FlexibleContexts, UndecidableInstances, NoMonomorphismRestriction, CPP #-} 
+{-# LANGUAGE GeneralizedNewtypeDeriving, FlexibleContexts, UndecidableInstances, TypeOperators, NoMonomorphismRestriction, CPP #-} 
 
 module Query where
 
@@ -51,7 +51,8 @@ import Math.Probably.FoldingStats
 import Text.Printf
 import NewSignal
 import System.Info
- 
+import System.IO.Unsafe
+
 double :: Double
 double = undefined
 
@@ -61,6 +62,47 @@ bugpanRootDir = if os == "mingw32"
                    else "/var/bugpan/" 
 
 sessionsRootDir = bugpanRootDir./"sessions/"
+
+getTnow :: MonadIO m  => StateT QState m Double
+getTnow = ifM (realTime `fmap` get)
+              (do Session _ t0 <- getSession
+                  tnow <- liftIO $ getClockTime
+                  return $ diffInS tnow t0)
+              (lastTStop `fmap` get)
+
+data a := b = a := b
+
+inLast :: (MonadIO m , Reify a) => (String := a) -> StateT QState m ()
+inLast (nm := val) = do 
+  sess@(Session bdir _) <- getSession
+  --running <- unitDurationsStrict "running"
+  t1 <- lastTStart `fmap` get
+  t2 <- lastTStop `fmap` get
+  {-case safeLast $ sortBy (comparing (fst . fst)) running of 
+    Nothing -> return ()
+    Just ((t1,t2),()) -> -}
+  
+  liftIO $ saveInSession sess nm t1 0.001 $ pack [((0::Double,t2-t1),val)]
+
+
+inLastSig :: MonadIO m => (String := Signal Double) -> StateT QState m ()
+inLastSig (nm := sig) = do 
+  sess@(Session bdir _) <- getSession
+  --running <- unitDurationsStrict "running"
+  t1 <- lastTStart `fmap` get
+  t2 <- lastTStop `fmap` get
+  {-case safeLast $ sortBy (comparing (fst . fst)) running of 
+    Nothing -> return ()
+    Just ((t1,t2),()) -> -}
+  
+  liftIO $ saveInSession sess nm t1 0.001 $ pack $ shift t1 sig
+{-createDirectoryIfMissing False $ bdir ./ "durations" ./ nm
+              fnm <- uniqueFileInDir "stored" $ bdir ./ "durations" ./ nm
+              saveVs fnm [pack ((t1,t2),val)]
+              putStrLn $ "inlast "++fnm
+              return ()-}
+
+
 
 --change these to loadUntyped
 signals :: (MonadIO m, Reify (Signal a)) => String -> a-> StateT QState m [Signal a]
@@ -81,7 +123,7 @@ signalsDirect nm = do
   --liftIO . print $ bdir++"/signals/"++nm
   ifM (liftIO (doesDirectoryExist (bdir++"/signals/"++nm)))
       (do fnms <- getSortedDirContents $ bdir++"/signals/"++nm
-          sigs <- forM fnms $ \fn-> liftIO $ loadSignalsU $ bdir++"/signals/"++nm++"/"++fn 
+          sigs <- forM fnms $ \fn-> liftIO $ unsafeInterleaveIO $ loadSignalsU $ bdir++"/signals/"++nm++"/"++fn 
           return $ shift tshift $ concat sigs) 
       (return [])
 

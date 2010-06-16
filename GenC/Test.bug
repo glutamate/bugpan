@@ -13,9 +13,10 @@ rate = 200
 
 x = {: 1 :}
 
+y :: Signal Real
 y = {: 2 + <: x :> :}
 
-D w = 4 fby y
+D w = 4 fby y 
 
 w *> store "" 
 

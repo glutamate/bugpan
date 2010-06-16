@@ -42,6 +42,7 @@ import ValueIO
 import Data.Monoid
 import Control.Applicative hiding (Const)
 import System.Info
+import NewSignal
 import qualified Math.Probably.Sampler as S
 
 
@@ -163,31 +164,7 @@ runFromLocally ds t0 = do
   put $ s { lastTStart = t0,
             lastTStop = t0 + trun}
 
-data a := b = a := b
 
-inLast :: (MonadIO m , Reify a) => (String := a) -> StateT QState m ()
-inLast (nm := val) = do 
-  sess@(Session bdir _) <- getSession
-  --running <- unitDurationsStrict "running"
-  t1 <- lastTStart `fmap` get
-  t2 <- lastTStop `fmap` get
-  {-case safeLast $ sortBy (comparing (fst . fst)) running of 
-    Nothing -> return ()
-    Just ((t1,t2),()) -> -}
-  
-  liftIO $ saveInSession sess nm t1 0.001 $ pack [((0::Double,t2-t1),val)]
-{-createDirectoryIfMissing False $ bdir ./ "durations" ./ nm
-              fnm <- uniqueFileInDir "stored" $ bdir ./ "durations" ./ nm
-              saveVs fnm [pack ((t1,t2),val)]
-              putStrLn $ "inlast "++fnm
-              return ()-}
-
-getTnow :: MonadIO m  => StateT QState m Double
-getTnow = ifM (realTime `fmap` get)
-              (do Session _ t0 <- getSession
-                  tnow <- liftIO $ getClockTime
-                  return $ diffInS tnow t0)
-              (lastTStop `fmap` get)
 
 use :: MonadIO m => String -> m [Declare]
 use fnm = liftIO $ fileDecls fnm []

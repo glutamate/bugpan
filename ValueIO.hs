@@ -25,7 +25,6 @@ import Data.List
 import Numeric
 import PrettyPrint
 import System.Cmd
-import System.IO.Unsafe
 import NewSignal
 
 loadVs :: String -> IO [V]
@@ -255,10 +254,8 @@ instance (MyBinary a) => MyBinary [a] where
     myGet = get >>= myGetMany
     
 loadSignalsU:: String -> IO [Signal Double]
-loadSignalsU fp = do
-  let expectedTypeTag = SignalT $ NumT $ Just RealT
-  --h <- openBinaryFile fp ReadMode
-  unsafeInterleaveIO $ withBinaryFile fp ReadMode $ \h->  do 
+loadSignalsU fp = 
+  withBinaryFile fp ReadMode $ \h->  do 
                     n <- idInt `fmap` binGet h 8
                     forM [1..n] (\i -> loadOneSigSV h)
 

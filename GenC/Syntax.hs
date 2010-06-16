@@ -122,7 +122,7 @@ ppEC (M2 Div e1 e2) = ppOp e1 "/" e2
 ppEC (Cmp Lt e1 e2) = ppEC e1 ++ " < " ++ ppEC e2
 
 ppEC (Var nm) = nm
-ppEC e = error $ show e
+ppEC e = error2 "ppEC: " e
 
 ppOp e op e2 = ppEC e++op++ppEC e2
 
