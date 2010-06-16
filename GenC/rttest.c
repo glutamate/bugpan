@@ -53,7 +53,7 @@ int main() {
 
 }
 
-double read_volts(int subd, int chan, int range) {
+double read_volts(int subdev, int chan, int range) {
   lsampl_t data, maxdata;
   int readres;
   comedi_range *rang;
@@ -248,4 +248,30 @@ void internal_trigger() {
   }
   //printf("done\n");fflush(stdout);
 
+}
+
+double readpin(int chan)
+{
+  comedi_t *it;
+  lsampl_t data, maxdata;
+  comedi_range *rang;
+  int readres;
+  double outval;
+
+  if((it=comedi_open("/dev/comedi0"))==NULL) {
+    printf("fail open");
+  }
+
+  comedi_set_global_oor_behavior(COMEDI_OOR_NUMBER);
+
+  readres=comedi_data_read(it,subdev,chan,0,aref, & data);
+
+  rang = comedi_get_range(it, subdev, chan, 0);
+  maxdata = comedi_get_maxdata(it, subdev, chan);
+
+  outval = comedi_to_phys(data, rang, maxdata);
+
+  printf("data=%d\noutval=%g\nreadres=%d\n",data, outval, readres);
+
+  return outval;
 }
