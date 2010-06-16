@@ -14,11 +14,19 @@ rate = 200
 x = {: 1 :}
 
 y :: Signal Real
-y = {: 2 + <: x :> :}
+
+--y = {: 2 + <: x :> :}
+
+y <* ADC 0
 
 D w = 4 fby y 
 
 w *> store "" 
+
+w *> DAC 0
+
+
+
 
 rndSpike :: [(Real, ())]
 rndSpike <* poisson rate

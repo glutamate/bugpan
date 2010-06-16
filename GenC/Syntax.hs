@@ -23,6 +23,7 @@ data CType = CIntT
            | VoidT
            | CStringT
            | CStructT String
+           | CAnyTy String
            deriving (Show, Eq)
 
 bugTyToCTy (NumT (Just RealT)) = CDoubleT
@@ -46,6 +47,7 @@ data CCmd = DecVar CType String (Maybe E)
           | Return E
           | For CCmd E CCmd [CCmd]
           | Call String [E]
+          | LitCmds [String]
            deriving (Show, Eq)
 
 forCount nm from to = For (Assign (Var nm) from) (Cmp Lt (Var nm) to) (Assign (Var nm) (Var nm+1))
@@ -73,6 +75,7 @@ ppCTy CIntT = "int"
 ppCTy CLongT = "long"
 ppCTy CDoubleT = "double"
 ppCTy CCharT = "char"
+ppCTy (CAnyTy nm) = nm
 ppCTy VoidT = "void" 
 
 ppCTy CStringT = "char *" 
@@ -103,6 +106,7 @@ ppCCmd (For ini tst incr cmds) =
        [concat ["for(", head $ ppCCmd ini, 
                 ppEC tst, semicolon,init $ head $ ppCCmd incr, ") {"]]
        ++concat(map (map ind . ppCCmd) cmds)++["}"]
+ppCCmd (LitCmds ss) = ss
                                       
                             
 

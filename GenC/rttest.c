@@ -265,6 +265,10 @@ double readpin(int chan)
   comedi_set_global_oor_behavior(COMEDI_OOR_NUMBER);
 
   readres=comedi_data_read(it,subdev,chan,0,aref, & data);
+  if(!readres) {
+    comedi_perror("comedi_data_read: ");
+  }
+ 
 
   rang = comedi_get_range(it, subdev, chan, 0);
   maxdata = comedi_get_maxdata(it, subdev, chan);

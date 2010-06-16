@@ -35,9 +35,9 @@ compileToC fp dt tmax ds params = do
 
   --putStrLn "\n---------------\n"
   let stgs@(env:stageDs) = splitByStages ds
-  --forM stgs $ \ds-> do
-  --  putStrLn "\n---------------stage\n"
-  --  mapM print  ds
+  forM stgs $ \ds-> do
+    putStrLn "\n---------------stage\n"
+    mapM print  ds
   let prg = ppCProg $ toC dt tmax ds params
   writeFile (fp) prg
   --putStrLn prg 
@@ -66,12 +66,17 @@ mainFun ds stages
 
 runStage (n, ds) = [traceS $"stage"++show n ]++concatMap runOnceSrcs ds++ driveStage (n, ds) 
 
-driveStage (n, ds) = 
-    [forCount "i" 0 (Var "npnts") [Call ("step"++show n) []]]
+isDynClamp ds = 
+    let ins = [() | ReadSource _ ("ADC",_) <- ds ]
+        outs = [() | SinkConnect _ ("DAC",_) <- ds ]
+    in not (null ins || null outs)
+
+driveStage (n, ds) 
+    | isDynClamp ds = [Call ("stepdyn"++show n) []]
+    | otherwise = [forCount "i" 0 (Var "npnts") [Call ("step"++show n) []]]
 
 runOnceSrcs (ReadSource vnm ("poisson", rate)) = [Assign (Var vnm) (Var "poisson_train" $> rate $> Var "tmax")]
 runOnceSrcs _ = []
-
 
 imports = map (CInclude True) ["stdlib.h","stdio.h", "math.h"] ++ [CInclude False "dynprelude.c"]
 
@@ -119,6 +124,8 @@ gloVar ds (SinkConnect (Var nm) (bufnm, _)) | head bufnm == '#' =
 gloVar ds (ReadSource vnm ("poisson", rate)) = 
           let t =tyOf ds vnm in
           [DeclareGlobal (bugTyToCTy t) (vnm) Nothing]
+gloVar ds (ReadSource vnm ("ADC", rate)) = 
+          [DeclareGlobal (CDoubleT) (vnm++"Val") Nothing]
 gloVar _ _ = []
 
 flatLamTy (LamT arg res) = flatLamTy arg ++ flatLamTy res
@@ -133,20 +140,75 @@ lamBody e = e
 tyOf ds nm =  head $ [t | DeclareType nm' t <- ds, nm == nm' ] 
 
 stepper (stage,ds) = [CFun CIntT ("step"++show stage) [] $ (secs:(concat$ nub $map step ds))++tr]
+                     ++dynStepper (stage,ds)
     where secs = DecVar CDoubleT "secondsVal" (Just $ Var "i"*Var "dt")
           tr = [] -- [traceD ("step"++show stage) "secondsVal" ]
 step (Let (PatVar nm t) (Sig e)) = [Assign (Var (nm++"Val")) $ unVal e]
 step (Let (PatVar nm t) (Forget tm e)) = 
-          [Assign (Var (nm)) (Var "forget_events" $> e $> Var "secondsVal" $> tm)]
+          [Assign (Var (nm)) (Var "forget_events" $> e $> (Var "secondsVal"- tm))]
 step (SinkConnect (Var nm) ("store", _)) = [Assign (Var ("("++nm++"->arr)[i]")) $ Var  (nm++"Val")]
 step (Let (PatVar nm t) (SolveOde (SigFby v e))) = 
                     [Assign (Var (nm++"Val")) $ (Var (nm++"Val")) + Var "dt" * unVal (SigVal e)]
 step (SinkConnect (Var nm) (bufnm, _)) | head bufnm == '#' = 
              [Assign (Var ("("++nm++"->arr)[i]")) $ Var (nm++"Val")]
                                        | otherwise = []
-
-
 step d = []
+
+dynStepper (stage,ds) 
+    | isDynClamp ds = [CFun CIntT ("stepdyn"++show stage) [] $ dynBegin++dynLoop ds++dynEnd]
+    | otherwise = []
+
+dynBegin = 
+    [LitCmds 
+       ["RTIME until;",
+	"RT_TASK *task;",
+	"comedi_insn insn_read;",
+	"comedi_insn insn_write;",
+	"lsampl_t sinewave;",
+	"double actualtime;",
+	"lsampl_t *hist;",
+	"lsampl_t data[NCHAN];",
+	"long i, k, n, retval;",
+	"signal(SIGKILL, endme);",
+	"signal(SIGTERM, endme);",
+	"hist = malloc(SAMP_FREQ*RUN_TIME*NCHAN*sizeof(lsampl_t) + 1000);",
+	"memset(hist, 0, SAMP_FREQ*RUN_TIME*NCHAN*sizeof(lsampl_t) + 1000);",
+
+	"start_rt_timer(0);",
+	"task = rt_task_init_schmod(nam2num(\"MYTASK\"), 1, 0, 0, SCHED_FIFO, 0xF);",
+	
+	"mlockall(MCL_CURRENT | MCL_FUTURE);",
+	"rt_make_hard_real_time();", 
+	"if (init_board()) {;",
+	"       printf(\"Board initialization failed.\\n\");",
+	"       return 1;",
+	"}",
+	"BUILD_AREAD_INSN(insn_read, subdevai, data[0], 1, read_chan[i], AI_RANGE, AREF_GROUND);",
+	"BUILD_AWRITE_INSN(insn_write, subdevao, data[NICHAN + i], 1, write_chan[i], AO_RANGE, AREF_GROUND);",
+        "until = rt_get_time();"]]
+
+dynLoop ds =
+    [forCount "i" 0 (Var "npnts") $ [
+                 DecVar CDoubleT "secondsVal" (Just $ Var "i"*Var "dt"),
+                 Call "comedi_do_insn" [Var "dev", Var "insn_read"]]++
+                 (concat$ nub $map stepd ds)]
+	
+dynEnd = 
+    [LitCmds 
+       ["comedi_cancel(dev, subdevai);",
+	"comedi_cancel(dev, subdevao);",
+	"comedi_data_write(dev, subdevao, 0, 0, AREF_GROUND, 2048);",
+	"comedi_data_write(dev, subdevao, 1, 0, AREF_GROUND, 2048);",
+	"comedi_close(dev);"],
+    LitCmds 
+       ["free(hist);",
+	"stop_rt_timer();",
+	"rt_make_soft_real_time();",
+	"rt_task_delete(task);"]]
+
+stepd (SinkConnect (Var nm) ("DAC", _)) = [Assign  (Var "data[1]") (Var (nm++"Val")) ]
+stepd (ReadSource nm ("ADC", _)) = [Assign (Var (nm++"Val")) $ Var "data[0]"]
+stepd d = step d
 
 traceD what nm = Call "printf" [Const (StringV $ what ++ " " ++ nm ++" %g\n"), Var nm]
 traceInt what nm = Call "printf" [Const (StringV $ what ++ " " ++ nm ++" %ld\n"), Var nm]
