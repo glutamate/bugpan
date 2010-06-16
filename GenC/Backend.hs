@@ -48,7 +48,7 @@ gloDbl nm x=DeclareGlobal CDoubleT nm (Just (Const (NumV $ NReal x)))
 toC dt tmax ds params
     = let (env:stageDs) = splitByStages ds
           stages = zip [0..] stageDs
-      in concat [imports, 
+      in concat [imports ds, 
                  [gloDbl "dt" dt, gloDbl "tmax" tmax], 
                  globals ds, 
                  concatMap stepper stages, 
@@ -78,7 +78,11 @@ driveStage (n, ds)
 runOnceSrcs (ReadSource vnm ("poisson", rate)) = [Assign (Var vnm) (Var "poisson_train" $> rate $> Var "tmax")]
 runOnceSrcs _ = []
 
-imports = map (CInclude True) ["stdlib.h","stdio.h", "math.h"] ++ [CInclude False "dynprelude.c"]
+imports ds 
+        | isDynClamp ds =std ++ [CInclude False "dyncomedi.c"]
+        | otherwise = std
+  where std = map (CInclude True) ["stdlib.h","stdio.h", "math.h"] ++ 
+             [CInclude False "dynprelude.c"]                                       
 
 mainBeg ds (SinkConnect (Var nm) ("store", _)) = 
         let t =tyOf ds nm in
@@ -155,24 +159,25 @@ step (SinkConnect (Var nm) (bufnm, _)) | head bufnm == '#' =
 step d = []
 
 dynStepper (stage,ds) 
-    | isDynClamp ds = [CFun CIntT ("stepdyn"++show stage) [] $ dynBegin++dynLoop ds++dynEnd]
+    | isDynClamp ds = [CFun CIntT ("stepdyn"++show stage) [] $ dynBegin++[dynLoop ds]++dynEnd]
     | otherwise = []
 
 dynBegin = 
     [LitCmds 
        ["RTIME until;",
+        "RTIME samp_time=dt*1000*1000*1000;",
 	"RT_TASK *task;",
 	"comedi_insn insn_read;",
 	"comedi_insn insn_write;",
 	"lsampl_t sinewave;",
 	"double actualtime;",
-	"lsampl_t *hist;",
+	"//lsampl_t *hist;",
 	"lsampl_t data[NCHAN];",
 	"long i, k, n, retval;",
 	"signal(SIGKILL, endme);",
 	"signal(SIGTERM, endme);",
-	"hist = malloc(SAMP_FREQ*RUN_TIME*NCHAN*sizeof(lsampl_t) + 1000);",
-	"memset(hist, 0, SAMP_FREQ*RUN_TIME*NCHAN*sizeof(lsampl_t) + 1000);",
+	"//hist = malloc(SAMP_FREQ*RUN_TIME*NCHAN*sizeof(lsampl_t) + 1000);",
+	"//memset(hist, 0, SAMP_FREQ*RUN_TIME*NCHAN*sizeof(lsampl_t) + 1000);",
 
 	"start_rt_timer(0);",
 	"task = rt_task_init_schmod(nam2num(\"MYTASK\"), 1, 0, 0, SCHED_FIFO, 0xF);",
@@ -188,10 +193,12 @@ dynBegin =
         "until = rt_get_time();"]]
 
 dynLoop ds =
-    [forCount "i" 0 (Var "npnts") $ [
+    forCount "i" 0 (Var "npnts") $ [
                  DecVar CDoubleT "secondsVal" (Just $ Var "i"*Var "dt"),
                  Call "comedi_do_insn" [Var "dev", Var "insn_read"]]++
-                 (concat$ nub $map stepd ds)]
+                 (concat$ nub $map stepd ds)++
+                 [LitCmds ["comedi_do_insn(dev,insn_write);", 
+                           "rt_sleep_until(until += nano2count(samp_time));"]]
 	
 dynEnd = 
     [LitCmds 
@@ -201,13 +208,13 @@ dynEnd =
 	"comedi_data_write(dev, subdevao, 1, 0, AREF_GROUND, 2048);",
 	"comedi_close(dev);"],
     LitCmds 
-       ["free(hist);",
+       ["//free(hist);",
 	"stop_rt_timer();",
 	"rt_make_soft_real_time();",
 	"rt_task_delete(task);"]]
 
-stepd (SinkConnect (Var nm) ("DAC", _)) = [Assign  (Var "data[1]") (Var (nm++"Val")) ]
-stepd (ReadSource nm ("ADC", _)) = [Assign (Var (nm++"Val")) $ Var "data[0]"]
+stepd (SinkConnect (Var nm) ("DAC", _)) = [Assign  (Var "data[1]") (Var "from_phys" $> Var (nm++"Val")) ]
+stepd (ReadSource nm ("ADC", _)) = [Assign (Var (nm++"Val")) $ Var "to_phys" $> Var "data[0]"]
 stepd d = step d
 
 traceD what nm = Call "printf" [Const (StringV $ what ++ " " ++ nm ++" %g\n"), Var nm]

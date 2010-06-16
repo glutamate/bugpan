@@ -252,6 +252,14 @@ dispatch opts ("lnsess":newDir:_) = do
       (putStrLn $ "directory does not exist: /var/bugpan/"++newDir)
 
 
+dispatch opts ("screenplot":sessNm:sigNm:sigIdx) = do
+  inApproxSession sessNm $ do
+            sig <- signalsDirect sigNm
+            case safeHead sigIdx >>= safeRead of
+                 Just i  -> io $ gnuplotOnScreen $ [sig!!i]
+                 Nothing -> io $ gnuplotOnScreen $ sig
+  return ()                                                                    
+
 dispatch opts ("plotsigs":sessNm:sigNm:_) = do
   qres <- inApproxSession sessNm $ do
             sig <- signalsDirect sigNm
@@ -348,6 +356,7 @@ dispatch os ss = putStrLn $ unlines ["",
               "\tbugsess mkdur {session} {durationName} [value]",
               "\tbugsess addev {session} {eventName} [value]",
               "\tbugsess plotsigs {session} {signalName}",
+              "\tbugsess screenplot {session} {signalName} [index]",
               "\tbugsess askall {query}",
               "\tbugsess check {session}|all"
  ]
