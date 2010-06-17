@@ -189,11 +189,12 @@ dynBegin =
 	"       return 1;",
 	"}",
 	"BUILD_AREAD_INSN(insn_read, subdevai, data[0], 1, read_chan[i], AI_RANGE, AREF_GROUND);",
-	"BUILD_AWRITE_INSN(insn_write, subdevao, data[NICHAN + i], 1, write_chan[i], AO_RANGE, AREF_GROUND);",
+	"BUILD_AWRITE_INSN(insn_write, subdevao, data[1], 1, write_chan[i], AO_RANGE, AREF_GROUND);",
+        "data[1] = from_phys(0);",
         "until = rt_get_time();"]]
 
 dynLoop ds =
-    forCount "i" 0 (Var "npnts") $ [
+    For (Assign (Var "i") 0) (And (Cmp Lt (Var "i") (Var "npnts")) (Var "!end")) (Assign (Var "i") (Var "i"+1)) $ [
                  DecVar CDoubleT "secondsVal" (Just $ Var "i"*Var "dt"),
                  Call "comedi_do_insn" [Var "dev", Var "insn_read"]]++
                  (concat$ nub $map stepd ds)++
@@ -205,7 +206,7 @@ dynEnd =
        ["comedi_cancel(dev, subdevai);",
 	"comedi_cancel(dev, subdevao);",
 	"comedi_data_write(dev, subdevao, 0, 0, AREF_GROUND, 2048);",
-	"comedi_data_write(dev, subdevao, 1, 0, AREF_GROUND, 2048);",
+	"//comedi_data_write(dev, subdevao, 1, 0, AREF_GROUND, 2048);",
 	"comedi_close(dev);"],
     LitCmds 
        ["//free(hist);",
