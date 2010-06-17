@@ -533,7 +533,7 @@ conductance to a real neuron. Simple neural models of often simulate
 synaptic excitation using an alpha function, which provides a
 relatively good fit to many synaptic processes.
 \begin{code}
-alpha amp tau = sopen amp*tau*tau*<:seconds:>*exp (-<:seconds:>*tau) sclose
+alpha amp tau = sopen amp*tau **2 * <: seconds :> *exp (- <: seconds :> *tau) sclose
 \end{code}
 Fig 3A shows the membrane voltage recorded from a XXX neuron in a
 dynamic clamp experiment where |g = sopen alpha Y Z <:seconds:>
@@ -562,49 +562,44 @@ input-output relationship of the neuron (Fig 3C).
 Both the subthreshold properties of a cell and its spiking rate can be
 regulated by active ionic conductances. One way to examine this
 regulation of synaptic integration is to impose an additional active
-conductance on cells with dynamic clamp.
+conductance on cells with dynamic clamp. In the Hodgkin-Huxley
+formalism for ion channels, the conductance depends on two state
+variables, for which the forward and backward rate constants depend on
+the membrane voltage. Here we show the equations for the activation
+gate of the A-current, following (Traub ref). The equations for
+inactivation are analogous.
 
--active conductances
--a-current
--equations
--other traces
--FF curve
-
-First, we examine the response to a step conductance. In that case,
+We write the forward and backward rates as functions of the membrane voltage
 \begin{code}
-gcell = sopen if between 0.01 0.09 <: seconds :> then a else 0 sclose
-\end{code}
-which completes a definition of the integrate-and-fire simulation, for
-a particular value of |a|. |v_m| for this simulation is plotted in Fig
-3A, which shows a regular firing rhythm.
-
-A more biologically realistic input to the cell is a convolution of a
-presynaptic spike train with a unitary postsynaptic conductance
-waveform. First the preSpike events are bound from an event source
-sampling homogeneous poisson trains:
-
-\begin{code}
-preSpike <* poissonTrain rate
+alphaa v = (20*(13.1-v))/((exp ((13.1 -v)/10)) -1)
+betaa v =  (17.5*(v-40.1))/((exp ((v-40.1)/10))-1)
 \end{code}
 
-Then we define the synaptic waveform with an alpha function
+The time-varying state of the activation gate is given by a
+differential equation. We use the notation |D x = | $x_0$ | fby sopen f
+  (x,<:seconds:>) sclose | to denote the ordinary differential equation
+that is conventionally written $\frac{dx}{dt} = f(x,t) $ with starting
+conditions $x=x_0$.
 \begin{code}
-alpha amp tau = sopen amp*tau*tau*<:seconds:>*exp (-<:seconds:>*tau) sclose
-gcell =  convolveSE (alpha amp tau) (tag 1 preSpike)
+D a = 0 fby sopen  alphaa (<: vm :> *1000+60) * (1- <:a:> ) -
+                   betaa (<: vm :> *1000+60) * <: a :> sclose
 \end{code}
-where |convolveSE| convolves a signal with an event, mutiplying the
-impulse response signal with tag of each event
-occurrence. |convolveSE| is a library function defined with the
-previously described primitives. Figure 3B shows the convolved cell
-conductance and 3C |v_m| for particular values of |rate|, |amp| and
-|tau|.
+with the inactivation state signal |b| defined similarly.
+
+The current signal from this channel is calculated from Ohm's law:
+\begin{code}
+ika = {: gmaxk * <:a:> * <:b:>*(<:vm:> - E) :}
+\end{code}
+which is added to the signal |i| defined above. Figure 3A and 3B shows
+the voltage response to a unitary synaptic conductance and a trains of
+synaptic inputs, respecitively, with |gmaxk = 10 nS|.
 
 By varying the value of |rate|, we can examine the input-output
 relationship of the model neuron. To plot this relationship
 quantitatively, we need a function to calculate the frequency of
 events in durations. |frequencyDuring| does this by exploiting the
-list semantics of both durations and events, using the familiar
-functions |map|, |filter| and |length|:
+list semantics of both durations and events, using 
+functions |map|, |filter| and |length| familiar from list processing:
 
 \begin{code}
 frequencyDuring ds es = map f ds
@@ -616,9 +611,11 @@ frequencyDuring ds es = map f ds
 |frequencyDuring| retains the temporal context of the firing rate
 by returning a new duration, with the rate of the event as the tag. 
 
-Figure 3D shows a scatterplot of the postsynaptic against the
-presynaptic spike rate for 400 runs of the model each of 10 seconds,
-with input rates randomly distributed as U(0,450). ...
+Figure 3C shows a scatterplot of the postsynaptic against the
+presynaptic spike rate for two different values of |gmaxk|, the
+maximal conductance of the A-current. Here, an increase in the
+a-current appears to raise the threshold for activation of the
+postsynaptic cell without changing the gain.
 
 \section*{Discussion}
 
