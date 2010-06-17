@@ -30,12 +30,23 @@ struct signal_double* create_sig(int npnts) {
   p = malloc(sizeof(struct signal_double));
   p->npts = npnts;
   p->arr = malloc(npnts*sizeof(double));
+  return p;
 }
+
+
 
 void free_sig(struct signal_double* sig) {
   free(sig->arr);
   free(sig);
 }
+
+void debug_sig(struct signal_double* sig) {
+  int i;
+  for (i=0; i<5;i++) {
+    printf("%g\n", (sig->arr)[i]);
+  }
+}
+
 
 void free_events(struct event_unit *first) {
   struct event_unit *next_head, *head = first;
@@ -113,6 +124,7 @@ long count_events(struct event_unit *head) {
     head = head->next;
     len++;
   }
+  return len;
 }
 
 int write_events(char *fnm, struct event_unit *head) {

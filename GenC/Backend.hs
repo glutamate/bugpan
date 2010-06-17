@@ -143,7 +143,7 @@ lamBody e = e
 
 tyOf ds nm =  head $ [t | DeclareType nm' t <- ds, nm == nm' ] 
 
-stepper (stage,ds) = [CFun CIntT ("step"++show stage) [] $ (secs:(concat$ nub $map step ds))++tr]
+stepper (stage,ds) = [CFun VoidT ("step"++show stage) [] $ (secs:(concat$ nub $map step ds))++tr]
                      ++dynStepper (stage,ds)
     where secs = DecVar CDoubleT "secondsVal" (Just $ Var "i"*Var "dt")
           tr = [] -- [traceD ("step"++show stage) "secondsVal" ]
@@ -169,11 +169,8 @@ dynBegin =
 	"RT_TASK *task;",
 	"comedi_insn insn_read;",
 	"comedi_insn insn_write;",
-	"lsampl_t sinewave;",
-	"double actualtime;",
 	"//lsampl_t *hist;",
 	"lsampl_t data[NCHAN];",
-	"long i, k, n, retval;",
 	"signal(SIGKILL, endme);",
 	"signal(SIGTERM, endme);",
 	"//hist = malloc(SAMP_FREQ*RUN_TIME*NCHAN*sizeof(lsampl_t) + 1000);",
@@ -188,17 +185,17 @@ dynBegin =
 	"       printf(\"Board initialization failed.\\n\");",
 	"       return 1;",
 	"}",
-	"BUILD_AREAD_INSN(insn_read, subdevai, data[0], 1, read_chan[i], AI_RANGE, AREF_GROUND);",
-	"BUILD_AWRITE_INSN(insn_write, subdevao, data[1], 1, write_chan[i], AO_RANGE, AREF_GROUND);",
+	"BUILD_AREAD_INSN(insn_read, subdevai, data[0], 1, 0, AI_RANGE, AREF_GROUND);",
+	"BUILD_AWRITE_INSN(insn_write, subdevao, data[1], 1, 0, AO_RANGE, AREF_GROUND);",
         "data[1] = from_phys(0);",
         "until = rt_get_time();"]]
 
 dynLoop ds =
     For (Assign (Var "i") 0) (And (Cmp Lt (Var "i") (Var "npnts")) (Var "!end")) (Assign (Var "i") (Var "i"+1)) $ [
                  DecVar CDoubleT "secondsVal" (Just $ Var "i"*Var "dt"),
-                 Call "comedi_do_insn" [Var "dev", Var "insn_read"]]++
+                 Call "comedi_do_insn" [Var "dev", Var "&insn_read"]]++
                  (concat$ nub $map stepd ds)++
-                 [LitCmds ["comedi_do_insn(dev,insn_write);", 
+                 [LitCmds ["comedi_do_insn(dev,&insn_write);", 
                            "rt_sleep_until(until += nano2count(samp_time));"]]
 	
 dynEnd = 
@@ -212,7 +209,8 @@ dynEnd =
        ["//free(hist);",
 	"stop_rt_timer();",
 	"rt_make_soft_real_time();",
-	"rt_task_delete(task);"]]
+	"rt_task_delete(task);",
+        "return 0;"]]
 
 stepd (SinkConnect (Var nm) ("DAC", _)) = [Assign  (Var "data[1]") (Var "from_phys" $> Var (nm++"Val")) ]
 stepd (ReadSource nm ("ADC", _)) = [Assign (Var (nm++"Val")) $ Var "to_phys" $> Var "data[0]"]

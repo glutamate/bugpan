@@ -33,8 +33,13 @@ useRT fnm params = do
   let tmax = (lookupDefn "_tmax" ds >>= vToDbl) `orJust` 1
   let fileroot = (head $ splitBy '.' fnm)
   let filec = fileroot++".c"
+  let gccArgs = if isDynClamp ds
+                   then concat ["-I. -I/usr/realtime/include ",
+                                "-I/usr/src/linux/include -Wall -pipe -D_GNU_SOURCE ",
+                                "-L/usr/realtime/lib -lpthread -lkcomedilxrt -lm "]
+                   else "-lm -Wall "
   io $ compileToC filec dt tmax ds [] 
-  io $ system $ "gcc -lm -o "++fileroot++" "++filec
+  io $ system $ "gcc "++gccArgs++" -o "++fileroot++" "++filec
   return (fileroot, tmax, dt)
 
 invokeRT (fnm, tmax,dt) params = do

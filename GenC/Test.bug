@@ -19,9 +19,11 @@ y :: Signal Real
 
 y <* ADC 0
 
-D w = 4 fby y 
+w = {: <: seconds :> :}
 
 w *> store "" 
+
+y *> store "" 
 
 w *> DAC 0
 
