@@ -36,10 +36,11 @@ useRT fnm params = do
   let gccArgs = if isDynClamp ds
                    then concat ["-I. -I/usr/realtime/include ",
                                 "-I/usr/src/linux/include -Wall -pipe -D_GNU_SOURCE ",
-                                "-L/usr/realtime/lib -lpthread -lkcomedilxrt -lm "]
-                   else "-lm -Wall "
+                                "-L/usr/realtime/lib -lpthread -lkcomedilxrt -lm -lcomedi -o ",
+                                fileroot," dyncal.c ",filec]
+                   else "-lm -Wall "++" -o "++fileroot++" "++filec
   io $ compileToC filec dt tmax ds [] 
-  io $ system $ "gcc "++gccArgs++" -o "++fileroot++" "++filec
+  io $ system $ "gcc "++gccArgs
   return (fileroot, tmax, dt)
 
 invokeRT (fnm, tmax,dt) params = do

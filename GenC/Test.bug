@@ -2,33 +2,41 @@ module Test where
 
 alpha tau t = if t<0.0 then 0.0 else (t/tau)*exp (1-t/tau)
 
-gsyn = {: 1.0e-12 * (alpha 1485 <: seconds:>) :}
+gsyn = {: 1.0e-9* (alpha 0.005 (<: seconds:>-0.2)) :}
 
-stage gsyn -1
+--stage gsyn -1		
+
+rate = 200
+
+_tmax = 1
+_dt = 1.0e-4
 
 gcell = {: convolution gsyn (forget 0.02 rndSpike ) <:seconds:> :}
 
---stage gcell 0
-rate = 200
+rawv :: Signal Real
+celli :: Signal Real
 
-x = {: 1 :}
+rawv <* ADC 0
 
-y :: Signal Real
+vm = {: <: rawv:>  *0.10 :}
 
---y = {: 2 + <: x :> :}
+celli = {: (0-<:vm:>) * <:gsyn:> :}
 
-y <* ADC 0
+--{: if (<:seconds:> > 0.2) && (<:seconds:> < 0.8) then 1.0e-9 else 0 :} 
 
-w = {: <: seconds :> :}
+outv = {: <:celli:> * 1.0e9 :} 
 
-w *> store "" 
+outv *> DAC 0
 
-y *> store "" 
+celli *> store ""
 
-w *> DAC 0
+gcell *> store ""
 
+gsyn *> store ""
 
+rawv *> store ""
 
+vm *> store ""
 
 rndSpike :: [(Real, ())]
 rndSpike <* poisson rate

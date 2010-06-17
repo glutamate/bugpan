@@ -124,6 +124,7 @@ ppEC (M2 Sub (Const (NumV (NInt 0))) e2) = "-" ++ppEC e2
 ppEC (M2 Sub e1 e2) = ppOp e1 "-" e2
 ppEC (M2 Div e1 e2) = ppOp e1 "/" e2
 ppEC (Cmp Lt e1 e2) = ppEC e1 ++ " < " ++ ppEC e2
+ppEC (Cmp Gt e1 e2) = ppEC e1 ++ " > " ++ ppEC e2
 
 ppEC (Var nm) = nm
 ppEC (And e1 e2) = "("++ppEC e1 ++")&&("++ppEC e2 ++")"

@@ -35,9 +35,9 @@ compileToC fp dt tmax ds params = do
 
   --putStrLn "\n---------------\n"
   let stgs@(env:stageDs) = splitByStages ds
-  forM stgs $ \ds-> do
-    putStrLn "\n---------------stage\n"
-    mapM print  ds
+--  forM stgs $ \ds-> do
+--    putStrLn "\n---------------stage\n"
+--    mapM print  ds
   let prg = ppCProg $ toC dt tmax ds params
   writeFile (fp) prg
   --putStrLn prg 
@@ -202,7 +202,7 @@ dynEnd =
     [LitCmds 
        ["comedi_cancel(dev, subdevai);",
 	"comedi_cancel(dev, subdevao);",
-	"comedi_data_write(dev, subdevao, 0, 0, AREF_GROUND, 2048);",
+	"comedi_data_write(dev, subdevao, 0, 0, AREF_GROUND, from_phys(0));",
 	"//comedi_data_write(dev, subdevao, 1, 0, AREF_GROUND, 2048);",
 	"comedi_close(dev);"],
     LitCmds 
