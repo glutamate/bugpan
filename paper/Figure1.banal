@@ -10,18 +10,37 @@
 
 >> openSession 302
 
->> distSig =  fillSigOver lovDur 0.001 distFun 
-
 >> lns = \c w -> Lines [LineType 1, LineWidth w, LineColor c]
 
 >> pts = \c ty sz -> Points [PointType ty, PointSize sz, LineColor c]  
 
->> plot $ NoYaxis $ AxisLabels "time (s)" "" $ lns "dark-red" 1 (chopx ((/80) <$$> distSig)) :+: 
->>        lns "black" 1 (chopx (rescale 8 1 ecVoltage)) :+: 
->>        lns "blue" 4 (chopx (rescale 20 (-1.6) lovDur)) :+:
->>        pts "dark-green" 7 0.3 (chopx (jitterys 0.08 $ tag 1.2 spikes)) :+:
->>        pts "red" 11 1 (chopx (tag 0.1 collision)) :+:
->>        lns "black" 1 (chopx (rescale 0.0015 1.35 shistMany))
+
+>> accu3 = (take 3 . accushow) :: Double -> String
+>> sbars = ScaleBars (0.14,4) (0.02,"20 ms") (1, "1 mV")
+
+
+>> distSig =  fillSigOver lovDur 0.001 distFun 
+
+%>> lns = \c w -> Lines [LineType 1, LineWidth w, LineColor c]
+
+%>> pts = \c ty sz -> Points [PointType ty, PointSize sz, LineColor c]  
+
+%>> plot $ NoYaxis $ AxisLabels "time (s)" "" $ lns "dark-red" 1 (chopx ((/80) <$$> distSig)) :+: 
+%>>        lns "black" 1 (chopx (rescale 8 1 ecVoltage)) :+: 
+%>>        lns "blue" 4 (chopx (rescale 20 (-1.6) lovDur)) :+:
+%>>        pts "dark-green" 7 0.3 (chopx (jitterys 0.08 $ tag 1.2 spikes)) :+:
+%>>        pts "red" 11 1 (chopx (tag 0.1 collision)) :+:
+%>>        lns "black" 1 (chopx (rescale 0.0015 1.35 shistMany))
+
+
+
+>> plot $ PadX 0.05 0.05 $ Noaxis $ XRange 1749 1788 $ 
+>>        (YScaleBar (1753, -0.4) (20/80, "Distance 20 m") (-3) $ lns "dark-red" 1 (chopx ((/80) <$$> distSig))) :+: 
+>>        (TextAt (1751.2, 0.8) "Voltage" $ lns "black" 1 (chopx (rescale 8 1 ecVoltage))) :+: 
+>>        (YScaleBar (1753, -1.2) (0.3, "Speed 30 ms^{-1}") (-3) $ lns "blue" 4 (chopx (rescale 0.01 (-1.5) $ recip <$$> lovDur))) :+:
+>>        (TextAt (1751.5, 1.2) "Spikes" $ pts "dark-green" 7 0.3 (chopx (jitterys 0.08 $ tag 1.2 spikes))) :+:
+>>        (TextAt (1751.0, 0.1) "Collision" $ pts "red" 11 1 (chopx (tag 0.1 collision))) :+:
+>>        (YScaleBar (1753, 1.4) (100*0.0015, "Frequency 100 Hz") (-3.7) $ lns "black" 1 (chopx (rescale 0.0015 1.35 shistMany))) 
 
 >> close
 

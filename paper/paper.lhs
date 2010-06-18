@@ -35,18 +35,18 @@ not by conventional programming languages.
 
 Although we can describe quantitative scientific models rigorously,
 there are few formalisms to fully describe how evidence for or against
-these models is obtained and evaluated. A mathematical approach
-approach to experimentation itself could facilitate replication and
-meta-analysis, permit a better understanding of apparent
-inconsistencies between studies and a clearer formulation of what
-constitutes sound scientific practice.  Here, we propose a calculus of
-physiological evidence that can describe an experiment on a biological
-organism such that it can be unambiguously replicated and be inspected
-to certify whether analysis procedures are applicable. This framework
-does not describe the physical components of biological organism; it
-has no concept of networks, cells or proteins. Instead it describes the
-observation and calculation of the mathematical objects that
-constitute physiological evidence.
+these models is obtained and evaluated. A mathematical approach to
+experimentation itself could facilitate replication and meta-analysis,
+permit a better understanding of apparent inconsistencies between
+studies and a clearer formulation of what constitutes sound scientific
+practice.  Here, we propose a calculus of physiological evidence that
+can describe an experiment on a biological organism such that it can
+be unambiguously replicated and be inspected to certify whether
+analysis procedures are applicable. This framework does not describe
+the physical components of biological organism; it has no concept of
+networks, cells or proteins. Instead it describes the observation and
+calculation of the mathematical objects that constitute physiological
+evidence.
 
 What is an experiment? Whether they are carried out by humans or by
 automated equipment, many experiments can be seen as \emph{programs}
@@ -59,9 +59,17 @@ purely mathematical transformations to interact with the physical
 world. Here we show that the semantics of FRP provide a structure for
 physiological evidence. We have implemented this calculus of evidence
 in a concrete programming language and used it for non-trivial
-neurophysiological experiments and data analysis. These
-protocol are defined unambiguously in a handful of equations; we show
-two such examples.
+neurophysiological experiments and data analysis. First, we describe
+the theory of \emph{types} and define three types that can represent
+physiological evidence. We then present an new formal and
+machine-executable language for defining observations and
+transformations of such evidence. Finally, we show two very different
+formally defined experiments and analyses from neurophysiology. In the
+first example, we measure an \emph{in vivo} spike train response to
+visual stimulation in locusts. In the second example, we use the
+dynamic clamp technique to investigate the impact of an active
+potassium conductance on synaptic integration. Each of these protocols
+are defined unambiguously in a handful of equations. 
 
 \section*{The calculus of physiological evidence}
 
@@ -82,22 +90,22 @@ transparent manner by combining elementary transformations of the
 whole input, including responses from the user, into the entire output
 from the program. When these transformations can be defined by purely
 mathematical functions, the resulting computational paradigm is known
-as Functional Reactive Programming. FRP introduces
-two types of values to place information in a temporal context:
-Signals, which represent continuously varying quantities, and events
-representing distinct occurrences. These types are flexible, in that
-they can carry information of any other type. We show that there is
-significant overlap between these definitions of signals and events,
-and physiological evidence. Thus, definitions of experiments can be
+as Functional Reactive Programming. FRP introduces two types of values
+to place information in a temporal context: Signals, which represent
+continuously varying quantities, and events which represent distinct
+occurrences. These types are flexible, in that they can carry
+information of any other type. We show that there is significant
+overlap between these definitions of signals and events and
+physiological evidence. Thus, definitions of experiments can be
 described concisely in a language based on the composition and
-calculuation of signals and events, such as one based on FRP.  We
+calculuation of signals and event based on FRP.  We
 begin by describing the types that are central to FRP, and how
 physiological quantities can be captured in these types. We then
 describe how values of of these types can be observed, and how
 fuctions can be used to refine existing observations or generate
 stimuli for experiments.
 
-\subsubsection*{What is physiological evidence?}
+\subsubsection*{Type theory for physiological evidence}
 
 What kinds of mathematical objects can count as physiological
 evidence? We answer this question within simple type theory
@@ -111,10 +119,10 @@ the type |alpha times beta| is the pair formed by an element of
 -> beta| is the type of functions that calculate a value in the type
 |beta| from a value in |alpha|. Here, we use the convention that greek
 letters stand for type variables, which can be substituted by any
-concrete type, such as a base type or a compound type. Types can be
+concrete type, such as a base type or a type combination. Types can be
 defined with references to arbitrary types; for instance,
 |withIntegers alpha = [Integer times alpha]| denotes for any type |alpha|
-the list of pairs of integers and |alpha|s. This hole in the type
+the list of pairs of integers and |alpha|s. The hole |alpha| in the type
 definition can then be filled in to form a concrete type, for instance
 |withIntergers String|. The ability to build flexible type schemata in
 this manner and define generic function over them \citep[``parametric
@@ -147,10 +155,10 @@ to an extended period of time. These qualitatively different classes
 of observations are represented by \emph{events} and \emph{durations},
 respectively. 
 
-To model discrete occurences, FRP introduced events as a set of pairs
+To model discrete occurences, FRP introduced events as a list of pairs
 of time points and a value in a type |alpha|, called the ``tag'':
 \begin{code}
-Event alpha = {Time times alpha}
+Event alpha = [Time times alpha]
 \end{code}
 For example, an event could be constructed from a scalar signal such
 that the time of the largest amplitude of a signal was associated with
@@ -159,16 +167,15 @@ value of interest to associate with the time point at which it
 occurred, can be tagged with the unit type |()| which has only one
 element (that is, no information). Therefore, events can represent
 both measurements where the principal information is \emph{when}
-something happend, and measurements concerning \emph{what} happened
-where the time is mostly contextual.
+something happend, and measurements concerning \emph{what} happened.
 
-A third kind of information describes the properties of whole periods
+A third kind of information describes the properties of whole time periods
 during which the system was exposed to a controlled stimulus. We
 define a duration of type |alpha| as a set of triples, of which the
 first two components denote a start time and an end time. The last
 component is again a value of any type |alpha|:
 \begin{code}
-Duration alpha = {Time times Time times alpha}
+Duration alpha = [Time times Time times alpha]
 \end{code}
 Durations are useful for information about a whole trial or about an
 entire experiment, but could also be observations in their own right,
@@ -240,21 +247,27 @@ adds two to its argument; hence |add2 3 = (\x->x+2) 3 = 3+2| by
 substituting arguments in the function body. In addition we define a
 number of constructs to improve the readability of the language,
 although strictly they can be defined in terms of function application
-and abstraction. The expression |if p then c else a| evaluates to |c|
+and abstraction. The expression |if p then c else a| equals |c|
 if |p| is |True| and |a| if |a| is |False|. Similarly, |let y = e in
 w| defines a variable |y| with the value of the expression |e| that
 can be used as a value in the expression |w|. 
 
-Here, we present a concrete syntax for a formal language, based on the
-lambda calculus and extended with first-class signals and events. Let
-the construct |sopen e sclose| create a signal with the value of the
-expression |e| at every time point, and |<: s :>| yield the current
-value of the signal |s| in the temporal context created by the
-surrounding |sopen  sclose| braces. For instance, 
+Here, we present a concrete syntax for a new lambda calculus extended
+with signals and event based on the lambda calculus. This language
+borrows some concepts from the previous implementations of FRP, but it
+emphasises signals and events as mathematical object in themselves
+rather than as control structures for creating reactive systems
+\citep{Elliott1997, Nilsson2002}. Consequently, the syntax and
+implementation strategy is very different from FRP.
+
+Let the construct |sopen e sclose| denote a signal with
+the value of the expression |e| at every time point, and |<: s :>|
+yield the current value of the signal |s| in the temporal context
+created by the surrounding |open| |sclose| braces. For instance,
 \begin{code}
 sopen 1 sclose
 \end{code}
-denotes the signal that always has the value 1; and the function smap
+denotes the signal that always has the value 1; and the function |smap|
 defined as
 \begin{code}
 smap = \f -> \s -> sopen f <: s :> sclose
@@ -263,21 +276,21 @@ transforms, for any two types |alpha| and |beta|, a signal of |alpha|
 into a signal of |beta| by applying the function |f| of type |alpha
 -> beta| to the value of the signal at every time point.
 
-The differential operator |D| differentiates a real-valued signal with
-respect to time, such |D s| denote its first derivative |D D s| the
-second derivative of the signal |s|. Likewise, the differential
-operator can appear on the left side of a definition, in which case it
-introduces a differential equation by pattern matching (ref) on the
-derivative of a signal (see example 2 below).
-
 Further primitives are needed to form signals that depend on the
-history of other signals. For any signal |s|, the expression |delay s|
-denotes the signal that is delayed by a small amount of time (in
-practise, one time step). Other FRP implementations have other
-primitives, in particular a |switch| statement that changes the
-definition of a signal depending on the occurrence of specific
-events. We have not needed such a construct in the experiments
-described here.
+history of other signals. Fro instance, the differential operator |D|
+differentiates a real-valued signal with respect to time, such that 
+|D s| denote its first derivative |D D s| the second derivative of the
+signal |s|. Likewise, the differential operator can appear on the left
+side of a definition, in which case it introduces a differential
+equation by pattern matching (ref) on the derivative of a signal (see
+example 2 below).
+
+In addition, the expression |delay s| denotes the signal that is
+delayed by a small amount of time (in practise, one time step). Other
+FRP implementations have other primitives, in particular a |switch|
+statement that changes the definition of a signal depending on the
+occurrence of specific events. We have not needed such a construct in
+the experiments described here.
 
 The simplest approach to constructing events, and that taken here, is
 to detect events from existing signals. For instance, a threshold
@@ -294,11 +307,10 @@ predicate becomes true using the |??| operator. For instance,
 denotes the event that occurs whenever x crosses the threshold level
 |5|. 
 
-In addition to event detection, we suggest that events (and durations)
-should be manipulated as if they were lists in a functional
-programming language. Thus, a large number of transformations can be
-defined with simple recursive equations including filters, folds and
-scans (refs).
+In addition to event detection, events (and durations) can be
+manipulated directly as lists in a functional programming
+language. Thus, a large number of transformations can be defined with
+simple recursive equations including filters, folds and scans (refs).
 
 This small number of special constructors, along with the lambda
 calculus and the list semantics of events and durations, have allowed
@@ -315,14 +327,14 @@ to create controlled stimuli to perturn these systems. For this
 purpose, we introduce \emph{sources} and \emph{sinks} that bridge
 variables in purely mathematical equations with the physical world.
 
-Using the construct
+The construct
 \begin{code}
 identifier <* source parameter
 \end{code}
-we bind the signal yielded by a parametrised \emph{source} to
+binds the signal yielded by a parametrised \emph{source} to
 the variable \emph{identifier}. This variable will hold the
 whole signal observed during the course of the experiment. The signal
-source binding construct defined a simple experiment:
+source binding construct defines  a simple experiment:
 \begin{code}
 v <* ADC (0, 20000)
 \end{code}
@@ -338,8 +350,8 @@ experiment started, which can be read from a clock source
 \begin{code}
 seconds <* clock ()
 \end{code}
-where |()| denotes that the clock source does not require any
-parameters. The sine wave can then be defined with
+which is paramtrised by the unit type (i.e. no information). The sine
+wave can then be defined with
 
 \begin{code}
 sineWave = smap sin seconds
@@ -356,12 +368,13 @@ sineWave *> DAC (0, 20000)
 In the context of a physiology experiment, these declarations can for
 instance control the amount of current injected in a cell. Below,
 non-numeric signals and signal sinks are used to control visual
-stimuli on a projection screen. In addition, sources and sinks
-are not restricted to signals. Random number generators are also
-difficult to describe as pure functions and expressions involving
-random numbers can break referentially transparency. We have thus
-implemented sources corresponding to common parametric probability
-distributions.
+stimuli on a projection screen. In addition, sources and sinks are not
+restricted to signals, but can yield values of different types during
+an experiment. Random number generators representing sampling
+probability distribtions are not pure functions and expressions
+involving random numbers can break referentially transparency. We have
+thus implemented sources corresponding to common parametrised
+probability distributions.
 
 \section*{Example 1}
 
@@ -400,12 +413,12 @@ colour (r,g,b) s
 the shape identical to |s| except with the colour intensity red |r|,
 green |g| and blue |b|. Additional constructors can be introduced for
 more complex stimuli, but these are sufficient for the experiments
-reported here. Since signals are entirely polymorphic containers, they
-can carry not just numeric values but also shapes, and we represent
-visual stimuli as values in |Signal Shape|. The looming stimulus
-consists of a cube of side length l approaching the viewer with
-constant velocity v. The time-varying distance from the observer to
-the cube in real-world coordinates is a real-valued signal:
+reported here. Since signals are polymorphic, they can carry not just
+numeric values but also shapes, and we represent visual stimuli as
+values in |Signal Shape|. The looming stimulus consists of a cube of
+side length l approaching the locust with constant velocity v. The
+time-varying distance from the observer to the cube in real-world
+coordinates is a real-valued signal:
 \begin{code}
 distance = sopen v * (<: seconds :> - 5) sclose 
 \end{code}
@@ -421,35 +434,38 @@ loomingSquare =
 \end{code}
 
 |loomingSquare| differs from conventional protocols for stimulating
-the DCMD in that the object passes through the observer after
+the DCMD in that the object appears to pass through the observer after
 collision. In order not to evoke a large OFF response from the LGMD
-\citep{O'shea1976} immediately after collision, the object is frozen
-in space as it reaches the plane of the surface onto which the
-animation is projected \citep{Hatsopoulos1995}. To achieve this
+\citep{O'shea1976} immediately after simulated collision, the object
+is frozen in space as it reaches the plane of the surface onto which
+the animation is projected \citep{Hatsopoulos1995}. To achieve this
 effect, we define a new signal that has a lower bound of the distance
 from the eye to the screen |zscreen|
 \begin{code}
-distance' = sopen max (zscreen, <: distance :> ) sclose
+distance' = sopen max zscreen <: distance :>  sclose
 \end{code}
-|loomingSquare'| is identical to |loomingSquare| except for the use of
-|distance'|.
+where |max x y| returns the larger of the two numbers |x| and
+|y|. |loomingSquare'| is identical to |loomingSquare| except for the
+use of |distance'|.
 
 Finally, |loomingSquare'| is connected to a screen signal sink that
-represents an abstract visual display unit capable of projecting
+represents an visual display unit capable of projecting
 three-dimensional shapes onto a two-dimensional surface.
 
 \begin{code}
 loomingSquare' *> screen ()
 \end{code}
 
-The response to the looming stimulus in the LGMD can be recorded from
-the locust connectives. Although the LGMD is not thought to make a
-long-range projection, it reliably activate the descending
+The response to the looming stimulus in the LGMD neuron can be
+recorded from the main longitudinal nerves (``connectives'') in the
+ventral nerve cord. Although the LGMD is not thought to make a
+long-range projection, it reliably activates the descending
 contralateral movement detector (DCMD) with a strong synaptic
 connection, such that spikes in the DCMD follow LGMD spikes one to one
-\citep{O'Shea1974}. Extracellular hook electrodes wrapped around the
-connectives record activity in the DCMD as the strongest unit. These
-electrodes were amplified, filtered (see methods) and converted to a
+\citep{O'Shea1974}. Extracellular hook electrodes wrapped around one
+connective can record activity in the DCMD, which produces the
+largest-amplitude action potential in such recordings. These analogue
+signals were amplified, filtered (see methods) and converted to a
 digital signal:
 
 \begin{code}
@@ -457,7 +473,7 @@ voltage <* ADC (0, 20000)
 \end{code}
 
 |loomingSquare'| and |voltage| define a single approach and the
-recording of the response thereto. This approach was repeated every 4
+recording of the elicited response. This approach was repeated every 4
 minutes, with different values of $\frac{l}{v}$. Figure 1 shows
 $\frac{l}{v}$ as values with type |Duration Real|, together with the
 |distance'| and |voltage| signals for the first five trials on a
@@ -471,26 +487,40 @@ event |spike| can be calculated with
 \begin{code}
 spike = (\v->v>vth) ?? voltage
 \end{code}
-Here, we throw away the tag
+Which yields a value of type |Event Real|, where the tag of each event
+holds the voltage at which the threshold was crossed. Since this is
+likely to be close to the threshold and holds little information, a
+value of type |Event ()| more accurately reflects the observation. The
+function |tag| conveniently replaces every tag in some events with a
+fixed value.
 \begin{code}
 spike = tag () ((\v->v>vth) ?? voltage)
 \end{code}
-so that |spike| has type |Event ()|. This event, with a jittered tag
-for display purposes (ref), is displayed on the common time scale in
-Figure 1. The top row displays the spike count histogram |hspike =
+so that |spike| has type |Event ()|. This event, is displayed on the
+common time scale in Figure 1. The top row displays the spike count
+histogram
+\begin{code}
+hspike =
 sopen length (filter (between <: delay seconds:> <: seconds:> . fst)
-spikes) sclose| for each trial.
+spikes) sclose
+\end{code}
+for each trial.
 
 We examined how the DCMD spike response varied with changes in
 $\frac{l}{v}$. The average of |hist| for three different values of
 $\frac{l}{v}$ are shown in figure 2B, and 2C and 2D show the total
-number of spikes (|length spike|) and largest tag of |hspike|, for
+number of spikes (|length spike|) and largest value of |hspike|, for
 each approach, plotted against the value of $\frac{l}{v}$. These plots
 show that while the peak rate of the spike histogram is an decreasing
 function of $\frac{l}{v}$, the total number of spikes in the approach
 is n increasing function. In addition, the time of the peak rate is
 later with smaller values of $\frac{l}{v}$
 \citep{Hatsopoulos1995}. 
+
+This experiment indicates that the calculus of physiological evidence
+can adquately describe both the visual stimulus, spike recording and
+relevant analysis. We now show that the same is true for an experiment
+using intracellular recording in the dynamic clamp configuration.
 
 \section*{Example 2}
 
@@ -510,12 +540,15 @@ intracellular compartment, such that the cell membrane voltage can be
 recorded and current injected into the cell. As opposed to a standard
 current-clamp experiment, where the injected current waveform is known
 in advance, in the dynamic clamp setup the injected current is
-calculated near-instantaneously from the membrance voltage and a known
-conductance waveform by ohm's law, or by simulated
-Hodgkin-Huxley-style voltage-sensitive conductances.
+calculated near-instantaneously from the membrance voltage. Unlike the
+standard current clamp configuration, the dynamic clamp permits the
+imposition of additional simulated ionic conductances on a real
+neuron. For instance, it is possible record the responce of a cell to
+an added a synaptic conductance or an additional Hodgkin-Huxley-style
+voltage-sensitive conductance.
 
-Dynamic clamp-experiments thus follow the same template --- the voltage
-is read and the (output) current calculated from the imposed
+Dynamic clamp-experiments thus follow the same template --- the
+voltage is read and the (output) current calculated from the added
 conductance:
 \begin{code}
 v <* ADC (0,20000)
@@ -566,13 +599,14 @@ conductance on cells with dynamic clamp. In the Hodgkin-Huxley
 formalism for ion channels, the conductance depends on two state
 variables, for which the forward and backward rate constants depend on
 the membrane voltage. Here we show the equations for the activation
-gate of the A-current, following (Traub ref). The equations for
-inactivation are analogous.
+gate of the A-current (O'Connor ref), following (Traub ref; we use SI
+units and absolute voltages). The equations for inactivation are
+analogous.
 
 We write the forward and backward rates as functions of the membrane voltage
 \begin{code}
-alphaa v = (20*(13.1-v))/((exp ((13.1 -v)/10)) -1)
-betaa v =  (17.5*(v-40.1))/((exp ((v-40.1)/10))-1)
+alphaa v = 20*(-46.9-v*1000)/(exp ((-46.9-v*1000)/10) -1)
+betaa v =  17.5*(v*1000+19.9)/(exp ((v*1000+19.9)/10) -1)
 \end{code}
 
 The time-varying state of the activation gate is given by a
@@ -581,8 +615,8 @@ differential equation. We use the notation |D x = | $x_0$ | fby sopen f
 that is conventionally written $\frac{dx}{dt} = f(x,t) $ with starting
 conditions $x=x_0$.
 \begin{code}
-D a = 0 fby sopen  alphaa (<: vm :> *1000+60) * (1- <:a:> ) -
-                   betaa (<: vm :> *1000+60) * <: a :> sclose
+D a = 0 fby sopen  alphaa <: vm :> * (1- <:a:> ) -
+                   betaa <: vm :> * <: a :> sclose
 \end{code}
 with the inactivation state signal |b| defined similarly.
 
@@ -596,26 +630,18 @@ synaptic inputs, respecitively, with |gmaxk = 10 nS|.
 
 By varying the value of |rate|, we can examine the input-output
 relationship of the model neuron. To plot this relationship
-quantitatively, we need a function to calculate the frequency of
-events in durations. |frequencyDuring| does this by exploiting the
-list semantics of both durations and events, using 
-functions |map|, |filter| and |length| familiar from list processing:
+quantitatively, we need a function to calculate event
+frequencies. |frequencyDuring| is a function of a duration |d| and an
+event |e|, and returns a new duration with the tag of the temporal
+occurrence frequency of |e| within each occurrence of |d|. This
+duration retains the temporal context of |d|.
 
-\begin{code}
-frequencyDuring ds es = map f ds
-   where f ((t1,t2),_) =
-           let count = length (filter (between t1 t2 . fst) es)  
-           in ((t1,t2), count / t2-t1)
-\end{code}
-
-|frequencyDuring| retains the temporal context of the firing rate
-by returning a new duration, with the rate of the event as the tag. 
-
-Figure 3C shows a scatterplot of the postsynaptic against the
-presynaptic spike rate for two different values of |gmaxk|, the
-maximal conductance of the A-current. Here, an increase in the
-a-current appears to raise the threshold for activation of the
-postsynaptic cell without changing the gain.
+Figure 3C shows a scatterplot of the postsynaptic (|frequencyDuring
+running spike|) against the presynaptic (|frequencyDuring running
+preSpike|) spike rate for two different values of |gmaxk|, the maximal
+conductance of the A-current. Here, an increase in the a-current
+appears to raise the threshold for activation of the postsynaptic cell
+without changing the gain.
 
 \section*{Discussion}
 
@@ -631,7 +657,7 @@ simulation of synaptic integration in a simple model neuron.
 We present an entirely new approach to performing and communicating
 science. Here, both stimuli and observations are defined concisely and
 unambiguously by mathematical \emph{equations}. This makes it possible
-to not only repeat, manipulate and reson about experiments in a formal
+to repeat, manipulate and reason about experiments in a formal
 framework. We can quibble about whether these definitions are simpler
 or clearer than a definition written in plain English or are easier to
 produce than clicking buttons in a graphical user interface. But they
@@ -670,27 +696,32 @@ can be shared.
 
 The principal claim of this paper, that signals, events and durations
 can represent all physiological evidence, is presented without a
-concrete proof. In one regard, the claim is trivially true: if a
-piece of evidence can be represented in a type |alpha|, then a value
-of type |Duration alpha| can be constructed by this function:
-\begin{code}
-dur x = [((-l, l),x)]
-\end{code}
-where l is a sufficiently large number. A stronger claim is this: all
-references to time are signals, events or durations. Thus, our theory
-will be refuted by a single piece of evidence in a physiological
-experiment that has temporal information or context but is neither a
-signal, event or a duration, or is an event or a duration that has
-temporal information in the tag. We can already think of one such
-example: power-spectra can be thought of as values analogous to
-signals, but indexed by frequency rather than time. The most
-appropriate manner of extending our framework to include
-frequency-indexed and even spatial information must remain a topic for
-further research. On the other hand, the lack of linear algebra,
-higher order statistics, information theoretic analysis et cetera, et
-cetera in our examples is \emph{not} to be taken as a limitation of
-our theory; representing these analyses in a mathematical framework is
-a solved problem and is not the topic of this paper.
+concrete proof. Indeed, this claim may be impossible to prove. We have
+shown two very different examples from neurophysiology in this paper
+to substantiate our claim. In addition, we have used the calculus of
+physiological evidence to analyse an experiment with movement data and
+simultaneous recording of many neurons from the locust, and analysed
+the relationship between neural activity in identified cells and
+bursts in other neurons or movement cycles (Calas \& Matheson, in
+preparation). These analyses used exactly the same functions and types
+as those described above. 
+
+It may be simpler to look for a counterexample to the claims in this
+paper. The strong claim is this: all references to time are signals,
+events or durations. Thus, our theory will be refuted by a single
+piece of evidence in a physiological experiment that has temporal
+information or context but is neither a signal, event or a duration,
+or is an event or a duration that has temporal information in the
+tag. We can already think of one such example: power-spectra can be
+thought of as values analogous to signals, but indexed by frequency
+rather than time. The most appropriate manner of extending our
+framework to include frequency-indexed and even spatial information
+must remain a topic for further research. On the other hand, the lack
+of linear algebra, higher order statistics, information theoretic
+analysis et cetera, et cetera in our examples is \emph{not} to be
+taken as a limitation of our theory; representing these analyses in a
+mathematical framework is a solved problem and not the topic of this
+paper.
 
 \subsection*{Statistics}
 
@@ -716,9 +747,9 @@ A more intriguing possibility is to build statistical models for the
 directly observed data, and to use durations to describe a
 hierarchical organisation of conditional dependencies amongst
 parameters in such a model. Although probabilistic models for direct
-observations can be built in physics \citep{Daniell1991}, the flexible
-construction of such models for biological organisms may depend on the
-development of new programming languages.
+observations are used in physics \citep{Daniell1991}, the flexible
+construction of such models for physiological observations may depend
+on the development of new programming languages.
 
 \subsection*{Relation to existing technologies}
 
@@ -787,7 +818,7 @@ that correspond to subjects or relations in a semantic web ontology.
 
 \subsection*{Towards verified scientific inference}
 
-Whether the natural sciences are socially constructed remain an open
+Whether the natural sciences are socially constructed remains an open
 question in the philosophy of science. If we seriously entertain the
 notion that science is instead based on logic \citep{Jaynes2003}, it
 must be possible in principle to mechanically verify scientific
@@ -825,18 +856,16 @@ is conducted.
 
 \subsection*{Language implementation} 
 
-Although Bugpan is intended to present a single language for
-experimentation, simulation and analysis, we have used two different
-implementation strategies for reasons of rapid development and
-execution efficiency. For purposes of experimentation and simulation,
-we have implemented a prototype compiler that can execute some Bugpan
-programs that contain signals and events that are defined by mutual
-recursion, as is necessary for many of the simulations and experiments
-in this paper. For post-acquisition/simulation analysis, where one
-often merely wishes to calculate a new value from existing
-observations, we have implemented Bugpan as a domain-specific
-language embedded in the purely functional programming language
-Haskell.  OpenGL and Comedi.
+We have used two different implementation strategies for reasons of
+rapid development and execution efficiency. For purposes of
+experimentation and simulation, we have implemented a prototype
+compiler that can execute some Bugpan programs that contain signals
+and events that are defined by mutual recursion, as is necessary for
+many of the simulations and experiments in this paper. For
+post-acquisition/simulation analysis, where one often merely wishes to
+calculate a new value from existing observations, we have implemented
+Bugpan as a domain-specific language embedded in the purely functional
+programming language Haskell.  OpenGL and Comedi.
 
 \subsection*{Locust experiments}
 
