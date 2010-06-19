@@ -2,9 +2,9 @@ module Test where
 
 alpha tau t = if t<0.0 then 0.0 else (t/tau)*exp (1-t/tau)
 
-gsyn = {: 1.0e-9* (alpha 0.005 (<: seconds:>-0.2)) :}
+gsyn = {: 1.0e-9* (alpha 0.005 <: seconds:>) :}
 
---stage gsyn -1		
+stage gsyn -1		
 
 rate = 200
 
@@ -16,17 +16,17 @@ gcell = {: convolution gsyn (forget 0.02 rndSpike ) <:seconds:> :}
 rawv :: Signal Real
 celli :: Signal Real
 
-rawv <* ADC 0
+rawv = {: 0-0.070 :} -- <* ADC 0
 
 vm = {: <: rawv:>  *0.10 :}
 
-celli = {: (0-<:vm:>) * <:gsyn:> :}
+celli = {: (0-<:vm:>) * <:gcell:> :}
 
 --{: if (<:seconds:> > 0.2) && (<:seconds:> < 0.8) then 1.0e-9 else 0 :} 
 
 outv = {: <:celli:> * 1.0e9 :} 
 
-outv *> DAC 0
+-- outv *> DAC 0
 
 celli *> store ""
 

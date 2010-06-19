@@ -35,9 +35,9 @@ compileToC fp dt tmax ds params = do
 
   --putStrLn "\n---------------\n"
   let stgs@(env:stageDs) = splitByStages ds
---  forM stgs $ \ds-> do
---    putStrLn "\n---------------stage\n"
---    mapM print  ds
+  forM stgs $ \ds-> do
+    putStrLn "\n---------------stage\n"
+    mapM print  ds
   let prg = ppCProg $ toC dt tmax ds params
   writeFile (fp) prg
   --putStrLn prg 
@@ -87,11 +87,11 @@ imports ds
 mainBeg ds (SinkConnect (Var nm) ("store", _)) = 
         let t =tyOf ds nm in
         [Assign (Var $ nm)
-                (Var "create_sig" $> Var "npnts")]
+                (Var "create_sig" $> Var "npnts" $> Var "dt")]
                 --(Var "malloc" $> (Var "npnts" * (Var "sizeof" $> Var (ppCTy $ bugTyToCTy t)))), 
 mainBeg ds (SinkConnect (Var nm) (bufnm, _)) | head bufnm == '#' = 
              [Assign (Var $ nm)
-                (Var "create_sig" $> Var "npnts")]
+                (Var "create_sig" $> Var "npnts"$> Var "dt")]
                                        | otherwise = []
 
          
@@ -150,7 +150,7 @@ stepper (stage,ds) = [CFun VoidT ("step"++show stage) [] $ (secs:(concat$ nub $m
 step (Let (PatVar nm t) (Sig e)) = [Assign (Var (nm++"Val")) $ unVal e]
 step (Let (PatVar nm t) (Forget tm e)) = 
           [Assign (Var (nm)) (Var "forget_events" $> e $> (Var "secondsVal"- tm))]
-step (SinkConnect (Var nm) ("store", _)) = [Assign (Var ("("++nm++"->arr)[i]")) $ Var  (nm++"Val")]
+--step (SinkConnect (Var nm) ("store", _)) = [Assign (Var ("("++nm++"->arr)[i]")) $ Var  (nm++"Val")]
 step (Let (PatVar nm t) (SolveOde (SigFby v e))) = 
                     [Assign (Var (nm++"Val")) $ (Var (nm++"Val")) + Var "dt" * unVal (SigVal e)]
 step (SinkConnect (Var nm) (bufnm, _)) | head bufnm == '#' = 

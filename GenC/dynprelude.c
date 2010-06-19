@@ -25,10 +25,20 @@ struct event_unit* cons_event(double thetime, struct event_unit *head) {
   return cell;
 }
 
-struct signal_double* create_sig(int npnts) {
+struct event_unit* snoc_event(double thetime, struct event_unit *tail) {
+  struct event_unit *cell = malloc(sizeof(struct event_unit));
+  cell->etime = thetime;
+  cell->next = NULL;
+  tail->next = cell;
+  return cell;
+}
+
+struct signal_double* create_sig(int npnts, double dt) {
   struct signal_double* p;
   p = malloc(sizeof(struct signal_double));
   p->npts = npnts;
+  p->t1=0;
+  p->dt = dt;
   p->arr = malloc(npnts*sizeof(double));
   return p;
 }
@@ -58,7 +68,7 @@ void free_events(struct event_unit *first) {
 }
 
 double read_signal(struct signal_double *sig, double t) {
-  unsigned long pnt = (t-sig->t1)/sig->dt;
+  unsigned long pnt = (t-(sig->t1))/(sig->dt);
   return sig->arr[pnt];
 }
 
@@ -66,7 +76,7 @@ double convolution(struct signal_double *sig, struct event_unit *evs, double tno
   double sum = 0;
   struct event_unit *head = evs; 
   while(head && (head->etime)<tnow) {
-    sum += read_signal(sig, tnow-head->etime);
+    sum += read_signal(sig, tnow-(head->etime));
     head=head->next;
   }
   return sum;
@@ -118,6 +128,14 @@ int write_signal(char *fnm, struct signal_double *sig) {
 
 }
 
+void print_events(struct event_unit *head) {
+  while(head) {
+    printf("time: %g \n", head->etime);
+    head = head->next;
+  }
+
+}
+
 long count_events(struct event_unit *head) {
   long len = 0;
   while(head) {
@@ -144,6 +162,19 @@ int write_events(char *fnm, struct event_unit *head) {
 
 }
 
+struct event_unit *reverse_events(struct event_unit *head) {
+  struct event_unit *then, *last=NULL;
+  while(head) {
+    then = head-> next;
+    head -> next = last;
+    last = head;
+    head = then;
+  }
+  return last;
+
+}
+
+
 long seed = 0;
 double ran_poisson(double rate) {
   double x = ran0(&seed);
@@ -159,8 +190,9 @@ struct event_unit *poisson_train(double rate, double tmax) {
     head = cons_event(tlast, head);
     tlast+=ran_poisson(rate);
   }
-  return head;
+  return reverse_events(head);
 }
+
 
 
 #define IA 16807

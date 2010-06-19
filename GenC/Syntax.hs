@@ -43,6 +43,7 @@ data TopDecl = CInclude Bool String
 
 data CCmd = DecVar CType String (Maybe E)
           | Assign E E
+          | CComment String
           | IfC E [CCmd] [CCmd]
           | Return E
           | For CCmd E CCmd [CCmd]
@@ -107,6 +108,7 @@ ppCCmd (For ini tst incr cmds) =
                 ppEC tst, semicolon,init $ head $ ppCCmd incr, ") {"]]
        ++concat(map (map ind . ppCCmd) cmds)++["}"]
 ppCCmd (LitCmds ss) = ss
+ppCCmd (CComment s) = ["//"++s]
                                       
                             
 
