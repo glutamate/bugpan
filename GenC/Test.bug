@@ -6,12 +6,12 @@ gsyn = {: 1.0e-9* (alpha 0.005 <: seconds:>) :}
 
 stage gsyn -1		
 
-rate = 200
+rate = 50
 
 _tmax = 1
 _dt = 1.0e-4
 
-gcell = {: convolution gsyn (forget 0.02 rndSpike ) <:seconds:> :}
+gcell = {: convolution gsyn (forget 0.1 rndSpike ) <:seconds:> :}
 
 rawv :: Signal Real
 celli :: Signal Real

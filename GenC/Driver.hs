@@ -39,7 +39,7 @@ useRT fnm params = do
                                 "-L/usr/realtime/lib -lpthread -lkcomedilxrt -lm -lcomedi -o ",
                                 fileroot," dyncal.c ",filec]
                    else "-lm -Wall "++" -o "++fileroot++" "++filec
-  io $ compileToC filec dt tmax ds [] 
+  io $ compileToC filec dt tmax ds params 
   io $ system $ "gcc "++gccArgs
   return (fileroot, tmax, dt)
 

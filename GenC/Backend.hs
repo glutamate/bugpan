@@ -52,19 +52,22 @@ toC dt tmax ds params
                  [gloDbl "dt" dt, gloDbl "tmax" tmax], 
                  globals ds, 
                  concatMap stepper stages, 
-                 [mainFun ds stages]]
+                 [mainFun params ds stages]]
 
-mainFun ds stages
+mainFun params ds stages
     = CFun CIntT "main" [("argc", CIntT), 
                              ("argv", CPtrT $ CPtrT CCharT)] $
                [Assign (Var "npnts") $ Var "llround" $> (Var "tmax"/Var"dt")]++  
-               [traceInt "npnts" "npnts"]++
+               map setPar (zip params [1..])++
                concat(nub $ map (mainBeg ds) ds)++
                concatMap runStage stages++
                concatMap (mainEnd ds) ds++
                [Return 1]
 
-runStage (n, ds) = [traceS $"stage"++show n ]++concatMap runOnceSrcs ds++ driveStage (n, ds) 
+setPar ((nm, NumT (Just RealT)), n)
+       = Call "sscanf" [Var ("argv["++show n++"]"), Const (StringV "%lf"), Var ("&"++nm)]
+
+runStage (n, ds) = [traceS $"stage"++show n ]++concatMap runAtOnceSrcs ds++concatMap preStage ds++ driveStage (n, ds) 
 
 isDynClamp ds = 
     let ins = [() | ReadSource _ ("ADC",_) <- ds ]
@@ -75,8 +78,12 @@ driveStage (n, ds)
     | isDynClamp ds = [Call ("stepdyn"++show n) []]
     | otherwise = [forCount "i" 0 (Var "npnts") [Call ("step"++show n) []]]
 
-runOnceSrcs (ReadSource vnm ("poisson", rate)) = [Assign (Var vnm) (Var "poisson_train" $> rate $> Var "tmax")]
-runOnceSrcs _ = []
+runAtOnceSrcs (ReadSource vnm ("poisson", rate)) 
+         = [Assign (Var vnm) (Var "poisson_train" $> rate $> Var "tmax")]
+runAtOnceSrcs _ = []
+preStage (Let (PatVar nm t) (Forget tm (Var es))) 
+         = [Assign (Var nm) (Var es)]
+preStage _ = []
 
 imports ds 
         | isDynClamp ds =std ++ [CInclude False "dyncomedi.c"]
@@ -149,7 +156,7 @@ stepper (stage,ds) = [CFun VoidT ("step"++show stage) [] $ (secs:(concat$ nub $m
           tr = [] -- [traceD ("step"++show stage) "secondsVal" ]
 step (Let (PatVar nm t) (Sig e)) = [Assign (Var (nm++"Val")) $ unVal e]
 step (Let (PatVar nm t) (Forget tm e)) = 
-          [Assign (Var (nm)) (Var "forget_events" $> e $> (Var "secondsVal"- tm))]
+          [Assign (Var (nm)) (Var "forget_events" $> Var nm $> (Var "secondsVal"- tm))]
 --step (SinkConnect (Var nm) ("store", _)) = [Assign (Var ("("++nm++"->arr)[i]")) $ Var  (nm++"Val")]
 step (Let (PatVar nm t) (SolveOde (SigFby v e))) = 
                     [Assign (Var (nm++"Val")) $ (Var (nm++"Val")) + Var "dt" * unVal (SigVal e)]
