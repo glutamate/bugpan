@@ -312,8 +312,8 @@ procQ writeQ s
            let [[all, modnm]] = (s =~ "^\\s*importHs\\s*(.+)")::[[String]]
            in modimport modnm
     | s =~ "^\\s*plotSize\\s*(.+)x(.+)" = 
-           let [[all, h, w]] = (s =~ "^\\s*plotSize\\s*(.+)x(.+)")::[[String]]
-           in tell $ "plotSize "++h++" "++w
+           let [[all, w, h]] = (s =~ "^\\s*plotSize\\s*(.+)x(.+)")::[[String]]
+           in tell $ "plotSize "++w++" "++h
     | s =~ "^\\s*fontSize\\s*(.+)" = 
            let [[all, h]] = (s =~ "^\\s*fontSize\\s*(.+)")::[[String]]
            in tell $ "fontSize "++h

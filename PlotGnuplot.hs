@@ -278,10 +278,10 @@ gnuplotManyLatex opts nmbxs = do
                       --print2 nm cmd
                       return (nm,cmd)
   let start = "set datafile missing \"NaN\"\n"
-  let h = optVal 'h' 480 opts
-  let w = optVal 'w' 640 opts
+  let h::Double = (/10) $ realToFrac $ optVal 'h' (35::Int) opts
+  let w::Double = (/10) $ realToFrac $ optVal 'w' (50::Int) opts
   let fs = optVal 'f' 16 opts
-  let term = "set terminal postscript eps enhanced color \"Helvetica\" "++show fs++"\n" -- size "++ show w++","++show h++" crop\n"
+  let term = "set terminal postscript eps enhanced color \"Helvetica\" "++show fs++" size "++ show w++","++show h++"\n"-- crop\n"
   let cmds = start++term ++concatMap plotOne nmcmds
   execGP cmds
   forM_ nmcmds $ \(nm,cmd) -> do
@@ -599,7 +599,7 @@ instance (PlotWithGnuplot a, PlotWithGnuplot b) => PlotWithGnuplot ( a :|: b) wh
 
 instance (PlotWithGnuplot a, PlotWithGnuplot b) => PlotWithGnuplot ( a :--: b) where
     multiPlot (Rect (x0, y0) (x1,y1)) (Pcnt pcp p :--: Pcnt pcq q) = do
-      let ysep = y0+(pcp/(pcp+pcq))*(y1-y0)
+      let ysep = y0+(pcq/(pcp+pcq))*(y1-y0)
       px <- multiPlot ( Rect (x0,y0) (x1, ysep) ) q
       py <- multiPlot ( Rect (x0, ysep) (x1, y1) ) p
       return $ py++px 

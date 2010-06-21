@@ -32,7 +32,7 @@
 %>>        pts "red" 11 1 (chopx (tag 0.1 collision)) :+:
 %>>        lns "black" 1 (chopx (rescale 0.0015 1.35 shistMany))
 
-
+>> plotSize 60x40
 
 >> plot $ PadX 0.05 0.05 $ Noaxis $ XRange 1749 1788 $ 
 >>        (YScaleBar (1753, -0.4) (20/80, "Distance 20 m") (-3) $ lns "dark-red" 1 (chopx ((/80) <$$> distSig))) :+: 
@@ -41,6 +41,8 @@
 >>        (TextAt (1751.5, 1.2) "Spikes" $ pts "dark-green" 7 0.3 (chopx (jitterys 0.08 $ tag 1.2 spikes))) :+:
 >>        (TextAt (1751.0, 0.1) "Collision" $ pts "red" 11 1 (chopx (tag 0.1 collision))) :+:
 >>        (YScaleBar (1753, 1.4) (100*0.0015, "Frequency 100 Hz") (-3.7) $ lns "black" 1 (chopx (rescale 0.0015 1.35 shistMany))) 
+
+
 
 >> close
 

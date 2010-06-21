@@ -15,18 +15,21 @@
 
 >> showDur =  restrictDur (0, 0.1) [running!!1]
  
-% >> spikes = tag 6e-10 $ during showDur rndSpike
-
 >> stepsPlot = alignBy sigStart $ during steps vm
 >> oneSynPlot = during [((0.997,1.02),())] $ alignBy sigStart $ during oneSyn vm
 >> vmPlot = during [((1,1.1),())] $ alignBy sigStart $ take 2 $ drop 50 $ during ffcurve vm
 
-> plot $ (A stepsPlot :||: B (oneSynPlot)) 
->        :==: (C vmPlot :||: D ffscat) 
+>> plotSize 30x40
 
-%> plot $ during showDur [gcell!!1] 
-%>        :==: spikes 
+>> plot $ 1%(A (oneSynPlot)) :--: 
+>>        (2%(B vmPlot :==: C ffscat))
 
-%> plot $ scatter $ zipD inputRate inrate
 
 > close
+
+\textbf{Figure 3}. A, recorded intracellular voltage following
+conductance injections of a unitary simulated synaptic conductance,
+with imposed $I_A$ maximal conductance of 0 (green) and $ 1.0 \times 10^{-8}
+S$ (red). B, as A, but with synaptic inputs convolved with a poisson train
+with rate = 200 ms $^{-1}$. C, the postsynaptic spike rate plotted
+against the rate of simulated presynaptic inputs, with $I_A$ as in A. 
