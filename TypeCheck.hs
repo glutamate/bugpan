@@ -82,8 +82,8 @@ tyCheckD d@(Let (PatVar nm tp) e) =
                                          return ()
 
 --figure out how to do this correctly
-tyCheckD d@(Let (PatDeriv p) (SigFby v0 e)) = 
-                tyCheckD $ Let p (SolveOde (SigFby v0 e))
+tyCheckD d@(Let (PatDeriv p) sige) = 
+                tyCheckD $ Let p (SolveOde sige)
 {-                      do decTys <- allDeclaredTypes
                          tpn <-  if tp== UnspecifiedT
                                     then (SignalT . UnknownT) `fmap` genSym nm

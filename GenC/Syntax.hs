@@ -110,8 +110,6 @@ ppCCmd (For ini tst incr cmds) =
 ppCCmd (LitCmds ss) = ss
 ppCCmd (CComment s) = ["//"++s]
                                       
-                            
-
 ppEC (If p c a) = "("++ppEC p ++")?("++ppEC c ++"):("++ppEC a++")"
 ppEC (App (Var "sizeof") e2) = "sizeof("++ppEC e2++")"
 ppEC (App (App (Var "ptr") (Var pnm)) (Var field)) = pnm++"->"++field
@@ -120,16 +118,17 @@ ppEC a@(App e1 e2) = printCall $ flatApp a
 ppEC (Const x) = ppVal x
 ppEC (M1 Exp e1) = "exp("++ppEC e1++")"
 ppEC (M1 Ln e1) = "log("++ppEC e1++")"
-ppEC (M2 Mul e1 e2) = ppOp e1 "*" e2
-ppEC (M2 Add e1 e2) = ppOp e1 "+" e2
+ppEC (M2 Mul e1 e2) = inPar $ ppOp e1 "*" e2
+ppEC (M2 Add e1 e2) = inPar $ ppOp e1 "+" e2
 ppEC (M2 Sub (Const (NumV (NInt 0))) e2) = "-" ++ppEC e2
-ppEC (M2 Sub e1 e2) = ppOp e1 "-" e2
-ppEC (M2 Div e1 e2) = ppOp e1 "/" e2
-ppEC (Cmp Lt e1 e2) = ppEC e1 ++ " < " ++ ppEC e2
-ppEC (Cmp Gt e1 e2) = ppEC e1 ++ " > " ++ ppEC e2
+ppEC (M2 Sub e1 e2) = inPar $ ppOp e1 "-" e2
+ppEC (M2 Div e1 e2) = inPar $ ppOp e1 "/" e2
+ppEC (Cmp Lt e1 e2) = inPar $ ppEC e1 ++ " < " ++ ppEC e2
+ppEC (Cmp Gt e1 e2) = inPar $ ppEC e1 ++ " > " ++ ppEC e2
 
 ppEC (Var nm) = nm
-ppEC (And e1 e2) = "("++ppEC e1 ++")&&("++ppEC e2 ++")"
+ppEC (SigVal (Var nm)) = nm++"Val"
+ppEC (And e1 e2) = inPar $ ppEC e1++"&&"++ppEC e2 
 ppEC e = error2 "ppEC: " e
 
 ppOp e op e2 = ppEC e++op++ppEC e2

@@ -37,7 +37,7 @@ compileToC fp dt tmax ds params = do
   let stgs@(env:stageDs) = splitByStages ds
   forM stgs $ \ds-> do
     putStrLn "\n---------------stage\n"
-    mapM print  ds
+    mapM (putStrLn . ppDecl)  ds
   let prg = ppCProg $ toC dt tmax ds params
   writeFile (fp) prg
   --putStrLn prg 
@@ -67,7 +67,7 @@ mainFun params ds stages
 setPar ((nm, NumT (Just RealT)), n)
        = Call "sscanf" [Var ("argv["++show n++"]"), Const (StringV "%lf"), Var ("&"++nm)]
 
-runStage (n, ds) = [traceS $"stage"++show n ]++concatMap runAtOnceSrcs ds++concatMap preStage ds++ driveStage (n, ds) 
+runStage (n, ds) = (traceS $"stage"++show n )++concatMap runAtOnceSrcs ds++concatMap preStage ds++ driveStage (n, ds) 
 
 isDynClamp ds = 
     let ins = [() | ReadSource _ ("ADC",_) <- ds ]
@@ -102,7 +102,12 @@ mainBeg ds (SinkConnect (Var nm) (bufnm, _)) | head bufnm == '#' =
                                        | otherwise = []
 
          
+mainBeg ds (Let (PatVar nm t) e) 
+                    | "_0" `isSuffixOf` nm = [Assign (Var ((dropEnd 2 nm)++"Val")) e]
+                    | otherwise = []
 mainBeg _ _ = []
+
+dropEnd n = reverse . drop n . reverse
 
 mainEnd ds (SinkConnect (Var nm) ("store", _))= 
     [Call "write_signal" [Const (StringV ("dyn_sig_"++nm)), Var (nm)],
@@ -125,6 +130,8 @@ gloVar _ (Let (PatVar nm ft) lam@(Lam _ _ _)) =
           in [CFun (last tys) nm (zip nms $ init tys) [Return $ lamBody lam]]
 gloVar _ (Let (PatVar nm t) (SolveOde (SigFby v e))) = 
                     [DeclareGlobal (bugTyToCTy t) (nm++"Val") (Just v)]
+gloVar _ (Let (PatVar nm t) (SolveOde e)) = 
+                    [DeclareGlobal (bugTyToCTy t) (nm++"Val") (Nothing)]
 gloVar ds (SinkConnect (Var nm) ("store", _)) = 
           let t =tyOf ds nm in
           [DeclareGlobal (CPtrT $ CStructT "signal_double") (nm) Nothing]
@@ -160,6 +167,8 @@ step (Let (PatVar nm t) (Forget tm e)) =
 --step (SinkConnect (Var nm) ("store", _)) = [Assign (Var ("("++nm++"->arr)[i]")) $ Var  (nm++"Val")]
 step (Let (PatVar nm t) (SolveOde (SigFby v e))) = 
                     [Assign (Var (nm++"Val")) $ (Var (nm++"Val")) + Var "dt" * unVal (SigVal e)]
+step (Let (PatVar nm t) (SolveOde (Sig e))) = 
+                    [Assign (Var (nm++"Val")) $ (Var (nm++"Val")) + Var "dt" *  e]
 step (SinkConnect (Var nm) (bufnm, _)) | head bufnm == '#' = 
              [Assign (Var ("("++nm++"->arr)[i]")) $ Var (nm++"Val")]
                                        | otherwise = []
@@ -223,9 +232,9 @@ stepd (SinkConnect (Var nm) ("DAC", _)) = [Assign  (Var "data[1]") (Var "from_ph
 stepd (ReadSource nm ("ADC", _)) = [Assign (Var (nm++"Val")) $ Var "to_phys" $> Var "data[0]"]
 stepd d = step d
 
-traceD what nm = Call "printf" [Const (StringV $ what ++ " " ++ nm ++" %g\n"), Var nm]
-traceInt what nm = Call "printf" [Const (StringV $ what ++ " " ++ nm ++" %ld\n"), Var nm]
-traceS what= Call "printf" [Const (StringV $ what++"\n")]
+traceD what nm = [Call "printf" [Const (StringV $ what ++ " " ++ nm ++" %g\n"), Var nm], Call "fflush" [Var "stdout"]]
+traceInt what nm = [Call "printf" [Const (StringV $ what ++ " " ++ nm ++" %ld\n"), Var nm], Call "fflush" [Var "stdout"]]
+traceS what= [Call "printf" [Const (StringV $ what++"\n")], Call "fflush" [Var "stdout"]]
 
 
 {-main = do

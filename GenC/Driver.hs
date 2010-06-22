@@ -43,7 +43,7 @@ useRT fnm params = do
   io $ system $ "gcc "++gccArgs
   return (fileroot, tmax, dt)
 
-invokeRT (fnm, tmax,dt) params = do
+invokeRT (fnm, tmax,dt) vals = do
   s <- get
   t0 <- getTnow 
   rt <- realTime `fmap` get
@@ -51,8 +51,8 @@ invokeRT (fnm, tmax,dt) params = do
                then lastTStop s +1
                else t0 
   Session sessNm _ <- getSession
-  --let valargs = intercalate " " $ map (ppVal . snd) vals --ideally check ordering
-  let cmdStr = "./"++fnm --bugpanRootDir./"queryCache"./sha++" "++(last $ splitBy '/' sessNm)++" "++show t0' ++" "++valargs
+  let valargs = intercalate " " $ map (ppVal . snd) vals --ideally check ordering
+  let cmdStr = "./"++fnm++" "++valargs --bugpanRootDir./"queryCache"./sha++" "++(last $ splitBy '/' sessNm)++" "++show t0' ++" "++valargs
   liftIO . putStrLn $ cmdStr
   liftIO $ system $ cmdStr 
   put $ s { lastTStart = t0',
