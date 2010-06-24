@@ -8,5 +8,5 @@ import EvalM
 main = do
   deleteSessionIfExists "rttest"
   inApproxSession "new:rttest" $ do
-        tok <- useRT "TestSim" [("rate", NumT (Just RealT))]
+        tok <- useRT "Test" [("rate", NumT (Just RealT))]
         invokeRT tok [("rate", 100)]

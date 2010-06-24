@@ -2,7 +2,7 @@ module Test where
 
 alpha tau t = if t<0.0 then 0.0 else (t/tau)*exp (1-t/tau)
 
-gsyn = {: 1.0e-9* (alpha 0.005 <: seconds:>) :}
+gsyn = {: 5.0e-10* (alpha 0.005 <: seconds:>) :}
 
 stage gsyn -1		
 
@@ -16,25 +16,26 @@ gcell = {: convolution gsyn (forget 0.1 rndSpike ) <:seconds:> :}
 rawv :: Signal Real
 celli :: Signal Real
 
-rawv = {: 0-0.070 :} -- <* ADC 0
+rawv <* ADC 0
 
 vm = {: <: rawv:>  *0.10 :}
 
-celli = {: (0-<:vm:>) * <:gcell:> :}
+--V=IR = 1e-2 = 0.01 
+--{: if (<:seconds:> > 0.1) && (<:seconds:> < 0.9) then 0.1e-9 else 0 :}
 
---{: if (<:seconds:> > 0.2) && (<:seconds:> < 0.8) then 1.0e-9 else 0 :} 
+celli =  {: (0-<:vm:>) * <:gcell:> :}
 
-outv = {: <:celli:> * 1.0e9 :} 
+outv = {: <:celli:> * 1.0e8 :}  -- 1.0e9 on axoclamp, 1.0e8 on biologic rk400 
 
--- outv *> DAC 0
+outv *> DAC 0
 
 celli *> store ""
 
 gcell *> store ""
 
-gsyn *> store ""
+--gsyn *> store ""
 
-rawv *> store ""
+--rawv *> store ""
 
 vm *> store ""
 
