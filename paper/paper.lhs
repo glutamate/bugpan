@@ -610,13 +610,14 @@ betaa v =  17.5*(v*1000+19.9)/(exp ((v*1000+19.9)/10) -1)
 \end{code}
 
 The time-varying state of the activation gate is given by a
-differential equation. We use the notation |D x = | $x_0$ | fby sopen f
-  (x,<:seconds:>) sclose | to denote the ordinary differential equation
+differential equation. We use the notation |D x = sopen f
+(x,<:seconds:>) sclose | to denote the ordinary differential equation
 that is conventionally written $\frac{dx}{dt} = f(x,t) $ with starting
-conditions $x=x_0$.
+conditions explicityly assigned to the variable $x_0$.
 \begin{code}
-D a = 0 fby sopen  alphaa <: vm :> * (1- <:a:> ) -
-                   betaa <: vm :> * <: a :> sclose
+D a = sopen  alphaa <: vm :> * (1- <:a:> ) -
+             betaa <: vm :> * <: a :> sclose
+a_0 = 0
 \end{code}
 with the inactivation state signal |b| defined similarly.
 
