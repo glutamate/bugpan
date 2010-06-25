@@ -23,7 +23,7 @@ import System.IO
 import ValueIO
 import qualified Data.StorableVector as SV
 import NewSignal
-
+import GHC.Conc
 
 useRT ::  MonadIO m => String -> [(String, T)] -> StateT QState m (String, Double, Double)
 useRT fnm params = do
@@ -72,4 +72,5 @@ invokeRT (fnm, tmax,dt) vals = do
     inLastSig (nm :=  sig)
     io $ removeFile sigfp
   return ()
-   
+   --
+wait s =  liftIO (threadDelay $ s*1000*1000)

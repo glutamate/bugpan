@@ -2,13 +2,15 @@ module Test where
 
 alpha tau t = if t<0.0 then 0.0 else (t/tau)*exp (1-t/tau)
 
-gsyn = {: 5.0e-10* (alpha 0.005 <: seconds:>) :}
+gampa = 5.0e-10
+
+gsyn = {: gampa* (alpha 0.005 <: seconds:>) :}
 
 stage gsyn -1		
 
 rate = 50
 
-_tmax = 1
+_tmax = 2
 _dt = 1.0e-4
 
 gcell = {: convolution gsyn (forget 0.1 rndSpike ) <:seconds:> :}
@@ -16,7 +18,7 @@ gcell = {: convolution gsyn (forget 0.1 rndSpike ) <:seconds:> :}
 rawv :: Signal Real
 celli :: Signal Real
 
-rawv = <* ADC 0
+rawv <* ADC 0
 
 vm = {: <: rawv:>  *0.10 :}
 
@@ -49,11 +51,11 @@ betaa v =  (0.0175*(v-40.1))/((exp ((v-40.1)/10))-1)
 alphab v = 0.0016*exp((0-13-v)/18)
 betab v = 0.05/(1+(exp((10.1-v)/5)))
 
-celli = {: (0-<:vm:>) * <:gcell:> :}
+celli = {: (0-<:vm:>) * <:gcell:> - <: ika:> :}
 
 outv = {: <:celli:> * 1.0e8 :} 
 
--- outv *> DAC 0
+outv *> DAC 0
 
 celli *> store ""
 
