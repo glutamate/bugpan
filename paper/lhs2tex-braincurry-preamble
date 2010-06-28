@@ -22,6 +22,7 @@
 %format xthresh = "x_{th}"
 %format **  = "^"
 %format vth = "v_{th}"
+%format a_0 = "a_0"
 %format v_rest = "v_{rest}"
 %format alphaa = "\alpha_a"
 %format betaa = "\beta_a"

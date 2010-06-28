@@ -623,7 +623,7 @@ with the inactivation state signal |b| defined similarly.
 
 The current signal from this channel is calculated from Ohm's law:
 \begin{code}
-ika = {: gmaxk * <:a:> * <:b:>*(<:vm:> - E) :}
+ika = sopen gmaxk * <:a:> * <:b:> * (<:vm:> - E) sclose
 \end{code}
 which is added to the signal |i| defined above. Figure 3A and 3B shows
 the voltage response to a unitary synaptic conductance and a trains of
