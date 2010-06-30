@@ -144,7 +144,11 @@ p ?? s@(Signal t1 t2 dt arr (Kont k)) =
     zip (idxsToTimes s $ SV.findIndices id $ SV.zipWith (p') arr (SV.tail arr)) (repeat ())
         where p' y1 y2 = p (k y2)  && not (p (k y1))
 
-
+deriv :: Signal Double -> Signal Double
+deriv s@(Signal t1 t2 dt arr Eq) = 
+    let f y1 y2 = (y2 - y1)/dt
+        newarr = SV.zipWith (f) arr (SV.tail arr)
+    in (Signal t1 (t2-dt) dt newarr Eq)
 
 idxsToTimes :: Signal a -> [Int] -> [Double]
 idxsToTimes (Signal t1 t2 dt _ _) = map $ (+t1) . (*dt) . realToFrac

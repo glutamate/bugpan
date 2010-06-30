@@ -590,3 +590,7 @@ minInterval t (ts1:res@(ts2:es)) | dist (gettStart ts1) (gettStart ts2) < t = mi
 eq4 x y = abs(x-y)<1e-4
 
 evInDur t = shift t . durStart
+
+reTimeSigsBy [] _ = []
+reTimeSigsBy _ [] = []
+reTimeSigsBy (((t1, t2),_):durs) (Signal ts1 ts2 dt arr eq:sigs) = (Signal t1 t2 dt arr eq):reTimeSigsBy durs sigs

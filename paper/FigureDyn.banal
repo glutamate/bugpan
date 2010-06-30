@@ -1,0 +1,73 @@
+%>> defineSession intfire SimIntfire
+
+>> openSession ff6
+
+>> show $ tagValues gmaxk
+>> show $ tagValues rate
+>> show $ tagValues gampa
+
+>> eq = \x y -> abs (x-y) < 1e-10
+>> der = map deriv
+
+
+%>> noA = during ((<1e-9)//gmaxk)
+>> gA = \gk -> during (eq gk//gmaxk)
+%>> z = alignBy sigStart
+>> vmrt = reTimeSigsBy running vm
+
+>> spike = crossesUp (durd 25) $ der $ vmrt
+
+>> vmWhere = \gk rat -> alignBy sigStart $ during (eq gk//gmaxk) $ during (eq rat//rate) vmrt
+
+
+>> ffcurve = (>0)//rate
+
+>> aCurrent = (>1e-14)//gmaxk
+
+>> inrate = rate
+
+>> outrate = freqDuring (ffcurve) spike
+
+>> ffscat = ("0 pS", scatter $ gA 0 (zipD inrate outrate)) :+: ("10 pS", scatter $ gA 1e-8 (zipD inrate outrate)) :+: ("40 pS", scatter $ gA 4e-8 (zipD inrate outrate)) :+: ("100 pS", scatter $ gA 1e-7 (zipD inrate outrate))
+
+>> showDur =  restrictDur (0, 0.1) [running!!1]
+
+>> oneSyn = take 2 running
+
+>> focus1 = during [((1.7,1.8),())]
+>> focus2 = during [((1,1.9),())]
+
+>> r1 = 20
+
+>> vm1 = \gk -> smoothN 4 $ focus1 (vmWhere gk r1)
+
+>> plot $ vm1 1e-7 :+: vm1 1e-8 :+: vm1 0
+
+>> plot $ focus2 (vmWhere 1e-7 120) :+: focus2 (vmWhere 1e-8 120) :+:  focus2 (vmWhere 0 120)
+
+%>> plot $ der (vmWhere 1e-7 100) :+: der (vmWhere 1e-8 100) :+:  der (vmWhere 0 100)
+
+>> plot $ XRange 0 100 $ ffscat
+
+%> plot oneSynPlot
+
+%> plot vmPlot
+
+> length vm
+
+%>> plotSize 30x40
+
+
+
+%>> plot $ 1%(A (oneSynPlot)) :--: 
+%>>        (2%(B vmPlot :==: C ffscat))
+
+
+> close
+
+\textbf{Figure 3}. A, recorded intracellular voltage following
+conductance injections of a unitary simulated synaptic conductance,
+with imposed $I_A$ maximal conductance of 0 (green) and $ 1.0 \times 10^{-8}
+S$ (red). B, as A, but with synaptic inputs convolved with a poisson train
+with rate = 200 ms $^{-1}$. C, the postsynaptic spike rate plotted
+against the rate of simulated presynaptic inputs, with $I_A$ as in A. 

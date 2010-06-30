@@ -95,7 +95,7 @@ inLastSig (nm := sig) = do
     Nothing -> return ()
     Just ((t1,t2),()) -> -}
   
-  liftIO $ saveInSession sess nm t1 0.001 $ pack $ shift t1 sig
+  liftIO $ saveInSession sess nm t1 0.001 $ pack $ sigZero sig
 {-createDirectoryIfMissing False $ bdir ./ "durations" ./ nm
               fnm <- uniqueFileInDir "stored" $ bdir ./ "durations" ./ nm
               saveVs fnm [pack ((t1,t2),val)]
