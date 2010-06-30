@@ -15,7 +15,6 @@ import Numbers
 realTs nms = zip (words nms) $ repeat (NumT (Just RealT))
 
 gampa = 2e-9
-gmaxk = 2e-7
 
 main = do
   inApproxSession "new:ff3" $ do
@@ -27,6 +26,8 @@ main = do
                  inLast ("gmaxk" := gk)           
                  wait 1
         forM_ [10,20..600] $ \r -> do
-           runIt (NumV $ NReal r) gmaxk gampa
+           runIt (NumV $ NReal r) 1e-7 gampa
+           runIt (NumV $ NReal r) 4e-8 gampa
+           runIt (NumV $ NReal r) 1e-8 gampa
            runIt (NumV $ NReal r) 0 gampa
  
