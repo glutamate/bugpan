@@ -27,8 +27,8 @@ useful because they allow us to calculate --- to re-arrange, isolate
 and substitute terms --- and by doing so, to prove general
 theorems. These symbolic manipulations are possible because terms can
 be replaced by terms with identical meaning without changing the
-meaning of the context. For instance, no matter what $w$ refers to or
-where it appears, $w+w$ can always be substituted by $2w$. This
+meaning of the context. For instance, no matter what |w| refers to or
+where it appears, |w+w| can always be substituted by |2*w|. This
 property, which is called referential transparency
 \citep{Whitehead1927}, is shared by all ``mathematical'' notations but
 not by conventional programming languages.
@@ -48,12 +48,12 @@ networks, cells or proteins. Instead it describes the observation and
 calculation of the mathematical objects that constitute physiological
 evidence.
 
-What is an experiment? Whether they are carried out by humans or by
-automated equipment, many experiments can be seen as \emph{programs}
-that manipulate and observe the real world. This definition suggests
-that experiment descriptions must resemble programming languages, and
-that a referentially transparent calculus of experiments could come
-from programming language theory. Functional Reactive Programming
+Whether they are carried out by humans or by automated equipment, many
+experiments can be seen as \emph{programs} that manipulate and observe
+the real world. This definition suggests that experiment descriptions
+must resemble programming languages, and that a referentially
+transparent calculus of experiments could come from programming
+language theory. Functional Reactive Programming
 \citep[FRP;][]{Elliott1997, Nilsson2002} is an elegant approach for
 purely mathematical transformations to interact with the physical
 world. Here we show that the semantics of FRP provide a structure for
@@ -64,12 +64,13 @@ the theory of \emph{types} and define three types that can represent
 physiological evidence. We then present an new formal and
 machine-executable language for defining observations and
 transformations of such evidence. Finally, we show two very different
-formally defined experiments and analyses from neurophysiology. In the
-first example, we measure an \emph{in vivo} spike train response to
-visual stimulation in locusts. In the second example, we use the
-dynamic clamp technique to investigate the impact of an active
-potassium conductance on synaptic integration. Each of these protocols
-are defined unambiguously in a handful of equations. 
+experiments from neurophysiology, together with their associated
+analyses can be formally defined in out calculus. In the first
+example, we measure an \emph{in vivo} spike train response to visual
+stimulation in locusts. In the second example, we use the dynamic
+clamp technique to investigate the impact of an active potassium
+conductance on synaptic integration. Each of these protocols are
+defined unambiguously in a handful of equations.
 
 \section*{The calculus of physiological evidence}
 
@@ -500,11 +501,17 @@ so that |spike| has type |Event ()|. This event, is displayed on the
 common time scale in Figure 1. The top row displays the spike count
 histogram
 \begin{code}
-hspike =
-sopen length (filter (between <: delay seconds:> <: seconds:> . fst)
-spikes) sclose
+hspike  =
+        sopen length (filter  (between <: delay seconds:> <: seconds:> . fst)
+                              spikes) sclose
 \end{code}
-for each trial.
+for each trial. This definition exploits the list semantics of events
+by using the generic list-processing function |filter| which takes as
+arguments predicate |p| and a list |xs|, and returns the list of
+elements in |xs| for which the predicate holds. Here the predicate is
+|fst| (which returns the first element of a pair, here the occurrence
+time) composed (|.|) with the function |between = \x -> \y -> \z ->
+z>x && z>=y|. 
 
 We examined how the DCMD spike response varied with changes in
 $\frac{l}{v}$. The average of |hist| for three different values of
@@ -528,12 +535,12 @@ An important property studied in computational neuroscience is the
 input-output relationships of neurons. Given a stimulus, e.g. injected
 current waveform or pattern of synaptic input, what is the membrance
 voltage trajectory and firing rate response of a particular neuron? In
-particular, the cell properties such as the dendritic morphology or
+particular, cell properties such as the dendritic morphology or
 ionic conductances can profoundly influence this relationship. Such
 influences can be examined with experiments or simulations; here we
 show how the calculus of physiological evidence can be used to
-formulate and execute (simulated, at least for now!) dynamic-clamp
-experiments on synaptic integration.
+formulate and execute dynamic-clamp experiments on synaptic
+integration.
 
 A dynamic clamp experiment requires electrical access to the
 intracellular compartment, such that the cell membrane voltage can be
@@ -545,11 +552,14 @@ standard current clamp configuration, the dynamic clamp permits the
 imposition of additional simulated ionic conductances on a real
 neuron. For instance, it is possible record the responce of a cell to
 an added a synaptic conductance or an additional Hodgkin-Huxley-style
-voltage-sensitive conductance.
+voltage-sensitive conductance. Here, we combine these possibilities to
+investigate the effect of an A-type potassium conductance (ref
+O'connor) on the response of a zebrafish spinal motorneuron to
+synaptic excitation.
 
-Dynamic clamp-experiments thus follow the same template --- the
-voltage is read and the (output) current calculated from the added
-conductance:
+Dynamic clamp-experiments follow the same template --- (output)
+current calculated from the simulated conductance and the measured
+membrane voltage:
 \begin{code}
 v <* ADC (0,20000)
 
@@ -557,35 +567,35 @@ i = sopen (<: v :> - E)* <: g :> sclose
 
 i *> DAC (0,20000)
 \end{code}
-The experiment is thus characterised by the signal $g$.
+The experiment is thus characterised by the signal $g$ (we omit the
+amplifier-dependent input and output gains).
 
 In the simplest case, $g$ is independent of $v$; for instance, when
 considering linear synaptic conductances (Ref angus and simon). Here,
 we consider the addition of a simulated fast excitatory synaptic
-conductance to a real neuron. Simple neural models of often simulate
-synaptic excitation using an alpha function, which provides a
-relatively good fit to many synaptic processes.
+conductance to a real neuron. Simple neural models of synapses
+approximate the conductance waveform with an alpha function.
 \begin{code}
-alpha amp tau = sopen amp*tau **2 * <: seconds :> *exp (- <: seconds :> *tau) sclose
+alpha = \tau -> sopen tau **2 * <: seconds :> *exp (- <: seconds :> *tau) sclose
 \end{code}
-Fig 3A shows the membrane voltage recorded from a XXX neuron in a
-dynamic clamp experiment where |g = sopen alpha Y Z <:seconds:>
-sclose|.
+Fig 3A shows the membrane voltage recorded from a zebrafish caudal
+primary motor neuron in a dynamic clamp experiment where |g = sopen 
+50*10 tom9 * <: alpha 0.005 :>  sclose|.
  
-A more realistic simulation of the input to a cell is the convolution
-of this signal with a presynaptic spike train. The spike train itself
-is first read from a source representing a random probability
+To simulate a barrage of synaptic input to a cell, this waveform is
+convolved with a presynaptic spike train. The spike train itself is
+first bound from a source representing a random probability
 distribution, in this case series of recurrent events of type |Event
 ()| for which the inter-occurrence interval is Poisson distributed.
 Secondly, our standard library contains a function |convolveSE| which
 convolves an impulse response signal with a numerically-tagged event,
 such that the impulse response is multiplied by the tag before
-convolution. 
+convolution.
 \begin{code}
 preSpike <* poissonTrain rate
 gsyn =  convolveSE (alpha amp tau) (tag 1 preSpike)
 \end{code}
-The new signal gsyn was used in a new dynamic clamp experiment, and
+The new signal |gsyn| was used in a new dynamic clamp experiment, and
 the recorded membrane voltage (Fig 3B) showed considerable
 subthreshold fluctuations and some spikes. By changing |rate| and
 measuring the frequency of postsynaptic spikes (|frequencyDuring
@@ -596,7 +606,7 @@ Both the subthreshold properties of a cell and its spiking rate can be
 regulated by active ionic conductances. One way to examine this
 regulation of synaptic integration is to impose an additional active
 conductance on cells with dynamic clamp. In the Hodgkin-Huxley
-formalism for ion channels, the conductance depends on two state
+formalism for ion channels, the conductance depends on one or more state
 variables, for which the forward and backward rate constants depend on
 the membrane voltage. Here we show the equations for the activation
 gate of the A-current (O'Connor ref), following (Traub ref; we use SI
@@ -613,7 +623,7 @@ The time-varying state of the activation gate is given by a
 differential equation. We use the notation |D x = sopen f
 (x,<:seconds:>) sclose | to denote the ordinary differential equation
 that is conventionally written $\frac{dx}{dt} = f(x,t) $ with starting
-conditions explicityly assigned to the variable $x_0$.
+conditions explicitly assigned to the variable $x_0$.
 \begin{code}
 D a = sopen  alphaa <: vm :> * (1- <:a:> ) -
              betaa <: vm :> * <: a :> sclose
@@ -886,9 +896,9 @@ computer.
 \bibliographystyle{apalike}
 \bibliography{paper}
 
-\includepdf[pages=-]{Figure1.pdf}
-\includepdf[pages=-]{Figure2.pdf}
-\includepdf[pages=-]{FigureIF.pdf}
+%\includepdf[pages=-]{Figure1.pdf}
+%\includepdf[pages=-]{Figure2.pdf}
+%\includepdf[pages=-]{FigureDyn.pdf}
 %\includepdf[pages=-]{Figure4.pdf}
 \end{document}
  

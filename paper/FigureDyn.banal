@@ -2,6 +2,9 @@
 
 >> openSession ff6
 
+>> plotSize 30x40
+
+
 >> show $ tagValues gmaxk
 >> show $ tagValues rate
 >> show $ tagValues gampa
@@ -28,42 +31,24 @@
 
 >> outrate = freqDuring (ffcurve) spike
 
->> ffscat = ("0 pS", scatter $ gA 0 (zipD inrate outrate)) :+: ("10 pS", scatter $ gA 1e-8 (zipD inrate outrate)) :+: ("40 pS", scatter $ gA 4e-8 (zipD inrate outrate)) :+: ("100 pS", scatter $ gA 1e-7 (zipD inrate outrate))
-
->> showDur =  restrictDur (0, 0.1) [running!!1]
-
->> oneSyn = take 2 running
+>> ffscat = ("0 nS", scatter $ gA 0 (zipD inrate outrate)) :+: ("10 nS", scatter $ gA 1e-8 (zipD inrate outrate)) :+: ("40 nS", scatter $ gA 4e-8 (zipD inrate outrate)) :+: ("100 nS", scatter $ gA 1e-7 (zipD inrate outrate))
 
 >> focus1 = during [((1.7,1.8),())]
 >> focus2 = during [((1,1.9),())]
-
 >> r1 = 20
-
 >> vm1 = \gk -> smoothN 4 $ focus1 (vmWhere gk r1)
 
->> plot $ vm1 1e-7 :+: vm1 1e-8 :+: vm1 0
+>> oneSyn =  vm1 1e-7 :+: vm1 1e-8 :+: vm1 0
+>> vmplot = focus2 (vmWhere 1e-7 120) :+: focus2 (vmWhere 1e-8 120) :+:  focus2 (vmWhere 0 120)
+>> ffplot = XRange 0 100 $ ffscat
 
->> plot $ focus2 (vmWhere 1e-7 120) :+: focus2 (vmWhere 1e-8 120) :+:  focus2 (vmWhere 0 120)
+>> plot oneSyn
+>> plot vmplot
+>> plot ffplot
+
+>> plot $ (1%(A oneSyn) :--: 2%(B vmplot :==: C ffplot))
 
 %>> plot $ der (vmWhere 1e-7 100) :+: der (vmWhere 1e-8 100) :+:  der (vmWhere 0 100)
-
->> plot $ XRange 0 100 $ ffscat
-
-%> plot oneSynPlot
-
-%> plot vmPlot
-
-> length vm
-
-%>> plotSize 30x40
-
-
-
-%>> plot $ 1%(A (oneSynPlot)) :--: 
-%>>        (2%(B vmPlot :==: C ffscat))
-
-
-> close
 
 \textbf{Figure 3}. A, recorded intracellular voltage following
 conductance injections of a unitary simulated synaptic conductance,
