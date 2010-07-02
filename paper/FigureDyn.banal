@@ -5,17 +5,10 @@
 >> plotSize 30x40
 
 
->> show $ tagValues gmaxk
->> show $ tagValues rate
->> show $ tagValues gampa
-
 >> eq = \x y -> abs (x-y) < 1e-10
 >> der = map deriv
 
-
-%>> noA = during ((<1e-9)//gmaxk)
 >> gA = \gk -> during (eq gk//gmaxk)
-%>> z = alignBy sigStart
 >> vmrt = reTimeSigsBy running vm
 
 >> spike = crossesUp (durd 25) $ der $ vmrt
@@ -31,28 +24,32 @@
 
 >> outrate = freqDuring (ffcurve) spike
 
->> ffscat = ("0 nS", scatter $ gA 0 (zipD inrate outrate)) :+: ("10 nS", scatter $ gA 1e-8 (zipD inrate outrate)) :+: ("40 nS", scatter $ gA 4e-8 (zipD inrate outrate)) :+: ("100 nS", scatter $ gA 1e-7 (zipD inrate outrate))
+>> ffscat = (scatter $ gA 0 (zipD inrate outrate)) :+: (scatter $ gA 1e-8 (zipD inrate outrate)) :+: (scatter $ gA 4e-8 (zipD inrate outrate)) :+: (scatter $ gA 1e-7 (zipD inrate outrate))
 
->> focus1 = during [((1.7,1.8),())]
+>> focus1 = during [((1.69,1.8),())]
 >> focus2 = during [((1,1.9),())]
 >> r1 = 20
 >> vm1 = \gk -> smoothN 4 $ focus1 (vmWhere gk r1)
 
->> oneSyn =  vm1 1e-7 :+: vm1 1e-8 :+: vm1 0
->> vmplot = focus2 (vmWhere 1e-7 120) :+: focus2 (vmWhere 1e-8 120) :+:  focus2 (vmWhere 0 120)
->> ffplot = XRange 0 100 $ ffscat
+>> oneSyn =  YTics [-0.075, 0.005, -0.05] $ XRange 1.7 1.78 $ YRange (-0.075) (-0.05) $ KeyTopLeft True $ ("0 nS", vm1 0) :+: ("10 nS", vm1 1e-8) :+: ("40 nS", vm1 4e-8) :+: ("100 nS", vm1 1e-7)
+>> vmplot = YTics [-0.08, 0.01, -0.03] $ focus2 (vmWhere 0 120) :+: focus2 (vmWhere 1e-8 120) :+:  focus2 (vmWhere 4e-8 120) :+:  focus2 (vmWhere 1e-7 120)
+>> ffplot = YTics [0, 10, 30] $ XRange 0 105 $ YRange 0 30 $ ffscat
 
->> plot oneSyn
->> plot vmplot
->> plot ffplot
+>> plot $ 1%(A oneSyn)
+>>        :--: 2%(B vmplot :==: C ffplot)
 
->> plot $ (1%(A oneSyn) :--: 2%(B vmplot :==: C ffplot))
+%>> plot oneSyn
+%>> plot vmplot
+%>> plot ffplot
+
+
 
 %>> plot $ der (vmWhere 1e-7 100) :+: der (vmWhere 1e-8 100) :+:  der (vmWhere 0 100)
 
 \textbf{Figure 3}. A, recorded intracellular voltage following
 conductance injections of a unitary simulated synaptic conductance,
-with imposed $I_A$ maximal conductance of 0 (green) and $ 1.0 \times 10^{-8}
-S$ (red). B, as A, but with synaptic inputs convolved with a poisson train
-with rate = 200 ms $^{-1}$. C, the postsynaptic spike rate plotted
-against the rate of simulated presynaptic inputs, with $I_A$ as in A. 
+with A-type conductances of increasing magnitude (vlaues given are for
+the maximal conductance $g_A$). B, as A, but with synaptic inputs
+convolved with a poisson train with rate = 120 Hz. C, the postsynaptic
+spike rate plotted against the rate of simulated presynaptic inputs,
+with $g_A$ as in A.

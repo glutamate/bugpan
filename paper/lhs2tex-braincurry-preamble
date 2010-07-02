@@ -38,3 +38,5 @@
 %format thit = "t_{hit}"
 %format zscreen = "z_{screen}"
 %format * = "\!\cdot\!"
+%format ika = "i_{A}"
+%format gmaxk = "g_{A}"

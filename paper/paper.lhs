@@ -553,13 +553,13 @@ imposition of additional simulated ionic conductances on a real
 neuron. For instance, it is possible record the responce of a cell to
 an added a synaptic conductance or an additional Hodgkin-Huxley-style
 voltage-sensitive conductance. Here, we combine these possibilities to
-investigate the effect of an A-type potassium conductance (ref
-O'connor) on the response of a zebrafish spinal motorneuron to
-synaptic excitation.
+investigate the effect of an A-type potassium conductance
+\citep{Connor1971} on the response of a zebrafish spinal motorneuron
+to synaptic excitation.
 
-Dynamic clamp-experiments follow the same template --- (output)
-current calculated from the simulated conductance and the measured
-membrane voltage:
+Dynamic clamp-experiments follow the same template: the output current
+is calculated at each time-step from the simulated conductance and the
+measured membrane voltage:
 \begin{code}
 v <* ADC (0,20000)
 
@@ -571,7 +571,7 @@ The experiment is thus characterised by the signal $g$ (we omit the
 amplifier-dependent input and output gains).
 
 In the simplest case, $g$ is independent of $v$; for instance, when
-considering linear synaptic conductances (Ref angus and simon). Here,
+considering linear synaptic conductances \citep{Mitchell2003}. Here,
 we consider the addition of a simulated fast excitatory synaptic
 conductance to a real neuron. Simple neural models of synapses
 approximate the conductance waveform with an alpha function.
@@ -606,17 +606,17 @@ Both the subthreshold properties of a cell and its spiking rate can be
 regulated by active ionic conductances. One way to examine this
 regulation of synaptic integration is to impose an additional active
 conductance on cells with dynamic clamp. In the Hodgkin-Huxley
-formalism for ion channels, the conductance depends on one or more state
-variables, for which the forward and backward rate constants depend on
-the membrane voltage. Here we show the equations for the activation
-gate of the A-current (O'Connor ref), following (Traub ref; we use SI
-units and absolute voltages). The equations for inactivation are
-analogous.
+formalism for ion channels, the conductance depends on one or more
+state variables, for which the forward and backward rate constants
+depend on the membrane voltage. Here we show the equations for the
+activation gate of the A-type potassium current \citep{Connor1971},
+following \citet[we use SI units and absolute voltages]{Traub1991}. The
+equations for inactivation are analogous.
 
 We write the forward and backward rates as functions of the membrane voltage
 \begin{code}
-alphaa v = 20*(-46.9-v*1000)/(exp ((-46.9-v*1000)/10) -1)
-betaa v =  17.5*(v*1000+19.9)/(exp ((v*1000+19.9)/10) -1)
+alphaa = \v-> 20*(-46.9-v*1000)/(exp ((-46.9-v*1000)/10) -1)
+betaa = \v->  17.5*(v*1000+19.9)/(exp ((v*1000+19.9)/10) -1)
 \end{code}
 
 The time-varying state of the activation gate is given by a
@@ -633,26 +633,29 @@ with the inactivation state signal |b| defined similarly.
 
 The current signal from this channel is calculated from Ohm's law:
 \begin{code}
-ika = sopen gmaxk * <:a:> * <:b:> * (<:vm:> - E) sclose
+ika = sopen gmaxk * <:a:> * <:b:> * (<:v:> - E) sclose
 \end{code}
 which is added to the signal |i| defined above. Figure 3A and 3B shows
 the voltage response to a unitary synaptic conductance and a trains of
-synaptic inputs, respecitively, with |gmaxk = 10 nS|.
+synaptic inputs, respecitively, with |gmaxk| ranging from 0 to 100
+nS. A large A-type conductance decreases the amplitude of the EPSP, as
+expected, and decreases the number of spikes in response to the
+injection of an identical synaptic conductance waveform. 
 
 By varying the value of |rate|, we can examine the input-output
-relationship of the model neuron. To plot this relationship
-quantitatively, we need a function to calculate event
-frequencies. |frequencyDuring| is a function of a duration |d| and an
-event |e|, and returns a new duration with the tag of the temporal
-occurrence frequency of |e| within each occurrence of |d|. This
-duration retains the temporal context of |d|.
-
-Figure 3C shows a scatterplot of the postsynaptic (|frequencyDuring
-running spike|) against the presynaptic (|frequencyDuring running
-preSpike|) spike rate for two different values of |gmaxk|, the maximal
-conductance of the A-current. Here, an increase in the a-current
-appears to raise the threshold for activation of the postsynaptic cell
-without changing the gain.
+relationship of the model neuron by measuring the frequency of
+postsynaptic spikes. Firstly, spikes were detected from the first
+derivative of the |v| signal with 
+\begin{code}
+spike = tag () ((\v'->v'>vth') ?? D v)
+\end{code}
+and the spike frequency calculated with the |frequncyDuring| function.
+This relationship between the postsynaptic spike frequency and the
+synaptic input |rate| is plotted in Figure 3C for four different
+values of |gmaxk|. Large A-type conductances supress spikes resulting
+from endogenous synaptic activity, which was not pharmacologically
+blocked in this experiment, and increases the threshold at which imposed
+synaptic activity causes postsynaptic spiking. 
 
 \section*{Discussion}
 
@@ -663,7 +666,7 @@ calculations of these types can be described in a mathematical
 framework based on the lambda calculus. Two examples from
 neurophysiology illustrate this approach: the \emph{in vivo} spike
 train response to a visual looming stimulus in locusts; and a
-simulation of synaptic integration in a simple model neuron. 
+study of synaptic integration in with dynamic clamp. 
 
 We present an entirely new approach to performing and communicating
 science. Here, both stimuli and observations are defined concisely and
@@ -870,35 +873,45 @@ is conducted.
 We have used two different implementation strategies for reasons of
 rapid development and execution efficiency. For purposes of
 experimentation and simulation, we have implemented a prototype
-compiler that can execute some Bugpan programs that contain signals
-and events that are defined by mutual recursion, as is necessary for
-many of the simulations and experiments in this paper. For
+compiler that can execute some programs that contain signals and
+events defined by mutual recursion, as is necessary for many of the
+simulations and experiments in this paper. For
 post-acquisition/simulation analysis, where one often merely wishes to
 calculate a new value from existing observations, we have implemented
-Bugpan as a domain-specific language embedded in the purely functional
-programming language Haskell.  OpenGL and Comedi.
+the calculus of physiological evidence as domain-specific language
+embedded in the purely functional programming language Haskell.
+
+For hard real-time dynamic-clamp experiments, we build a compiler
+backend targeting the LXRT interface to the RTAI extensions of the
+Linux kernel, and the Comedi interface to data acquisition
+hardware. Geometric shapes were rendered using OpenGL.
+
+All code is available at http://github.com/glutamate/bugpan.
 
 \subsection*{Locust experiments}
 
 Recordings from the locust DCMD neurons were performed as previously
 described (ref). Briefly, locusts were fixed in plasticine with the
-ventral side upwards. The head was fixed with wax at an 90 degree angle and
-the connectives were exposed. A pair of hook electrodes were placed
-underneath the connectives and the electrodes and connectives enclosed
-in petroleum jelly. The electrode signal was amplified 1000x and
-bandpass filtered 50-5000 Hz, before analog-to-digital conversion at
-18 bits and 20 kHz with a NI-6xxx board. The locust was placed in
-front of a 22'' CRT monitor running with a vertical refresh rate of
-160 Hz. All aspects of the visual stimulus and analog-to-digital
-conversion were controlled by Bugpan programs running on a single
-computer.
+ventral side upwards. The head was fixed with wax at an 90 degree
+angle and the connectives were exposed. A pair of hook electrodes were
+placed underneath the connectives and the electrodes and connectives
+enclosed in petroleum jelly. The electrode signal was amplified 1000x
+and bandpass filtered 50-5000 Hz, before analog-to-digital conversion
+at 18 bits and 20 kHz with a National Instruments PCI-6281 board. The
+locust was placed in front of a 22'' CRT monitor running with a
+vertical refresh rate of 160 Hz. All aspects of the visual stimulus
+and analog-to-digital conversion were controlled by a single computer.
+
+\subsection*{Zebrafish experiments}
+
+...
 
 \bibliographystyle{apalike}
 \bibliography{paper}
 
-%\includepdf[pages=-]{Figure1.pdf}
-%\includepdf[pages=-]{Figure2.pdf}
-%\includepdf[pages=-]{FigureDyn.pdf}
+\includepdf[pages=-]{Figure1.pdf}
+\includepdf[pages=-]{Figure2.pdf}
+\includepdf[pages=-]{FigureDyn.pdf}
 %\includepdf[pages=-]{Figure4.pdf}
 \end{document}
  
