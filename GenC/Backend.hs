@@ -67,7 +67,7 @@ mainFun params ds stages
 setPar ((nm, NumT (Just RealT)), n)
        = Call "sscanf" [Var ("argv["++show n++"]"), Const (StringV "%lf"), Var ("&"++nm)]
 
-runStage (n, ds) = (traceS $"stage"++show n )++concatMap runAtOnceSrcs ds++concatMap preStage ds++ driveStage (n, ds) 
+runStage (n, ds) = {- (traceS $"stage"++show n )++ -} concatMap runAtOnceSrcs ds++concatMap preStage ds++ driveStage (n, ds) 
 
 isDynClamp ds = 
     let ins = [() | ReadSource _ ("ADC",_) <- ds ]
@@ -187,6 +187,7 @@ dynBegin =
 	"comedi_insn insn_write;",
 	"//lsampl_t *hist;",
 	"lsampl_t data[NCHAN];",
+        "double secondsVal, tnow, tlast, max_t_diff=0;",
 	"signal(SIGKILL, endme);",
 	"signal(SIGTERM, endme);",
 	"//hist = malloc(SAMP_FREQ*RUN_TIME*NCHAN*sizeof(lsampl_t) + 1000);",
@@ -204,15 +205,19 @@ dynBegin =
 	"BUILD_AREAD_INSN(insn_read, subdevai, data[0], 1, 0, AI_RANGE, AREF_GROUND);",
 	"BUILD_AWRITE_INSN(insn_write, subdevao, data[1], 1, 0, AO_RANGE, AREF_GROUND);",
         "data[1] = from_phys(0);",
-        "until = rt_get_time();"]]
+        "until = rt_get_time();",
+        "tlast = count2nano(until)"]]
 
 dynLoop ds =
-    For (Assign (Var "i") 0) (And (Cmp Lt (Var "i") (Var "npnts")) (Var "!end")) (Assign (Var "i") (Var "i"+1)) $ [
-                 DecVar CDoubleT "secondsVal" (Just $ Var "i"*Var "dt"),
-                 Call "comedi_do_insn" [Var "dev", Var "&insn_read"]]++
-                 (concat$ nub $map stepd ds)++
-                 [LitCmds ["comedi_do_insn(dev,&insn_write);", 
-                           "rt_sleep_until(until += nano2count(samp_time));"]]
+    For (Assign (Var "i") 0) (And (Cmp Lt (Var "i") (Var "npnts")) (Var "!end")) (Assign (Var "i") (Var "i"+1)) $ 
+            [LitCmds ["secondsVal=i*dt;",
+                      "comedi_do_insn(dev,&insn_read);"]]
+            ++(concat$ nub $map stepd ds)++
+            [LitCmds ["comedi_do_insn(dev,&insn_write);",
+                      "tnow = count2nano(rt_get_time());",
+                      "if(tnow-tlast>max_t_diff) max_t_diff = tnow-tlast;",
+                      "tlast= tnow;",
+                      "rt_sleep_until(until += nano2count(samp_time));"]]
 	
 dynEnd = 
     [LitCmds 
@@ -226,6 +231,7 @@ dynEnd =
 	"stop_rt_timer();",
 	"rt_make_soft_real_time();",
 	"rt_task_delete(task);",
+        "printf(\"largest time difference %g ns\\n\", max_t_diff);",
         "return 0;"]]
 
 stepd (SinkConnect (Var nm) ("DAC", _)) = [Assign  (Var "data[1]") (Var "from_phys" $> Var (nm++"Val")) ]

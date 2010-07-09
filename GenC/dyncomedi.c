@@ -30,7 +30,7 @@ static int init_board(void)
   cal();
 
 	dev = comedi_open("/dev/comedi0");		
-	printf("Comedi device (6071) handle: %p.\n", dev);
+	//printf("Comedi device (6071) handle: %p.\n", dev);
 	if (!dev){
 		printf("Unable to open (6071) %s.\n", "/dev/comedi0");
 		return 1;

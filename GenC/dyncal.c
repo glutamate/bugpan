@@ -12,7 +12,7 @@ int cal() {
 
 	int subdevai, subdevao;
 
-  printf("calibrating.."); fflush(stdout);
+	//  printf("calibrating.."); fflush(stdout);
   	devc = comedi_open("/dev/comedi0");		
 	if (!devc){
 		printf("Unable to open (6071) %s.\n", "/dev/comedi0");
@@ -28,7 +28,7 @@ int cal() {
 
 	//comedi_cleanup_calibration_file(cal);
 	comedi_close(devc);
-  printf("done\n");fflush(stdout);
+	//printf("done\n");fflush(stdout);
 
   return 0;
 }
