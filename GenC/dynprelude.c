@@ -68,7 +68,8 @@ void free_events(struct event_unit *first) {
 }
 
 double read_signal(struct signal_double *sig, double t) {
-  unsigned long pnt = (t-(sig->t1))/(sig->dt);
+  long pnt = llround((t-(sig->t1))/(sig->dt));
+  if(pnt<0) pnt = 0;
   return sig->arr[pnt];
 }
 

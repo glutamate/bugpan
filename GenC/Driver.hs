@@ -62,10 +62,10 @@ invokeRT (fnm, tmax,dt) vals = do
   let npnts = round $ tmax/dt
 
   forM signms $ \sigfp-> do
-    io $ print sigfp
+    --io $ print sigfp
     sig <- liftIO $ withBinaryFile sigfp ReadMode $ \h->  do
                                 n <- idInt `fmap` binGet h 8
-                                print n
+                                --print n
                                 arr <- SV.hGet h npnts
                                 return $ Signal 0 tmax dt arr Eq
     let nm = drop (length "dyn_sig_") sigfp

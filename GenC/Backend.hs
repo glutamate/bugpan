@@ -34,10 +34,10 @@ compileToC fp dt tmax ds params = do
   --mapM print ds
 
   --putStrLn "\n---------------\n"
-  let stgs@(env:stageDs) = splitByStages ds
-  forM stgs $ \ds-> do
-    putStrLn "\n---------------stage\n"
-    mapM (putStrLn . ppDecl)  ds
+  --let stgs@(env:stageDs) = splitByStages ds
+  --forM stgs $ \ds-> do
+  --  putStrLn "\n---------------stage\n"
+  --  mapM (putStrLn . ppDecl)  ds
   let prg = ppCProg $ toC dt tmax ds params
   writeFile (fp) prg
   --putStrLn prg 
@@ -206,7 +206,7 @@ dynBegin =
 	"BUILD_AWRITE_INSN(insn_write, subdevao, data[1], 1, 0, AO_RANGE, AREF_GROUND);",
         "data[1] = from_phys(0);",
         "until = rt_get_time();",
-        "tlast = count2nano(until)"]]
+        "tlast = count2nano(until);"]]
 
 dynLoop ds =
     For (Assign (Var "i") 0) (And (Cmp Lt (Var "i") (Var "npnts")) (Var "!end")) (Assign (Var "i") (Var "i"+1)) $ 

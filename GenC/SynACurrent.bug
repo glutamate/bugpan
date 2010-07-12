@@ -11,7 +11,7 @@ stage gsyn -1
 rate = 50
 
 _tmax = 2
-_dt = 1.0e-4
+_dt = 5.0e-5
 
 gcell = {: convolution gsyn (forget 0.1 rndSpike ) <:seconds:> :}
 
@@ -28,10 +28,6 @@ vm :: Signal Real
 a :: Signal Real
 b :: Signal Real
 
-ika :: Signal Real
-ika = {: gmaxk * <:a:> * <:b:>*(0.08+<:vm:>) :}
-ika_0 = 0
-
 D a = {: 1000*(((alphaa ((<: vm:>*1000)+60))* ( 1-<:a:>)) -
               ((betaa ((<:vm:>*1000)+60)) * <: a :>)) :}
 a_0 = 0.025
@@ -45,15 +41,19 @@ betaa :: Real -> Real
 alphab :: Real -> Real
 betab :: Real -> Real
 
+ika :: Signal Real
+ika = {: gmaxk * <:a:> * <:b:>*(0.08+<:vm:>) :}
+ika_0 = 0
+
 alphaa v = (0.02*(13.1-v))/((exp ((13.1 -v)/10)) -1)
 betaa v =  (0.0175*(v-40.1))/((exp ((v-40.1)/10))-1)
 
 alphab v = 0.0016*exp((0-13-v)/18)
-betab v = 0.05/(1+(exp((10.1-v)/5)))
+betab v = 0.05/(1+(exp((10.1-v)/5))) 
 
-celli = {: (0-<:vm:>) * <:gcell:> - <: ika:> :}
+celli = {: (0-<:vm:>) * <:gcell:>  - <: ika:> :}
 
-outv = {: <:celli:> * 1.0e8 :} 
+outv = {: <:celli:> * 1.0e9 :} 
 
 outv *> DAC 0
 

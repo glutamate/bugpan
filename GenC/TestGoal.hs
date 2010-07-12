@@ -12,7 +12,7 @@ import NewSignal
 
 realTs nms = zip (words nms) $ repeat (NumT (Just RealT))
 
-gampa = 2e-9
+gampa = 1e-9
 gk = 2e-7
 
 main = do
