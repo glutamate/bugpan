@@ -10,19 +10,23 @@
 %\usepackage{epsfig}
 \onehalfspacing
 \title{A calculus of physiological evidence}
-\author{Thomas A. Nielsen et al}
+\author{Thomas A. Nielsen, Henrik Nilsson and Tom Matheson}
 \begin{document}
 
 \maketitle
+
+\section*{Abstract}
+
+
 
 \section*{Introduction}
 
 Mechanical reasoning removes ambiguity and thus allows ideas to be
 formulated and communicated efficiently, and inferences to be
 scrutinised. Consequently, formal languages and calculi have had a
-profound impact on mathematics and the natural sciences. As
-examples we point to Leibniz's infinitesimals, vector notation in
-electromagnetism and Frege's first-order logic. Such languages are
+profound impact on mathematics and the natural sciences. As examples
+we point to Leibniz's notation for calculus, vector notation in
+electromagnetism and first-order logic. Such languages are
 useful because they allow us to calculate --- to re-arrange, isolate
 and substitute terms --- and by doing so, to prove general
 theorems. These symbolic manipulations are possible because terms can
@@ -38,15 +42,15 @@ there are few formalisms to fully describe how evidence for or against
 these models is obtained and evaluated. A mathematical approach to
 experimentation itself could facilitate replication and meta-analysis,
 permit a better understanding of apparent inconsistencies between
-studies and a clearer formulation of what constitutes sound scientific
-practice.  Here, we propose a calculus of physiological evidence that
-can describe an experiment on a biological organism such that it can
-be unambiguously replicated and be inspected to certify whether
-analysis procedures are applicable. This framework does not describe
-the physical components of biological organism; it has no concept of
-networks, cells or proteins. Instead it describes the observation and
-calculation of the mathematical objects that constitute physiological
-evidence.
+studies and allow a clearer formulation of what constitutes sound
+scientific practice.  Here, we propose a calculus of physiological
+evidence that can describe experiments on biological organisms such
+that they can be unambiguously replicated and be inspected to certify
+whether analysis procedures are applicable. This framework does not
+describe the physical components of biological organism; it has no
+concept of networks, cells or proteins. Instead it describes the
+observation and calculation of the mathematical objects that
+constitute physiological evidence.
 
 Whether they are carried out by humans or by automated equipment, many
 experiments can be seen as \emph{programs} that manipulate and observe
@@ -61,16 +65,16 @@ physiological evidence. We have implemented this calculus of evidence
 in a concrete programming language and used it for non-trivial
 neurophysiological experiments and data analysis. First, we describe
 the theory of \emph{types} and define three types that can represent
-physiological evidence. We then present an new formal and
+physiological evidence. We then present a new formal and
 machine-executable language for defining observations and
-transformations of such evidence. Finally, we show two very different
-experiments from neurophysiology, together with their associated
-analyses can be formally defined in out calculus. In the first
-example, we measure an \emph{in vivo} spike train response to visual
-stimulation in locusts. In the second example, we use the dynamic
-clamp technique to investigate the impact of an active potassium
-conductance on synaptic integration. Each of these protocols are
-defined unambiguously in a handful of equations.
+transformations of such evidence. Finally, we show that two very
+different experiments from neurophysiology can be formally defined,
+run and analysed in our calculus. In the first example, we measure
+\emph{in vivo} spike train responses to visual stimulation in
+locusts. In the second example, we examine the impact of an active
+potassium conductance on synaptic integration using the dynamic clamp
+technique. These protocols are defined unambiguously using only a
+handful of equations in our language.
 
 \section*{The calculus of physiological evidence}
 
@@ -83,28 +87,27 @@ changes in ion channel conductances or fusion pore dilations on a
 different timescale. Time must play a multifaceted role in
 physiological evidence.
 
-Time also plays an essential role in some computer programs, such as
-such as animations, video games, robotics and physical
-simulations. Although these can be implemented in a conventional
-programming language, then can also be composed in a referentially
+Time also plays an essential role in some computer programs such as
+animations, video games, robotics and physical simulations. Although
+these time-dependent processes can be implemented in a conventional
+programming language, they can also be composed in a referentially
 transparent manner by combining elementary transformations of the
-whole input, including responses from the user, into the entire output
+whole input, including responses from a user, into the entire output
 from the program. When these transformations can be defined by purely
 mathematical functions, the resulting computational paradigm is known
 as Functional Reactive Programming. FRP introduces two types of values
-to place information in a temporal context: Signals, which represent
-continuously varying quantities, and events which represent distinct
+to place information in a temporal context: signals, which represent
+continuously varying quantities, and events, which represent distinct
 occurrences. These types are flexible, in that they can carry
-information of any other type. We show that there is significant
-overlap between these definitions of signals and events and
-physiological evidence. Thus, definitions of experiments can be
-described concisely in a language based on the composition and
-calculuation of signals and event based on FRP.  We
-begin by describing the types that are central to FRP, and how
-physiological quantities can be captured in these types. We then
-describe how values of of these types can be observed, and how
-fuctions can be used to refine existing observations or generate
-stimuli for experiments.
+information of any other type. We show that these definitions of
+signals and events permit the encoding of many kinds of physiological
+evidence. Thus, definitions of experiments can be described concisely
+in a language based on the composition and calculuation of signals and
+events based on FRP.  We begin by describing the types that are
+central to FRP, showing how physiological quantities can be captured
+in them. We then describe how values of these types can be
+observed, and how fuctions can be used to refine existing observations
+or generate stimuli for experiments.
 
 \subsubsection*{Type theory for physiological evidence}
 
@@ -112,10 +115,10 @@ What kinds of mathematical objects can count as physiological
 evidence? We answer this question within simple type theory
 \citep{Pierce2002}, which assigns to every object a \emph{type}. These
 types include base types, such as integers |Integer|, real numbers
-|Real|, text strings |String| and boolean type |Bool| with the two
+|Real|, text strings |String| and the boolean type |Bool| with the two
 values |True| and |False|. In addition, types can be arbitrarily
 combined in several ways, such that if |alpha| and |beta| are types,
-the type |alpha times beta| is the pair formed by an element of
+the type |alpha times beta| is the pair formed by one element of
 |alpha| and one of |beta|; |[alpha]| is a list of |alpha|s; and |alpha
 -> beta| is the type of functions that calculate a value in the type
 |beta| from a value in |alpha|. Here, we use the convention that greek
@@ -126,7 +129,7 @@ defined with references to arbitrary types; for instance,
 the list of pairs of integers and |alpha|s. The hole |alpha| in the type
 definition can then be filled in to form a concrete type, for instance
 |withIntergers String|. The ability to build flexible type schemata in
-this manner and define generic function over them \citep[``parametric
+this manner and define generic functions over them \citep[``parametric
   polymorphism'';][]{Pierce2002} is essential for representing
 \emph{all} physiological quantities.
 
@@ -170,11 +173,10 @@ element (that is, no information). Therefore, events can represent
 both measurements where the principal information is \emph{when}
 something happend, and measurements concerning \emph{what} happened.
 
-A third kind of information describes the properties of whole time periods
-during which the system was exposed to a controlled stimulus. We
-define a duration of type |alpha| as a set of triples, of which the
-first two components denote a start time and an end time. The last
-component is again a value of any type |alpha|:
+A third kind of information describes the properties of whole time
+periods. We define a duration of type |alpha| as a set of triples, of
+which the first two components denote a start time and an end
+time. The last component is again a value of any type |alpha|:
 \begin{code}
 Duration alpha = [Time times Time times alpha]
 \end{code}
@@ -192,7 +194,7 @@ entire experiment - for instance, the presence of a drug.
 Since signals, events and durations can be instantiated for any type,
 they form a simple but flexible framework for representing many
 physiological quantities. We show a list of such examples primarily
-drawn from neurophysiology here: \vskip1ex
+drawn from neurophysiology in Table 1. \vskip1ex
 \begin{tabular}{l  l}
 \hline
   Quantity & Type \\ 
@@ -218,17 +220,17 @@ before any conclusions can be drawn from them. Other quantities can
 only be inferred from calculations on other observations. First we
 show how to build programs that calculate with signals and events;
 then we show how annotations allow these programs to interact with
-external system and observe their responses.
+external systems and measure their behaviour.
 
 \subsubsection*{Calculating with signals and events}
 
-From the direct observations, one often needs to process events and
+From direct observations, one often needs to process events and
 signals, create new events from signals, filter data and calculate
 statistics. Here, we formulate these transformations in terms of the
 lambda calculus \citep{Church1941}, a formal language for
 referentially transparent computation based on evaluating purely
-mathematical functions. The lambda calculus allows the use of
-functions as first class entities: that is, they can be referenced by
+mathematical functions. The lambda calculus allows functions to be
+used as first class entities: that is, they can be referenced by
 variables and passed as arguments to other functions (which then
 become higher-order functions). On the other hand, the lambda calculus
 excludes variable or state mutation. These properties together mean
@@ -254,12 +256,12 @@ w| defines a variable |y| with the value of the expression |e| that
 can be used as a value in the expression |w|. 
 
 Here, we present a concrete syntax for a new lambda calculus extended
-with signals and event based on the lambda calculus. This language
+with signals and events based on the lambda calculus. This language
 borrows some concepts from the previous implementations of FRP, but it
-emphasises signals and events as mathematical object in themselves
+emphasises signals and events as mathematical objects in themselves
 rather than as control structures for creating reactive systems
-\citep{Elliott1997, Nilsson2002}. Consequently, the syntax and
-implementation strategy is very different from FRP.
+\citep{Elliott1997, Nilsson2002}. The syntax and implementation
+strategy is therefore very different from FRP.
 
 Let the construct |sopen e sclose| denote a signal with
 the value of the expression |e| at every time point, and |<: s :>|
@@ -280,22 +282,22 @@ into a signal of |beta| by applying the function |f| of type |alpha
 Further primitives are needed to form signals that depend on the
 history of other signals. Fro instance, the differential operator |D|
 differentiates a real-valued signal with respect to time, such that 
-|D s| denote its first derivative |D D s| the second derivative of the
+|D s| denote its first derivative and |D D s| the second derivative of the
 signal |s|. Likewise, the differential operator can appear on the left
 side of a definition, in which case it introduces a differential
 equation by pattern matching (ref) on the derivative of a signal (see
 example 2 below).
 
 In addition, the expression |delay s| denotes the signal that is
-delayed by a small amount of time (in practise, one time step). Other
-FRP implementations have other primitives, in particular a |switch|
-statement that changes the definition of a signal depending on the
-occurrence of specific events. We have not needed such a construct in
-the experiments described here.
+delayed by a small amount of time. Other FRP implementations have
+other primitives, in particular a |switch| statement that changes the
+definition of a signal depending on the occurrence of specific
+events. We have not needed such a construct in the experiments
+described here.
 
 The simplest approach to constructing events, and that taken here, is
 to detect events from existing signals. For instance, a threshold
-detector generates an occurrence in an event every time point the value
+detector generates an occurrence in an event whenever the value
 of a signal exceeds a set level (and then not again before the value
 of the signal has decreased below that level and then reached it
 again.)  Here, we generalise the threshold detector slightly by taking
@@ -323,8 +325,8 @@ in this library.
 
 In the previous examples, signals, events and durations exist as
 purely mathematical objects. In order to describe experiments, it must
-also be possible to observe these values from real-world systems, and
-to create controlled stimuli to perturn these systems. For this
+also be possible to observe particular values from real-world systems, and
+to create controlled stimuli to perturb these systems. For this
 purpose, we introduce \emph{sources} and \emph{sinks} that bridge
 variables in purely mathematical equations with the physical world.
 
@@ -345,7 +347,7 @@ an analog-to-digital converter at 20kHz sampling rate.
 In addition to making appropriate observations, an experiment may also
 involve a perturbation of the experimental preparation. To create a
 stimulus for an external system, we first construct time-varying signals as
-described above, for instance a sine wave. To build such a signal, we
+described above; for instance a sine wave. To build such a signal, we
 start with a clock signal that counts the number of seconds since the
 experiment started, which can be read from a clock source
 \begin{code}
@@ -368,9 +370,9 @@ sineWave *> DAC (0, 20000)
 
 In the context of a physiology experiment, these declarations can for
 instance control the amount of current injected in a cell. Below,
-non-numeric signals and signal sinks are used to control visual
-stimuli on a projection screen. In addition, sources and sinks are not
-restricted to signals, but can yield values of different types during
+non-numeric signals and signal sinks are used to generate visual
+stimuli on a computer screen. In addition, sources and sinks are not
+restricted to signals, but can yield values of other types during
 an experiment. Random number generators representing sampling
 probability distribtions are not pure functions and expressions
 involving random numbers can break referentially transparency. We have
