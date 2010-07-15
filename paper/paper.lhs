@@ -266,7 +266,7 @@ strategy is therefore very different from FRP.
 Let the construct |sopen e sclose| denote a signal with
 the value of the expression |e| at every time point, and |<: s :>|
 yield the current value of the signal |s| in the temporal context
-created by the surrounding |open| |sclose| braces. For instance,
+created by the surrounding |sopen| \ldots |sclose| braces. For instance,
 \begin{code}
 sopen 1 sclose
 \end{code}
@@ -371,36 +371,41 @@ sineWave *> DAC (0, 20000)
 In the context of a physiology experiment, these declarations can for
 instance control the amount of current injected in a cell. Below,
 non-numeric signals and signal sinks are used to generate visual
-stimuli on a computer screen. In addition, sources and sinks are not
-restricted to signals, but can yield values of other types during
-an experiment. Random number generators representing sampling
-probability distribtions are not pure functions and expressions
-involving random numbers can break referentially transparency. We have
-thus implemented sources corresponding to common parametrised
-probability distributions.
+stimuli on a computer screen. Sinks and sources are thus be used to
+link values, which have been or will be used in purely mathematical
+expressions, to the real world. There are also operations in
+experiments that are not related to real-world observation or to
+purely functional computation --- for instance sampling from
+probability distributions, which violates referentially transparancy
+(if $rnd$ is a random number generator with an arbitratry distribution
+parametrised by $\theta$, it is not in general the case that $ rnd
+\theta + rnd \theta = 2*rnd \theta$). We have thus implemented sources
+corresponding to common parametrised probability distributions. In
+this more general view, sources and sinks bridge referentially
+transparent and non-transparent computations.
 
 \section*{Example 1}
 
-Most animal species can benefit from a mechanism for detecting and
-moving away from obstacles and predators. In addition, navigation in
-social animals are further constrained by the need avoiding collisions
-with conspecifics. A common component in such systems is a detector
-for looming objects. In locusts, a single neuron in each brain
-hemisphere, the Lobular Giant Movement Detector (LGMD), responds
-preferentially to looming stimuli \citep{Rind1992}. The response of
-the LGMD is known to be invariant to manipulations of many apsects of
-the looming stimulus. For instance, a key property, the time of the
-peak firing rate with respect to the retinal angle of the looming
-stimulus, is insensitive to the colour, texture, size, velocity and
-azimuth of the approaching object when averaged over several
-approaches \citep{Gabbiani2001}. 
+Most animals can benefit from a mechanism for detecting and avoiding
+obstacles and predators. In addition, movement in social animals might
+be constrained by the need to avoid collisions with conspecifics. A
+common component in such species is a visual detector for looming
+objects. In locusts, a single neuron in each brain hemisphere, the
+Lobular Giant Movement Detector (LGMD), responds preferentially to
+looming stimuli \citep{Rind1992}. The response of the LGMD is
+invariant to manipulations of many apsects of the looming
+stimulus. For instance, a key property, the time of the peak firing
+rate with respect to the retinal angle of the looming stimulus, is
+insensitive to the colour, texture, size, velocity and azimuth of the
+approaching object when averaged over several approaches
+\citep{Gabbiani2001}.
 
-Here, we have constructed several experiments in the calculus of
-physiological evidence to recorded the neural response in locusts to
-visual stimuli representing identical objects approaching with
-different velocities. To generate these stimuli, we augmented the
-calculus of physiological evidence with primitive three-dimensional
-geometric shapes. Let the expression
+We have constructed several experiments in the calculus of
+physiological evidence to record the response of LGMD in locusts to
+visual stimuli that simulate objects approaching with different
+velocities. To generate these stimuli, we augmented the calculus of
+physiological evidence with primitive three-dimensional geometric
+shapes. Let the expression
 \begin{code}
 cube l
 \end{code}
@@ -417,17 +422,17 @@ the shape identical to |s| except with the colour intensity red |r|,
 green |g| and blue |b|. Additional constructors can be introduced for
 more complex stimuli, but these are sufficient for the experiments
 reported here. Since signals are polymorphic, they can carry not just
-numeric values but also shapes, and we represent visual stimuli as
+numeric values but also shapes, so we represent visual stimuli as
 values in |Signal Shape|. The looming stimulus consists of a cube of
-side length l approaching the locust with constant velocity v. The
-time-varying distance from the observer to the cube in real-world
+side length l approaching a locust with constant velocity v. The
+time-varying distance from the locust to the cube in real-world
 coordinates is a real-valued signal:
 \begin{code}
 distance = sopen v * (<: seconds :> - 5) sclose 
 \end{code}
 
-The |distance| signal is the basis of shape-valued signal for the
-approaching square, |loomingSquare|:
+The |distance| signal is the basis of shape-valued signal
+|loomingSquare| representing the approaching square:
 
 \begin{code}
 loomingSquare = 
@@ -436,14 +441,15 @@ loomingSquare =
                                (cube l)) sclose
 \end{code}
 
-|loomingSquare| differs from conventional protocols for stimulating
-the DCMD in that the object appears to pass through the observer after
-collision. In order not to evoke a large OFF response from the LGMD
-\citep{O'shea1976} immediately after simulated collision, the object
-is frozen in space as it reaches the plane of the surface onto which
-the animation is projected \citep{Hatsopoulos1995}. To achieve this
-effect, we define a new signal that has a lower bound of the distance
-from the eye to the screen |zscreen|
+|loomingSquare| differs from conventional protocols
+\citep{Gabbiani2001} for stimulating the LGMD in that the object
+appears to pass through the observer after collision. In order not to
+evoke a large OFF response from the LGMD \citep{O'shea1976}
+immediately after simulated collision, the object is frozen in space
+as it reaches the plane of the surface onto which the animation is
+projected \citep{Hatsopoulos1995}. To achieve this effect, we define a
+new signal that has a lower bound of the distance from the eye to the
+screen |zscreen|
 \begin{code}
 distance' = sopen max zscreen <: distance :>  sclose
 \end{code}
@@ -452,7 +458,7 @@ where |max x y| returns the larger of the two numbers |x| and
 use of |distance'|.
 
 Finally, |loomingSquare'| is connected to a screen signal sink that
-represents an visual display unit capable of projecting
+represents a visual display unit capable of projecting
 three-dimensional shapes onto a two-dimensional surface.
 
 \begin{code}
@@ -461,12 +467,12 @@ loomingSquare' *> screen ()
 
 The response to the looming stimulus in the LGMD neuron can be
 recorded from the main longitudinal nerves (``connectives'') in the
-ventral nerve cord. Although the LGMD is not thought to make a
-long-range projection, it reliably activates the descending
-contralateral movement detector (DCMD) with a strong synaptic
-connection, such that spikes in the DCMD follow LGMD spikes one to one
+ventral nerve cord. Although the LGMD does not make a long-range
+projection, it reliably activates the descending contralateral
+movement detector (DCMD) with a strong synaptic connection, such that
+spikes in the DCMD follow LGMD spikes one to one
 \citep{O'Shea1974}. Extracellular hook electrodes wrapped around one
-connective can record activity in the DCMD, which produces the
+connective can record activity in the contralateral DCMD, which produces the
 largest-amplitude action potential in such recordings. These analogue
 signals were amplified, filtered (see methods) and converted to a
 digital signal:
@@ -475,12 +481,12 @@ digital signal:
 voltage <* ADC (0, 20000)
 \end{code}
 
-|loomingSquare'| and |voltage| define a single approach and the
+|loomingSquare'| and |voltage| thus define a single approach and the
 recording of the elicited response. This approach was repeated every 4
 minutes, with different values of $\frac{l}{v}$. Figure 1 shows
 $\frac{l}{v}$ as values with type |Duration Real|, together with the
-|distance'| and |voltage| signals for the first five trials on a
-common time scale.
+|distance'| and |voltage| signals for the first five trials of one
+experiment on a common time scale.
 
 The simplest method for detecting spikes from a raw voltage trace is
 to search for threshold crossings, which works well in practise for
@@ -491,16 +497,17 @@ event |spike| can be calculated with
 spike = (\v->v>vth) ?? voltage
 \end{code}
 Which yields a value of type |Event Real|, where the tag of each event
-holds the voltage at which the threshold was crossed. Since this is
-likely to be close to the threshold and holds little information, a
-value of type |Event ()| more accurately reflects the observation. The
-function |tag| conveniently replaces every tag in some events with a
-fixed value.
+holds the voltage at which the threshold was crossed. The value of
+this tag is likely to be close to the threshold |vth| and holds little
+relevant information. Therefore, replacing each tag with the unit type
+|()|, such that |spike| has type |Event ()| is a more meaningful
+representation of the spike train. The function |tag| conveniently
+replaces every tag in some events with a fixed value.
 \begin{code}
 spike = tag () ((\v->v>vth) ?? voltage)
 \end{code}
-so that |spike| has type |Event ()|. This event, is displayed on the
-common time scale in Figure 1. The top row displays the spike count
+so that |spike| has type |Event ()|. This event is displayed on the
+common time scale in Figure 1. The top row displays the spike rate
 histogram
 \begin{code}
 hspike  =
@@ -513,32 +520,34 @@ arguments predicate |p| and a list |xs|, and returns the list of
 elements in |xs| for which the predicate holds. Here the predicate is
 |fst| (which returns the first element of a pair, here the occurrence
 time) composed (|.|) with the function |between = \x -> \y -> \z ->
-z>x && z>=y|. 
+z>x && z<=y|. 
 
-We examined how the DCMD spike response varied with changes in
-$\frac{l}{v}$. The average of |hist| for three different values of
-$\frac{l}{v}$ are shown in figure 2B, and 2C and 2D show the total
+We examined how the LGMD spike response varied with changes in
+$\frac{l}{v}$. The average of |hspike| for three different values of
+$\frac{l}{v}$ are shown in figure 2A, and 2B and 2C show the total
 number of spikes (|length spike|) and largest value of |hspike|, for
 each approach, plotted against the value of $\frac{l}{v}$. These plots
-show that while the peak rate of the spike histogram is an decreasing
+show that while the peak firing rate is a decreasing
 function of $\frac{l}{v}$, the total number of spikes in the approach
-is n increasing function. In addition, the time of the peak rate is
+is an increasing function. In addition, the time of the peak rate is
 later with smaller values of $\frac{l}{v}$
 \citep{Hatsopoulos1995}. 
 
 This experiment indicates that the calculus of physiological evidence
-can adquately describe both the visual stimulus, spike recording and
-relevant analysis. We now show that the same is true for an experiment
-using intracellular recording in the dynamic clamp configuration.
+can adequately and concisely describe the visual stimulus, spike
+recording and relevant analysis for activation of the locust looming
+detection circuit. To demonstrate the versatility of this framework,
+we now show that it can be used to implement dynamic clamp in an
+intracellular recording experiment.
 
 \section*{Example 2}
 
-An important property studied in computational neuroscience is the
-input-output relationships of neurons. Given a stimulus, e.g. injected
-current waveform or pattern of synaptic input, what is the membrance
-voltage trajectory and firing rate response of a particular neuron? In
-particular, cell properties such as the dendritic morphology or
-ionic conductances can profoundly influence this relationship. Such
+The input-output relationship of individual neurons are fundamental to
+the functioning of neuronal networks. Given a stimulus, e.g. pattern
+of synaptic input or injected current waveform, what is the membrance
+voltage trajectory and firing rate response of a neuron? In
+particular, cell properties such as the dendritic morphology or ionic
+conductances can profoundly influence this relationship. Such
 influences can be examined with experiments or simulations; here we
 show how the calculus of physiological evidence can be used to
 formulate and execute dynamic-clamp experiments on synaptic
@@ -548,20 +557,20 @@ A dynamic clamp experiment requires electrical access to the
 intracellular compartment, such that the cell membrane voltage can be
 recorded and current injected into the cell. As opposed to a standard
 current-clamp experiment, where the injected current waveform is known
-in advance, in the dynamic clamp setup the injected current is
+in advance, in the dynamic clamp setup the injected current command is
 calculated near-instantaneously from the membrance voltage. Unlike the
 standard current clamp configuration, the dynamic clamp permits the
 imposition of additional simulated ionic conductances on a real
-neuron. For instance, it is possible record the responce of a cell to
-an added a synaptic conductance or an additional Hodgkin-Huxley-style
-voltage-sensitive conductance. Here, we combine these possibilities to
-investigate the effect of an A-type potassium conductance
-\citep{Connor1971} on the response of a zebrafish spinal motorneuron
-to synaptic excitation.
+neuron. For instance, it is possible to record the responce of a cell
+to an added a synaptic conductance or an additional Hodgkin-Huxley
+style voltage-sensitive membrane conductance. Here, we combine these
+possibilities to investigate the effect of an A-type potassium
+conductance \citep{Connor1971} on the response of a zebrafish spinal
+motor neuron to synaptic excitation.
 
-Dynamic clamp-experiments follow the same template: the output current
-is calculated at each time-step from the simulated conductance and the
-measured membrane voltage:
+Dynamic clamp-experiments follow the same template: the current
+command is calculated at each time-step from the simulated conductance
+and the measured membrane voltage:
 \begin{code}
 v <* ADC (0,20000)
 
@@ -569,21 +578,18 @@ i = sopen (<: v :> - E)* <: g :> sclose
 
 i *> DAC (0,20000)
 \end{code}
-The experiment is thus characterised by the signal $g$ (we omit the
-amplifier-dependent input and output gains).
+The experiment is thus characterised by the signal $g$ (for clarity,
+here we omit the amplifier-dependent input and output gains).
 
 In the simplest case, $g$ is independent of $v$; for instance, when
 considering linear synaptic conductances \citep{Mitchell2003}. Here,
 we consider the addition of a simulated fast excitatory synaptic
-conductance to a real neuron. Simple neural models of synapses
+conductance to a real neuron. Simple models of synapses
 approximate the conductance waveform with an alpha function.
 \begin{code}
 alpha = \tau -> sopen tau **2 * <: seconds :> *exp (- <: seconds :> *tau) sclose
 \end{code}
-Fig 3A shows the membrane voltage recorded from a zebrafish caudal
-primary motor neuron in a dynamic clamp experiment where |g = sopen 
-50*10 tom9 * <: alpha 0.005 :>  sclose|.
- 
+
 To simulate a barrage of synaptic input to a cell, this waveform is
 convolved with a presynaptic spike train. The spike train itself is
 first bound from a source representing a random probability
@@ -597,12 +603,9 @@ convolution.
 preSpike <* poissonTrain rate
 gsyn =  convolveSE (alpha amp tau) (tag 1 preSpike)
 \end{code}
-The new signal |gsyn| was used in a new dynamic clamp experiment, and
-the recorded membrane voltage (Fig 3B) showed considerable
-subthreshold fluctuations and some spikes. By changing |rate| and
-measuring the frequency of postsynaptic spikes (|frequencyDuring
-running ((\v->v>0) ?? v)|), we can plot the
-input-output relationship of the neuron (Fig 3C).
+The signal |gsyn| could be used directly in a dynamic clamp experiment
+using the above template. Here, we will examine other conductances
+that modulate the response of the cell to synaptic excitation.
 
 Both the subthreshold properties of a cell and its spiking rate can be
 regulated by active ionic conductances. One way to examine this
@@ -611,7 +614,7 @@ conductance on cells with dynamic clamp. In the Hodgkin-Huxley
 formalism for ion channels, the conductance depends on one or more
 state variables, for which the forward and backward rate constants
 depend on the membrane voltage. Here we show the equations for the
-activation gate of the A-type potassium current \citep{Connor1971},
+activation gate of an A-type potassium current \citep{Connor1971},
 following \citet[we use SI units and absolute voltages]{Traub1991}. The
 equations for inactivation are analogous.
 
@@ -637,52 +640,55 @@ The current signal from this channel is calculated from Ohm's law:
 \begin{code}
 ika = sopen gmaxk * <:a:> * <:b:> * (<:v:> - E) sclose
 \end{code}
-which is added to the signal |i| defined above. Figure 3A and 3B shows
-the voltage response to a unitary synaptic conductance and a trains of
-synaptic inputs, respecitively, with |gmaxk| ranging from 0 to 100
-nS. A large A-type conductance decreases the amplitude of the EPSP, as
-expected, and decreases the number of spikes in response to the
-injection of an identical synaptic conductance waveform. 
+which is added to the signal |i| defined above that drives the current
+command, completing the definition of this experiment. 
+
+Figure 3A and 3B shows the voltage response to a unitary synaptic
+conductance and a trains of synaptic inputs, respecitively, with
+|gmaxk| ranging from 0 to 100 nS. A large A-type membrane conductance
+decreases the amplitude of the EPSP, as expected, and decreases the
+number of spikes in response to the injection of an identical synaptic
+conductance waveform.
 
 By varying the value of |rate|, we can examine the input-output
-relationship of the model neuron by measuring the frequency of
-postsynaptic spikes. Firstly, spikes were detected from the first
-derivative of the |v| signal with 
+relationship of the neuron by measuring the frequency of postsynaptic
+spikes. Firstly, spikes were detected from the first derivative of the
+|v| signal with
 \begin{code}
 spike = tag () ((\v'->v'>vth') ?? D v)
 \end{code}
 and the spike frequency calculated with the |frequncyDuring| function.
 This relationship between the postsynaptic spike frequency and the
-synaptic input |rate| is plotted in Figure 3C for four different
-values of |gmaxk|. Large A-type conductances supress spikes resulting
-from endogenous synaptic activity, which was not pharmacologically
-blocked in this experiment, and increases the threshold at which imposed
-synaptic activity causes postsynaptic spiking. 
+simulated synaptic input |rate| is plotted in Figure 3C for four
+different values of |gmaxk|. Large A-type conductances supress spikes
+resulting from endogenous synaptic activity, which was not
+pharmacologically blocked in this experiment, and increases the
+threshold at which imposed simulated synaptic activity causes postsynaptic
+spiking.
 
 \section*{Discussion}
 
-We propose that three types, signals, events and durations, are
-sufficient to represent physiological evidence when they can be
-parametrised by any other type. We show how observations and
-calculations of these types can be described in a mathematical
-framework based on the lambda calculus. Two examples from
-neurophysiology illustrate this approach: the \emph{in vivo} spike
-train response to a visual looming stimulus in locusts; and a
-study of synaptic integration in with dynamic clamp. 
-
 We present an entirely new approach to performing and communicating
-science. Here, both stimuli and observations are defined concisely and
-unambiguously by mathematical \emph{equations}. This makes it possible
-to repeat, manipulate and reason about experiments in a formal
-framework. We can quibble about whether these definitions are simpler
-or clearer than a definition written in plain English or are easier to
-produce than clicking buttons in a graphical user interface. But they
-are certainly less ambiguous and more powerful than either of those
-alternatives.
+science. We propose that three \emph{types}, signals, events and
+durations, are sufficient to represent physiological evidence when
+they can be parametrised by any other type. We show how observations
+and calculations of these types can be described in a mathematical
+framework based on the lambda calculus. We use two experiments from
+neurophysiology to demonstrate that this approach works in practise:
+the \emph{in vivo} spike train response to a visual looming stimulus
+in locusts; and a study of synaptic integration in with dynamic clamp.
+
+Using our approach, both stimuli and observations are defined
+concisely and unambiguously by mathematical \emph{equations}. This
+makes it possible to repeat, manipulate and reason about experiments
+in a formal framework. Our mathematical definitions are less ambiguous
+than definitions written in plain English, and are more powerful than
+those specified by graphical user interfaces or in formal languages
+without a facility for defining abstractions.
 
 To our knowledge this is the first explicit use of type theory to
 classify evidence in a experimental scientific field. We find that
-parametric polymorphism is critical in modelling a wide repertoire of
+parametric polymorphism is critical in encoding a wide repertoire of
 evidence. We also surprisingly found that the there is broad overlap
 between the types that hold stimuli, observations and calculated
 values. This may be not be the case in other fields. For instance, in
