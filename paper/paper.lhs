@@ -17,7 +17,22 @@
 
 \section*{Abstract}
 
-
+Scientific experiments can be seen as programs that manipulate and
+observe the physical world; nevertheless, there has been almost no
+work in programming language theory to formalise experiments. Here, we
+propose a formal framework for experimentation and analysis in
+physiology. First, we define a structure for physiological evidence
+within simple type theory. This structure emphasises the critical role
+of time in physiology, but is flexible, in that it can carry
+information of any type. Second, we show that experiments themselves
+can be composed as a wiring of time-dependent quantities, and be
+expressed as purely mathematical equations that can be manipulated
+algebraically. To demonstrate the practicality and versatility of our
+approach, we show the full equations for two non-trivial implemented
+and analysed experiments describing visually stimulated neuronal
+responses and dynamic clamp. The brevity of these definitions
+illustrates the power of our approach, and we discuss its implications
+for neuroinformatics research.
 
 \section*{Introduction}
 
@@ -689,28 +704,27 @@ without a facility for defining abstractions.
 To our knowledge this is the first explicit use of type theory to
 classify evidence in a experimental scientific field. We find that
 parametric polymorphism is critical in encoding a wide repertoire of
-evidence. We also surprisingly found that the there is broad overlap
+evidence. We also surprisingly found that there is broad overlap
 between the types that hold stimuli, observations and calculated
-values. This may be not be the case in other fields. For instance, in
-anatomy, the direct observations may be mediated by images and
-inferences mainly made about graph structures. (We don't know how to
-represent the stimuli.) A wider question is which type theories can
+values, although this may be not be the case in other fields, for
+instance in anatomy. A wider question is which type theories can
 support evidence from many different fields. For physiology, we have
-found that simple type theory \citep{Pierce2002} is sufficient. Richer
-type theories including impredicativity and dependent types
-\citep{Pierce2002} may help capture aspects of evidence in other fields.
+shown that simple type theory \citep{Pierce2002} can support key types
+of evidence. Richer type theories including impredicativity and
+dependent types \citep{Pierce2002} may help capture aspects of
+evidence in other fields.
 
-What exactly is the thing that is described in this paper? First of
-all, it is a very practical tool: a collection of computer programs
-for executing experiments and analyses and organising
-data. Controlling every aspect of the scientific process with programs
-that share data formats is potentially efficient and eliminates many
-sources of human error. Secondly, beyond any particular
+We have presented a mathematical approach to experimentation at three
+levels. 1. We present it is a very practical tool: a collection of
+computer programs for executing experiments and analyses, and data
+management. Controlling every aspect of the scientific process with
+programs that share data formats is potentially highly efficient and
+eliminates many sources of human error. 2. Beyond any particular
 implementation, we have described a framework for reasoning about and
 manipulating scientific experiments. Obtaining such an experiment
-definition is a necessary step in automating the experiment.  It also
+definition is a necessary step in automating an experiment.  It also
 makes the conditions of the recording very explicit, and can serve as
-a unambiguous communication medium. Finally, the types we have
+an unambiguous communication medium. 3. The types we have
 presented form a linguistic framework and an ontology for
 physiology. This ontology can form the basis for the interchange of
 physiological data without imposing unnecessary constraints on what
@@ -739,11 +753,11 @@ thought of as values analogous to signals, but indexed by frequency
 rather than time. The most appropriate manner of extending our
 framework to include frequency-indexed and even spatial information
 must remain a topic for further research. On the other hand, the lack
-of linear algebra, higher order statistics, information theoretic
-analysis et cetera, et cetera in our examples is \emph{not} to be
-taken as a limitation of our theory; representing these analyses in a
-mathematical framework is a solved problem and not the topic of this
-paper.
+of linear algebra, higher order statistics, and information theoretic
+analysis in our examples is \emph{not} to be taken as a limitation of
+our theory; representing such analyses in a mathematical framework
+such as ours is a neither a difficult conceptual problem nor the topic
+of this paper.
 
 \subsection*{Statistics}
 
@@ -766,7 +780,7 @@ formalism for describing these analyses would make it easier to handle
 large amounts of data and reduce the risk of human error.
 
 A more intriguing possibility is to build statistical models for the
-directly observed data, and to use durations to describe a
+directly observed data, and to use nested durations to describe a
 hierarchical organisation of conditional dependencies amongst
 parameters in such a model. Although probabilistic models for direct
 observations are used in physics \citep{Daniell1991}, the flexible
