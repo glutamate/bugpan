@@ -18,6 +18,7 @@
 >> accu3 = (take 3 . accushow) :: Double -> String
 >> sbars = ScaleBars (0.14,4) (0.02,"20 ms") (1, "1 mV")
 
+>> speedDur = (0.3/) <$$> lovDur
 
 >> distSig =  fillSigOver lovDur 0.001 distFun 
 
@@ -25,7 +26,7 @@
 
 %>> pts = \c ty sz -> Points [PointType ty, PointSize sz, LineColor c]  
 
-%>> plot $ NoYaxis $ AxisLabels "time (s)" "" $ lns "dark-red" 1 (chopx ((/80) <$$> distSig)) :+: 
+%>> plot $ NoYaxis $ AxisLabels "time (s)" "" $ lns "dark-red" 1 (chopx ((/200) <$$> distSig)) :+: 
 %>>        lns "black" 1 (chopx (rescale 8 1 ecVoltage)) :+: 
 %>>        lns "blue" 4 (chopx (rescale 20 (-1.6) lovDur)) :+:
 %>>        pts "dark-green" 7 0.3 (chopx (jitterys 0.08 $ tag 1.2 spikes)) :+:
@@ -34,13 +35,13 @@
 
 >> plotSize 60x40
 
->> plot $ PadX 0.05 0.05 $ Noaxis $ XRange 1749 1788 $ XScaleBar (1784, -0.6) (2, "2 s") (0.08) $
->>        (YScaleBar (1753, -0.4) (20/80, "Distance 20 m") (-3) $ lns "dark-red" 1 (chopx ((/80) <$$> distSig))) :+: 
->>        (TextAt (1751.2, 0.8) "Voltage" $ lns "black" 1 (chopx (rescale 8 1 ecVoltage))) :+: 
->>        (YScaleBar (1753, -1.2) (0.3, "Speed 30 ms^{-1}") (-3) $ lns "blue" 4 (chopx (rescale 0.01 (-1.5) $ recip <$$> lovDur))) :+:
->>        (TextAt (1751.5, 1.2) "Spikes" $ pts "dark-green" 7 0.3 (chopx (jitterys 0.08 $ tag 1.2 spikes))) :+:
->>        (TextAt (1751.0, 0.1) "Collision" $ pts "red" 11 1 (chopx (tag 0.1 collision))) :+:
->>        (YScaleBar (1753, 1.4) (100*0.0015, "Frequency 100 Hz") (-3.7) $ lns "black" 1 (chopx (rescale 0.0015 1.35 shistMany))) 
+>> plot $ PadX 0.05 0.05 $ Noaxis $ XRange 1749 1788 $ XScaleBar (1784, 0.0) (2, "2 s") (0.03) $
+>>        (YScaleBar (1753, 0.075) (20*0.0035, "Distance 20 m") (-3) $ lns "dark-red" 1 (chopx (rescale 0.0035 0.175 distSig))) :+: 
+>>        (TextAt (1751.2, 0.52) "Voltage" $ lns "black" 1 (chopx (rescale 4 0.63 ecVoltage))) :+: 
+>>        (YScaleBar (1753, -0.2) (0.01*5, "l/v 0.01 ms") (-3) $ lns "blue" 4 (chopx (rescale 5 (-0.33) lovDur))) :+:
+>>        (TextAt (1751.5, 0.8) "Spikes" $ pts "dark-green" 7 0.3 (chopx (jitterys 0.08 $ tag 0.8 spikes))) :+:
+>>        (TextAt (1751.0, 0.22) "Collision" $ pts "red" 11 1 (chopx (tag 0.22 collision))) :+:
+>>        (YScaleBar (1753, 0.9) (100*0.0012, "Frequency 100 Hz") (-3.7) $ lns "black" 1 (chopx (rescale 0.0012 0.9 shistMany))) 
 
 
 
@@ -54,8 +55,13 @@
 %>>         (during aroundHit $ rebase running $ tag 0 hitScreen)) :==:
 %>>        ((C $ rebase running visangle :+: rebase running dvisangle) :||: (D $ rebase running lumin))) 
 
-\textbf{Figure 1}. Diagram of experiment: \emph{red lines}, simulated
-object distance, \emph{red triangles}, apparent collision time,
-... recorded extracellular voltage, spikes, spike time histograms.
-%> close
-
+\textbf{Figure 1}. Diagram of experiment to record the looming response
+from a locust DCMD neuron with the first five recorded trials from one
+animal. Experiment design: \emph{blue lines}, simulated object
+approach speed for given approach trial, \emph{red lines}, simulated
+object distance, \emph{red triangles}, apparent collision
+time. Observed signal: \emph{black lines}, recorded extracellular
+voltage. Analysis: \emph{green dots}, spikes, with jittered vertical
+placement for display, \emph{thin black line}, spike rate histogram
+with 50 ms bin size. The inter-trial interval of four minutes is not
+shown.

@@ -347,6 +347,7 @@ subLabSplit (SubNum n x) = (show n, x)
 newtype Boxes a = Boxes {unBoxes :: a }
 
 data Lines a = Lines [StyleOpt] a
+data LinesPoints a = LinesPoints [StyleOpt] a
 data Points a = Points [StyleOpt] a
 
 data StyleOpt = LineWidth Double 
@@ -372,6 +373,13 @@ instance PlotWithGnuplot a => PlotWithGnuplot (Lines a) where
       px <- multiPlot r x
       let wstr = styleOptsToString sos
       return $ map (\(r', pls) -> (r', setWith ("lines "++wstr) pls)) px
+
+instance PlotWithGnuplot a => PlotWithGnuplot (LinesPoints a) where
+    multiPlot r (LinesPoints sos x) = do
+      px <- multiPlot r x
+      let wstr = styleOptsToString sos
+      return $ map (\(r', pls) -> (r', setWith ("linespoints "++wstr) pls)) px
+
 
 instance PlotWithGnuplot a => PlotWithGnuplot (Points a) where
     multiPlot r (Points sos x) = do

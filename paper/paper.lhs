@@ -851,7 +851,7 @@ must be possible in principle to mechanically verify scientific
 inference, just as mathematical proofs can be verified by a proof
 checker (ref). It is of course not possible to verify particular
 hypotheses about the physical world, or an organism. What can be
-verified are statements about experiments --- for instance that:
+verified are statements about experiments --- for instance, that:
 particular variables were randomly controlled and not observed;
 outcomes have not gained correlation due to the analysis procedure;
 missing data is accounted for by the statistical model
@@ -918,7 +918,14 @@ and analog-to-digital conversion were controlled by a single computer.
 
 \subsection*{Zebrafish experiments}
 
-...
+Intracellular patch-clamp recordings from motor neurons in the spinal
+cord from a 2-day old zebrafish embryo were performed as previously
+described (ref). We used a National Instruments PCI-6281 board to
+record the output from BioLogic patch-clamp amplifier in current-clamp
+mode, filtered at 3kHz and digitised at 10 kHz, with the output
+current calculated at the same rate. The measured jitter for updating
+the output voltage was 6 $\mu$s and was similar to that measured
+with the RTAI latency test tool.  
 
 \bibliographystyle{apalike}
 \bibliography{paper}
