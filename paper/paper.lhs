@@ -730,54 +730,47 @@ physiology. This ontology can form the basis for the interchange of
 physiological data without imposing unnecessary constraints on what
 can be shared.
 
-The principal claim of this paper, that signals, events and durations
-can represent all physiological evidence, is presented without a
-concrete proof. Indeed, this claim may be impossible to prove. We have
-shown two very different examples from neurophysiology in this paper
-to substantiate our claim. In addition, we have used the calculus of
-physiological evidence to analyse an experiment with movement data and
-simultaneous recording of many neurons from the locust, and analysed
-the relationship between neural activity in identified cells and
-bursts in other neurons or movement cycles (Calas \& Matheson, in
+We have claimed that most or all physiological evidence can be
+represented by signals, events and durations. We have shown two very
+different examples from neurophysiology in this paper to substantiate
+our claim. In addition, we have used the calculus of physiological
+evidence to analyse an experiment with movement data and simultaneous
+recording of many neurons from the locust, and analysed the
+relationship between neural activity in identified cells and bursts in
+other neurons or movement cycles (Calas \& Matheson, in
 preparation). These analyses used exactly the same functions and types
-as those described above. 
-
-It may be simpler to look for a counterexample to the claims in this
-paper. The strong claim is this: all references to time are signals,
-events or durations. Thus, our theory will be refuted by a single
-piece of evidence in a physiological experiment that has temporal
-information or context but is neither a signal, event or a duration,
-or is an event or a duration that has temporal information in the
-tag. We can already think of one such example: power-spectra can be
-thought of as values analogous to signals, but indexed by frequency
-rather than time. The most appropriate manner of extending our
-framework to include frequency-indexed and even spatial information
-must remain a topic for further research. On the other hand, the lack
-of linear algebra, higher order statistics, and information theoretic
-analysis in our examples is \emph{not} to be taken as a limitation of
-our theory; representing such analyses in a mathematical framework
-such as ours is a neither a difficult conceptual problem nor the topic
-of this paper.
+as those described above. However, our framework could be
+extended. Frequency-domain information is important in analysing
+oscillations in neuronal systems. Power-spectra can be thought of as
+values analogous to signals, but indexed by frequency rather than
+time. The most appropriate manner of extending our framework to
+include frequency-indexed and even spatial information must remain a
+topic for further research. On the other hand, the lack of linear
+algebra, higher order statistics, and information theoretic analysis
+in our examples is \emph{not} to be taken as a limitation of our
+theory; representing such analyses in a mathematical framework such as
+ours is a neither a difficult conceptual problem nor the topic of this
+paper.
 
 \subsection*{Statistics}
 
 We have used the word ``evidence'' to mean direct observations and
 calculated values from experiments. In another sense of the word,
 evidence carries information that is relevant for a particular
-statistical model. Here we discuss some ideas as to how values with
-signal, event or duration types can be combined with statistical
-models. First, a conservative approach is to take measurements on
-signals and events - for instance, the amplitude of signal
-deflections, event frequencies etc - and store these in durations. The
-language of event detectors and list semantics for durations and
-events may be sufficiently rich to describe these measurements, as we
-have demonstrated for the limited examples in this paper. It is then
-straightforward to use the tags of durations representing measurements
-in classical null-hypothesis significance tests such as the General
-Linear Model. This approach differs little from the way data is
-analysed today in physiology, but a lightweight and executable
-formalism for describing these analyses would make it easier to handle
-large amounts of data and reduce the risk of human error.
+statistical model. How can values with signal, event or duration types
+be combined with statistical models? First, a conservative approach is
+to take measurements on signals and events -- for instance the
+amplitude of signal deflections, event frequencies etc -- and store
+these in durations. The language of event detectors and list semantics
+for durations and events may be sufficiently rich to describe these
+measurements, as we have demonstrated for the limited examples in this
+paper. It is then straightforward to use the tags of durations
+representing measurements in classical null-hypothesis significance
+tests such as the General Linear Model. This approach differs little
+from the way data are analysed routinely in physiology, but a
+lightweight and executable formalism for describing these analyses
+would make it easier to handle large amounts of data and reduce the
+risk of human error.
 
 A more intriguing possibility is to build statistical models for the
 directly observed data, and to use nested durations to describe a
@@ -789,57 +782,56 @@ on the development of new programming languages.
 
 \subsection*{Relation to existing technologies}
 
-It should be no surprise that some notion of signals and events can
-play a central role in physiology. Existing software packages that are
-popular in the acquisition and analysis of physiological data have
-signal-like (Igor Pro, Spike 2), and event-like (Spike 2) data
-structures at the core of their operations. Although these package
-have some flexibility in the information that can be carried by
-signals and events, they do not exploit full parametric polymorphism;
-the range of observations and stimuli that can be described with this
-more limited definition is smaller. For instance, the signal of shapes
-that describe a visual stimulus in Example 1, or the two- or three
-dimensional location of a moving animal \emph{cannot} be represented
-by a signal in these systems. Thus functions written over generic
-signals cannot be used in cases where such data are represented in a
-different data structure.
+Existing software packages used for the acquisition and analysis of
+physiological data have signal-like (Igor Pro, Wavemetrics; Spike 2,
+Cambridge Electronic Design), and event-like (Spike 2) data structures
+at the core of their operations. Although these package have some
+flexibility in the information that can be carried by signals and
+events, they do not exploit full parametric polymorphism: the range of
+observations and stimuli that can be described with their more limited
+definitions is smaller than in our framework. For instance, the signal
+of shapes that describes a visual stimulus in Example 1, or the two-
+or three dimensional location of a moving animal \emph{cannot} be
+represented by a signal in these systems. Although these data may be
+respresentable in different data structures, they cannot then be
+manipulated by functions written to transform generic signals.
 
 Our account of physiological evidence solves or immediately proposes
 solutions to many problems in neuroinformatics. One such problem is
-the difficulty of sharing primary data from neuroscientific
-experiments (REF). A repository of such data must answer the question
-``what kinds of things should be shared?'' We show here that fully
+the difficulty of sharing primary data (REF). We have shown that fully
 polymorphic signals, events and durations can represent data across
-many aspects of neurophysiology, and can be the foundation for a very
-general database. Previous work on scientific knowledge representation
-has also suggested a possible role for ``meta-data'' to represent the
-context of an experiment (REFs). Here, we make no distinction between
-data and meta-data. All relevant information which can be represented
-by a value in some type can exist as signals, events and
-durations. There are important reasons to believe that there cannot
-exist a strict distinction between data and meta-data; is, for
-instance, the temperature at which an experiment is conducted, data or
-meta-data? That surely depends on the intention of the experimenter
-and whether it is manipulated, but also of the person who is analysing
-or meta-analysing the data. By not assigning data to different bins,
-but merely saying, ``there exists information about this experiment''
-we are not imposing any limits on the nature of this information. That
-does not imply that individual pieces of information have no
-context. Because every value has a temporal context, the entire
-context of that value can be retrieved by gathering other values with
-a similar or enclosing temporal context.
+many aspects of neurophysiology, which could provide the foundation
+for a very general database. Previous work on scientific knowledge
+representation has suggested a possible role for ``meta-data'' to
+represent the context of an experiment (REFs). Here, we make no
+distinction between data and meta-data. All relevant information which
+can be represented by values in some type can exist as a collection of
+signals, events and durations. There are important reasons to believe
+that there cannot exist a strict distinction between data and
+meta-data. Is, for instance, a measurement of the temperature at which
+an experiment is conducted, data or meta-data? That surely depends on
+the intention of the experimenter and whether temperature is
+manipulated, but also depends on the person who is analysing or
+meta-analysing the data. In our framework, we do not impose any limits
+on the nature of such information. That does not imply that individual
+pieces of information have no context. Because every value has a
+temporal context, the entire context of that value can be retrieved by
+gathering other values with a similar or enclosing temporal context.
 
-There has been some work on formalising ``workflows'' and
-creating ``workflow engines'' for perform data analysis. In the
-contrasting approach here, all information about the experiment is
-defined by mathematical equations and exist as values of well-defined
-types. We are not excluding the possibility that an elaborate user
-interface can help formulate these equations, or construct new values
-in ad-hoc circumstances (we have used a simple interface to enter the
-thresholds for spike detections in Example 1). But such interfaces may
-be inessential to scientific inference, even in the large scale. This
-is especially likely to be the case when we can write generic
-functions over types with very flexible definitions.
+There has been some work on formalising ``workflows'' and creating
+``workflow engines'' for perform large batches of standardised data
+analyses. In the contrasting approach here, all information about the
+experiment is defined by mathematical equations and exists as values
+of well-defined types, and analyses are simply mathematical functions
+that transform and combine signals, event and durations.
+
+We do not exclude the possibility that an elaborate user interface
+could help formulate these equations, or construct new values in
+ad-hoc circumstances. Indeed, we have used a simple interface to enter
+the thresholds for spike detection in Example 1. Such interfaces,
+however, may be unnecessary for scientific inference, even in the
+large scale. This is especially likely to be the case when we can
+write generic functions over types with very flexible definitions.
 
 Lastly, there has been much work on semantic web ontologies that
 describe results from biological experiments. While our approach is at
@@ -849,44 +841,44 @@ experiments performed here that we have not represented; for instance,
 the exact position of the locust with respect to the screen, the anatomical
 location of the recording electrodes etc. Such information should be
 represented as a duration, but the question is what type the tag of
-the duration should have. On solution is to allow tags to take values
+the duration should have. One solution is to allow tags to take values
 that correspond to subjects or relations in a semantic web ontology.
 
 \subsection*{Towards verified scientific inference}
 
-Whether the natural sciences are socially constructed remains an open
-question in the philosophy of science. If we seriously entertain the
-notion that science is instead based on logic \citep{Jaynes2003}, it
+If we consider that science is based on logic \citep{Jaynes2003}, it
 must be possible in principle to mechanically verify scientific
 inference, just as mathematical proofs can be verified by a proof
 checker (ref). It is of course not possible to verify particular
-hypotheses about the physical world, or a biological organism. What
-can be verified are statements about experiments, for instance that
+hypotheses about the physical world, or an organism. What can be
+verified are statements about experiments --- for instance that:
 particular variables were randomly controlled and not observed;
 outcomes have not gained correlation due to the analysis procedure;
 missing data is accounted for by the statistical model
-\citep{Gelman2003}; correct propagation of errors \citep{Taylor1997}
-and consistent units of measure \citep{Kennedy1997}; the absence of
-``double dipping'' \citep{Kriegeskorte2009}; and ultimately, whether
-the gathered data support the conclusion. Statistics addresses some of
-these issues in relating atomic observations to parameter estimation
-and hypothesis testing, but not how those observations are
-obtained. Experiment description languages, and the reification of
-experimental observations into values of concrete types (which may not
-always be the type of real numbers), can play an important role in
-such inference. But the statistical framework within which such
-inferences take place impact the amount of information that must be
-analysed; for instance, if we accept the likelihood principle
-\citep{Jaynes2003}, we can safely ignore the intention of the
-experimenter. 
+\citep{Gelman2003}; errors are propagated correctly
+\citep{Taylor1997}; units of measure are used consistently
+\citep{Kennedy1997}; there is no ``double dipping''
+\citep{Kriegeskorte2009}; and ultimately, that the gathered data
+support the conclusions drawn. Statistics addresses some of these
+issues in relating observations to parameter estimation and hypothesis
+testing, but every procedure makes assumptions about how those
+observations are obtained. Experiment description languages, and the
+reification of experimental observations into values of concrete types
+(which may not always be the type of real numbers), can play an
+important role in such inference. The statistical framework within
+which such inferences take place has an impact on the amount of
+information that must be analysed. For instance, if we accept the
+likelihood principle \citep{Jaynes2003}, we can safely ignore the
+intention of the experimenter, because all the relevant information is
+in the likelihood of the observed data. 
 
 There has been substantial progress in \emph{automation} in the
 experimental sciences, which has substatially accelerated the
 acquisition of knowledge. In contrast, there has been almost no work
-in verification, a seperate but overlapping application of calculating
-machines to science. Nevertheless, if such verification is possible it
-may lead to a much more radical change in the way scientific research
-is conducted.
+in verification, which is a seperate but overlapping application of
+calculating machines to science. Nevertheless, if such verification is
+possible it may lead to a much more radical change in the way
+scientific research is conducted.
 
 \section*{Methods}
 
