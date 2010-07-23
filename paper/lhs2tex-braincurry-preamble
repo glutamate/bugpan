@@ -18,6 +18,8 @@
 %format <* = "\,<\!\!\!*\,\,"
 %format *> = "\,\,*\!\!\!>\,"
 
+%format spc = "\,"
+
 %format ~> = "\leadsto"
 %format xthresh = "x_{th}"
 %format **  = "^"
