@@ -6,22 +6,24 @@ module Bugpan.Expr where
 import Data.Generics
 import Control.Monad
 
+data D = DLet Pat E
+       | DType String [String] [(String, [T])]
+       | DSource Pat String V
+       | DSink E String V
+         deriving (Show, Eq, Read, Data, Typeable)
+
 data V = VReal Double
        | VInt Int
        | VBool Bool
        | VLam String E
-       | VPair V V
-       | VUnit
-       | VList [V]
        | VString String
+       | VCons String [V]
          deriving (Show, Eq, Read, Data, Typeable)
 
-data T = TInt
-       | TReal
-       | TLam T T
-       | TBool
-       | TyApp T T
-       | TyCon String
+data T = TLam T T
+       | TApp T T
+       | TCon String
+       | TVar String
          deriving (Show, Eq, Read, Data, Typeable)
 
 data E = ECon V
@@ -29,13 +31,14 @@ data E = ECon V
        | ELam String T E
        | EVar String
        | ECase E [(Pat, E)]
+       | EConstruct String [E]
        | ELet [(Pat,E)] E
          deriving (Show, Eq, Read, Data, Typeable)
 
 data Pat = PLit V
          | PWild 
          | PVar String
-         | PPair Pat Pat
+         | PCons String [Pat]
            deriving (Show, Eq, Read, Data, Typeable)
 
 type Env = [(String, V)]
@@ -44,8 +47,7 @@ extEnv :: String -> V -> Env -> Env
 extEnv nm v env = (nm,v):env
 
 extsEnv :: [(String, V)] -> Env -> Env
-extsEnv [] env = env
-extsEnv ((nm,v):exts) env = extsEnv exts $ (nm,v):env
+extsEnv = (++) 
 
 instance Monad (Either String) where
     return x = Right x
@@ -77,7 +79,10 @@ eval env (ELet ((pat,e):rest) bd) = do
 
 eval env (ECase ex pats) = do
   v <- eval env ex
-  evalCase env v pats 
+  evalCase env v pats
+eval env (EConstruct nm es) = do
+  vs <- mapM (eval env) es
+  return $ VCons nm vs
 
 evalCase :: Env -> V -> [(Pat, E)] -> Either String V
 evalCase env v [] = Left $ "evalCase: non-exhaustive case; no match for: "++show v
@@ -91,9 +96,14 @@ match (PVar nm) v = Just [(nm, v)]
 match PWild v = Just []
 match (PLit v1) v2 | v1 == v2 = Just []
                    | otherwise = Nothing
-match (PPair px py) (VPair vx vy) = do
-  boundx <- match px vx
-  boundy <- match py vy
-  return $ boundx++boundy
-match (PPair px py) _ = Nothing
+match (PCons cnm1 pats) (VCons cnm2 vls) | cnm1 == cnm2 = matchCons $ zip pats vls
+                                         | otherwise = Nothing
+match (PCons _ _) v = Nothing
 
+matchCons :: [(Pat, V)] -> Maybe [(String, V)]
+matchCons [] = Just []
+matchCons ((pat, v):patvs) = do
+  env1 <- match pat v
+  env <- matchCons patvs
+  return $ env1++env
+  
