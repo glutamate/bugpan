@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeOperators, DeriveDataTypeable, FlexibleInstances #-}
 {-# OPTIONS_GHC -fwarn-incomplete-patterns #-}
 
-module Bugpan.Expr where
+module Baysig.Expr where
 
 import Data.Generics
 import Control.Monad
@@ -15,7 +15,7 @@ data D = DLet Pat E
 data V = VReal Double
        | VInt Int
        | VBool Bool
-       | VLam String E
+       | VLam Pat E
        | VString String
        | VCons String [V]
          deriving (Show, Eq, Read, Data, Typeable)
@@ -28,7 +28,7 @@ data T = TLam T T
 
 data E = ECon V
        | EApp E E
-       | ELam String T E
+       | ELam Pat E
        | EVar String
        | ECase E [(Pat, E)]
        | EConstruct String [E]
@@ -40,6 +40,16 @@ data Pat = PLit V
          | PVar String
          | PCons String [Pat]
            deriving (Show, Eq, Read, Data, Typeable)
+
+e1 $> e2 = EApp e1 e2
+
+instance Num E where
+   e1 + e2 = EVar "+" $> e1 $> e2
+   e1 - e2 = EVar "-" $> e1 $> e2
+   e1 * e2 = EVar "*" $> e1 $> e2
+   abs e = EVar "abs" $> e
+   signum e = EVar "signum" $> e
+   fromInteger n = ECon (VInt $ fromInteger n)
 
 type Env = [(String, V)]
 
@@ -65,9 +75,11 @@ eval env (EApp ef ex) = do
     x <- eval env ex
     f <- eval env ef
     case f of
-      VLam nm bd -> eval (extEnv nm x env) bd 
+      VLam pat bd -> case match pat x of
+                          Just exts -> eval (exts++env) bd 
+                          Nothing -> fail $ "eval: incomplete pattern "++ show pat
       v -> fail $ "eval: expected lambda value, got: "++ show v
-eval env (ELam nm _ bd) = return $ VLam nm bd
+eval env (ELam pat bd) = return $ VLam pat bd
 eval env (ELet [] bd) = eval env bd
 eval env (ELet ((pat,e):rest) bd) = do
   v <- eval env e
