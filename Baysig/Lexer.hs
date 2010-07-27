@@ -59,6 +59,8 @@ lex inp@(c:cs)
                          Nothing -> case safeRead numStr of
                                         Just n -> TokFloat n : lex rest
                                         _ -> error $ "lex: the impossible happened!"
+   | "infixl" `isPrefixOf` inp = lex $ dropWhile (`notElem` eolChars) cs
+   | "infixr" `isPrefixOf` inp = lex $ dropWhile (`notElem` eolChars) cs
    | otherwise = error $ "lex: unknown character "++[c]++" in "++take 10 inp
     where (opNm, rest) = span (`elem` opChars) inp
           isOp = c `elem` opChars 

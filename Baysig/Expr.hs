@@ -33,6 +33,7 @@ data E = ECon V
        | ECase E [(Pat, E)]
        | EConstruct String [E]
        | ELet [(Pat,E)] E
+       | ETy T E
          deriving (Show, Eq, Read, Data, Typeable)
 
 data Pat = PLit V
@@ -43,6 +44,8 @@ data Pat = PLit V
 
 e1 $> e2 = EApp e1 e2
 
+lift1 s e = EVar s $> e
+
 instance Num E where
    e1 + e2 = EVar "+" $> e1 $> e2
    e1 - e2 = EVar "-" $> e1 $> e2
@@ -50,6 +53,25 @@ instance Num E where
    abs e = EVar "abs" $> e
    signum e = EVar "signum" $> e
    fromInteger n = ECon (VInt $ fromInteger n)
+
+instance Fractional E where
+    fromRational rat = ECon (VReal $ fromRational rat)
+
+instance Floating E where
+    pi = ECon (VReal pi)
+    exp e = lift1 "exp" e
+    log e = lift1 "log" e
+    sin e = lift1 "sin" e 
+    cos e = lift1 "cos" e
+    tan e = lift1 "tan" e
+    acos e = lift1 "acos" e
+    asin e = lift1 "asin" e
+    atan e = lift1 "atan" e
+    sinh e = lift1 "sinh" e 
+    cosh e = lift1 "cosh" e
+    asinh e = lift1 "asinh" e 
+    acosh e = lift1 "acosh" e
+    atanh e = lift1 "atanh" e
 
 type Env = [(String, V)]
 
@@ -67,6 +89,7 @@ instance Monad (Either String) where
 
 eval :: Env -> E -> Either String V
 eval _   (ECon v) = return v
+eval env (ETy _ e ) = eval env e
 eval env (EVar nm) = 
     case lookup nm env of
       Nothing -> fail $ "eval: cannot find variable "++nm++" in evironment"

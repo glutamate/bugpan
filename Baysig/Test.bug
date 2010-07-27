@@ -12,6 +12,10 @@ sig = switch
 	f, g ~> \_-> foo
 -}
 
+infixr 2 +
+infixl 5 *%
+
+
 x= -5
 
 y= 1-4
