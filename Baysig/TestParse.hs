@@ -11,15 +11,19 @@ main = do
    testBug <- readFile "Test.bug"
    --mapM print $ lex testBug
    --print $ parseDs testBug
-   mapM  runTst etsts
+   mapM (runTst $ parseE stdFixity) etsts
+   mapM (runTst parsePat) pattsts
+   mapM (runTst parseTy) tytsts
+   mapM (runTst $ parseD stdFixity) dtsts
  
 infixl 1 #
 (#) = (,)
 
-runTst :: (String ,E) -> IO ()
-runTst (s, e) = do let toks = lex s
+--runTst :: (String ,E) -> IO ()
+runTst the_parser (s, e) 
+    = do           let toks = lex s
                    --print toks
-                   case parse (parseE stdFixity) "" toks of
+                   case parse the_parser "" toks of
                      Left err -> putStrLn $ "error in "++s++ show err
                      Right x | x == e -> putStrLn $ "pass: "++s
                              | otherwise -> do putStrLn $ "not the same: "++s++" \ngot : "++show x
@@ -40,3 +44,30 @@ etsts = [
       "\\x->2*x" # ELam (PVar "x") (2*EVar "x"),
       "(\\x->2*x) 4" # EApp (ELam (PVar "x") (2*EVar "x")) 4
       ]
+
+pattsts :: [(String, Pat)]
+pattsts = [
+  "x" # PVar "x"
+ ,"_" # PWild
+ ,"1" # PLit (VInt 1)
+          ]
+
+tytsts :: [(String, T)]
+tytsts = [
+    "a" # TVar "a"
+   ,"A" # TCon "A"
+   ,"a->A" # TLam (TVar "a") (TCon "A") 
+   ,"a->b->c" # TLam (TVar "a") (TLam (TVar "b") (TVar "c"))  
+   ,"(a->b)->c" # TLam (TLam (TVar "a") (TVar "b")) (TVar "c") 
+   ,"a->(b->c)" # TLam (TVar "a") (TLam (TVar "b") (TVar "c")) 
+   ,"(a->b) -> Signal a -> Signal b" # 
+      TLam (TLam (TVar "a") (TVar "b")) (TLam (TApp (TCon "Signal") (TVar "a")) (TApp (TCon "Signal") (TVar "b")))
+  ]
+
+dtsts :: [(String, D)]
+dtsts = [
+    "import Foo" # DImport "Foo"
+   ,"f x = 2*x" # DLet [PVar "f", PVar "x"] (2*EVar "x")
+   ,"data Bool = T | F" # DMkType "Bool" [] [("T", []),("F", [])]
+   ,"data Maybe ɑ = Just ɑ | Nothing" # DMkType "Maybe" ["ɑ"] [("Just",[TVar "ɑ"]),("Nothing",[])]
+  ]

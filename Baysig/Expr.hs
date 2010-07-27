@@ -6,10 +6,12 @@ module Baysig.Expr where
 import Data.Generics
 import Control.Monad
 
-data D = DLet Pat E
-       | DType String [String] [(String, [T])]
+data D = DLet [Pat] E
+       | DMkType String [String] [(String, [T])]
+       | DDecTy [String] T
        | DSource Pat String V
        | DSink E String V
+       | DImport String
          deriving (Show, Eq, Read, Data, Typeable)
 
 data V = VReal Double
@@ -126,7 +128,7 @@ evalCase env v ((pat,e):rest) =
       Just exts -> eval (extsEnv exts env) e
       Nothing -> evalCase env v rest
 
-match ::  Pat -> V -> Maybe [(String, V)]
+match :: Pat -> V -> Maybe [(String, V)]
 match (PVar nm) v = Just [(nm, v)]
 match PWild v = Just []
 match (PLit v1) v2 | v1 == v2 = Just []

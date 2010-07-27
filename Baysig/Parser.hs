@@ -1,3 +1,5 @@
+{-# LANGUAGE TypeOperators, DeriveDataTypeable, ScopedTypeVariables, FlexibleInstances #-}
+{-# OPTIONS_GHC -fwarn-incomplete-patterns #-}
 module Baysig.Parser where
 
 import Baysig.Lexer
@@ -7,11 +9,12 @@ import Text.Parsec.String
 import Text.Parsec.Expr
 import Text.Parsec
 import Data.Ord
+import Data.Char
+import Control.Monad.Identity
 
 instance Show Assoc where
     show (AssocLeft) = "AssocLeft"
     show (AssocRight) = "AssocRight"
-                       
 
 data FixDec = FixDec Assoc Int String
             deriving Show
@@ -24,32 +27,91 @@ groupFixeties fds = groupBy (\f1 f2 -> prec f1 == prec f2) $ reverse $ sortBy (c
 
 type EParser a = Parsec [Tok] () a
 
+--http://guppy.eng.kagawa-u.ac.jp/2005/AdvProg/Programs/IO.hs
+
 parseE :: [FixDec] -> EParser E
 parseE fds = expr
-    where expr = try lam <|> buildExpressionParser table term <?> "expression"
+    where expr = buildExpressionParser table factor <?> "expression"
           table =map (map mkOp) $ groupFixeties fds
-          term =  try app <|> try (bracketed Parens expr)
-                    <|> try var <|> eint  <?> "factor"
-          app = do e1 <- try var <|> lam
-                   e2 <- term
-                   return $ EApp e1 e2
-                <?> "application"
+          factor =  foldl1 EApp `fmap` many1 term
+          term =  bracketed Parens expr <|>
+                  var <|> 
+                  eint <|>
+                  edbl <|>
+                  tyAnno <|>
+                  lam
+                  <?> "factor"
           var = EVar `fmap` identifier <?> "variable name"
           eint = (ECon . VInt) `fmap` con_int <?> "integer"
-          lam = try (do 
+          edbl = (ECon . VReal) `fmap` con_float <?> "floating point number"
+          lam = do 
                    opTok "\\" 
                    vnm <- identifier
                    opTok "->" 
                    e <- expr
-                   return $ ELam (PVar vnm) e)
-                <|> (bracketed Parens lam)
+                   return $ ELam (PVar vnm) e
                 <?> "lambda term"
-mkOp (FixDec ass prn nm) = Infix (do (const (\e1 e2-> EVar nm $> e1 $> e2)) `fmap` opTok nm) ass
+          tyAnno = do ty <- parseTy
+                      opTok ":"
+                      e <- expr
+                      return $ ETy ty e
+
+parsePat :: EParser Pat
+parsePat = (bracketed Parens parsePat)
+           <|> (PVar `fmap` identifier)
+           <|> (const PWild `fmap` tok Underscore)
+           <|> ((PLit . VInt) `fmap` con_int)
+           <?> "pattern"
+parseTy :: EParser T
+parseTy =  buildExpressionParser table pTy <?> "type expression"
+    where pTy = foldl1 TApp `fmap` many1 term
+          table = [[arr_op]]
+          term = (bracketed Parens parseTy)
+                 <|> atomic
+          atomic = do vnm <- identifier
+                      if isLower $ head vnm
+                           then return $ TVar vnm
+                           else return $ TCon vnm
+          arr_op = Infix (const (\t1 t2-> TLam t1 t2) `fmap` opTok "->") AssocRight
+
+
+parseD :: [FixDec] -> EParser D
+parseD fds = try mktyd <|> try letd <|> try tyd  <|> impd 
+    where letd = do pats <- many1 parsePat
+                    guard (PVar "data" /= head pats)
+                    opTok "=" 
+                    e <- parseE fds
+                    return $ DLet pats e
+          tyd = do ids <- sepBy1 (opTok ",") identifier
+                   opTok "::"
+                   ty <- parseTy
+                   return $ DDecTy ids ty
+          impd = do tok $ Id "import" 
+                    nm <- identifier
+                    return $ DImport nm
+          mktyd = do tok (Id "data")
+                     tynm <- identifier
+                     tyvars <- many identifier
+                     opTok "=" 
+                     constrs <- sepBy parseC (opTok "|")
+                     return $ (DMkType tynm tyvars constrs)
+          parseC :: EParser (String, [T])
+          parseC = do cnm <- identifier
+                      fields <- many parseTy
+                      return (cnm, fields)
+                            
+            
+            
+
+mkOp (FixDec ass _ nm) = Infix (const (\e1 e2-> EVar nm $> e1 $> e2) `fmap` opTok nm) ass
 
 bracketed par p = do satisfyT (==Open par)
                      e <- p
                      satisfyT (==Close par)
                      return e
+
+tok :: Tok -> EParser Tok
+tok t = prim $ \t2-> if t== t2 then Just t else Nothing
 
 prim :: (Tok -> Maybe a) -> EParser a
 prim mf = tokenPrim (\t -> show t)

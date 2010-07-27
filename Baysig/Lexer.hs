@@ -22,12 +22,13 @@ data Tok = Id String
          | TokInt Int
          | TokFloat Double
          | Eos
+         | Underscore
          deriving (Show, Eq, Read, Data, Typeable)
 
 opChars = ".:^*+-=<>&%$!#%|/\\"
 wsChars = " \t\r\n"
 eolChars = "\r\n"
-initIdChars = ['A'..'Z']++['a'..'z']++['_']
+initIdChars = ['A'..'Z']++['a'..'z']++['_']++['ɑ'..'ω']
 idChars = initIdChars ++ ['0'..'9']++ ['\'']
 digits = ['0'..'9']
 numChar = digits ++ ['.', 'e', '-']
@@ -51,6 +52,7 @@ lex inp@(c:cs)
    | isOp && "<:" `isSuffixOf` opNm = Op (dropEnd 2 opNm) : lex ("<:"++rest)
    | isOp = Op opNm : lex rest
    | c `elem` wsChars = lex cs
+   | c == '_' && (null cs || (head cs `notElem` idChars)) = Underscore : lex cs
    | c `elem` initIdChars = let (idNm, rest) = span (`elem` idChars) inp
                             in Id idNm : lex rest
    | c `elem` digits = let (numStr, rest) = takeNumStr inp in
