@@ -4,6 +4,7 @@ module Baysig.Parser where
 
 import Baysig.Lexer
 import Baysig.Expr
+import Baysig.Layout
 import Data.List
 import Text.Parsec.String 
 import Text.Parsec.Expr
@@ -11,10 +12,12 @@ import Text.Parsec
 import Data.Ord
 import Data.Char
 import Control.Monad.Identity
+import Prelude hiding (lex)
 
 instance Show Assoc where
-    show (AssocLeft) = "AssocLeft"
-    show (AssocRight) = "AssocRight"
+    show AssocLeft  = "AssocLeft"
+    show AssocNone  = "AssocNone"
+    show AssocRight = "AssocRight"
 
 data FixDec = FixDec Assoc Int String
             deriving Show
@@ -162,9 +165,12 @@ parseDs in_s =
     let lns = lines in_s
         isFixDec ('i':'n':'f':'i':'x':lr:_) = lr == 'r' || lr =='l'
         isFixDec ln = False
-        (fixDecLns, program) = partition isFixDec lns
+        fixDecLns = filter isFixDec lns
+        toks = map fst $ addDeclEnds $ lex 0 0 in_s
+        
     in do fixDecs <- mapM (showErr . parse parseFixDec "") fixDecLns
-          fail $ show $groupFixeties fixDecs
+          showErr $ parse (endBy (parseD fixDecs) (tok (EndOf Declaration))) "" toks
+          --fail $ show toks
 
 showErr :: Show e => Either e a -> Either String a
 showErr (Left e) = Left $ show e

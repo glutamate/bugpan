@@ -10,7 +10,7 @@ import Text.Parsec
 main = do 
    testBug <- readFile "Test.bug"
    --mapM print $ lex testBug
-   --print $ parseDs testBug
+   print $ parseDs testBug
    mapM (runTst $ parseE stdFixity) etsts
    mapM (runTst parsePat) pattsts
    mapM (runTst parseTy) tytsts
@@ -21,11 +21,11 @@ infixl 1 #
 
 --runTst :: (String ,E) -> IO ()
 runTst the_parser (s, e) 
-    = do           let toks = lex s
+    = do           let toks = map fst $lex 0 0 s
                    --print toks
                    case parse the_parser "" toks of
                      Left err -> putStrLn $ "error in "++s++ show err
-                     Right x | x == e -> putStrLn $ "pass: "++s
+                     Right x | x == e -> return () -- putStrLn $ "pass: "++s
                              | otherwise -> do putStrLn $ "not the same: "++s++" \ngot : "++show x
                                                putStrLn $ "expected: "++show e
                                                putStrLn $ "tokens: "++show toks

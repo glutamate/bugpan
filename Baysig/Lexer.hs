@@ -8,6 +8,8 @@ import Data.List
 import TNUtils
 import Data.Generics
 
+data Endable = Declaration | LetLine | CaseLine
+          deriving (Show, Eq, Read, Data, Typeable)              
 
 data Parentheticals = Parens
                     | Sig
@@ -15,61 +17,67 @@ data Parentheticals = Parens
                     | Curly
           deriving (Show, Eq, Read, Data, Typeable)              
 
-data Tok = Id String
-         | Op String
-         | Open Parentheticals
-         | Close Parentheticals
-         | TokInt Int
-         | TokFloat Double
-         | Eos
-         | Underscore
+data Tok = Id String 
+         | Op String 
+         | Open Parentheticals 
+         | Close Parentheticals 
+         | TokInt Int 
+         | TokFloat Double 
+         | EndOf Endable 
+         | Underscore 
          deriving (Show, Eq, Read, Data, Typeable)
 
 opChars = ".:^*+-=<>&%$!#%|/\\"
-wsChars = " \t\r\n"
+wsChars = " \t"
 eolChars = "\r\n"
 initIdChars = ['A'..'Z']++['a'..'z']++['_']++['ɑ'..'ω']
 idChars = initIdChars ++ ['0'..'9']++ ['\'']
 digits = ['0'..'9']
 numChar = digits ++ ['.', 'e', '-']
 
+type Pos = (Int, Int)
 
-lex :: String -> [Tok]
-lex [] = []
-lex ('-':'-':cs) = lex $ dropWhile (`notElem` eolChars) cs
-lex ('{':'-':cs) = lex $ dropComment cs
-lex (';':cs) = Eos : lex cs
-lex ('(':cs) = Open Parens : lex cs
-lex (')':cs) = Close Parens : lex cs
-lex ('{':':':cs) = Open Sig : lex cs
-lex (':':'}':cs) = Close Sig : lex cs
-lex ('{':cs) = Open Curly : lex cs
-lex ('}':cs) = Close Curly : lex cs
-lex ('<':':':cs) = Open SigVal : lex cs
-lex (':':'>':cs) = Close SigVal : lex cs
-lex inp@(c:cs) 
-   | isOp && "{:" `isSuffixOf` opNm = Op (dropEnd 2 opNm) : lex ("{:"++rest)
-   | isOp && "<:" `isSuffixOf` opNm = Op (dropEnd 2 opNm) : lex ("<:"++rest)
-   | isOp = Op opNm : lex rest
-   | c `elem` wsChars = lex cs
-   | c == '_' && (null cs || (head cs `notElem` idChars)) = Underscore : lex cs
+at x y t = (t, (x, y))
+
+lex :: Int -> Int -> String -> [(Tok,Pos)]
+lex x y [] = []
+lex x y ('-':'-':cs) = lex x y $ dropWhile (`notElem` eolChars) cs
+lex x y ('{':'-':cs) = lexComment (x+2) y cs
+lex x y ('(':cs) = at x y (Open Parens) : lex (x+1) y cs
+lex x y (')':cs) = at x y (Close Parens) : lex (x+1) y cs
+lex x y ('{':':':cs) = at x y (Open Sig) : lex (x+2) y cs
+lex x y (':':'}':cs) = at x y (Close Sig) : lex (x+2) y cs
+lex x y ('{':cs) = at x y (Open Curly) : lex (x+1) y cs
+lex x y ('}':cs) = at x y (Close Curly) : lex (x+1) y cs
+lex x y ('<':':':cs) = at x y (Open SigVal) : lex (x+2) y cs
+lex x y (':':'>':cs) = at x y (Close SigVal) : lex (x+2) y cs
+lex x y inp@(c:cs) 
+   | isOp && "{:" `isSuffixOf` opNm = let opNm' = dropEnd 2 opNm
+                                      in at x y (Op opNm') : lex (x+length opNm') y ("{:"++rest)
+   | isOp && "<:" `isSuffixOf` opNm = let opNm' = dropEnd 2 opNm
+                                      in at x y (Op opNm') : lex (x+length opNm') y ("<:"++rest)
+   | isOp = at x y (Op opNm) : lex (x+length opNm) y rest
+   | c `elem` wsChars = lex (x+1) y cs
+   | c `elem` eolChars = lex 0 (y+1) cs
+   | c == '_' && (null cs || (head cs `notElem` idChars)) = at x y (Underscore) : lex (x+1) y cs
+   | "infixl" `isPrefixOf` inp = lex x y $ dropWhile (`notElem` eolChars) cs
+   | "infixr" `isPrefixOf` inp = lex x y $ dropWhile (`notElem` eolChars) cs
    | c `elem` initIdChars = let (idNm, rest) = span (`elem` idChars) inp
-                            in Id idNm : lex rest
+                            in at x y (Id idNm) : lex (x+length idNm) y rest
    | c `elem` digits = let (numStr, rest) = takeNumStr inp in
                        case safeRead numStr of
-                         Just n -> TokInt n : lex rest
+                         Just n -> at x y (TokInt n) : lex (x+length numStr) y rest
                          Nothing -> case safeRead numStr of
-                                        Just n -> TokFloat n : lex rest
+                                        Just n -> at x y (TokFloat n) : lex (x+length numStr) y rest
                                         _ -> error $ "lex: the impossible happened!"
-   | "infixl" `isPrefixOf` inp = lex $ dropWhile (`notElem` eolChars) cs
-   | "infixr" `isPrefixOf` inp = lex $ dropWhile (`notElem` eolChars) cs
    | otherwise = error $ "lex: unknown character "++[c]++" in "++take 10 inp
     where (opNm, rest) = span (`elem` opChars) inp
           isOp = c `elem` opChars 
 
-dropComment [] = []
-dropComment ('-':'}':cs) = cs
-dropComment (_:cs) = dropComment cs
+lexComment x y [] = []
+lexComment x y ('-':'}':cs) = lex (x+2) y cs
+lexComment x y (c:cs) | c `elem` eolChars = lexComment 0 (y+1) cs
+                      | otherwise = lexComment (x+1) y cs
 
 dropEnd n xs = take (max 0 $ length xs - n) xs
 
