@@ -8,13 +8,10 @@ import Data.List
 import TNUtils
 import Data.Generics
 
-data Endable = Declaration | LetLine | CaseLine
+data Endable = Declaration | LetLine | CaseLine | SwitchLine
           deriving (Show, Eq, Read, Data, Typeable)              
 
-data Parentheticals = Parens
-                    | Sig
-                    | SigVal
-                    | Curly
+data Parentheticals = Parens | Sig | SigVal | Curly
           deriving (Show, Eq, Read, Data, Typeable)              
 
 data Tok = Id String 
@@ -27,7 +24,7 @@ data Tok = Id String
          | Underscore 
          deriving (Show, Eq, Read, Data, Typeable)
 
-opChars = ".:^*+-=,<>&%$!#%|/\\"
+opChars = ".:^*+-=,<>~&%$!#%|/\\"
 wsChars = " \t"
 eolChars = "\r\n"
 initIdChars = ['A'..'Z']++['a'..'z']++['_']++['ɑ'..'ω']
@@ -60,10 +57,8 @@ lex x y inp@(c:cs)
    | c `elem` wsChars = lex (x+1) y cs
    | c `elem` eolChars = lex 0 (y+1) cs
    | c == '_' && (null cs || (head cs `notElem` idChars)) = at x y (Underscore) : lex (x+1) y cs
-   | "infixl" `isPrefixOf` inp = lex x y $ dropWhile (`notElem` eolChars) cs
-   | "infixr" `isPrefixOf` inp = lex x y $ dropWhile (`notElem` eolChars) cs
-   | "prefix " `isPrefixOf` inp = lex x y $ dropWhile (`notElem` eolChars) cs
-   | "postfix " `isPrefixOf` inp = lex x y $ dropWhile (`notElem` eolChars) cs
+   | any (`isPrefixOf` inp) $ map (++" ") $ words "infixr infixl infix prefix postfix"
+       = lex x y $ dropWhile (`notElem` eolChars) cs
    | c `elem` initIdChars = let (idNm, rest) = span (`elem` idChars) inp
                             in at x y (Id idNm) : lex (x+length idNm) y rest
    | c `elem` digits = let (numStr, rest) = takeNumStr inp in
@@ -97,4 +92,3 @@ takeNumStr inp = tak inp []
          tak (c:cs) acc   | c `elem` digits = tak cs (c:acc)
                           | otherwise = (reverse acc, c:cs)
 
---x `notElem` xs = not $ x `elem` xs

@@ -3,8 +3,10 @@
 module Baysig.Parser where
 
 import Baysig.Lexer
+import Baysig.Fixity
 import Baysig.Expr
 import Baysig.Layout
+import Baysig.TokParser
 import Data.List
 import Text.Parsec.String 
 import Text.Parsec.Expr
@@ -13,31 +15,11 @@ import Data.Ord
 import Data.Char
 import Control.Monad.Identity
 import Prelude hiding (lex)
+import Debug.Trace
 
-instance Show Assoc where
-    show AssocLeft  = "AssocLeft"
-    show AssocNone  = "AssocNone"
-    show AssocRight = "AssocRight"
-
-data WhereFix = In | Post | Pre
-            deriving Show
-
-data FixDec = FixDec WhereFix Assoc Int String
-            deriving Show
-
-stdFixity = [FixDec In AssocLeft 2 "+",
-             FixDec In AssocLeft 3 "*"]
-
-prec ( FixDec _ _ n _) = n
-
-groupFixeties fds = groupBy (\f1 f2 -> prec f1 == prec f2) $ reverse $ sortBy (comparing prec) fds
-
-type EParser a = Parsec [Tok] () a
+reservedKW = words "let in case where of switch if then else"
 
 --http://guppy.eng.kagawa-u.ac.jp/2005/AdvProg/Programs/IO.hs
-
-reservedKW = words "let in case where"
-
 parseE :: [FixDec] -> EParser E
 parseE fds = expr
     where expr = buildExpressionParser table factor <?> "expression"
@@ -50,8 +32,11 @@ parseE fds = expr
                   edbl <|>
                   psig <|> 
                   psigval <|> 
+                  try ifthenelse <|>
+                  try plet <|> 
+                  try pcase <|>
+                  try pswitch <|>
                   try tyAnno <|>
-                  plet <|> 
                   lam
                   <?> "factor"
           var = do nm <- identifier 
@@ -62,10 +47,10 @@ parseE fds = expr
           edbl = (ECon . VReal) `fmap` con_float <?> "floating point number"
           lam = do 
                    opTok "\\" 
-                   vnm <- identifier
+                   pat <- parsePat
                    opTok "->" 
                    e <- expr
-                   return $ ELam (PVar vnm) e
+                   return $ ELam pat e
                 <?> "lambda term"
           tyAnno = do ty <- parseTy
                       opTok ":"
@@ -77,13 +62,41 @@ parseE fds = expr
           unitConstr = do bracketed Parens (return ())
                           return $ EConstruct "unit" []
           plet = do tok $ Id "let"
-                    p <- parsePat
-                    opTok "="
-                    pe <- expr
+                    ppes <- sepBy1 pletline (tok $ EndOf LetLine)
                     tok $ Id "in"
                     re <- expr
-                    return (ELet [(p, pe)] re)
+                    return (ELet ppes re)
                     <?> "let term"
+          ifthenelse = do tok $ Id "if"
+                          pe <- expr
+                          tok $ Id "then"
+                          ce <- expr
+                          tok $ Id "else"
+                          ae <- expr
+                          return (EVar "if" $> pe $> ce $> ae)
+                    <?> "let term"
+          pletline = do p <- parsePat
+                        opTok "="
+                        pe <- expr
+                        return (p,pe)
+          pcase = do tok $ Id "case"
+                     re <- expr
+                     tok $ Id "of"
+                     ppes <- sepBy1 pcaseline (tok $ EndOf CaseLine)                     
+                     return (ECase re ppes )
+                     <?> "case term"
+          pcaseline = do p <- parsePat
+                         opTok "->"
+                         pe <- expr
+                         return (p,pe)
+          pswitch = do tok $ Id "switch"
+                       ppes <- sepBy1 pswitchline (tok $ EndOf SwitchLine)                     
+                       return (ECase (EVar "_switch") ppes)
+                    <?> "switch term"
+          pswitchline = do p <- parsePat
+                           opTok "~>"
+                           pe <- expr
+                           return (p,pe)
                        
 
 parsePat :: EParser Pat
@@ -143,67 +156,18 @@ parseD fds = try mktyd <|> try letd <|> try tyd  <|> try impd <|> try psink <|> 
           parseC = do cnm <- identifier
                       fields <- many parseTy
                       return (cnm, fields)
-                            
-            
-            
-
-mkOp (FixDec In ass _ nm) = Infix (const (\e1 e2-> EVar nm $> e1 $> e2) `fmap` opTok nm) ass
-mkOp (FixDec Pre _ _ nm) = Prefix (const (\e1-> EVar nm $> e1 ) `fmap` opTok nm) 
-mkOp (FixDec Post _ _ nm) = Postfix (const (\e1-> EVar nm $> e1 ) `fmap` opTok nm) 
-
-bracketed par p = do satisfyT (==Open par)
-                     e <- p
-                     satisfyT (==Close par)
-                     return e
-
-tok :: Tok -> EParser Tok
-tok t = prim $ \t2-> if t== t2 then Just t else Nothing
-
-prim :: (Tok -> Maybe a) -> EParser a
-prim mf = tokenPrim (\t -> show t)
-                    (\pos t s -> incSourceColumn pos 1)
-                    (mf)
-
-con_int :: EParser Int
-con_int = prim $ \t-> case t of 
-                           TokInt s -> Just s
-                           _ -> Nothing
-
-con_float :: EParser Double
-con_float = prim $ \t-> case t of 
-                           TokFloat s -> Just s
-                           _ -> Nothing
-
-
-identifier :: EParser String
-identifier = prim $ \t-> case t of 
-                           Id s -> Just s
-                           _ -> Nothing
-
-opTok :: String -> EParser String
-opTok nm = prim $ \t-> case t of 
-                               Op s | s == nm -> Just s
-                                    | otherwise -> Nothing
-                               _ -> Nothing
-
-satisfyT :: (Tok -> Bool) -> EParser Tok
-satisfyT p = prim $ \t-> if p t then Just t else Nothing
-
-
+                          
 parseFixDec :: Parser FixDec
 parseFixDec = try pin <|> try ppost <|> ppre <?> "fixity declaration"
     where pin = do string "infix"
-                   lrlet <- letter
-                   lr <- case lrlet of 
-                           'l' -> return AssocLeft
-                           'r' -> return AssocRight
-                           '_' -> return AssocNone
-                           _ -> fail $ "invalid fixity"
+                   assoc <- (char 'l' >> return AssocLeft) <|>
+                            (char 'r' >> return AssocRight) <|>
+                            (char ' ' >> return AssocNone) 
                    spaces
                    n <- number
                    spaces
                    op <- many1 (oneOf opChars)
-                   return $ FixDec In lr n op
+                   return $ FixDec In assoc n op
           ppre = do string "prefix"
                     spaces
                     n <- number
@@ -217,19 +181,18 @@ parseFixDec = try pin <|> try ppost <|> ppre <?> "fixity declaration"
                      op <- many1 (oneOf opChars)
                      return $ FixDec Post AssocNone n op
 
-
 parseDs :: String -> Either String [D]
 parseDs in_s = 
     let lns = lines in_s
-        isFixDec ('i':'n':'f':'i':'x':lr:_) = lr == 'r' || lr =='l'
+        isFixDec ('i':'n':'f':'i':'x':lr:_) = lr == 'r' || lr =='l' || lr ==' '
         isFixDec ('p':'r':'e':'f':'i':'x':' ':_) = True
         isFixDec ('p':'o':'s':'t':'f':'i':'x':' ':_) = True
         isFixDec ln = False
         fixDecLns = filter isFixDec lns
-        toks = map fst $ addDeclEnds $ lex 0 0 in_s
+        toks = withLayout $ lex 0 0 in_s 
         
     in do fixDecs <- mapM (showErr . parse parseFixDec "") fixDecLns
-          showErr $ parse (parseModNm >> (endBy (parseD fixDecs) (tok (EndOf Declaration)))) "" toks
+          trace (show fixDecs) $ showErr $ parse (parseModNm >> (endBy (parseD fixDecs) (tok (EndOf Declaration)))) "" toks
           --fail $ show toks
 
 parseModNm = do tok $ Id "module"

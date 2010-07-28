@@ -7,18 +7,33 @@ bar = map foo myList
 
 smap ::  (a->b) -> Signal a -> Signal b
 
-{-sig = switch
-	_, e ~> \_-> foo
-	f, g ~> \_-> foo
--}
+mysig = switch
+           e ~> z
+           _ ~> \_->fbaz
+
 
 infixr 2 +
 infixr 2 -
 infixl 5 *
 infixl 5 /
 prefix 3 -
+infix 6 >
 
-x= -5
+foo = let x = 5
+      	  y = let z = 6
+	      	  w = 7
+              in z+w
+      in x+y
+
+bar = case foo of
+         4 -> 53
+         _ -> 12
+
+baz = if 2+3>1
+      	 then 3*6
+	 else exp 4
+
+x= 5
 
 y= 1-4
 
