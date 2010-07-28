@@ -27,7 +27,7 @@ data Tok = Id String
          | Underscore 
          deriving (Show, Eq, Read, Data, Typeable)
 
-opChars = ".:^*+-=<>&%$!#%|/\\"
+opChars = ".:^*+-=,<>&%$!#%|/\\"
 wsChars = " \t"
 eolChars = "\r\n"
 initIdChars = ['A'..'Z']++['a'..'z']++['_']++['ɑ'..'ω']
@@ -62,6 +62,8 @@ lex x y inp@(c:cs)
    | c == '_' && (null cs || (head cs `notElem` idChars)) = at x y (Underscore) : lex (x+1) y cs
    | "infixl" `isPrefixOf` inp = lex x y $ dropWhile (`notElem` eolChars) cs
    | "infixr" `isPrefixOf` inp = lex x y $ dropWhile (`notElem` eolChars) cs
+   | "prefix " `isPrefixOf` inp = lex x y $ dropWhile (`notElem` eolChars) cs
+   | "postfix " `isPrefixOf` inp = lex x y $ dropWhile (`notElem` eolChars) cs
    | c `elem` initIdChars = let (idNm, rest) = span (`elem` idChars) inp
                             in at x y (Id idNm) : lex (x+length idNm) y rest
    | c `elem` digits = let (numStr, rest) = takeNumStr inp in

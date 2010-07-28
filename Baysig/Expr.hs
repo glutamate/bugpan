@@ -9,8 +9,8 @@ import Control.Monad
 data D = DLet [Pat] E
        | DMkType String [String] [(String, [T])]
        | DDecTy [String] T
-       | DSource Pat String V
-       | DSink E String V
+       | DSource Pat String E
+       | DSink E String E
        | DImport String
          deriving (Show, Eq, Read, Data, Typeable)
 
@@ -42,6 +42,7 @@ data Pat = PLit V
          | PWild 
          | PVar String
          | PCons String [Pat]
+         | PBang Pat
            deriving (Show, Eq, Read, Data, Typeable)
 
 e1 $> e2 = EApp e1 e2
@@ -131,6 +132,7 @@ evalCase env v ((pat,e):rest) =
 match :: Pat -> V -> Maybe [(String, V)]
 match (PVar nm) v = Just [(nm, v)]
 match PWild v = Just []
+match (PBang p) v = match p v
 match (PLit v1) v2 | v1 == v2 = Just []
                    | otherwise = Nothing
 match (PCons cnm1 pats) (VCons cnm2 vls) | cnm1 == cnm2 = matchCons $ zip pats vls

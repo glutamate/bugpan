@@ -3,14 +3,18 @@ module Main where
 import Baysig.Expr
 import Baysig.Lexer
 import Baysig.Parser
+import Baysig.Layout
 import Prelude hiding (lex)
 import Text.Parsec.String 
 import Text.Parsec
 
 main = do 
    testBug <- readFile "Test.bug"
-   --mapM print $ lex testBug
-   print $ parseDs testBug
+   --mapM print $ map fst $ addDeclEnds $ lex 0 0 testBug
+   case parseDs testBug of
+     Left err -> do putStrLn $ "parse error in Test.bug: "++ err
+                    mapM_ print $ map fst $ addDeclEnds $ lex 0 0 testBug
+     Right ds -> mapM_ print ds
    mapM (runTst $ parseE stdFixity) etsts
    mapM (runTst parsePat) pattsts
    mapM (runTst parseTy) tytsts
@@ -19,13 +23,15 @@ main = do
 infixl 1 #
 (#) = (,)
 
+quiet = True
+
 --runTst :: (String ,E) -> IO ()
 runTst the_parser (s, e) 
     = do           let toks = map fst $lex 0 0 s
                    --print toks
                    case parse the_parser "" toks of
                      Left err -> putStrLn $ "error in "++s++ show err
-                     Right x | x == e -> return () -- putStrLn $ "pass: "++s
+                     Right x | x == e -> if quiet then return () else putStrLn $ "pass: "++s
                              | otherwise -> do putStrLn $ "not the same: "++s++" \ngot : "++show x
                                                putStrLn $ "expected: "++show e
                                                putStrLn $ "tokens: "++show toks
@@ -43,6 +49,10 @@ etsts = [
       "2*x" # (2*EVar "x"),
       "\\x->2*x" # ELam (PVar "x") (2*EVar "x"),
       "(\\x->2*x) 4" # EApp (ELam (PVar "x") (2*EVar "x")) 4
+     ,"{: 1 :}" # EApp (EVar "sig") 1
+     ,"<: s :>" # EApp (EVar "sigval") (EVar "s")
+     ,"()" # EConstruct "unit" []
+     ,"let x = 5 in x+2" # ELet [(PVar "x", 5)] (EVar "x"+2)
       ]
 
 pattsts :: [(String, Pat)]
@@ -50,6 +60,7 @@ pattsts = [
   "x" # PVar "x"
  ,"_" # PWild
  ,"1" # PLit (VInt 1)
+ ,"u!" # PBang (PVar "u")
           ]
 
 tytsts :: [(String, T)]
@@ -60,7 +71,7 @@ tytsts = [
    ,"a->b->c" # TLam (TVar "a") (TLam (TVar "b") (TVar "c"))  
    ,"(a->b)->c" # TLam (TLam (TVar "a") (TVar "b")) (TVar "c") 
    ,"a->(b->c)" # TLam (TVar "a") (TLam (TVar "b") (TVar "c")) 
-   ,"(a->b) -> Signal a -> Signal b" # 
+   ,"(a->b)-> Signal a -> Signal b" # 
       TLam (TLam (TVar "a") (TVar "b")) (TLam (TApp (TCon "Signal") (TVar "a")) (TApp (TCon "Signal") (TVar "b")))
   ]
 
@@ -70,4 +81,8 @@ dtsts = [
    ,"f x = 2*x" # DLet [PVar "f", PVar "x"] (2*EVar "x")
    ,"data Bool = T | F" # DMkType "Bool" [] [("T", []),("F", [])]
    ,"data Maybe ɑ = Just ɑ | Nothing" # DMkType "Maybe" ["ɑ"] [("Just",[TVar "ɑ"]),("Nothing",[])]
+   ,"myfun :: a -> b -> c" # DDecTy ["myfun"] (TLam (TVar "a") (TLam (TVar "b") (TVar "c")))
+   ,"myfun, otherfun :: a -> b -> c" # DDecTy ["myfun", "otherfun"] (TLam (TVar "a") (TLam (TVar "b") (TVar "c")))
+   ,"xyz *> dac 1" # DSink (EVar "xyz") "dac" 1
+   ,"xyz <* adc 1" # DSource (PVar "xyz") "adc" 1
   ]

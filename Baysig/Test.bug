@@ -1,20 +1,22 @@
 module Test where
 
-{-myfun :: a -> b -> c
+myfun :: a -> b -> c
 myfun = x+f y
 
 bar = map foo myList
 
 smap ::  (a->b) -> Signal a -> Signal b
 
-sig = switch
+{-sig = switch
 	_, e ~> \_-> foo
 	f, g ~> \_-> foo
 -}
 
 infixr 2 +
-infixl 5 *%
-
+infixr 2 -
+infixl 5 *
+infixl 5 /
+prefix 3 -
 
 x= -5
 
