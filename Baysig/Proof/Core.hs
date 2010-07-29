@@ -1,7 +1,8 @@
 {-# LANGUAGE TypeOperators #-}
 {-# OPTIONS_GHC -fwarn-incomplete-patterns #-}
 
-module Baysig.Proof (Theorem, v, TheoremView((:-)), 
+module Baysig.Proof.Core (
+                     Theorem, v, TheoremView((:-)), 
                      refl, assume, trans, mkApp, 
                      abstract, eqMP, betaConv) where
 
@@ -39,6 +40,11 @@ eqMP (Thm asm1 e) (Thm asm2 a) = do
 betaConv ap@(EApp (ELam (PVar x) a) y) =
   return $ Thm [] $ eq ap $ subVar x y a
 betaConv _ = mzero
+inst n e (Thm asm conse) = do
+  let subf = subVar n e 
+  return $ Thm (map subf asm) $ subf conse
+  
+
 
 --BETA_CONV `(\x. A) y`
 --gives `|- (\x. A) y = A[y/x]`
