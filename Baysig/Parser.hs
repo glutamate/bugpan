@@ -60,7 +60,7 @@ parseE fds = expr
           psig = EApp (EVar "sig") `fmap` bracketed Sig expr  <?> "signal expression"
           psigval = EApp (EVar "sigval") `fmap` bracketed SigVal expr  <?> "signal valueexpression"
           unitConstr = do bracketed Parens (return ())
-                          return $ EConstruct "unit" []
+                          return $ ECon (VCons "()" [])
           plet = do tok $ Id "let"
                     ppes <- sepBy1 pletline (tok $ EndOf LetLine)
                     tok $ Id "in"
@@ -192,7 +192,7 @@ parseDs in_s =
         toks = withLayout $ lex 0 0 in_s 
         
     in do fixDecs <- mapM (showErr . parse parseFixDec "") fixDecLns
-          trace (show fixDecs) $ showErr $ parse (parseModNm >> (endBy (parseD fixDecs) (tok (EndOf Declaration)))) "" toks
+          showErr $ parse (parseModNm >> (endBy (parseD fixDecs) (tok (EndOf Declaration)))) "" toks
           --fail $ show toks
 
 parseModNm = do tok $ Id "module"

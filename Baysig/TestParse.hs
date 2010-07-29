@@ -54,7 +54,7 @@ etsts = [
       "(\\x->2*x) 4" # EApp (ELam (PVar "x") (2*EVar "x")) 4
      ,"{: 1 :}" # EApp (EVar "sig") 1
      ,"<: s :>" # EApp (EVar "sigval") (EVar "s")
-     ,"()" # EConstruct "unit" []
+     ,"()" # ECon (VCons "()" [])
      ,"let x = 5 in x+2" # ELet [(PVar "x", 5)] (EVar "x"+2)
      ,"if p then c else a" # EVar "if" $> EVar "p" $> EVar "c" $>EVar "a"
      ,"case x of e->5" # ECase (EVar "x") [(PVar "e",5)]

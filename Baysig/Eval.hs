@@ -39,9 +39,6 @@ eval env (ELet ((pat,e):rest) bd) = do
 eval env (ECase ex pats) = do
   v <- eval env ex
   evalCase env v pats
-eval env (EConstruct nm es) = do
-  vs <- mapM (eval env) es
-  return $ VCons nm vs
 
 evalCase :: Env -> V -> [(Pat, E)] -> Either String V
 evalCase env v [] = Left $ "evalCase: non-exhaustive case; no match for: "++show v

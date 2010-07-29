@@ -6,6 +6,8 @@ module Baysig.Expr where
 import Data.Generics
 import Control.Monad
 
+data U = D D | V V | E E | T T | S String
+
 data D = DLet [Pat] E
        | DMkType String [String] [(String, [T])]
        | DDecTy [String] T
@@ -16,7 +18,6 @@ data D = DLet [Pat] E
 
 data V = VReal Double
        | VInt Int
-       | VBool Bool
        | VLam Pat E
        | VString String
        | VCons String [V]
@@ -33,7 +34,6 @@ data E = ECon V
        | ELam Pat E
        | EVar String
        | ECase E [(Pat, E)]
-       | EConstruct String [E]
        | ELet [(Pat,E)] E
        | ETy T E
          deriving (Show, Eq, Read, Data, Typeable)
@@ -59,7 +59,7 @@ instance Num E where
 
 instance Fractional E where
     fromRational rat = ECon (VReal $ fromRational rat)
-
+ 
 instance Floating E where
     pi = ECon (VReal pi)
     exp e = lift1 "exp" e
@@ -82,3 +82,41 @@ instance Monad (Either String) where
     (Left s) >>= _ = Left s
     (Right x) >>= f = f x
     fail = Left 
+
+mapE :: (E -> E) -> E -> E
+mapE f = everywhere (mkT f)
+
+queryE :: (E-> [a]) -> E -> [a]
+queryE qf = everything (++) ([] `mkQ` qf)
+
+queryPat :: (Pat-> [a]) -> Pat -> [a]
+queryPat qf = everything (++) ([] `mkQ` qf)
+
+isSubTermIn :: E-> E-> Bool
+isSubTermIn small big = not . null $ queryE tst big
+    where tst someE | someE == small = [someE]
+                    | otherwise = []
+
+isFreeVarIn :: String-> E-> Bool
+isFreeVarIn vnm = isSubTermIn (EVar vnm)
+
+--substitute variables respecting shadowing
+subVar n es (EVar n') | n == n' = es
+                      | otherwise = EVar n'
+subVar n es (EApp e1 e2) = EApp (subVar n es e1) (subVar n es e2)
+subVar n es (ETy t e1) = ETy t (subVar n es e1)
+subVar n es (ELam p e) | n `elem` patIntroducedVars p = ELam p e
+                       | otherwise = ELam p (subVar n es e)
+subVar n es (ECase e pates) = ECase e $ map (subVarPatE n es) pates
+subVar n es (ELet pates e)  
+    | n `elem` (concatMap patIntroducedVars $ map fst pates) = ELet (map (subVarPatE n es) pates) e
+    | otherwise = ELet (map (subVarPatE n es) pates) $ subVar n es e
+subVar n es (ECon v) = ECon v
+
+subVarPatE n es (p,e) | n `elem` patIntroducedVars p = (p,e)
+                      | otherwise = (p,subVar n es e)
+
+patIntroducedVars :: Pat -> [String]
+patIntroducedVars = queryPat f
+    where f (PVar nm) = [nm]
+          f p = []
