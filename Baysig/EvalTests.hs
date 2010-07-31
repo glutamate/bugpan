@@ -2,16 +2,23 @@ module Main where
 
 import Baysig.Expr
 import Baysig.Eval
-import Baysig.Parser
+import Baysig.Syntax.Parser
 import Text.Parsec 
-import Baysig.Fixity
-import Baysig.Lexer
-import Baysig.Layout
-import Prelude hiding (lex)
+import Baysig.Syntax.Fixity
+import Baysig.Syntax.Layout
+import Baysig.RunModule
 
+tstNats = do
+   testBug <- readFile "Nats.bug"
+   --mapM print $ map fst $ addDeclEnds $ lex 0 0 testBug
+   ds <- case parseDs testBug of
+           Left err -> fail $ "parse error in Nats.bug: "++ err 
+           Right ds -> return ds
+   print $ runModule emptyEnv ds
 
 evtsts = [
- "(\\_->2) 3" # VInt 2
+  "(\\_->2) 3" # VInt 2
+ ,"let x = 5 in x" # VInt 5
   ]
     
 
@@ -19,7 +26,7 @@ evtsts = [
 infixl 1 #
 (#) = (,)
 
-quiet = True
+quiet = False
 
 ioTst (s,v) = do
   case runTst (s,v) of
@@ -27,12 +34,13 @@ ioTst (s,v) = do
     Left s -> putStrLn s
 
 runTst (s,v) = do
-  e <- showErr $ parse (parseE stdFixity) "" $ withLayout $ lex 0 0 s
-  v' <- eval [] e
+  e <- showErr $ parse (parseE stdFixity) "" $ lexWithLayout s
+  v' <- eval emptyEnv e
   if v' == v 
      then if quiet then Right () else Left $ "pass: "++s
      else Left $ "not the same: "++s++" => "++show v'++", expected "++show v
 
 main = do
   mapM ioTst evtsts
-  print $ subVar "x" 5 $ ELam (PVar "x") $ EVar "x"
+  tstNats
+  --print $ subVar "x" 5 $ ELam (PVar "x") $ EVar "x"

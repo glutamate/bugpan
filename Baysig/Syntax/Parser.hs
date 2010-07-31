@@ -1,12 +1,12 @@
 {-# LANGUAGE TypeOperators, DeriveDataTypeable, ScopedTypeVariables, FlexibleInstances #-}
 {-# OPTIONS_GHC -fwarn-incomplete-patterns #-}
-module Baysig.Parser where
+module Baysig.Syntax.Parser where
 
-import Baysig.Lexer
-import Baysig.Fixity
+import Baysig.Syntax.Lexer
+import Baysig.Syntax.Fixity
 import Baysig.Expr
-import Baysig.Layout
-import Baysig.TokParser
+import Baysig.Syntax.Layout
+import Baysig.Syntax.TokParser
 import Data.List
 import Text.Parsec.String 
 import Text.Parsec.Expr
@@ -102,12 +102,17 @@ parseE fds = expr
 parsePat :: EParser Pat
 parsePat = buildExpressionParser table pPat <?> "Pattern"
     where pPat = (bracketed Parens parsePat)
-                 <|> (PVar `fmap` identifier)
+                 <|> pconstrOrVar
                  <|> (const PWild `fmap` tok Underscore)
                  <|> ((PLit . VInt) `fmap` con_int)
                  <?> "pattern"
           table = [[bang_op]]
-          bang_op = Postfix (const (\p-> PBang p) `fmap` opTok "!") 
+          bang_op = Postfix (const (\p-> PBang p) `fmap` opTok "!")
+          pconstrOrVar = do nm <- identifier
+                            if isLower $ head nm
+                               then return $ PVar nm
+                               else do cargs <- many pPat
+                                       return $ PCons nm cargs
 parseTy :: EParser T
 parseTy =  buildExpressionParser table pTy <?> "type expression"
     where pTy = foldl1 TApp `fmap` many1 term

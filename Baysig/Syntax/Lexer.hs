@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeOperators, DeriveDataTypeable, FlexibleInstances #-}
 {-# OPTIONS_GHC -fwarn-incomplete-patterns #-}
 
-module Baysig.Lexer where
+module Baysig.Syntax.Lexer where
 
 import Prelude hiding (lex)
 import Data.List

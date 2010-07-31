@@ -1,7 +1,7 @@
-module Baysig.TokParser where
+module Baysig.Syntax.TokParser where
 
 import Text.Parsec
-import Baysig.Lexer
+import Baysig.Syntax.Lexer
 
 --parsers on tokens
 

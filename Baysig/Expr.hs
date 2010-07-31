@@ -8,6 +8,17 @@ import Control.Monad
 
 data U = D D | V V | E E | T T | S String
 
+instance Show (V->Either String V) where
+   show f = "<function>"
+
+instance Read (V->Either String V) where
+   readsPrec _ s = error $ "eq: <function>" ++s
+
+instance Eq (V->Either String V) where
+   f == g = error "eq: <function>"
+
+
+
 data D = DLet [Pat] E
        | DMkType String [String] [(String, [T])]
        | DDecTy [String] T
@@ -18,7 +29,7 @@ data D = DLet [Pat] E
 
 data V = VReal Double
        | VInt Int
-       | VLam Pat E
+       | VLam (V->Either String V)
        | VString String
        | VCons String [V]
          deriving (Show, Eq, Read, Data, Typeable)

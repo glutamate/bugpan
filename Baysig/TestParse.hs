@@ -1,11 +1,9 @@
 module Main where
 
 import Baysig.Expr
-import Baysig.Lexer
-import Baysig.Parser
-import Baysig.Layout
-import Baysig.Fixity
-import Prelude hiding (lex)
+import Baysig.Syntax.Parser
+import Baysig.Syntax.Layout
+import Baysig.Syntax.Fixity
 import Text.Parsec.String 
 import Text.Parsec
 
@@ -14,8 +12,8 @@ main = do
    --mapM print $ map fst $ addDeclEnds $ lex 0 0 testBug
    case parseDs testBug of
      Left err -> do putStrLn $ "parse error in Test.bug: "++ err
-                    mapM_ print $ withLayout $ lex 0 0 testBug
-     Right ds -> mapM_ print ds
+                    mapM_ print $ lexWithLayout testBug
+     Right ds -> putStrLn "Test.bug parse Ok"
    mapM (runTst $ parseE stdFixity) etsts
    mapM (runTst parsePat) pattsts
    mapM (runTst parseTy) tytsts
@@ -28,7 +26,7 @@ quiet = True
 
 --runTst :: (String ,E) -> IO ()
 runTst the_parser (s, e) 
-    = do           let toks = withLayout $ lex 0 0 s
+    = do           let toks = lexWithLayout s
                    --print toks
                    case parse the_parser "" toks of
                      Left err -> do putStrLn $ "error in "++s++ show err
@@ -67,6 +65,8 @@ pattsts = [
  ,"_" # PWild
  ,"1" # PLit (VInt 1)
  ,"u!" # PBang (PVar "u")
+ ,"S n" # PCons "S" [PVar "n"]
+ ,"(S n)" # PCons "S" [PVar "n"]
           ]
 
 tytsts :: [(String, T)]

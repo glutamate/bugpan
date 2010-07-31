@@ -1,7 +1,7 @@
-module Baysig.Fixity where
+module Baysig.Syntax.Fixity where
 
-import Baysig.Lexer
-import Baysig.TokParser
+import Baysig.Syntax.Lexer
+import Baysig.Syntax.TokParser
 import Text.Parsec.Expr
 import Data.List
 import Data.Ord

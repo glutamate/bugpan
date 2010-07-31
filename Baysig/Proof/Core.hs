@@ -44,8 +44,3 @@ inst n e (Thm asm conse) = do
   let subf = subVar n e 
   return $ Thm (map subf asm) $ subf conse
   
-
-
---BETA_CONV `(\x. A) y`
---gives `|- (\x. A) y = A[y/x]`
-  

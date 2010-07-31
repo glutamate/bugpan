@@ -1,8 +1,9 @@
 {-# OPTIONS_GHC -fwarn-incomplete-patterns #-}
 
-module Baysig.Layout where
+module Baysig.Syntax.Layout where
 
-import Baysig.Lexer
+import Baysig.Syntax.Lexer
+import Prelude hiding (lex)
 
 addDeclEnds :: [(Tok,Pos)] -> [(Tok, Pos)]
 addDeclEnds = aDE Nothing             
@@ -46,3 +47,5 @@ addSwitchEnds = aSE []
 
 withLayout :: [(Tok,Pos)] -> [Tok]
 withLayout tps = map fst $ addSwitchEnds $ addCaseEnds $ addLetEnds $ addDeclEnds tps
+
+lexWithLayout = withLayout . lex 0 0 
