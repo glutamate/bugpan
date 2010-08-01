@@ -10,7 +10,14 @@ runModule :: Env -> [D] -> Either String Env
 runModule env ds = 
    let constrs' = [(nm,ts) | DMkType _ _ cons <- ds, (nm, ts) <- cons]
        envwcon = env {constrs = constrs' ++ constrs env}
-   in evalD envwcon ds
+       dlets = [(reverse ps,e) | DLet ps e <- ds]
+       f ([], ex) = []
+       
+       f ([p], ex) = fromRights (eval envwvals ex >>= match p)
+       f (p:ps, ex) = f (ps, ELam p ex)
+       envwvals = let nvals = concat $ (vals envwcon) : map f dlets
+                  in envwcon {vals = nvals}
+   in return envwvals
 
 evalD env [] = return env
 evalD env (DLet [pat] e:ds) = do

@@ -66,6 +66,7 @@ pattsts = [
  ,"1" # PLit (VInt 1)
  ,"u!" # PBang (PVar "u")
  ,"S n" # PCons "S" [PVar "n"]
+ ,"P x y" # PCons "P" [PVar "x",PVar "y"]
  ,"(S n)" # PCons "S" [PVar "n"]
           ]
 

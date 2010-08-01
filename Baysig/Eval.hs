@@ -37,6 +37,10 @@ instance Functor (Either String) where
     fmap f (Left x) = Left x
     fmap f (Right x) = Right $ f x
 
+fromRight (Right x) = x
+fromRights (Right xs) = xs
+fromRights _ = []
+
 eval :: Env -> E -> Either String V
 eval _   (ECon v) = return v
 eval env (ETy _ e ) = eval env e
@@ -60,21 +64,23 @@ eval env (ELam pat bd) =
     where f (p,ex) = do 
                  env' <- envExtsM
                  v <- eval env' ex
-                 case match p v of
-                   Just exts -> return exts
-                   Nothing -> fail $ "eval: incomplete pattern "++ 
-                                     show p ++"for value "++show v    -- [m [(S,V)]]
+                 match p v
           envExtsM = do nvals <- concat `fmap` sequence (return (vals env): map f pates)
                         return $ env {vals = nvals}
           vfinal = do 
                  env' <- envExtsM
                  eval env' e -}
+eval env (ELet pates e) = vfinal
+    where f (p,ex) = fromRights $ eval envExtsM ex >>= match p
+          envExtsM = let nvals = concat $ (vals env) : map f pates
+                     in env {vals = nvals}
+          vfinal =eval envExtsM e 
           
-eval env (ELet [] bd) = eval env bd
+{-eval env (ELet [] bd) = eval env bd
 eval env (ELet ((pat,e):rest) bd) = do
   v <- eval env e
   exts <- match pat v 
-  eval (extsEnv exts env) (ELet rest bd) 
+  eval (extsEnv exts env) (ELet rest bd) -}
 
 eval env (ECase ex pats) = do
   v <- eval env ex
