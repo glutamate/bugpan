@@ -7,6 +7,7 @@ import Text.Parsec
 import Baysig.Syntax.Fixity
 import Baysig.Syntax.Layout
 import Baysig.RunModule
+import Baysig.Transform
 
 tstNats = do
    testBug <- readFile "Nats.bug"
@@ -14,7 +15,10 @@ tstNats = do
    ds <- case parseDs testBug of
            Left err -> fail $ "parse error in Nats.bug: "++ err 
            Right ds -> return ds
-   print $ runModule emptyEnv ds
+   --mapM_ print $ ds
+   --mapM_ print $ removeTopLevelPatterns ds
+
+   print $ runModule emptyEnv $ removeTopLevelPatterns ds
 
 evtsts = [
   "(\\_->2) 3" # VInt 2

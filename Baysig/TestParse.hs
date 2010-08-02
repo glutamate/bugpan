@@ -65,8 +65,8 @@ pattsts = [
  ,"_" # PWild
  ,"1" # PLit (VInt 1)
  ,"u!" # PBang (PVar "u")
- ,"S n" # PCons "S" [PVar "n"]
- ,"P x y" # PCons "P" [PVar "x",PVar "y"]
+ ,"Z" # PCons "Z" []
+ ,"(P x y)" # PCons "P" [PVar "x",PVar "y"]
  ,"(S n)" # PCons "S" [PVar "n"]
           ]
 
@@ -92,4 +92,7 @@ dtsts = [
    ,"myfun, otherfun :: a -> b -> c" # DDecTy ["myfun", "otherfun"] (TLam (TVar "a") (TLam (TVar "b") (TVar "c")))
    ,"xyz *> dac 1" # DSink (EVar "xyz") "dac" 1
    ,"xyz <* adc 1" # DSource (PVar "xyz") "adc" 1
+   ,"plus Z m = m" # DLet [PVar "plus", PCons "Z" [], PVar "m"] (EVar "m")
+   ,"plus (S p) m = p" # DLet [PVar "plus", PCons "S" [PVar "p"], PVar "m"] (EVar "p")
   ]
+ 

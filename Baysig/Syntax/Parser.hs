@@ -101,18 +101,21 @@ parseE fds = expr
 
 parsePat :: EParser Pat
 parsePat = buildExpressionParser table pPat <?> "Pattern"
-    where pPat = (bracketed Parens parsePat)
-                 <|> pconstrOrVar
+    where pPat = pconstr <|> (bracketed Parens parsePat)
+                 <|> pvar
                  <|> (const PWild `fmap` tok Underscore)
                  <|> ((PLit . VInt) `fmap` con_int)
                  <?> "pattern"
           table = [[bang_op]]
           bang_op = Postfix (const (\p-> PBang p) `fmap` opTok "!")
-          pconstrOrVar = do nm <- identifier
-                            if isLower $ head nm
+          pvar = do nm <- identifier
+                    if isLower $ head nm
                                then return $ PVar nm
-                               else do cargs <- many pPat
-                                       return $ PCons nm cargs
+                               else return $ PCons nm []
+          pconstr = bracketed Parens $ do nm <- identifier
+                                          guard $ not $ isLower $ head nm
+                                          cargs <- many pPat
+                                          return $ PCons nm cargs
 parseTy :: EParser T
 parseTy =  buildExpressionParser table pTy <?> "type expression"
     where pTy = foldl1 TApp `fmap` many1 term
