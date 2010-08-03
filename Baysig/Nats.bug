@@ -15,7 +15,7 @@ plus (S p) m = plus p (S m)
 
 one = S Z
 two = S one
-
+three = S two
 incr = \n->S n 
 
 x = plus two two

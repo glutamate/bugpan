@@ -18,8 +18,8 @@ printProof thm = putStrLn $ showThm thm
 
 main = do (es,t) <- inEnv "Nats.bug" $ \env -> do
                  er2 <- evalRule env (EVar "plus"
-                                       $> EVar "two"
-                                       $> EVar "two")
+                                       $> EVar "three"
+                                       $> EVar "three")
                  return (env, er2)
           mapM_ print $ fst es
           putStrLn ""
