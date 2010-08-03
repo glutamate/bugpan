@@ -54,6 +54,7 @@ data Pat = PLit V
          | PVar String
          | PCons String [Pat]
          | PBang Pat
+         | PTy T Pat
            deriving (Show, Eq, Read, Data, Typeable)
 
 e1 $> e2 = EApp e1 e2
@@ -118,7 +119,7 @@ subVar n es (EApp e1 e2) = EApp (subVar n es e1) (subVar n es e2)
 subVar n es (ETy t e1) = ETy t (subVar n es e1)
 subVar n es (ELam p e) | n `elem` patIntroducedVars p = ELam p e
                        | otherwise = ELam p (subVar n es e)
-subVar n es (ECase e pates) = ECase e $ map (subVarPatE n es) pates
+subVar n es (ECase e pates) = ECase (subVar n es e) $ map (subVarPatE n es) pates
 subVar n es (ELet pates e)  
     | n `elem` (concatMap patIntroducedVars $ map fst pates) = ELet (map (subVarPatE n es) pates) e
     | otherwise = ELet (map (subVarPatE n es) pates) $ subVar n es e

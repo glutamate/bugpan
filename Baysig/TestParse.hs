@@ -94,5 +94,6 @@ dtsts = [
    ,"xyz <* adc 1" # DSource (PVar "xyz") "adc" 1
    ,"plus Z m = m" # DLet [PVar "plus", PCons "Z" [], PVar "m"] (EVar "m")
    ,"plus (S p) m = p" # DLet [PVar "plus", PCons "S" [PVar "p"], PVar "m"] (EVar "p")
+   ,"incr n = S n" # DLet [PVar "incr", PVar "n"] EVar "S" $> EVar "n"
   ]
  

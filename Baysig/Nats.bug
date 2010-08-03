@@ -2,14 +2,22 @@ module Nats where
 
 data Nat = Z | S Nat
 
-plus Z     m = m 
+data Bool = True | False
+
+plus Z     m = m
 plus (S p) m = plus p (S m)
 
-{-plus' n m =  case n of
+
+{-plus n m =  case n of
                Z -> m
-               S p -> plus' p (S m) 
+               S p -> plus p (S m) 
 -}
+
 one = S Z
 two = S one
 
+incr = \n->S n 
+
 x = plus two two
+
+

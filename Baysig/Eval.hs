@@ -57,21 +57,21 @@ eval env (EApp ef ex) = do
       VLam vf -> vf x
       v -> fail $ "eval: expected lambda value, got: "++ show v
 eval env (ELam pat bd) = 
-    return $ VLam $ \x -> do exts <- match pat x 
+    return $ VLam $ \x -> do exts <- matchPV pat x 
                              eval (extsEnv exts env) bd 
 --                             Nothing -> fail $ "eval: incomplete pattern "++ show pat
 {-eval env (ELet pates e) = vfinal
     where f (p,ex) = do 
                  env' <- envExtsM
                  v <- eval env' ex
-                 match p v
+                 matchPV p v
           envExtsM = do nvals <- concat `fmap` sequence (return (vals env): map f pates)
                         return $ env {vals = nvals}
           vfinal = do 
                  env' <- envExtsM
                  eval env' e -}
 eval env (ELet pates e) = vfinal
-    where f (p,ex) = fromRights $ eval envExtsM ex >>= match p
+    where f (p,ex) = fromRights $ eval envExtsM ex >>= matchPV p
           envExtsM = let nvals = concat $ (vals env) : map f pates
                      in env {vals = nvals}
           vfinal =eval envExtsM e 
@@ -79,7 +79,7 @@ eval env (ELet pates e) = vfinal
 {-eval env (ELet [] bd) = eval env bd
 eval env (ELet ((pat,e):rest) bd) = do
   v <- eval env e
-  exts <- match pat v 
+  exts <- matchPV pat v 
   eval (extsEnv exts env) (ELet rest bd) -}
 
 eval env (ECase ex pats) = do
@@ -89,24 +89,38 @@ eval env (ECase ex pats) = do
 evalCase :: Env -> V -> [(Pat, E)] -> Either String V
 evalCase env v [] = Left $ "evalCase: non-exhaustive case; no match for: "++show v
 evalCase env v ((pat,e):rest) = 
-    case match pat v of
+    case matchPV pat v of
       Just exts -> eval (extsEnv exts env) e
       Nothing -> evalCase env v rest
 
-match :: MonadPlus m => Pat -> V -> m [(String, V)]
-match (PVar nm) v = return [(nm, v)]
-match PWild v = return []
-match (PBang p) v = match p v
-match (PLit v1) v2 | v1 == v2 = return []
-                   | otherwise = mzero
-match (PCons cnm1 pats) (VCons cnm2 vls) | cnm1 == cnm2 = matchCons $ zip pats vls
+matchE :: MonadPlus m => Pat -> E -> m [(String, E)]
+matchE p (ECon v) = do nmvs <- matchPV p v
+                       forM nmvs $ \(nm,v) -> return (nm, ECon v)
+matchE (PCons nm []) (EVar nm') | nm == nm' = return []
+                                | otherwise = mzero
+matchE (PCons nm []) e@(EApp f arg) = fail $ "matchE no match "++show e
+matchE (PCons nm ps) (EApp f arg) = do 
+       this_exts<- matchE (last ps) arg
+       more_exts<- matchE (PCons nm (init ps)) f
+       return $ this_exts ++ more_exts
+matchE (PVar nm) e = return [(nm, e)]
+matchE _ _ = fail "matchE fail"
+
+matchPV :: MonadPlus m => Pat -> V -> m [(String, V)]
+matchPV (PVar nm) v = return [(nm, v)]
+matchPV PWild v = return []
+matchPV (PBang p) v = matchPV p v
+matchPV (PTy t p) v = matchPV p v
+matchPV (PLit v1) v2 | v1 == v2 = return []
+                     | otherwise = mzero
+matchPV (PCons cnm1 pats) (VCons cnm2 vls) | cnm1 == cnm2 = matchCons $ zip pats vls
                                          | otherwise = mzero
-match (PCons _ _) v = mzero
+matchPV (PCons _ _) v = mzero
 
 matchCons :: MonadPlus m => [(Pat, V)] -> m [(String, V)]
 matchCons [] = return []
 matchCons ((pat, v):patvs) = do
-  env1 <- match pat v
+  env1 <- matchPV pat v
   env <- matchCons patvs
   return $ env1++env
   
