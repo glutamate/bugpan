@@ -49,7 +49,9 @@ betaConv ap@(EApp (ELam (PVar x) a) y) =
 betaConv _ = fail "betaConv"
 inst n e (Thm asm conse) = do
   let subf = subVar n e 
-  return $ Thm (map subf asm) $ subf conse
+  if any (n `isFreeVarIn`) asm
+     then fail "inst: not free"
+     else return $ Thm (map subf asm) $ subf conse
 match e = match' e e 
 match' e1 (ECase v []) = fail $ "match: no match "++show e1
 match' e1 (ECase v ((p,e):pates)) = (do

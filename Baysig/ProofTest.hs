@@ -17,7 +17,7 @@ showThm thm
 printProof thm = putStrLn $ showThm thm
 
 main = do (es,t) <- inEnv "Nats.bug" $ \env -> do
-                 er2 <- evalRule env (EVar "plus"
+                 er2 <- evalRule env (EVar "+"
                                        $> EVar "three"
                                        $> EVar "three")
                  return (env, er2)

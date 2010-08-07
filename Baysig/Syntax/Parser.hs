@@ -23,9 +23,10 @@ reservedKW = words "let in case where of switch if then else"
 parseE :: [FixDec] -> EParser E
 parseE fds = expr
     where expr = buildExpressionParser table factor <?> "expression"
-          table =map (map mkOp) $ groupFixeties fds
+          table =map (map mkOpE) $ groupFixeties fds
           factor =  foldl1 EApp `fmap` many1 term
           term =  try unitConstr <|>
+                  try tyAnno <|>
                   bracketed Parens expr <|>
                   try var <|> 
                   eint <|>
@@ -36,7 +37,6 @@ parseE fds = expr
                   try plet <|> 
                   try pcase <|>
                   try pswitch <|>
-                  try tyAnno <|>
                   lam
                   <?> "factor"
           var = do nm <- identifier 
@@ -47,15 +47,18 @@ parseE fds = expr
           edbl = (ECon . VReal) `fmap` con_float <?> "floating point number"
           lam = do 
                    opTok "\\" 
-                   pat <- parsePat
+                   pats <- many1 $ parsePat fds
                    opTok "->" 
                    e <- expr
-                   return $ ELam pat e
+                   let wrap (p:ps) = ELam p $ wrap ps
+                       wrap [] = e
+                   return $ wrap pats
                 <?> "lambda term"
-          tyAnno = do ty <- parseTy
-                      opTok ":"
+          tyAnno = bracketed Parens (do 
                       e <- expr
-                      return $ ETy ty e
+                      opTok ":"
+                      ty <- parseTy
+                      return $ ETy ty e)
                    <?> "type annotation"
           psig = EApp (EVar "sig") `fmap` bracketed Sig expr  <?> "signal expression"
           psigval = EApp (EVar "sigval") `fmap` bracketed SigVal expr  <?> "signal valueexpression"
@@ -75,7 +78,7 @@ parseE fds = expr
                           ae <- expr
                           return (EVar "if" $> pe $> ce $> ae)
                     <?> "let term"
-          pletline = do p <- parsePat
+          pletline = do p <- parsePat fds
                         opTok "="
                         pe <- expr
                         return (p,pe)
@@ -85,7 +88,7 @@ parseE fds = expr
                      ppes <- sepBy1 pcaseline (tok $ EndOf CaseLine)                     
                      return (ECase re ppes )
                      <?> "case term"
-          pcaseline = do p <- parsePat
+          pcaseline = do p <- parsePat fds
                          opTok "->"
                          pe <- expr
                          return (p,pe)
@@ -93,20 +96,20 @@ parseE fds = expr
                        ppes <- sepBy1 pswitchline (tok $ EndOf SwitchLine)                     
                        return (ECase (EVar "_switch") ppes)
                     <?> "switch term"
-          pswitchline = do p <- parsePat
+          pswitchline = do p <- parsePat fds
                            opTok "~>"
                            pe <- expr
                            return (p,pe)
                        
 
-parsePat :: EParser Pat
-parsePat = buildExpressionParser table pPat <?> "Pattern"
-    where pPat = pconstr <|> (bracketed Parens parsePat)
+parsePat :: [FixDec] -> EParser Pat
+parsePat fds = buildExpressionParser table pPat <?> "Pattern"
+    where pPat = pconstr <|> (bracketed Parens (parsePat fds))
                  <|> pvar
                  <|> (const PWild `fmap` tok Underscore)
                  <|> ((PLit . VInt) `fmap` con_int)
                  <?> "pattern"
-          table = [[bang_op]]
+          table = [bang_op] : map (map mkOpP) (groupFixeties fds)
           bang_op = Postfix (const (\p-> PBang p) `fmap` opTok "!")
           pvar = do nm <- identifier
                     if isLower $ head nm
@@ -116,6 +119,9 @@ parsePat = buildExpressionParser table pPat <?> "Pattern"
                                           guard $ not $ isLower $ head nm
                                           cargs <- many pPat
                                           return $ PCons nm cargs
+fudgePats [PCons nm@(n:_) ps] | n `elem` opChars = PVar nm : ps
+fudgePats ps = ps
+
 parseTy :: EParser T
 parseTy =  buildExpressionParser table pTy <?> "type expression"
     where pTy = foldl1 TApp `fmap` many1 term
@@ -131,13 +137,13 @@ parseTy =  buildExpressionParser table pTy <?> "type expression"
 
 parseD :: [FixDec] -> EParser D
 parseD fds = try mktyd <|> try letd <|> try tyd  <|> try impd <|> try psink <|> psource
-    where letd = do pats <- many1 parsePat
+    where letd = do pats <- many1 (parsePat fds)
                     guard (PVar "data" /= head pats)
                     opTok "=" 
                     e <- parseE fds
-                    return $ DLet pats e
-          tyd = do ids <- sepBy1 identifier (opTok ",")
-                   opTok "::"
+                    return $ DLet (fudgePats pats) e
+          tyd = do ids <- sepBy1 identifierOrOp (opTok ",")
+                   opTok ":"
                    ty <- parseTy
                    return $ DDecTy ids ty
           impd = do tok $ Id "import" 
@@ -154,7 +160,7 @@ parseD fds = try mktyd <|> try letd <|> try tyd  <|> try impd <|> try psink <|> 
                      nm <- identifier
                      param <- parseE fds
                      return (DSink e nm param)
-          psource = do p <- parsePat
+          psource = do p <- parsePat fds
                        opTok "<*"
                        nm <- identifier
                        param <- parseE fds

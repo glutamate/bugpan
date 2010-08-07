@@ -6,23 +6,31 @@ import Baysig.Syntax.Layout
 import Baysig.Syntax.Fixity
 import Text.Parsec.String 
 import Text.Parsec
-
+import Baysig.Transform
 main = do 
-   testBug <- readFile "Test.bug"
-   --mapM print $ map fst $ addDeclEnds $ lex 0 0 testBug
-   case parseDs testBug of
-     Left err -> do putStrLn $ "parse error in Test.bug: "++ err
-                    mapM_ print $ lexWithLayout testBug
-     Right ds -> putStrLn "Test.bug parse Ok"
+   tstParseFile "Test.bug"
+   tstParseFile "Nats.bug"
    mapM (runTst $ parseE stdFixity) etsts
-   mapM (runTst parsePat) pattsts
+   mapM (runTst $ parsePat stdFixity) pattsts
    mapM (runTst parseTy) tytsts
-   mapM (runTst $ parseD stdFixity) dtsts
+   mapM (runTstD) dtsts
  
 infixl 1 #
 (#) = (,)
 
 quiet = True
+
+runTstD :: (String, D) -> IO ()
+runTstD (s, e) 
+    = do           let toks = lexWithLayout s
+                   --print toks
+                   case (head . removeTopLevelPatterns . (:[])) `fmap` parse (parseD stdFixity) "" toks of
+                     Left err -> do putStrLn $ "error in "++s++ show err
+                                    putStrLn $ "tokens: "++show toks
+                     Right x | x == e -> if quiet then return () else putStrLn $ "pass: "++s
+                             | otherwise -> do putStrLn $ "not the same: "++s++" \ngot : "++show x
+                                               putStrLn $ "expected: "++show e
+                                               putStrLn $ "tokens: "++show toks
 
 --runTst :: (String ,E) -> IO ()
 runTst the_parser (s, e) 
@@ -35,6 +43,15 @@ runTst the_parser (s, e)
                              | otherwise -> do putStrLn $ "not the same: "++s++" \ngot : "++show x
                                                putStrLn $ "expected: "++show e
                                                putStrLn $ "tokens: "++show toks
+
+tstParseFile nm =  do
+   testBug <- readFile nm
+   --mapM print $ map fst $ addDeclEnds $ lex 0 0 testBug
+   case parseDs testBug of
+     Left err -> do putStrLn $ "parse error in "++nm++": "++ err
+                    mapM_ print $ lexWithLayout testBug
+     Right ds -> if quiet then return () else putStrLn $ nm++" parse Ok"
+
 
 etsts :: [(String, E)]
 etsts = [
@@ -49,9 +66,11 @@ etsts = [
       "2*x" # (2*EVar "x"),
       "\\x->2*x" # ELam (PVar "x") (2*EVar "x"),
       "\\_->2*1" # ELam (PWild) (2*1),
+      "\\x y->y*x" # ELam (PVar "x") (ELam (PVar "y") (EVar "y"*EVar "x")),
       "(\\x->2*x) 4" # EApp (ELam (PVar "x") (2*EVar "x")) 4
      ,"{: 1 :}" # EApp (EVar "sig") 1
      ,"<: s :>" # EApp (EVar "sigval") (EVar "s")
+     ,"(x:A)" # ETy (TCon "A") (EVar "x")
      ,"()" # ECon (VCons "()" [])
      ,"let x = 5 in x+2" # ELet [(PVar "x", 5)] (EVar "x"+2)
      ,"if p then c else a" # EVar "if" $> EVar "p" $> EVar "c" $>EVar "a"
@@ -88,12 +107,15 @@ dtsts = [
    ,"f x = 2*x" # DLet [PVar "f", PVar "x"] (2*EVar "x")
    ,"data Bool = T | F" # DMkType "Bool" [] [("T", []),("F", [])]
    ,"data Maybe ɑ = Just ɑ | Nothing" # DMkType "Maybe" ["ɑ"] [("Just",[TVar "ɑ"]),("Nothing",[])]
-   ,"myfun :: a -> b -> c" # DDecTy ["myfun"] (TLam (TVar "a") (TLam (TVar "b") (TVar "c")))
-   ,"myfun, otherfun :: a -> b -> c" # DDecTy ["myfun", "otherfun"] (TLam (TVar "a") (TLam (TVar "b") (TVar "c")))
+   ,"myfun : a -> b -> c" # DDecTy ["myfun"] (TLam (TVar "a") (TLam (TVar "b") (TVar "c")))
+   ,"myfun, otherfun : a -> b -> c" # DDecTy ["myfun", "otherfun"] (TLam (TVar "a") (TLam (TVar "b") (TVar "c")))
    ,"xyz *> dac 1" # DSink (EVar "xyz") "dac" 1
    ,"xyz <* adc 1" # DSource (PVar "xyz") "adc" 1
    ,"plus Z m = m" # DLet [PVar "plus", PCons "Z" [], PVar "m"] (EVar "m")
    ,"plus (S p) m = p" # DLet [PVar "plus", PCons "S" [PVar "p"], PVar "m"] (EVar "p")
-   ,"incr n = S n" # DLet [PVar "incr", PVar "n"] EVar "S" $> EVar "n"
+   ,"(S p) + m = p" # DLet [PVar "+", PCons "S" [PVar "p"], PVar "m"] (EVar "p")
+--   ,"S p + m = p" # DLet [PVar "+", PCons "S" [PVar "p"], PVar "m"] (EVar "p")
+   ,"incr n = S n" # DLet [PVar "incr", PVar "n"] (EVar "S" $> EVar "n")
+   ,"+ : Nat -> Nat -> Nat" # DDecTy ["+"] (TLam (TCon "Nat") (TLam (TCon "Nat") (TCon "Nat")))
   ]
  

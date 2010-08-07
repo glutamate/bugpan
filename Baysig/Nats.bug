@@ -2,22 +2,32 @@ module Nats where
 
 data Nat = Z | S Nat
 
+data Int = P Nat | N Nat
+
 data Bool = True | False
 
-plus Z     m = m
-plus (S p) m = plus p (S m)
+data [a] = a:[a] | []
 
+infixl 5 _+_
 
-{-plus n m =  case n of
-               Z -> m
-               S p -> plus p (S m) 
--}
+_ + _ : Nat -> Nat -> Nat
+Z + m = m
+(S p) + m = p + S m
 
 one = S Z
 two = S one
 three = S two
-incr = \n->S n 
+incr n = S n 
 
-x = plus two two
+x = two + two
 
+
++ : Plus a => a -> a -> a 
+x + y = plus a x y
+
+Plus : Set -> Bool
+Plus Nat = T
+
+plus : Plus a => (t:Set) -> (a:t) -> a -> a
+plus Nat x y = 
 

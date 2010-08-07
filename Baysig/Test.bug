@@ -1,11 +1,11 @@
 module Test where
 
-myfun :: a -> b -> c
+myfun : a -> b -> c
 myfun = x+f y
 
 bar = map foo myList
 
-smap ::  (a->b) -> Signal a -> Signal b
+smap :  (a->b) -> Signal a -> Signal b
 
 mysig = switch
            e ~> z

@@ -38,6 +38,11 @@ con_float = prim $ \t-> case t of
                            TokFloat s -> Just s
                            _ -> Nothing
 
+identifierOrOp :: EParser String
+identifierOrOp = prim $ \t-> case t of 
+                           Id s -> Just s
+                           Op s -> Just s
+                           _ -> Nothing
 
 identifier :: EParser String
 identifier = prim $ \t-> case t of 

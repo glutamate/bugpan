@@ -25,6 +25,10 @@ prec ( FixDec _ _ n _) = n
 
 groupFixeties fds = groupBy (\f1 f2 -> prec f1 == prec f2) $ reverse $ sortBy (comparing prec) fds
 
-mkOp (FixDec In ass _ nm) = Infix (const (\e1 e2-> EVar nm $> e1 $> e2) `fmap` opTok nm) ass
-mkOp (FixDec Pre _ _ nm) = Prefix (const (\e1-> EVar nm $> e1 ) `fmap` opTok nm) 
-mkOp (FixDec Post _ _ nm) = Postfix (const (\e1-> EVar nm $> e1 ) `fmap` opTok nm) 
+mkOpE (FixDec In ass _ nm) = Infix (const (\e1 e2-> EVar nm $> e1 $> e2) `fmap` opTok nm) ass
+mkOpE (FixDec Pre _ _ nm) = Prefix (const (\e1-> EVar nm $> e1 ) `fmap` opTok nm) 
+mkOpE (FixDec Post _ _ nm) = Postfix (const (\e1-> EVar nm $> e1 ) `fmap` opTok nm) 
+
+mkOpP (FixDec In ass _ nm) = Infix (const (\e1 e2-> PCons nm [ e1, e2]) `fmap` opTok nm) ass
+mkOpP (FixDec Pre _ _ nm) = Prefix (const (\e1-> PCons nm [e1] ) `fmap` opTok nm) 
+mkOpP (FixDec Post _ _ nm) = Postfix (const (\e1-> PCons nm [e1] ) `fmap` opTok nm) 
