@@ -24,18 +24,17 @@ import qualified System.Process as Proc
 import Control.Concurrent
 import Control.Exception
 
-myForkIO :: IO () -> IO (MVar ())
+myForkIO :: IO () -> IO ()
 myForkIO io = do
      mvar <- newEmptyMVar
      forkIO (io `finally` putMVar mvar ())
-     return mvar
+     takeMVar mvar
 
 interactivePlot ma =  do --putStrLn program
       h@(inp,o,e,pid) <- Proc.runInteractiveCommand "gnuplot" 
       threadDelay $ 100*1000
-      mv<- myForkIO $ do tellInteractiveSession h "set terminal wxt noraise"
-                         ma h
-      takeMVar mv
+      myForkIO $ do tellInteractivePlot h "set terminal wxt noraise"
+                    ma h
       hClose o
       hClose e
       hClose inp
@@ -43,15 +42,9 @@ interactivePlot ma =  do --putStrLn program
       Proc.waitForProcess pid      
       return ()
 
-tellInteractiveSession (inp,o,e,p) s = do
+tellInteractivePlot (inp,o,e,p) s = do
   hPutStr inp $ s++"\n"
   hFlush inp
-
-killInteractiveSession h@(inp,o,e,pid) = do 
-  o <- hGetContents e
-  putStrLn o
-  tellInteractiveSession h "exit"
-
 
 execGPPipe ::
       String {-^ The lines of the gnuplot script to be piped into gnuplot -}
