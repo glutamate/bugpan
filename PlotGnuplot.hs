@@ -21,6 +21,36 @@ import System.Random
 {- stolen from gnuplot-0.3.3 (Henning Thieleman) -}
 
 import qualified System.Process as Proc
+import Control.Concurrent
+import Control.Exception
+
+myForkIO :: IO () -> IO (MVar ())
+myForkIO io = do
+     mvar <- newEmptyMVar
+     forkIO (io `finally` putMVar mvar ())
+     return mvar
+
+interactivePlot ma =  do --putStrLn program
+      h@(inp,o,e,pid) <- Proc.runInteractiveCommand "gnuplot" 
+      threadDelay $ 100*1000
+      mv<- myForkIO $ do tellInteractiveSession h "set terminal wxt noraise"
+                         ma h
+      takeMVar mv
+      hClose o
+      hClose e
+      hClose inp
+      Proc.terminateProcess pid
+      Proc.waitForProcess pid      
+      return ()
+
+tellInteractiveSession (inp,o,e,p) s = do
+  hPutStr inp $ s++"\n"
+  hFlush inp
+
+killInteractiveSession h@(inp,o,e,pid) = do 
+  o <- hGetContents e
+  putStrLn o
+  tellInteractiveSession h "exit"
 
 
 execGPPipe ::
