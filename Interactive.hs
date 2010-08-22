@@ -1,30 +1,42 @@
 --module Interactive where
+{-# LANGUAGE ScopedTypeVariables #-} 
 module Main where
 
 import PlotGnuplot
 import GHC.Conc as Conc
 import System.IO
-import Control.Monad.State.Strict
+import Control.Monad.State.Lazy
 import qualified System.Process as Proc
 import Data.Maybe
+import QueryPlots
+import QueryTypes
+import Query
+import Database
 
 main = do
-  putStrLn "hello"
   interactively $ do adjustable "amplitude" 4
-                     loop [("s", tellGnuplot "plot sin(x)"),
-                           ("c", tellGnuplot "plot cos(x)")]
+                     loop [("plot sine", ("ps", tellGnuplot "plot sin(x)")),
+                           ("plot cosine", ("pc", tellGnuplot "plot cos(x)")),
+                           ("plot voltage", ("pv", do vm <- take 2 `fmap` signalsDirect "vm"
+                                                      liftIO $ print vm
+                                                      iplot $ vm)),
+                           ("show session", ("ss", showSession)),
+                           ("new session", ("sn", newSess))
+                          ]
+                     newline
 
 data InteractS = InteractS {
       adjVals :: [(String, Double)],
       curAdj :: String,
-      gnuplotH :: (Handle, Handle, Handle, Proc.ProcessHandle)
+      gnuplotH :: (Handle, Handle, Handle, Proc.ProcessHandle),
+      cleanupIO :: IO ()
     }
 
-type InteractM a = StateT InteractS IO a
+type InteractM a = StateT QState (StateT InteractS IO) a
 
 confirm :: String -> InteractM a -> InteractM a -> InteractM a
 confirm s yma nma = do newline
-                       printLn $ s
+                       printS $ s
                        c <- getKey 
                        case c of 
                          'y' -> yma
@@ -32,31 +44,35 @@ confirm s yma nma = do newline
                          _ -> confirm s yma nma
 
 
-interactively :: InteractM a -> IO ()
+interactively :: InteractM () -> IO ()
 interactively ima = do
   interactivePlot $ \h -> 
-        let initS = InteractS [] "" h
-        in do   hSetBuffering stdin NoBuffering
-                evalStateT ima initS 
-                return ()
-getKey = lift (hSetBuffering stdin NoBuffering >> getChar)
-printLn :: String -> InteractM ()
-printLn s = lift $ do putStrLn s
-                      hFlush stdout
+        let initS = InteractS [] "" h (return ())
+        in do hSetBuffering stdin NoBuffering
+              let is::StateT InteractS IO () = inLastOrNewSession ima
+              evalStateT is initS 
+              return ()
+getKey = liftIO (hSetBuffering stdin NoBuffering >> getChar)
+printLn, printS :: String -> InteractM ()
+printLn s = liftIO $ do putStrLn s
+                        hFlush stdout
+printS s = liftIO $ do putStr s
+                       hFlush stdout
 
-
+newline :: InteractM ()
+newline=  liftIO $ putChar '\n'    
 
 tellGnuplot :: String -> InteractM ()
-tellGnuplot s = do h <- gnuplotH `fmap` get 
-                   lift $ tellInteractivePlot  h s
+tellGnuplot s = do h <- lift $ gnuplotH `fmap` get 
+                   liftIO $ tellInteractivePlot  h s
 
 adjustables :: [(String, Double)] -> InteractM ()
-adjustables tab = modify $ \(InteractS vls x y) -> InteractS (tab++vls)  x y
+adjustables tab = lift $ modify $ \(InteractS vls x y c) -> InteractS (tab++vls)  x y c
 
 adjustable :: String -> Double -> InteractM ()
-adjustable nm v = modify $ \(InteractS vls x y) -> InteractS ((nm,v):vls)  x y
+adjustable nm v = lift $ modify $ \(InteractS vls x y c) -> InteractS ((nm,v):vls)  x y c
 
-loop :: [(String, InteractM ())] -> InteractM ()
+loop :: [(String, (String, InteractM ()))] -> InteractM ()
 loop actionTable = loop' [] where
   loop' inbuf = do
     when (null inbuf) prompt
@@ -64,40 +80,70 @@ loop actionTable = loop' [] where
     case c of 
       '?' -> help >> loop' []
       '+' -> adjust 1.05 >> loop' []
-      '-' -> adjust 0.95 >> loop' []
+      '-' -> adjust (1/1.05) >> loop' []
+      '*' -> adjust 1.30 >> loop' []
+      '/' -> adjust (1/1.30) >> loop' []
       'a' -> changeAdjust >> loop' []
-      'q' -> newline >> return ()
-      _ -> tryAction (c:inbuf) 
+      'q' -> cleanUpMess >> return ()
+--      'q' -> confirm "really quit (y/n)?" (cleanUpMess >> return ()) (newline >> loop' [])
+      _ -> tryAction (inbuf++[c]) 
     return ()
-  tryAction s = case lookup s actionTable of
+  tryAction s = case lookup s $ map snd actionTable of
                  Nothing -> loop' s
-                 Just ma -> ma >> loop' []
-  adjust factor = do InteractS allVls curNm h  <- get
+                 Just ma -> newline >> ma >> loop' []
+  adjust factor = do InteractS allVls curNm h  c <- lift get
                      let f (nm,v) | nm == curNm = (nm, v*factor)
                                   | otherwise = (nm,v)
-                     put $ InteractS (map f allVls) curNm h
-                     newline
+                     lift $ put $ InteractS (map f allVls) curNm h c
+                     newline 
                                   
-  help = do printLn "Help!"
-  changeAdjust =  do InteractS allVls curNm h <- get
+  help = do newline >> printLn "Help:"
+            forM actionTable $ \(nm,(key,_)) -> printLn $ key ++ ": "++nm
+  changeAdjust =  do InteractS allVls curNm h clUp <- lift get
                      newline
-                     forM (zip [0..] allVls) $ \(n, (nm,_)) -> printLn $ show n ++ ". "++nm
+                     forM (zip [0..] allVls) $ \(n, (nm,vl)) -> 
+                          printLn $ show n ++ ". "++nm++" "++accushow vl
                      c <- getKey
                      let newnm = case c of 
                                    'x' -> ""
                                    _ | c `elem` ['0'..'9'] -> fst $ allVls!!(read $ c:[])
                                      | otherwise -> curNm
-                     put $ InteractS allVls newnm h
-                     newline
-  prompt = do InteractS allVls curNm _ <- get
-              lift $ case curNm of
+                     lift $ put $ InteractS allVls newnm h clUp
+                     newline 
+  prompt = do InteractS allVls curNm _ _ <- lift get
+              liftIO $ case curNm of
                 "" -> putStr "> "
                 s -> let curVal = fromJust $ lookup s allVls
-                     in putStr $ curNm ++"=" ++ show curVal ++"> "
-              lift $ hFlush stdout
+                     in putStr $ curNm ++"=" ++ accushow curVal ++"> "
+              liftIO $ hFlush stdout
                 
-newline :: InteractM ()
-newline=  lift $ putChar '\n'    
+
+showSession :: InteractM ()
+showSession = do bdir <- (baseDir . qsSess) `fmap` get
+                 printLn bdir
+
+newSess :: InteractM ()
+newSess = do sess <- liftIO $ newSession sessionsRootDir
+             changeToSession sess
 
   
+cleanUpMess :: InteractM ()
+cleanUpMess = do 
+     InteractS _ _ _ clUp <- lift get
+     liftIO clUp
                       
+addToCleanUp :: IO () -> InteractM ()
+addToCleanUp mio = do is <- lift get
+                      lift $ put is {cleanupIO = cleanupIO is >> mio}
+
+iplot :: PlotWithGnuplot a => a -> InteractM ()
+iplot x = do
+  plines <- liftIO $ multiPlot unitRect x
+  let cmdLines = "set datafile missing \"NaN\"\n"++
+                  (showMultiPlot plines)
+                       
+  liftIO $ putStrLn cmdLines
+  tellGnuplot cmdLines
+  addToCleanUp $ cleanupCmds $ map snd plines
+  return ()
+

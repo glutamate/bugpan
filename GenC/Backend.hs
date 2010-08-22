@@ -175,10 +175,14 @@ step (SinkConnect (Var nm) (bufnm, _)) | head bufnm == '#' =
 step d = []
 
 dynStepper (stage,ds) 
-    | isDynClamp ds = [CFun CIntT ("stepdyn"++show stage) [] $ dynBegin++[dynLoop ds]++dynEnd]
+    | isDynClamp ds = [CFun CIntT ("stepdyn"++show stage) [] $ dynBegin ds++[dynLoop ds]++dynEnd]
     | otherwise = []
-
-dynBegin = 
+ 
+dynBegin ds = 
+    let headOr x [] = x
+        heador _ (x:_) = x
+        chanIn = headOr "0" [pp chan | ReadSource _ ("ADC",chan) <- ds ] 
+        chanOut = headOr "0" [pp chan | SinkConnect _ ("DAC",chan) <- ds ] in 
     [LitCmds 
        ["RTIME until;",
         "RTIME samp_time=dt*1000*1000*1000;",
@@ -202,8 +206,8 @@ dynBegin =
 	"       printf(\"Board initialization failed.\\n\");",
 	"       return 1;",
 	"}",
-	"BUILD_AREAD_INSN(insn_read, subdevai, data[0], 1, 0, AI_RANGE, AREF_GROUND);",
-	"BUILD_AWRITE_INSN(insn_write, subdevao, data[1], 1, 0, AO_RANGE, AREF_GROUND);",
+	"BUILD_AREAD_INSN(insn_read, subdevai, data[0], 1, "++chanIn++" , AI_RANGE, AREF_GROUND);",
+	"BUILD_AWRITE_INSN(insn_write, subdevao, data[1], 1, "++chanOut++", AO_RANGE, AREF_GROUND);",
         "data[1] = from_phys(0);",
         "until = rt_get_time();",
         "tlast = count2nano(until);"]]

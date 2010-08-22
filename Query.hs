@@ -274,6 +274,12 @@ ttest1 getvls = do
   let pval =  (1-) $ studentIntegral (tval) (realToFrac df)
   return $ printf "one-sample t(%d)=%.3g, p=%.3g" df tval pval 
 
+inLastOrNewSession :: (MonadIO m, Functor m) => StateT QState m a -> m a
+inLastOrNewSession sma = do 
+  ms <- liftIO $ safeLastSession sessionsRootDir
+  case ms of
+     Just s -> inSession s sma
+     Nothing -> inNewSession sma                
 
 inLastSession :: (MonadIO m, Functor m) => StateT QState m a -> m a
 inLastSession sma = do
@@ -286,6 +292,12 @@ inSession s sma =  do args <- liftIO $ getArgs
                       gen <- liftIO $ getStdGen
                       rnds <- liftIO $ randoms gen
                       fst `fmap`  (runStateT sma $ QState s 0 0 True args Nothing rnds False False 0)
+
+changeToSession  :: (MonadIO m, Functor m) => Session -> StateT QState m ()
+changeToSession s = do
+    qs <- get
+    put qs { qsSess = s,  lastTStart = 0, lastTStop = 0} 
+   
 
 inSessionFromArgs :: (MonadIO m, Functor m) => StateT QState m a -> m a
 inSessionFromArgs sma = do allargs <- liftIO $ getArgs

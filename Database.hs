@@ -133,6 +133,13 @@ lastSession rootDir = do
   let dir = fst $ maximumBy (comparing snd) sesnsTm
   loadExactSession dir
 
+safeLastSession :: FilePath -> IO (Maybe Session)
+safeLastSession rootDir = do
+  sesns <- getSessionInRootDir rootDir
+  if null sesns 
+     then return Nothing
+     else Just `fmap` lastSession rootDir
+
 deleteSession :: Session -> IO ()
 deleteSession (Session dir _) = system ("rm -rf "++ dir) >> return ()
 
