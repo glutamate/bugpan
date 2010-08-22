@@ -1,4 +1,4 @@
-module Backend where
+module GenC.Backend where
 
 import Statement 
 --import Compiler 
@@ -16,7 +16,7 @@ import Data.Maybe
 import TNUtils
 import EvalM
 import Query (bugpanRootDir) 
-import Syntax
+import GenC.Syntax
 import Parse
 import System.Environment
 import Numbers
@@ -175,12 +175,12 @@ step (SinkConnect (Var nm) (bufnm, _)) | head bufnm == '#' =
 step d = []
 
 dynStepper (stage,ds) 
-    | isDynClamp ds = [CFun CIntT ("stepdyn"++show stage) [] $ dynBegin ds++[dynLoop ds]++dynEnd]
+    | isDynClamp ds = [CFun CIntT ("stepdyn"++show stage) [] $ dynBegin ds++[dynLoop ds]++dynEnd ds]
     | otherwise = []
  
 dynBegin ds = 
     let headOr x [] = x
-        heador _ (x:_) = x
+        headOr _ (x:_) = x
         chanIn = headOr "0" [pp chan | ReadSource _ ("ADC",chan) <- ds ] 
         chanOut = headOr "0" [pp chan | SinkConnect _ ("DAC",chan) <- ds ] in 
     [LitCmds 
@@ -223,11 +223,15 @@ dynLoop ds =
                       "tlast= tnow;",
                       "rt_sleep_until(until += nano2count(samp_time));"]]
 	
-dynEnd = 
+dynEnd ds= 
+    let headOr x [] = x
+        headOr _ (x:_) = x
+        chanIn = headOr "0" [pp chan | ReadSource _ ("ADC",chan) <- ds ] 
+        chanOut = headOr "0" [pp chan | SinkConnect _ ("DAC",chan) <- ds ] in 
     [LitCmds 
        ["comedi_cancel(dev, subdevai);",
 	"comedi_cancel(dev, subdevao);",
-	"comedi_data_write(dev, subdevao, 0, 0, AREF_GROUND, from_phys(0));",
+	"comedi_data_write(dev, subdevao, "++chanOut++", 0, AREF_GROUND, from_phys(0));",
 	"//comedi_data_write(dev, subdevao, 1, 0, AREF_GROUND, 2048);",
 	"comedi_close(dev);"],
     LitCmds 

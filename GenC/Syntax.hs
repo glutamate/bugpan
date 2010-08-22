@@ -1,4 +1,4 @@
-module Syntax where
+module GenC.Syntax where
 
 import Expr
 import EvalM

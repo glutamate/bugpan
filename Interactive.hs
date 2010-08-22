@@ -17,9 +17,7 @@ main = do
   interactively $ do adjustable "amplitude" 4
                      loop [("plot sine", ("ps", tellGnuplot "plot sin(x)")),
                            ("plot cosine", ("pc", tellGnuplot "plot cos(x)")),
-                           ("plot voltage", ("pv", do vm <- take 2 `fmap` signalsDirect "vm"
-                                                      liftIO $ print vm
-                                                      iplot $ vm)),
+                           ("plot voltage", ("pv", do iplotSig "vm")),
                            ("show session", ("ss", showSession)),
                            ("new session", ("sn", newSess))
                           ]
@@ -49,8 +47,7 @@ interactively ima = do
   interactivePlot $ \h -> 
         let initS = InteractS [] "" h (return ())
         in do hSetBuffering stdin NoBuffering
-              let is::StateT InteractS IO () = inLastOrNewSession ima
-              evalStateT is initS 
+              evalStateT (inLastOrNewSession ima) initS 
               return ()
 getKey = liftIO (hSetBuffering stdin NoBuffering >> getChar)
 printLn, printS :: String -> InteractM ()
@@ -147,3 +144,10 @@ iplot x = do
   addToCleanUp $ cleanupCmds $ map snd plines
   return ()
 
+
+iplotSig :: String -> InteractM ()
+iplotSig nm = do
+     s <- signalsDirect nm
+     if null s
+        then return ()
+        else iplot $ [last s]

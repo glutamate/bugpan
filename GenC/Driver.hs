@@ -1,6 +1,6 @@
-module Driver where
+module GenC.Driver where
 
-import Backend
+import GenC.Backend
 
 import QueryTypes
 --import QueryRun
@@ -25,7 +25,7 @@ import qualified Data.StorableVector as SV
 import NewSignal
 import GHC.Conc
 
-useRT ::  MonadIO m => String -> [(String, T)] -> StateT QState m (String, Double, Double)
+useRT :: MonadIO m => String -> [(String, T)] -> m (String, Double, Double)
 useRT fnm params = do
   ds' <- io $ fileDecls fnm []
   let ds = let runTM = runTravM ds' [] in snd . runTM $ transform
@@ -46,7 +46,7 @@ useRT fnm params = do
 invokeRT (fnm, tmax,dt) vals = do
   s <- get
   t0 <- getTnow 
-  rt <- realTime `fmap` get
+--  rt <- realTime `fmap` get
   let t0' = if t0 < lastTStop s 
                then lastTStop s +1
                else t0 
