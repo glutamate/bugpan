@@ -163,6 +163,11 @@ fileDecls fnm' subs = do
   case pProgram $ myLLexer conts of 
     Bad s -> fail $ fnm++": "++s++"\nfile name: \n"++fnm++"\nfile contents: \n"++conts
     Ok ast -> onlyOneModuleName `fmap` ( processImports . makeSubs subs $ convertProgram ast)
+
+stringDecls conts subs = do
+  case pProgram $ myLLexer conts of 
+    Bad s -> fail $ "stringDecls: "++s++"\nstring contents: \n"++conts
+    Ok ast -> onlyOneModuleName `fmap` ( processImports . makeSubs subs $ convertProgram ast)
                 
 
 onlyOneModuleName :: [Declare] -> [Declare]

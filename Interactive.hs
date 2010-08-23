@@ -12,11 +12,30 @@ import QueryPlots
 import QueryTypes
 import Query
 import Database
+import GenC.Driver
+import EvalM
+import Numbers 
+
+stdProg nm ln = unlines [
+ "module "++nm++" where",
+ "use Prelude",
+ "vm <* ADC 0",
+ "vm *> store \"\"",
+ "_tmax = 0.1",
+ "_dt = 5.0e-5",
+ ln]
+
+stimLegS = stdProg "StimLeg" "step 0.01 legwidth legamp *> DAC 0"
+stimNerveS = stdProg "StimNerve" "step 0.01 nervewidth nerveamp *> DAC 1"
 
 main = do
   interactively $ do adjustable "amplitude" 4
+                     stimLeg <- use stimLegS
+                     stimNerve <- use stimNerveS
                      loop [("plot sine", ("ps", tellGnuplot "plot sin(x)")),
                            ("plot cosine", ("pc", tellGnuplot "plot cos(x)")),
+                           ("stimulate leg", ("l", invoke stimLeg)),
+                           ("stimulate nerve", ("n", invoke stimNerve)),
                            ("plot voltage", ("pv", do iplotSig "vm")),
                            ("show session", ("ss", showSession)),
                            ("new session", ("sn", newSess))
@@ -151,3 +170,28 @@ iplotSig nm = do
      if null s
         then return ()
         else iplot $ [last s]
+
+invoke :: (String, Double, Double) ->  InteractM ()
+invoke tok = do 
+  vals <- adjVals `fmap` lift get
+  invokeRT tok $ map f vals
+      where f (nm,dbl) = (nm, NumV $ NReal dbl)
+
+useFile :: String -> InteractM (String, Double, Double)
+useFile fnm = do
+    adjNms <- (map fst . adjVals) `fmap` lift get
+    useRT fnm $ zip adjNms $ repeat (NumT (Just RealT))
+
+use :: String -> InteractM (String, Double, Double)
+use s = do
+    adjNms <- (map fst . adjVals) `fmap` lift get
+    useRTs s $ zip adjNms $ repeat (NumT (Just RealT))
+
+    
+interval s = do
+  st <- get
+  t0 <- getTnow
+  let twait = s - (t0 - lastTStart st)
+  printLn $ "waiting "++show twait ++" s" 
+  wait twait
+

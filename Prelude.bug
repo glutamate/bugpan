@@ -39,6 +39,9 @@ every = \ivl->eventIf ((fraction (<: seconds :>/ivl)) < dt)
 zip s1 s2 = {: (<: s1 :>, <: s2 :>) :}
 zipWith f s1 s2 = {:  f <: s1 :> <: s2 :> :}
 
+step :: Real -> Real -> Real -> Signal Real
+step t0 width amp = {: if (<:seconds :> > t0) && (<:seconds :> < (t0+width)) then amp else 0 :}
+
 {-peak sig = let sigpeak = sscan peakf (sig@0, 0) (zip sig seconds)
      	       (peakval, peakt) = sigpeak@tmax
 	   in [(peakt, peakval)]

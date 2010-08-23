@@ -24,13 +24,24 @@ import ValueIO
 import qualified Data.StorableVector as SV
 import NewSignal
 import GHC.Conc
+import Data.Char
 
 useRT :: MonadIO m => String -> [(String, T)] -> m (String, Double, Double)
 useRT fnm params = do
-  ds' <- io $ fileDecls fnm []
+  ds <- io $ fileDecls fnm []
+  useRTds ds params
+
+useRTs :: MonadIO m => String -> [(String, T)] -> m (String, Double, Double)
+useRTs s params = do
+  ds <- io $ stringDecls s []
+  useRTds ds params
+
+useRTds :: MonadIO m => [Declare] -> [(String, T)] -> m (String, Double, Double)
+useRTds ds' params = do
   let ds = let runTM = runTravM ds' [] in snd . runTM $ transform
   let dt = (lookupDefn "_dt" ds >>= vToDbl) `orJust` 0.001
   let tmax = (lookupDefn "_tmax" ds >>= vToDbl) `orJust` 1
+  let fnm = head [map toLower nm | Let (PatVar "moduleName" _) (Const (StringV nm)) <- ds]
   let fileroot = (head $ splitBy '.' fnm)
   let filec = fileroot++".c"
   let gccArgs = if isDynClamp ds
@@ -73,4 +84,5 @@ invokeRT (fnm, tmax,dt) vals = do
     io $ removeFile sigfp
   return ()
    --
-wait s =  liftIO (threadDelay $ s*1000*1000)
+wait :: MonadIO m => Double -> m ()
+wait s =  liftIO (threadDelay $ round $ s*1000*1000)
