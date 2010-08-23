@@ -47,15 +47,16 @@ main = do
                      adjustable "legwidth" 0.002
                      adjustable "nerveamp" 4
                      adjustable "nervewidth" 0.002
-                     stimLeg <- use stimLegS
-                     stimNerve <- use stimNerveS
+--                     stimLeg <- use stimLegS
+--                     stimNerve <- use stimNerveS
                      loop [("plot sine", ("ps", tellGnuplot "plot sin(x)")),
                            ("plot cosine", ("pc", tellGnuplot "plot cos(x)")),
-                           ("stimulate leg", ("l", invoke stimLeg>>plotvm)),
-                           ("stimulate nerve", ("n", invoke stimNerve>>plotvm)),
+--                           ("stimulate leg", ("l", invoke stimLeg>>plotvm)),
+--                           ("stimulate nerve", ("n", invoke stimNerve>>plotvm)),
                            ("plot voltage", ("pv", do iplotSig "vm")),
                            ("show session", ("ss", showSession)),
-                           ("new session", ("sn", newSess))
+                           ("new session", ("sn", newSess)),
+                           ("wait ", ("w", falseStart >> interval 5 (printLn "noKey!")))
                           ]
                      newline
 
@@ -85,7 +86,7 @@ interactively ima = do
         in do hSetBuffering stdin NoBuffering
               evalStateT (inLastOrNewSession ima) initS 
               return ()
-getKey = liftIO (hSetBuffering stdin NoBuffering >> getChar)
+getKey = liftIO (getChar)
 printLn, printS :: String -> InteractM ()
 printLn s = liftIO $ do putStrLn s
                         hFlush stdout
@@ -93,7 +94,9 @@ printS s = liftIO $ do putStr s
                        hFlush stdout
 
 newline :: InteractM ()
-newline=  liftIO $ putChar '\n'    
+newline=  liftIO $ do bufmode <- hGetBuffering stdin
+                      when (bufmode /= NoBuffering) $ hSetBuffering stdin NoBuffering 
+                      putChar '\n'    
 
 tellGnuplot :: String -> InteractM ()
 tellGnuplot s = do h <- lift $ gnuplotH `fmap` get 
@@ -112,6 +115,7 @@ loop actionTable = loop' [] where
     c <- getKey
     case c of 
       '?' -> help >> loop' []
+      '\n' -> loop' []
       '+' -> adjust 1.05 >> loop' []
       '-' -> adjust (1/1.05) >> loop' []
       '*' -> adjust 1.30 >> loop' []
@@ -187,27 +191,49 @@ iplotSig nm = do
         then return ()
         else iplot $ map (sigZero . sigInit 0.099) [last s]
 
-invoke :: (String, Double, Double) ->  InteractM ()
+invoke :: CompileToken ->  InteractM ()
 invoke tok = do 
   vals <- adjVals `fmap` lift get
+  let f (nm,dbl) = (nm, NumV $ NReal dbl)
   invokeRT tok $ map f vals
-      where f (nm,dbl) = (nm, NumV $ NReal dbl)
+  forM_ vals $ \(nm, v) -> inLast (nm := v) 
 
-useFile :: String -> InteractM (String, Double, Double)
+useFile :: String -> InteractM CompileToken
 useFile fnm = do
     adjNms <- (map fst . adjVals) `fmap` lift get
     liftIO $ useRT fnm $ zip adjNms $ repeat (NumT (Just RealT))
 
-use :: String -> InteractM (String, Double, Double)
+use :: String -> InteractM CompileToken
 use s = do
     adjNms <- (map fst . adjVals) `fmap` lift get
     liftIO $ useRTs s $ zip adjNms $ repeat (NumT (Just RealT))
 
-    
-interval s = do
+interval :: Double -> InteractM () -> InteractM ()
+interval s action = do
   st <- get
   t0 <- getTnow
-  let twait = s - (t0 - lastTStart st)
-  printLn $ "waiting "++show twait ++" s" 
-  wait twait
+  let twait = max 0 $ s - (t0 - lastTStart st)
+  let mswait = round $ twait * 1000
+  printLn $ "waiting "++show twait ++" s"
+  inAvail <- waitForInput (min 500 mswait) 
+  case () of _ | inAvail ->  return ()
+               | twait < 0.5 -> action
+               | otherwise -> interval s action
 
+falseStart :: InteractM ()
+falseStart = do
+  tnow <- getTnow
+  st <- get
+  put $ st { lastTStart = tnow }
+
+waitForInput :: Int -> InteractM Bool
+waitForInput ms = do
+  liftIO (threadDelay $ ms*1000)
+  --liftIO $ hFlush stdin
+  inReady <- liftIO $ hReady stdin
+
+  return inReady
+
+waitForInput' :: Int -> InteractM Bool
+waitForInput' ms = do
+  liftIO $ hWaitForInput stdin ms

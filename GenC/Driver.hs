@@ -30,28 +30,30 @@ isLeft (Left _ ) = True
 isLeft _ = False
 fromRight (Right x) = x
 
+type CompileToken =  (String, String, String, Double, Double)
 
-useRT :: String -> [(String, T)] -> IO (String, Double, Double)
+
+useRT :: String -> [(String, T)] -> IO CompileToken 
 useRT fnm params = do
   ds <- io $ fileDecls fnm []
   useRTds ds params
 
-useRTs :: String -> [(String, T)] -> IO (String, Double, Double)
+useRTs :: String -> [(String, T)] -> IO CompileToken
 useRTs s params = do
   --liftIO $ print s
   ds <- io $ stringDecls s []
   --liftIO $ print ds
   useRTds ds params
 
-useRTds :: [Declare] -> [(String, T)] -> IO (String, Double, Double)
+useRTds :: [Declare] -> [(String, T)] -> IO CompileToken
 useRTds ds' params = do
   --liftIO $ print ds'
   let eds = safeRunTravM ds' transform
   let ds = fromRight eds 
   let dt = (lookupDefn "_dt" ds >>= vToDbl) `orJust` 0.001
   let tmax = (lookupDefn "_tmax" ds >>= vToDbl) `orJust` 1
-  let fnms = [map toLower nm | Let (PatVar "moduleName" _) (Const (StringV nm)) <- ds]
-  let fileroot = head fnms --(head $ splitBy '.' fnm)
+  let modNm = head [nm | Let (PatVar "moduleName" _) (Const (StringV nm)) <- ds]
+  let fileroot =  map toLower modNm --(head $ splitBy '.' fnm)
   let filec = fileroot++".c"
   let gccArgs = if isDynClamp ds
                    then concat ["-I. -I/usr/realtime/include ",
@@ -67,9 +69,9 @@ useRTds ds' params = do
   --io $print gccArgs
   io $ system $ "gcc "++gccArgs
   --io $print "compile done"
-  return (fileroot, tmax, dt)
+  return (fileroot, modNm, unlines $ map ppDecl ds', tmax, dt)
 
-invokeRT (fnm, tmax,dt) vals = do
+invokeRT (fnm, modNm, prg, tmax,dt) vals = do
   s <- get
   t0 <- getTnow 
 --  rt <- realTime `fmap` get
@@ -85,6 +87,10 @@ invokeRT (fnm, tmax,dt) vals = do
             lastTStop = t0' + tmax}
   signms <- fmap (filter ("dyn_sig_" `isPrefixOf`)) $ liftIO (getDirContents ".")
   inLast ("running" := ()) 
+  inLast ("moduleName" := modNm) 
+  inLast ("program" := prg) 
+  let initLower (x:xs) = toLower x : xs
+  inLast (initLower modNm := ()) 
   let npnts = round $ tmax/dt
 
   forM signms $ \sigfp-> do
