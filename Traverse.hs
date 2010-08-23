@@ -88,6 +88,13 @@ runTravM decs env tx
                                              
       in (x, decsFinal)
 
+safeRunTravM :: [Declare] -> TravM a -> Either String [Declare]
+safeRunTravM decs tx 
+    = let initS = TravS 0 decs [] [] 0 [] False []
+      in case runStateT tx initS of
+                  Left s -> Left s
+                  Right (x, TravS _ decsFinal _ _ _ _ _ _)  -> Right decsFinal
+
 
 
 mapDE :: (E-> TravM E) -> TravM ()
