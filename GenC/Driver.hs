@@ -26,23 +26,32 @@ import NewSignal
 import GHC.Conc
 import Data.Char
 
-useRT :: MonadIO m => String -> [(String, T)] -> m (String, Double, Double)
+isLeft (Left _ ) = True
+isLeft _ = False
+fromRight (Right x) = x
+
+
+useRT :: String -> [(String, T)] -> IO (String, Double, Double)
 useRT fnm params = do
   ds <- io $ fileDecls fnm []
   useRTds ds params
 
-useRTs :: MonadIO m => String -> [(String, T)] -> m (String, Double, Double)
+useRTs :: String -> [(String, T)] -> IO (String, Double, Double)
 useRTs s params = do
+  --liftIO $ print s
   ds <- io $ stringDecls s []
+  --liftIO $ print ds
   useRTds ds params
 
-useRTds :: MonadIO m => [Declare] -> [(String, T)] -> m (String, Double, Double)
+useRTds :: [Declare] -> [(String, T)] -> IO (String, Double, Double)
 useRTds ds' params = do
-  let ds = let runTM = runTravM ds' [] in snd . runTM $ transform
+  --liftIO $ print ds'
+  let eds = safeRunTravM ds' transform
+  let ds = fromRight eds 
   let dt = (lookupDefn "_dt" ds >>= vToDbl) `orJust` 0.001
   let tmax = (lookupDefn "_tmax" ds >>= vToDbl) `orJust` 1
-  let fnm = head [map toLower nm | Let (PatVar "moduleName" _) (Const (StringV nm)) <- ds]
-  let fileroot = (head $ splitBy '.' fnm)
+  let fnms = [map toLower nm | Let (PatVar "moduleName" _) (Const (StringV nm)) <- ds]
+  let fileroot = head fnms --(head $ splitBy '.' fnm)
   let filec = fileroot++".c"
   let gccArgs = if isDynClamp ds
                    then concat ["-I. -I/usr/realtime/include ",
@@ -50,8 +59,13 @@ useRTds ds' params = do
                                 "-L/usr/realtime/lib -lpthread -lkcomedilxrt -lm -lcomedi -o ",
                                 fileroot," dyncal.c ",filec]
                    else "-lm -Wall "++" -o "++fileroot++" "++filec
+  io $print "compile done0"
+  --io $ print eds 
+  mapM print ds
   io $ compileToC filec dt tmax ds params 
+  io $print gccArgs
   io $ system $ "gcc "++gccArgs
+  io $print "compile done"
   return (fileroot, tmax, dt)
 
 invokeRT (fnm, tmax,dt) vals = do

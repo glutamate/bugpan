@@ -16,26 +16,46 @@ import GenC.Driver
 import EvalM
 import Numbers 
 
-stdProg nm ln = unlines [
+stdProg nm ln = unlines $ [
  "module "++nm++" where",
- "use Prelude",
+ "vm :: Signal Real",
  "vm <* ADC 0",
+ "step :: Real -> Real -> Real -> Signal Real",
+ "step t0 width amp = {: if (<:seconds :> > t0) && (<:seconds :> < (t0+width)) then amp else 0 :}",
+ "legwidth :: Real","legamp :: Real",
+ "nervewidth :: Real","nerveamp :: Real",
+ "legwidth=0.001", "legamp=4",
+ "nervewidth=0.001","nerveamp=4",
+ "stim :: Signal Real",
  "vm *> store \"\"",
  "_tmax = 0.1",
- "_dt = 5.0e-5",
- ln]
+ "_dt = 5.0e-5"] ++ ln
 
-stimLegS = stdProg "StimLeg" "step 0.01 legwidth legamp *> DAC 0"
-stimNerveS = stdProg "StimNerve" "step 0.01 nervewidth nerveamp *> DAC 1"
+stimLegS = stdProg "StimLeg" 
+              ["stim = step 0.01 legwidth legamp",
+               "stim*> DAC 0"]
+stimNerveS = stdProg "StimNerve" 
+               ["stim = step 0.01 nervewidth nerveamp",
+                "stim *> DAC 1"]
+
+plotvm = iplotSig "vm"
 
 main = do
-  interactively $ do adjustable "amplitude" 4
+  sleg <- useRTs stimLegS [("legwidth", NumT (Just RealT)),
+                           ("legamp", NumT (Just RealT))]
+  interactively $ do adjustable "legamp" 4
+                     adjustable "legwidth" 0.002
+                     adjustable "nerveamp" 4
+                     adjustable "nervewidth" 0.002
+                     printLn "hello"
                      stimLeg <- use stimLegS
+                     printLn "hello2"
+                     liftIO $ print stimLeg
                      stimNerve <- use stimNerveS
                      loop [("plot sine", ("ps", tellGnuplot "plot sin(x)")),
                            ("plot cosine", ("pc", tellGnuplot "plot cos(x)")),
-                           ("stimulate leg", ("l", invoke stimLeg)),
-                           ("stimulate nerve", ("n", invoke stimNerve)),
+                           ("stimulate leg", ("l", invoke stimLeg>>plotvm)),
+                           ("stimulate nerve", ("n", invoke stimNerve>>plotvm)),
                            ("plot voltage", ("pv", do iplotSig "vm")),
                            ("show session", ("ss", showSession)),
                            ("new session", ("sn", newSess))
@@ -180,12 +200,12 @@ invoke tok = do
 useFile :: String -> InteractM (String, Double, Double)
 useFile fnm = do
     adjNms <- (map fst . adjVals) `fmap` lift get
-    useRT fnm $ zip adjNms $ repeat (NumT (Just RealT))
+    liftIO $ useRT fnm $ zip adjNms $ repeat (NumT (Just RealT))
 
 use :: String -> InteractM (String, Double, Double)
 use s = do
     adjNms <- (map fst . adjVals) `fmap` lift get
-    useRTs s $ zip adjNms $ repeat (NumT (Just RealT))
+    liftIO $ useRTs s $ zip adjNms $ repeat (NumT (Just RealT))
 
     
 interval s = do
