@@ -232,6 +232,18 @@ renameCopiedEvents = mapD rnmCE
                                                    return Nop
           rnmCE d = return d 
 
+removeUnusedIdentifiers :: TravM ()
+removeUnusedIdentifiers = mapD rUI where
+   rUI d@(Let (PatVar nm _) e) = do
+         ds <- decls `fmap` get                     
+         if null (filter (nm `usedIn`) ds)
+            then return Nop
+            else return d
+   rUI d = return d
+   usedIn nm (Let _ e) = isSubTermIn (Var nm) e
+   usedIn nm (SinkConnect e _) = isSubTermIn (Var nm) e
+
+
 removeNops :: TravM ()
 removeNops = setter $ \s-> s{ decls = filter (not . isNop) $ decls s}
     where isNop Nop = True
@@ -541,6 +553,8 @@ transforms =   [(typeCheck, "typeCheck")
                 ,(sigFloating, "sigFloating")
                 ,(unDelays, "unDelays")
                 ,(addBuffersToStore, "addBuffersToStore")
+                ,(removeUnusedIdentifiers, "removeUnusedIdentifiers")
+                ,(removeNops, "removeNops")
                ]
 
 transform :: TravM ()
