@@ -34,10 +34,10 @@ compileToC fp dt tmax ds params = do
   --mapM print ds
 
   --putStrLn "\n---------------\n"
-  let stgs@(env:stageDs) = splitByStages ds
-  forM stgs $ \ds-> do
-    putStrLn "\n---------------stage\n"
-    mapM (putStrLn . ppDecl)  ds
+  --let stgs@(env:stageDs) = splitByStages ds
+  --forM stgs $ \ds-> do
+  --  putStrLn "\n---------------stage\n"
+  --  mapM (putStrLn . ppDecl)  ds
   let prg = ppCProg $ toC dt tmax ds params
   writeFile (fp) prg
   --putStrLn prg 

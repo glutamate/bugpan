@@ -242,7 +242,7 @@ removeUnusedIdentifiers = mapD rUI where
    rUI d = return d
    usedIn nm (Let _ e) = isSubTermIn (Var nm) e
    usedIn nm (SinkConnect e _) = isSubTermIn (Var nm) e
-
+   usedIn nm _ = False
 
 removeNops :: TravM ()
 removeNops = setter $ \s-> s{ decls = filter (not . isNop) $ decls s}

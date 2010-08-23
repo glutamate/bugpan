@@ -55,17 +55,18 @@ useRTds ds' params = do
   let filec = fileroot++".c"
   let gccArgs = if isDynClamp ds
                    then concat ["-I. -I/usr/realtime/include ",
+                                "-I/home/tomn/bugpan/GenC ",
                                 "-I/usr/src/linux/include -Wall -pipe -D_GNU_SOURCE ",
                                 "-L/usr/realtime/lib -lpthread -lkcomedilxrt -lm -lcomedi -o ",
-                                fileroot," dyncal.c ",filec]
+                                fileroot," /home/tomn/bugpan/GenC/dyncal.c ",filec]
                    else "-lm -Wall "++" -o "++fileroot++" "++filec
-  io $print "compile done0"
+  --io $print "compile done0"
   --io $ print eds 
-  mapM print ds
+  --mapM print ds
   io $ compileToC filec dt tmax ds params 
   io $print gccArgs
   io $ system $ "gcc "++gccArgs
-  io $print "compile done"
+  --io $print "compile done"
   return (fileroot, tmax, dt)
 
 invokeRT (fnm, tmax,dt) vals = do
