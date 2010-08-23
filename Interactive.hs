@@ -41,8 +41,6 @@ stimNerveS = stdProg "StimNerve"
 plotvm = iplotSig "vm"
 
 main = do
-  sleg <- useRTs stimLegS [("legwidth", NumT (Just RealT)),
-                           ("legamp", NumT (Just RealT))]
   interactively $ do adjustable "legamp" 4
                      adjustable "legwidth" 0.002
                      adjustable "nerveamp" 4

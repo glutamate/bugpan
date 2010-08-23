@@ -129,6 +129,7 @@ ppEC (Cmp Gt e1 e2) = inPar $ ppEC e1 ++ " > " ++ ppEC e2
 ppEC (Var nm) = nm
 ppEC (SigVal (Var nm)) = nm++"Val"
 ppEC (And e1 e2) = inPar $ ppEC e1++"&&"++ppEC e2 
+ppEC (Sig e) = ppEC e
 ppEC e = error2 "ppEC: " e
 
 ppOp e op e2 = ppEC e++op++ppEC e2
