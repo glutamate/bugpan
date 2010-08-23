@@ -30,6 +30,7 @@ import Numeric
 --import Transform
 --import Stages
 import Data.Ord
+import Data.Char
 import Control.Concurrent
 import TNUtils
 import PrettyPrint
@@ -59,7 +60,7 @@ createSession rootDir t0@(TOD t1 t2) name = do
 getUUID :: IO String
 getUUID = do
   u <- sh "uuidgen"
-  return $ filter (/='-') u
+  return $ filter (isAlphaNum) u
 
 newSession :: FilePath -> IO Session
 newSession rootDir = do

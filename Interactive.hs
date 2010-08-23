@@ -15,6 +15,7 @@ import Database
 import GenC.Driver
 import EvalM
 import Numbers 
+import NewSignal
 
 stdProg nm ln = unlines $ [
  "module "++nm++" where",
@@ -41,15 +42,12 @@ stimNerveS = stdProg "StimNerve"
 plotvm = iplotSig "vm"
 
 main = do
-  useRTs stimLegS []
+  --useRTs stimLegS []
   interactively $ do adjustable "legamp" 4
                      adjustable "legwidth" 0.002
                      adjustable "nerveamp" 4
                      adjustable "nervewidth" 0.002
-                     printLn "hello"
                      stimLeg <- use stimLegS
-                     printLn "hello2"
-                     liftIO $ print stimLeg
                      stimNerve <- use stimNerveS
                      loop [("plot sine", ("ps", tellGnuplot "plot sin(x)")),
                            ("plot cosine", ("pc", tellGnuplot "plot cos(x)")),
@@ -177,18 +175,17 @@ iplot x = do
   let cmdLines = "set datafile missing \"NaN\"\n"++
                   (showMultiPlot plines)
                        
-  liftIO $ putStrLn cmdLines
+  --liftIO $ putStrLn cmdLines
   tellGnuplot cmdLines
   addToCleanUp $ cleanupCmds $ map snd plines
   return ()
-
-
+ 
 iplotSig :: String -> InteractM ()
 iplotSig nm = do
      s <- signalsDirect nm
      if null s
         then return ()
-        else iplot $ [last s]
+        else iplot $ map (sigZero . sigInit 0.099) [last s]
 
 invoke :: (String, Double, Double) ->  InteractM ()
 invoke tok = do 

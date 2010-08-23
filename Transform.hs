@@ -553,7 +553,7 @@ transforms =   [(typeCheck, "typeCheck")
                 ,(sigFloating, "sigFloating")
                 ,(unDelays, "unDelays")
                 ,(addBuffersToStore, "addBuffersToStore")
-                ,(removeUnusedIdentifiers, "removeUnusedIdentifiers")
+--                ,(removeUnusedIdentifiers, "removeUnusedIdentifiers")
                 ,(removeNops, "removeNops")
                ]
 

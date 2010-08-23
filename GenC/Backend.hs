@@ -34,10 +34,10 @@ compileToC fp dt tmax ds params = do
   --mapM print ds
 
   --putStrLn "\n---------------\n"
-  --let stgs@(env:stageDs) = splitByStages ds
-  --forM stgs $ \ds-> do
-  --  putStrLn "\n---------------stage\n"
-  --  mapM (putStrLn . ppDecl)  ds
+--  let stgs@(env:stageDs) = splitByStages ds
+--  forM stgs $ \ds-> do
+--    putStrLn "\n---------------stage\n"
+--    mapM (putStrLn . ppDecl)  ds
   let prg = ppCProg $ toC dt tmax ds params
   writeFile (fp) prg
   --putStrLn prg 
@@ -127,7 +127,9 @@ gloVar _ (Let (PatVar nm t) (Const v)) =
 gloVar _ (Let (PatVar nm ft) lam@(Lam _ _ _)) = 
           let nms = flatLamNms lam
               tys = map bugTyToCTy $ flatLamTy ft
-          in [CFun (last tys) nm (zip nms $ init tys) [Return $ lamBody lam]]
+          in case last $ flatLamTy ft of
+                SignalT _ -> []
+                _ -> [CFun (last tys) nm (zip nms $ init tys) [Return $ lamBody lam]]
 gloVar _ (Let (PatVar nm t) (SolveOde (SigFby v e))) = 
                     [DeclareGlobal (bugTyToCTy t) (nm++"Val") (Just v)]
 gloVar _ (Let (PatVar nm t) (SolveOde e)) = 
@@ -164,7 +166,7 @@ stepper (stage,ds) = [CFun VoidT ("step"++show stage) [] $ (secs:(concat$ nub $m
 step (Let (PatVar nm t) (Sig e)) = [Assign (Var (nm++"Val")) $ unVal e]
 step (Let (PatVar nm t) (Forget tm e)) = 
           [Assign (Var (nm)) (Var "forget_events" $> Var nm $> (Var "secondsVal"- tm))]
---step (SinkConnect (Var nm) ("store", _)) = [Assign (Var ("("++nm++"->arr)[i]")) $ Var  (nm++"Val")]
+step (SinkConnect (Var nm) ("store", _)) = [Assign (Var ("("++nm++"->arr)[i]")) $ Var  (nm++"Val")]
 step (Let (PatVar nm t) (SolveOde (SigFby v e))) = 
                     [Assign (Var (nm++"Val")) $ (Var (nm++"Val")) + Var "dt" * unVal (SigVal e)]
 step (Let (PatVar nm t) (SolveOde (Sig e))) = 
@@ -244,6 +246,7 @@ dynEnd ds=
 
 stepd (SinkConnect (Var nm) ("DAC", _)) = [Assign  (Var "data[1]") (Var "from_phys" $> Var (nm++"Val")) ]
 stepd (ReadSource nm ("ADC", _)) = [Assign (Var (nm++"Val")) $ Var "to_phys" $> Var "data[0]"]
+--stepd (SinkConnect (Var nm) ("store", _)) = [Assign (Var ("("++nm++"->arr)[i]")) $ Var  (nm++"Val")]
 stepd d = step d
 
 traceD what nm = [Call "printf" [Const (StringV $ what ++ " " ++ nm ++" %g\n"), Var nm], Call "fflush" [Var "stdout"]]

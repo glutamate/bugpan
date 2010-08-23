@@ -64,7 +64,7 @@ useRTds ds' params = do
   --io $ print eds 
   --mapM print ds
   io $ compileToC filec dt tmax ds params 
-  io $print gccArgs
+  --io $print gccArgs
   io $ system $ "gcc "++gccArgs
   --io $print "compile done"
   return (fileroot, tmax, dt)
