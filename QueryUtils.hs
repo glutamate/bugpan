@@ -235,6 +235,13 @@ sigStat' (F op init c cmb) sig@(Signal t1 t2 dt sf _) =
         v = c $! foldSig op init sig 
     in ((t1,t2),v)
 
+baseline :: Double -> Double -> [Signal Double] -> [Signal Double]
+baseline tb1 tb2 = map f where
+  f s@(Signal t1 t2 _ _ _) = 
+     let bsig = limitSig (t1+tb1) (t1+tb2) s
+         bval = snd $ sigStat' meanF bsig
+     in fmap (subtract bval) s
+
 x === ys = (x `isPrefixOf`)//ys
 
 catevents :: [Event a] -> [Event a] -> [Event a]
