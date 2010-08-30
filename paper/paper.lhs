@@ -36,6 +36,33 @@ for neuroinformatics research.
 
 \section*{Introduction}
 
+Formalising scientific inference and knowledge in mathematical
+frameworks removes ambiguity and thus allows ideas to be formulated
+and communicated efficiently, and inferences to be scrutinised (Refs:
+ross king ontology; jaynes; harold jeffreys; suppes) Many aspects of
+such a formalisation, including hypothesis testing, estimation and
+prediction, are addressed in \emph{statistics} and \emph{experimental
+  design}. Nevertheless, it is much more difficult to formalise the
+experiments and analysis procedures that bridge physical reality or
+biological organisms to the quantities to which a statistical test can
+be applied. This formalisation is difficult because experiments
+produce heterogeneous data, and because experiments interact with the
+real world and therefore cannot be described purely by relations
+between mathematical objects. Consequently, experiments are invariably
+described in natural languages and carried out manually or by ad-hoc
+computer code. Formalisations have been restricted to narrow
+application areas (tidal; linda; ross) that seem difficult to generalise.
+
+There has been intense work recently in computer science on the
+ability to capture side effects, including input and output, in purely
+equational programming languages (Refs: peyton jones;
+wadler). Expressions in such languages languages can be freely
+substituted by terms with identical meanings. For instance, no matter
+how or where the quantity |w| is defined, |w+w| can always be
+substituted by |2*w|. This property, which is called referential
+transparency \citep{Whitehead1927}, is shared by all ``mathematical''
+notations but not by conventional programming languages. 
+
 Mechanical reasoning removes ambiguity and thus allows ideas to be
 formulated and communicated efficiently, and inferences to be
 scrutinised. Consequently, formal languages and calculi have had a
