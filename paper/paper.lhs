@@ -19,15 +19,18 @@
 
 Scientific experiments can be seen as programs that manipulate and
 observe the physical world; nevertheless, there has been almost no
-work in programming language theory to formalise experiments. Here, we
-propose a formal framework for experimentation and analysis in
+work in formalising experiments mathematically. Here, we propose a
+formal framework for experimentation and analysis in
 physiology. First, we define a structure for physiological evidence
 within simple type theory. This structure emphasises the critical role
 of time in physiology, but is flexible, in that it can carry
-information of any type. Second, we show that experiments themselves
-can be composed as a wiring of time-dependent quantities, and be
-expressed as purely mathematical equations that can be manipulated
-algebraically. To demonstrate the practicality and versatility of our
+information of any type. Thus, we define an ontology of physiological
+quantities that can describe a wide range of observations. Second, we
+show that experiments themselves can be composed as a wiring of
+time-dependent quantities, and be expressed as purely mathematical
+equations that can be manipulated algebraically. Our framework is
+concise, allowing entire experiments to be defined unambiguously in a
+few equations. To demonstrate the practicality and versatility of our
 approach, we show the full equations for two non-trivial implemented
 and analysed experiments describing visually stimulated neuronal
 responses and dynamic clamp. The brevity of these definitions
@@ -36,32 +39,95 @@ for neuroinformatics research.
 
 \section*{Introduction}
 
-Formalising scientific inference and knowledge in mathematical
-frameworks removes ambiguity and thus allows ideas to be formulated
-and communicated efficiently, and inferences to be scrutinised (Refs:
-ross king ontology; jaynes; harold jeffreys; suppes) Many aspects of
-such a formalisation, including hypothesis testing, estimation and
-prediction, are addressed in \emph{statistics} and \emph{experimental
-  design}. Nevertheless, it is much more difficult to formalise the
-experiments and analysis procedures that bridge physical reality or
-biological organisms to the quantities to which a statistical test can
-be applied. This formalisation is difficult because experiments
-produce heterogeneous data, and because experiments interact with the
-real world and therefore cannot be described purely by relations
-between mathematical objects. Consequently, experiments are invariably
-described in natural languages and carried out manually or by ad-hoc
-computer code. Formalisations have been restricted to narrow
-application areas (tidal; linda; ross) that seem difficult to generalise.
+Formalising scientific inference in mathematical frameworks removes
+ambiguity and thus allows protocols, data and knowledge to be
+formulated and communicated efficiently and transparently, and
+inferences to be scrutinised \citep{Soldatova2006, Jaynes2003,
+  Jeffreys1937, Krantz1971}. Many aspects of the scientific
+enterprise, including hypothesis testing, estimation, and parameter
+choice in experiments, are addressed rigorously in \emph{statistics}
+and \emph{experimental design}. Nevertheless, it is much more
+difficult to formalise the actual experiments, which bridge, say
+physical reality or biological organisms, to the quantities to which a
+statistical test can be applied. This formalisation is difficult
+because experiments produce heterogeneous data, and because
+experiments interact with the physical world and therefore cannot be
+described purely by relations between mathematical
+objects. Consequently, experiments are invariably described in natural
+languages and carried out manually or by ad-hoc computer
+code. Formalisations have been restricted to narrow application areas
+\citep{Jenkins1989, Manduchi1990, King2004} that seem difficult to
+generalise.
 
-There has been intense work recently in computer science on the
-ability to capture side effects, including input and output, in purely
-equational programming languages (Refs: peyton jones;
-wadler). Expressions in such languages languages can be freely
-substituted by terms with identical meanings. For instance, no matter
-how or where the quantity |w| is defined, |w+w| can always be
-substituted by |2*w|. This property, which is called referential
-transparency \citep{Whitehead1927}, is shared by all ``mathematical''
-notations but not by conventional programming languages. 
+Whether they are carried out by humans or by automated equipment, many
+experiments can be seen as \emph{programs} that manipulate and observe
+the real world. This view suggests that experiment descriptions must
+resemble programming languages. We take advantage of progress in
+embedding side effects, including input and output
+\citep{PeytonJones2002, Roy2004, Wadler1995} into purely functional
+programming languages. These languages, unlike conventional
+programming languages, retain an important characteristic of
+mathematics: terms can be freely substituted by terms with identical
+meanings. This property \citep[referential
+transparency;][]{Whitehead1927} enables algebraic manipulation and
+reasoning about the programs \citep{Bird1996}.
+
+Here, we model physiological experiments in a formal mathematical
+framework. Our work is based on Functional Reactive Programming
+\citep[FRP;][]{Elliott1997, Nilsson2002}, an elegant formulation of
+time-dependent reactive computer programs. We show that there is
+substantial overlap between the concepts introduced by FRP and
+physiological observations; consequently, physiological experiments
+can be concisely defined in a FRP-like language. This framework does
+not describe the physical components of biological organisms; it has no
+concept of networks, cells or proteins. Instead it describes the
+observation and calculation of the mathematical objects that
+constitute physiological evidence.
+
+Our approach provides:
+
+(i) an explicitly defined ontology of physiological observations. We
+outline a flexible but concisely defined catalogue of physiological
+quantities. This ontology can form the basis for repositories of
+physiological data and meta-data. Unlike in bioinformatics or anatomy,
+physiological databases have not found widespread adoption
+\citep{Herz2008}. We suggest that our simple yet flexible ontology can
+remedy some of the structural shortcomings of existing databases and
+thus facility data sharing \citep{Insel2003}.
+
+(ii) a new language for describing complex experiments and analysis
+procedures in physiology. Thus experimental protocols can be
+communicated unambiguously, highlighting differences between studies
+and facilitating replication and meta-analysis. In addition,
+expression in our framework can be a components of precisely
+formulated theories.
+
+(iii) an entirely new approach to validating scientific inference. By
+inspecting an experiment definition, automated decision procedures can
+verify statements that form part of sound scientific practice, such as
+consistent units of measure \citep{Kennedy1997} and correct error
+propagation \citep{Taylor1997}. The use of formal languages can thus
+bring transparency to complex experiments and analyses.
+
+(iv) a practical tool that is more general and powerful than existing
+experimental control systems available to physiologists. We
+have implemented this calculus of evidence as a new programming
+language and used it for non-trivial neurophysiological experiments
+and data analysis.
+
+Here, we first describe the theory of \emph{simple types} and define three
+types that can represent physiological evidence. We then present a new
+formal and machine-executable language for defining observations and
+transformations of such evidence. Finally, we show that two very
+different experiments from neurophysiology can be formally defined,
+run and analysed in our calculus. In the first example, we measure
+\emph{in vivo} spike train responses to visual stimulation in
+locusts. In the second example, we examine the impact of an active
+potassium conductance on synaptic integration using the dynamic clamp
+technique. These protocols are defined unambiguously using only a
+handful of equations in our language.
+
+\section*{Old Introduction}
 
 Mechanical reasoning removes ambiguity and thus allows ideas to be
 formulated and communicated efficiently, and inferences to be
@@ -88,11 +154,7 @@ studies and allow a clearer formulation of what constitutes sound
 scientific practice.  Here, we propose a calculus of physiological
 evidence that can describe experiments on biological organisms such
 that they can be unambiguously replicated and be inspected to certify
-whether analysis procedures are applicable. This framework does not
-describe the physical components of biological organism; it has no
-concept of networks, cells or proteins. Instead it describes the
-observation and calculation of the mathematical objects that
-constitute physiological evidence.
+whether analysis procedures are applicable. 
 
 Whether they are carried out by humans or by automated equipment, many
 experiments can be seen as \emph{programs} that manipulate and observe
@@ -849,6 +911,11 @@ represented by a signal in these systems. Although these data may be
 respresentable in different data structures, they cannot then be
 manipulated by functions written to transform generic signals.
 
+In particular, we suggest that two oft-used technologies in knowledge
+representation, relational databases and the semantic web, are not
+optimally tuned to representing physiological data (a task for which
+they were not designed).
+
 Our account of physiological evidence solves or immediately proposes
 solutions to many problems in neuroinformatics. One such problem is
 the difficulty of sharing primary data \citep{Amari2002}. We have
@@ -903,7 +970,7 @@ that correspond to subjects or relations in a semantic web ontology.
 If we consider that science is based on logic \citep{Jaynes2003}, it
 must be possible in principle to mechanically verify scientific
 inference, just as mathematical proofs can be verified by a proof
-checker (ref). It is of course not possible to verify particular
+checker \citep{Harrison2009}. It is of course not possible to verify particular
 hypotheses about the physical world, or an organism. What can be
 verified are statements about experiments --- for instance, that:
 particular variables were randomly controlled and not observed;
@@ -918,7 +985,7 @@ issues in relating observations to parameter estimation and hypothesis
 testing, but every procedure makes assumptions about how those
 observations are obtained. Experiment description languages, and the
 reification of experimental observations into values of concrete types
-(which may not always be the type of real numbers), can play an
+(which may not always be the real numbers), can play an
 important role in such inference. The statistical framework within
 which such inferences take place has an impact on the amount of
 information that must be analysed. For instance, if we accept the
