@@ -8,9 +8,10 @@
 \usepackage{natbib}
 \usepackage{graphicx}
 %\usepackage{epsfig}
-\onehalfspacing
-\title{A calculus for physiological experiments and analyses}
-\author{Thomas A. Nielsen, Henrik Nilsson and Tom Matheson}
+\onehalfspacing \title{A (mathematical or formal) framework for
+  physiological (quantities, evidence or observations) experiments and
+  analyses} \author{Thomas A. Nielsen, Henrik Nilsson and Tom
+  Matheson}
 \begin{document}
 
 \maketitle
@@ -40,38 +41,37 @@ research.
 \section*{Introduction}
 
 Formalising scientific inference in mathematical frameworks removes
-ambiguity and thus allows protocols, data and knowledge to be
-formulated and communicated efficiently and transparently, and
-inferences to be scrutinised \citep{Soldatova2006, Jaynes2003,
-  Jeffreys1937, Krantz1971}. Many aspects of the scientific
-enterprise, including hypothesis testing, estimation, and parameter
-choice in experiments, are addressed rigorously in \emph{statistics}
-and \emph{experimental design}. Nevertheless, it is much more
-difficult to formalise the actual experiments, which bridge from, say
-physical reality or biological organisms, to the numbers to which a
-statistical test can be applied. This formalisation is difficult
-because experiments produce heterogeneous data, and because
-experiments interact with the physical world and therefore cannot be
-described purely by relations between mathematical
-objects. Consequently, experiments are invariably described in natural
-languages and carried out manually or by \emph{ad hoc} computer
-code. Formalisations have been restricted to narrow application areas
-\citep{Jenkins1989, Manduchi1990, King2004} that seem difficult to
-generalise.
+ambiguity and thus allows protocols to be formulated efficiently,
+knowledge to be communicated transparently, and inferences to be
+scrutinised \citep{Soldatova2006, Jaynes2003, Krantz1971}. Many
+aspects of the scientific enterprise, including hypothesis testing,
+estimation, and optimal parameter choice, are addressed rigorously in
+\emph{statistics} and \emph{experimental design}. Nevertheless,
+without knowing where observations come from, it is difficult to
+ascertain whether they provide evidence for a given hypothesis
+\citep{Tukey1962}. Formalising the experiments themselves is difficult
+because they produce heterogeneous data, and because experiments
+interact with the physical world and therefore cannot be described
+purely by relations between mathematical objects. Consequently,
+experiments are invariably described in natural languages and carried
+out manually or by \emph{ad hoc} computer code. Formalisations have
+focused on the execution of specific experiments \citep{Jenkins1989,
+  Manduchi1990, King2004} that seem difficult to generalise.
 
 Whether they are carried out by humans or by automated equipment, many
 experiments can be seen as \emph{programs} that manipulate and observe
 the real world. This view suggests that experiment descriptions must
-resemble programming languages. We take advantage of progress in
-embedding side effects, such as input and output
-\citep{PeytonJones2002, Roy2004, Wadler1995} into purely equational
-programming languages, that is languages that can only evaluate
-mathematical functions \citep{Church1941}. These languages, unlike
-conventional programming languages, retain an important characteristic
-of mathematics: terms can be freely substituted by terms with
-identical meanings. This property \citep[referential
-transparency;][]{Whitehead1927} enables algebraic manipulation and
-reasoning about the programs \citep{Bird1996}.
+resemble programming languages. In creating a mathematical framework
+for experiments, we take advantage of progress in embedding side
+effects, such as input and output \citep{PeytonJones2002, Roy2004,
+  Wadler1995} into purely equational programming languages, that is
+languages that can only evaluate mathematical functions
+\citep{Church1941}. These languages, unlike conventional programming
+languages, retain an important characteristic of mathematics: terms
+can be freely substituted by terms with identical meanings. This
+property \citep[referential transparency;][]{Whitehead1927} enables
+algebraic manipulation and reasoning about the programs
+\citep{Bird1996}.
 
 Here, we formalise physiological experiments in a mathematical
 framework. Our work is based on Functional Reactive Programming
@@ -85,38 +85,38 @@ concept of networks, cells or proteins. Instead it describes the
 observation and calculation of the mathematical objects that
 constitute physiological evidence.
 
-Our approach provides:
+Our framework provides:
 
 (i) an explicitly defined ontology of physiological observations. We
-outline a flexible but concisely defined catalogue of physiological
+outline a flexible but concisely defined structure for physiological
 quantities. This ontology can form the basis for repositories of
 physiological data and meta-data. Unlike in bioinformatics or anatomy,
 physiological databases have not found widespread adoption
 \citep{Herz2008, Amari2002}, despite many attempts \citep{Katz2010,
-  Teeters2008, Gardner2004, Jessop2010}. We suggest that our simple
-yet flexible ontology can remedy some of the structural shortcomings
-of existing databases \citep{Gardner2005, Amari2002} and thus facility data
-sharing \citep{Insel2003}.
+  Teeters2008, Gardner2004, Jessop2010}. We suggest that the
+flexibility of our ontology can remedy some of the structural
+shortcomings of existing databases \citep{Gardner2005, Amari2002} and
+thus facilitate data sharing \citep{Insel2003}.
 
 (ii) a new language for describing complex experiments and analysis
 procedures in physiology. Thus experimental protocols can be
 communicated unambiguously, highlighting differences between studies
 and facilitating replication and meta-analysis. In addition,
-expression in our framework can be components of precisely
-formulated theories.
+expressions in our framework can be components of precisely
+formulated scientific theories.
 
-(iii) an entirely new approach to validating scientific inference. By
-inspecting an experiment definition, automated decision procedures can
-verify statements that indicate sound scientific practice, such as
-consistent units of measure \citep{Kennedy1997} and correct error
-propagation \citep{Taylor1997}. The use of formal languages can thus
-bring transparency to complex experiments and analyses.
+(iii) an new approach to validating scientific inference
+\citep{Editors2003}. By inspecting an experiment definition, automated
+decision procedures can verify statements about experiments that
+indicate sound scientific practice, such as consistent units of
+measure \citep{Kennedy1997} and correct error propagation
+\citep{Taylor1997}. The use of formal languages can thus bring
+transparency to complex experiments and analyses.
 
-(iv) a practical tool that is more general and powerful than existing
-experimental control systems available to physiologists. We
-have implemented our framework as a new programming
+(iv) a practical tool that is powerful and generalises to multimodal
+experiments. We have implemented our framework as a new programming
 language and used it for non-trivial neurophysiological experiments
-and data analysis.
+and data analyses.
 
 Here, we first describe the theory of \emph{simple types}
 \citep{Pierce2002} and define three types that can represent
