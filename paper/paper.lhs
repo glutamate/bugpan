@@ -1,6 +1,7 @@
 \documentclass[11pt]{article}
 %include polycode.fmt
 %include lhs2tex-braincurry-preamble
+\usepackage[a4paper, top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm]{geometry}
 \usepackage{amsmath, amsthm, amssymb}
 \usepackage{setspace} 
 \usepackage{verbatim} 
@@ -8,8 +9,8 @@
 \usepackage{natbib}
 \usepackage{graphicx}
 %\usepackage{epsfig}
-\onehalfspacing \title{A (mathematical or formal) framework for
-  physiological (quantities, evidence or observations) experiments and
+\doublespacing \title{A (mathematical or formal) framework for
+  physiological (quantities, evidence or observations), experiments and
   analyses} \author{Thomas A. Nielsen, Henrik Nilsson and Tom
   Matheson}
 \begin{document}

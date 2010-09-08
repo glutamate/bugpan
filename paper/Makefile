@@ -10,4 +10,4 @@ intro:
 	bibtex justtext
 	latex justtext
 	pdflatex -halt-on-error justtext.tex
-
+	latex2rtf justtext

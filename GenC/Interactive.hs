@@ -16,6 +16,9 @@ import GenC.Driver
 import EvalM
 import Numbers 
 import NewSignal
+import System.Environment
+import TNUtils
+import Data.List
 
 dcmd = unlines $ [
  "module RecordDCMD where",
@@ -79,20 +82,29 @@ main = do
                      stimNerve <- use stimNerveS
                      recdcmd <- use dcmd
                      recBoth <- use recBothS
-                     loop [("plot sine", ("ps", tellGnuplot "plot sin(x)")),
-                           ("plot cosine", ("pc", tellGnuplot "plot cos(x)")),
-                           ("stimulate leg", ("l", invoke stimLeg>>plotvm)),
-                           ("record nerve", ("d", invoke recdcmd>>plotvm)),
-                           ("record both", ("b", invoke recBoth>>plotvm)),
-                           ("stimulate nerve", ("n", invoke stimNerve>>plotvm)),
-                           ("plot voltage", ("pv", do iplotSig "vm")),
-                           ("show session", ("ss", showSession)),
-                           ("new session", ("sn", newSess)),
-                           ("wait ", ("w", falseStart >> interval 5 (printLn "noKey!")))
-                          ]
-                     newline
+                     
+                     action "stimulate leg" "l" $ invoke stimLeg>>plotvm
+                     action "record nerve" "d" $ invoke recdcmd>>plotvm
+                     action "record both" "b" $ invoke recBoth>> iplot2Sigs "vm" "ec"
+                     action "stimulate nerve" "n" $ invoke stimNerve>>plotvm
+                     action "show session" "ss" $ showSession
+                     action "new session" "sn" $ newSess
+                     action "help" "?" help
+                     action "increase 30%" "*" $ adjustBy 1.30
+                     action "increase 5%" "+" $ adjustBy 1.05
+                     action "decrease 5%" "-" $ adjustBy (1/1.05)
+                     action "decrease 30%" "/" $ adjustBy (1/1.30)
+                     action "make note" "n" $ do s <- getLn "Note> "
+                                                 mkNote s
+                     changeAdjustAction "legamp" "1"
+                     changeAdjustAction "legwidth" "2"
+                     changeAdjustAction "nerveamp" "3"
+                     changeAdjustAction "nervewidth" "4"
 
+                     loop
+  
 data InteractS = InteractS {
+      actions :: [(String, (String, InteractM ()))],
       adjVals :: [(String, Double)],
       curAdj :: String,
       gnuplotH :: (Handle, Handle, Handle, Proc.ProcessHandle),
@@ -113,11 +125,15 @@ confirm s yma nma = do newline
 
 interactively :: InteractM () -> IO ()
 interactively ima = do
+  --w <- initScr
   interactivePlot $ \h -> 
-        let initS = InteractS [] "" h (return ())
+        let initS = InteractS [] [] "" h (return ())
         in do hSetBuffering stdin NoBuffering
               evalStateT (inLastOrNewSession ima) initS 
               return ()
+  bufmode <- hGetBuffering stdin
+  when (bufmode /= LineBuffering) $ hSetBuffering stdin LineBuffering 
+  --endWin
 getKey = liftIO (getChar)
 printLn, printS :: String -> InteractM ()
 printLn s = liftIO $ do putStrLn s
@@ -129,63 +145,107 @@ newline :: InteractM ()
 newline=  liftIO $ do bufmode <- hGetBuffering stdin
                       when (bufmode /= NoBuffering) $ hSetBuffering stdin NoBuffering 
                       putChar '\n'    
+getLn :: String -> InteractM String
+getLn s = do printS s 
+             liftIO $ do 
+                bufmode <- hGetBuffering stdin
+                when (bufmode /= LineBuffering) $ hSetBuffering stdin LineBuffering 
+                s<- getLine
+                hSetBuffering stdin NoBuffering 
+                return s
+
+mkNote :: String -> InteractM ()
+mkNote str = do
+  t1 <- getTnow
+  sess@(Session bdir _) <- getSession
+  liftIO $ saveInSession sess "note" t1 0.001 $ pack [(t1,str)]
+  return ()
 
 tellGnuplot :: String -> InteractM ()
 tellGnuplot s = do h <- lift $ gnuplotH `fmap` get 
                    liftIO $ tellInteractivePlot  h s
 
 adjustables :: [(String, Double)] -> InteractM ()
-adjustables tab = lift $ modify $ \(InteractS vls x y c) -> InteractS (tab++vls)  x y c
+adjustables tab = lift $ modify $ \(InteractS as vls x y c) -> InteractS as (tab++vls)  x y c
 
 adjustable :: String -> Double -> InteractM ()
-adjustable nm v = lift $ modify $ \(InteractS vls x y c) -> InteractS ((nm,v):vls)  x y c
+adjustable nm v = lift $ modify $ \(InteractS as vls x y c) -> InteractS as ((nm,v):vls)  x y c
 
-loop :: [(String, (String, InteractM ()))] -> InteractM ()
-loop actionTable = loop' [] where
+action :: String -> String -> InteractM () -> InteractM ()
+action nm key act = lift $ modify $ \(InteractS as vls x y c) -> InteractS ((nm,(key,act)):as) vls x y c
+
+changeAdjustAction :: String -> String -> InteractM()
+changeAdjustAction nm key = action ("adjust "++nm) key $ changeAdjust nm
+
+help :: InteractM ()
+help = do actionTable <- (reverse . actions) `fmap` lift get
+          termcols::Int <- read `fmap` liftIO (getEnv "COLUMNS")
+--          newline
+          let maxdesclen = foldr max 0 $ map (length . fst) actionTable
+          let maxkeylen = foldr max 0 $ map (length . fst . snd) actionTable
+          let ncols = termcols `div` (maxdesclen+maxkeylen+5)
+          let padStr n s = s ++ replicate (n- length s) ' '
+          let showEntry (nm,(key, _)) = padStr (maxkeylen+2) (key++":") ++  padStr (maxdesclen+3) nm 
+          printLn "Help:"
+          forM_ (inChunksOf ncols actionTable ) $ \acts -> do 
+               forM_ acts $ printS . showEntry
+               newline
+          
+
+
+loop :: InteractM ()
+loop = do loop' [] where
   loop' inbuf = do
+    actionTable <- actions `fmap` lift get
+    let  tryAction s = case lookup s $ map snd actionTable of
+                 Nothing -> loop' s
+                 Just ma -> newline >> ma >> loop' []
     when (null inbuf) prompt
     c <- getKey
     case c of 
-      '?' -> help >> loop' []
       '\n' -> loop' []
-      '+' -> adjust 1.05 >> loop' []
-      '-' -> adjust (1/1.05) >> loop' []
-      '*' -> adjust 1.30 >> loop' []
-      '/' -> adjust (1/1.30) >> loop' []
-      'a' -> changeAdjust >> loop' []
-      'q' -> cleanUpMess >> return ()
---      'q' -> confirm "really quit (y/n)?" (cleanUpMess >> return ()) (newline >> loop' [])
+      'q' -> cleanUpMess >> newline >> return ()
+      '!' -> do newline
+                reps <- getLn "Repeats> "
+                isi <- getLn "ISI> "
+                act <- getLn "Command> "
+                case lookup act $ map snd actionTable of
+                 Nothing -> loop' []
+                 Just ma -> repAct (safeRead reps) (safeRead isi) ma >> loop' []
+           
+                
       _ -> tryAction (inbuf++[c]) 
     return ()
-  tryAction s = case lookup s $ map snd actionTable of
-                 Nothing -> loop' s
-                 Just ma -> newline >> ma >> loop' []
-  adjust factor = do InteractS allVls curNm h  c <- lift get
+  adjust factor = do InteractS as allVls curNm h c <- lift get
                      let f (nm,v) | nm == curNm = (nm, v*factor)
                                   | otherwise = (nm,v)
-                     lift $ put $ InteractS (map f allVls) curNm h c
+                     lift $ put $ InteractS as (map f allVls) curNm h c
                      newline 
                                   
-  help = do newline >> printLn "Help:"
-            forM actionTable $ \(nm,(key,_)) -> printLn $ key ++ ": "++nm
-  changeAdjust =  do InteractS allVls curNm h clUp <- lift get
-                     newline
-                     forM (zip [0..] allVls) $ \(n, (nm,vl)) -> 
-                          printLn $ show n ++ ". "++nm++" "++accushow vl
-                     c <- getKey
-                     let newnm = case c of 
-                                   'x' -> ""
-                                   _ | c `elem` ['0'..'9'] -> fst $ allVls!!(read $ c:[])
-                                     | otherwise -> curNm
-                     lift $ put $ InteractS allVls newnm h clUp
-                     newline 
-  prompt = do InteractS allVls curNm _ _ <- lift get
+  prompt = do InteractS as allVls curNm _ _ <- lift get
               liftIO $ case curNm of
                 "" -> putStr "> "
                 s -> let curVal = fromJust $ lookup s allVls
                      in putStr $ curNm ++"=" ++ accushow curVal ++"> "
               liftIO $ hFlush stdout
                 
+repAct :: Maybe Int -> Maybe Double -> InteractM () -> InteractM ()
+repAct (Just 0) _ _ = do return ()
+repAct (Just reps) (Just isi) ma  = interval isi $ ma >> repAct (Just $ reps-1) (Just isi) ma
+repAct _ _ _ = do return ()
+  
+
+changeAdjust :: String -> InteractM ()
+changeAdjust nm = do
+  InteractS as allVls curNm h clUp <- lift get
+  when (nm `elem` map fst allVls) $
+      lift $ put $ InteractS as allVls nm h clUp
+
+adjustBy :: Double -> InteractM ()
+adjustBy factor = do InteractS as allVls curNm h c <- lift get
+                     let f (nm,v) | nm == curNm = (nm, v*factor)
+                                  | otherwise = (nm,v)
+                     lift $ put $ InteractS as (map f allVls) curNm h c           
 
 showSession :: InteractM ()
 showSession = do bdir <- (baseDir . qsSess) `fmap` get
@@ -198,7 +258,7 @@ newSess = do sess <- liftIO $ newSession sessionsRootDir
   
 cleanUpMess :: InteractM ()
 cleanUpMess = do 
-     InteractS _ _ _ clUp <- lift get
+     clUp <- cleanupIO `fmap` lift get
      liftIO clUp
                       
 addToCleanUp :: IO () -> InteractM ()
@@ -222,6 +282,14 @@ iplotSig nm = do
      if null s
         then return ()
         else iplot $ map (sigZero . sigCutLast 0.001) [last s]
+
+iplot2Sigs :: String -> String -> InteractM ()
+iplot2Sigs nm1 nm2 = do
+     s1 <- signalsDirect nm1
+     s2 <- signalsDirect nm2
+     if null s1 || null s2
+        then return ()
+        else iplot $ map (sigZero . sigCutLast 0.001) [last s1] :==: map (sigZero . sigCutLast 0.001) [last s2] 
 
 invoke :: CompileToken ->  InteractM ()
 invoke tok = do 
