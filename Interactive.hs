@@ -17,10 +17,38 @@ import EvalM
 import Numbers 
 import NewSignal
 
+dcmd = unlines $ [
+ "module RecordDCMD where",
+ "vm :: Signal Real",
+ "vm <* ADC 1",
+ "vm *> store \"\"",
+ "_tmax = 1",
+ "_dt = 5.0e-5",
+ "stim = {: 0 :}",
+ "stim *> DAC 0",  "legwidth=0.001", "legamp=4",
+ "nervewidth=0.001","nerveamp=4"]
+
+recBothS = unlines $ [
+ "module RecordBoth where",
+ "rawvm :: Signal Real",
+ "rawvm <* ADC 0",
+ "vm = {: <: rawvm :> * 20 :}",
+ "vm *> store \"\"",
+ "ec :: Signal Real",
+ "ec <* ADC 1",
+ "ec *> store \"\"",
+ "_tmax = 1",
+ "_dt = 5.0e-5",
+ "stim = {: 0 :}",
+ "stim *> DAC 0",  "legwidth=0.001", "legamp=4",
+ "nervewidth=0.001","nerveamp=4"]
+
+
 stdProg nm ln = unlines $ [
  "module "++nm++" where",
- "vm :: Signal Real",
- "vm <* ADC 0",
+ "rawvm :: Signal Real",
+ "rawvm <* ADC 0",
+ "vm = {: <: rawvm :> * 20 :}",
  "step :: Real -> Real -> Real -> Signal Real",
  "step t0 width amp = {: if (<:seconds :> > t0) && (<:seconds :> < (t0+width)) then amp else 0 :}",
  "legwidth :: Real","legamp :: Real",
@@ -47,12 +75,16 @@ main = do
                      adjustable "legwidth" 0.002
                      adjustable "nerveamp" 4
                      adjustable "nervewidth" 0.002
---                     stimLeg <- use stimLegS
---                     stimNerve <- use stimNerveS
+                     stimLeg <- use stimLegS
+                     stimNerve <- use stimNerveS
+                     recdcmd <- use dcmd
+                     recBoth <- use recBothS
                      loop [("plot sine", ("ps", tellGnuplot "plot sin(x)")),
                            ("plot cosine", ("pc", tellGnuplot "plot cos(x)")),
---                           ("stimulate leg", ("l", invoke stimLeg>>plotvm)),
---                           ("stimulate nerve", ("n", invoke stimNerve>>plotvm)),
+                           ("stimulate leg", ("l", invoke stimLeg>>plotvm)),
+                           ("record nerve", ("d", invoke recdcmd>>plotvm)),
+                           ("record both", ("b", invoke recBoth>>plotvm)),
+                           ("stimulate nerve", ("n", invoke stimNerve>>plotvm)),
                            ("plot voltage", ("pv", do iplotSig "vm")),
                            ("show session", ("ss", showSession)),
                            ("new session", ("sn", newSess)),
@@ -189,7 +221,7 @@ iplotSig nm = do
      s <- signalsDirect nm
      if null s
         then return ()
-        else iplot $ map (sigZero . sigInit 0.099) [last s]
+        else iplot $ map (sigZero . sigCutLast 0.001) [last s]
 
 invoke :: CompileToken ->  InteractM ()
 invoke tok = do 

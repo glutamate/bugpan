@@ -103,6 +103,11 @@ readSigPt (Signal t1 t2 dt arr eqOrK)  t =
 sigInit tm s@(Signal t1 t2 dt arr eqOrK) = 
     let t2' = t1+tm
     in limitSig t1 t2' s
+
+sigCutLast tm s@(Signal t1 t2 dt arr eqOrK) = 
+    let t2' = t2-tm
+    in limitSig t1 t2' s
+
        
 sigZero s@(Signal t1 t2 dt arr eqOrK) = Signal 0 (t2-t1) dt arr eqOrK
 
