@@ -42,25 +42,29 @@ we can also look at just the bursts in D0:
 
 Let's define some more things we need for the cross-correlations (one plot for ever animal)
 
-> everywhere binSize = 0.01
+> everywhere binSize = 0.05
 > everywhere cc x y = limitSigs (-0.2) 0.2 $ crossCorrelateControlled scratch binSize x y
 
 The plots are on the following pages!
 
 > break
 
-%> inEverySession 
-%> plot ((("flexor feti",  cc fetiSpikes flex1Spikes) :||: ("ci1 feti ",  cc fetiSpikes ci1Spikes ))
-%>      :==:
-%>      (("ci1 flexor" , cc flex1Spikes ci1Spikes ) :||: ("seti flexor ", cc flex1Spikes setiSpikes)))
+> inEverySession 
 
+>> plot ((("flexor feti",  cc fetiSpikes flex1Spikes) :||: ("ci1 feti ",  cc fetiSpikes ci1Spikes ))
+>>      :==:
+>>      (("ci1 flexor" , cc flex1Spikes ci1Spikes ) :||: ("seti flexor ", cc flex1Spikes setiSpikes)))
+
+> break
+
+> close
 % jan needs raw traces for each animal of cc feti flexor and cc seti flexor 
 % and time window in which feti and seti is supressed around 1 flexor spike.
 
-> flexSeti := (smap (/0.09)) . head $$ cc flex1Spikes setiSpikes
+%> flexSeti := (smap (/0.09)) . head $$ cc flex1Spikes setiSpikes
 
-> flexFeti := (smap (/0.09)) . head $$ cc flex1Spikes fetiSpikes
-> flexFlex := head $$ cc flex1Spikes flex1Spikes
+%> flexFeti := (smap (/0.09)) . head $$ cc flex1Spikes fetiSpikes
+%> flexFlex := head $$ cc flex1Spikes flex1Spikes
 
 %> length flex1Spikes
 
@@ -68,14 +72,14 @@ The plots are on the following pages!
 
 %> break
 
->> avgSeti = (averageSigs flexSeti) 
+%>> avgSeti = (averageSigs flexSeti) 
 
-> length avgSeti
+%> length avgSeti
 
-> plot $ ("flex-Seti", take 1 avgSeti)
+%> plot $ ("flex-Seti", take 1 avgSeti)
 
-> plot $ ("flex-Feti", take 1 $ averageSigs flexFeti)
+%> plot $ ("flex-Feti", take 1 $ averageSigs flexFeti)
 
-> plot $ (averageSigs flexFlex)
+%> plot $ (averageSigs flexFlex)
 
-> [avgSeti!!1]
+%> [avgSeti!!1]

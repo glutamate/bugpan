@@ -8,7 +8,14 @@ data Bool = True | False
 
 data [a] = a:[a] | []
 
+data DReal = DReal Dim Real
+
 infixl 5 _+_
+notation [|_|]
+notation if_then_else_
+notation forall__. _
+
+forall i. P i
 
 _ + _ : Nat -> Nat -> Nat
 Z + m = m
@@ -31,3 +38,6 @@ Plus Nat = T
 plus : Plus a => (t:Set) -> (a:t) -> a -> a
 plus Nat x y = 
 
+class Eq a where
+   (==) :: a -> a -> Bool
+   Refl :: Thm |- a==a

@@ -5,3 +5,9 @@ pdf:
 	latex paper
 	pdflatex -halt-on-error paper.tex
 
+intro:
+	latex justtext
+	bibtex justtext
+	latex justtext
+	pdflatex -halt-on-error justtext.tex
+
