@@ -8,7 +8,126 @@ and calculations of these types can be described in a mathematical
 framework based on the lambda calculus. We use two experiments from
 neurophysiology to demonstrate that this approach works in practise:
 the \emph{in vivo} spike train response to a visual looming stimulus
-in locusts; and a study of synaptic integration in with dynamic clamp.
+in locusts; and a study of synaptic integration with dynamic
+clamp. Our use of typed, functional and reactive programming overcomes
+at least two long-standing issues in informatics; the need for a
+flexible ontology to share heterogeneous data from physiological
+experiments \citep{Amari2002}, and a language for describing
+experiments unambiguously \citep{MurrayRust2002}. In addition, the
+tradition of \emph{formal verification} attached to the lambda
+calculus suggests the possibility that algorithmic procedures can
+complement peer-review in validating scientific inference.
+
+Do we need this paragraph somewhere: We have claimed that most or all
+physiological evidence can be represented by signals, events and
+durations. We have shown two very different examples from
+neurophysiology in this paper to substantiate our claim. In addition,
+we have used the calculus of physiological evidence to analyse an
+experiment with movement data and simultaneous recording of many
+neurons from the locust, and analysed the relationship between neural
+activity in identified cells and bursts in other neurons or movement
+cycles (Calas \& Matheson, in preparation). These analyses used
+exactly the same functions and types as those described above.
+
+\subsection*{Limitations and extensions}
+
+The main omission from our framework for physiological observations
+and experiments are spatial (imaging-based) data. Indeed, this is
+quite an oversight given the increasing use of microscopic calcium
+imaging (refs) and other interactions between physiology and anatomy
+refs). Here, we have focussed on a classical physiology because it
+presents a more limited scope and because FRP exclusively deals with
+temporal and not spatial contexts. Nevertheless, our framework can be
+extended to include spatial observations. This extension is based on
+analogies between signals and images (which are ``indexed'' by
+continuous variables, differing only in the dimensionality of their
+index), between events and points, and between durations and regions
+of space. Points and regions would have tags for carrying information
+We suggest retaining full parametric polymorphism such that images,
+points and regions can represent not only colour or intensity, but
+values in any type. This would also allow nesting of spatial and
+temporal contexts such that movies (signals of images of, say, colour)
+or time-varying quantities recorded at a particular location
+\citep[for instance spot calcium measurements;][]{DiGregorio1999} to
+be representable. These spatial types and their transformations can
+also define visual stimuli, i.e. replace the arbitrary and limited
+geometric primitives in Example 1.
+
+An additional omission is frequency-domain information, which is
+important in analysing neural oscillations (ref). Time-domain signals
+transformed into the frequency-domain with e.g. Fourier or Laplace
+transforms can be seen as a generalised signal that is indexed by
+frequency rather than by time. We plan to combine frequency-domain and
+spatial generalisations of signals, events and durations in the future.
+
+We have not pursued any particularly sophisticated mathematical
+analyses of our data. Embedding linear algebra or probability theory
+in typed, purely functional programming languages is discussed
+elsewhere \citep{Eaton2006, Park2005}.
+
+\subsection*{An ontology for physiology}
+
+The types we have presented form a linguistic framework and an
+ontology for physiology. This ontology can form the basis for the
+interchange of physiological data without imposing unnecessary
+constraints on what can be shared. This ontology cannot be formulated
+in the various semantic web ontology frameworks (OWL, RDF) which lack
+parametric polymorphism and functional abstraction. Nevertheless, it
+really is an ontology, specifying the categories of mathematical
+objects that constitute evidence. It is unusual as an ontology for
+scientific knowledge in being embedded in a \emph{computational}
+framework, such that it can describe not only mathematical objects but
+also their transformations and observations, and for focusing on
+\emph{evidence} rather than \emph{facts}.
+
+Existing software packages used for the acquisition and analysis of
+physiological data have signal-like (Igor Pro, Wavemetrics; Spike 2,
+Cambridge Electronic Design), and event-like (Spike 2) data structures
+at the core of their operations. Although these package have some
+flexibility in the information that can be carried by signals and
+events, they do not exploit full parametric polymorphism: the range of
+observations and stimuli that can be described with their more limited
+definitions is smaller than in our framework. For instance, the signal
+of shapes that describes a visual stimulus in Example 1, or the two-
+or three dimensional location of a moving animal \emph{cannot} be
+represented by a signal in these systems. Although these data may be
+respresentable in different data structures, they cannot then be
+manipulated by functions written to transform generic
+signals. Therefore, our framework can be seen as a generalisation of
+existing methods of physiological signal processing.
+
+Our account of physiological evidence solves or immediately proposes
+solutions to many problems in neuroinformatics. One such problem is
+the difficulty of sharing primary data \citep{Amari2002}. We have
+shown that fully polymorphic signals, events and durations can
+represent data across many aspects of neurophysiology, which could
+provide the foundation for a very general database. Previous work on
+scientific knowledge representation has suggested a possible role for
+``meta-data'' to represent the context of an experiment
+\citep{Bower2009}. Here, we make no distinction between data and
+meta-data. All relevant information which can be represented by values
+in some type can exist as a collection of signals, events and
+durations. There are important reasons to believe that there cannot
+exist a strict distinction between data and meta-data. Is, for
+instance, a measurement of the temperature at which an experiment is
+conducted, data or meta-data?  That surely depends on the intention of
+the experimenter and whether temperature is manipulated, but also
+depends on the person who is analysing or meta-analysing the data. In
+our framework, we do not impose any limits on the nature of such
+information. That does not imply that individual pieces of information
+have no context. Because every value has a temporal context, the
+entire context of that value can be retrieved by gathering other
+values with a similar or enclosing temporal context.
+
+There is much relevant information about the experiments performed
+here that we find difficult in representing; for instance, the
+procedure for preparing the biological specimin. This information is
+not manipulated during the experiment and is not needed for a computer
+to execute the experiment, but may be of interest for
+meta-analysis. We suggest that a more traditional semantic web
+ontology may be more suited for representing this information.
+
+\subsection*{Experiment descriptions}
 
 Using our approach, both stimuli and observations are defined
 concisely and unambiguously by mathematical \emph{equations}. This
@@ -16,58 +135,34 @@ makes it possible to repeat, manipulate and reason about experiments
 in a formal framework. Our mathematical definitions are less ambiguous
 than definitions written in plain English, and are more powerful than
 those specified by graphical user interfaces or in formal languages
-without a facility for defining abstractions.
+without a facility for defining abstractions. It also makes the
+conditions of the recording very explicit, and can serve as an
+unambiguous communication medium.
 
-To our knowledge this is the first explicit use of simple type theory
-to classify evidence in a experimental scientific field. We find that
-parametric polymorphism is critical in encoding a wide repertoire of
-evidence. We also surprisingly found that there is broad overlap
-between the types that hold stimuli, observations and calculated
-values, although this may be not be the case in other fields, for
-instance in anatomy. A wider question is which type theories can
-support evidence from many different fields. For physiology, we have
-shown that simple type theory \citep{Pierce2002} can support key types
-of evidence. Richer type theories including impredicativity and
-dependent types \citep{Pierce2002} may help capture aspects of
-evidence in other fields.
+Our framework is not only a theoretical formalism, bug also a very
+practical tool: a collection of computer programs for executing
+experiments and analyses, and data management. Controlling every
+aspect of the scientific process with programs that share data formats
+is potentially highly efficient and eliminates many sources of human
+error. Our experiment definitions have the further advantage that they
+\emph{compose}, that is, more complex experiments can be formulated by
+joining together elementary building blocks. An explicit
+machine-executable definition is also a necessary step in automating
+experiments.
 
-We have presented a mathematical approach to experimentation at three
-levels. 1. We present it is a very practical tool: a collection of
-computer programs for executing experiments and analyses, and data
-management. Controlling every aspect of the scientific process with
-programs that share data formats is potentially highly efficient and
-eliminates many sources of human error. 2. Beyond any particular
-implementation, we have described a framework for reasoning about and
-manipulating scientific experiments. Obtaining such an experiment
-definition is a necessary step in automating an experiment.  It also
-makes the conditions of the recording very explicit, and can serve as
-an unambiguous communication medium. 3. The types we have
-presented form a linguistic framework and an ontology for
-physiology. This ontology can form the basis for the interchange of
-physiological data without imposing unnecessary constraints on what
-can be shared.
+There has been some work on formalising ``workflows'' and creating
+``workflow engines'' for perform large batches of standardised data
+analyses. In the contrasting approach here, all information about the
+experiment is defined by mathematical equations and exists as values
+of well-defined types, and analyses are simply mathematical functions
+that transform and combine signals, event and durations.
 
-We have claimed that most or all physiological evidence can be
-represented by signals, events and durations. We have shown two very
-different examples from neurophysiology in this paper to substantiate
-our claim. In addition, we have used the calculus of physiological
-evidence to analyse an experiment with movement data and simultaneous
-recording of many neurons from the locust, and analysed the
-relationship between neural activity in identified cells and bursts in
-other neurons or movement cycles (Calas \& Matheson, in
-preparation). These analyses used exactly the same functions and types
-as those described above. However, our framework could be
-extended. Frequency-domain information is important in analysing
-oscillations in neuronal systems. Power-spectra can be thought of as
-values analogous to signals, but indexed by frequency rather than
-time. The most appropriate manner of extending our framework to
-include frequency-indexed and even spatial information must remain a
-topic for further research. On the other hand, the lack of linear
-algebra, higher order statistics, and information theoretic analysis
-in our examples is \emph{not} to be taken as a limitation of our
-theory; representing such analyses in a mathematical framework such as
-ours is a neither a difficult conceptual problem nor the topic of this
-paper.
+We do not exclude the possibility that an elaborate user interface
+could help formulate these equations, or construct new values in
+ad-hoc circumstances. Indeed, we have used a simple interface to enter
+the thresholds for spike detection in Example 1. Such interfaces,
+however, may be unnecessary for scientific inference, even in the
+large scale.
 
 \subsection*{Statistics}
 
@@ -96,76 +191,6 @@ parameters in such a model. Although probabilistic models for direct
 observations are used in physics \citep{Daniell1991}, the flexible
 construction of such models for physiological observations may depend
 on the development of new programming languages.
-
-\subsection*{Relation to existing technologies}
-
-Existing software packages used for the acquisition and analysis of
-physiological data have signal-like (Igor Pro, Wavemetrics; Spike 2,
-Cambridge Electronic Design), and event-like (Spike 2) data structures
-at the core of their operations. Although these package have some
-flexibility in the information that can be carried by signals and
-events, they do not exploit full parametric polymorphism: the range of
-observations and stimuli that can be described with their more limited
-definitions is smaller than in our framework. For instance, the signal
-of shapes that describes a visual stimulus in Example 1, or the two-
-or three dimensional location of a moving animal \emph{cannot} be
-represented by a signal in these systems. Although these data may be
-respresentable in different data structures, they cannot then be
-manipulated by functions written to transform generic signals.
-
-In particular, we suggest that two oft-used technologies in knowledge
-representation, relational databases and the semantic web, are not
-optimally tuned to representing physiological data (a task for which
-they were not designed).
-
-Our account of physiological evidence solves or immediately proposes
-solutions to many problems in neuroinformatics. One such problem is
-the difficulty of sharing primary data \citep{Amari2002}. We have
-shown that fully polymorphic signals, events and durations can
-represent data across many aspects of neurophysiology, which could
-provide the foundation for a very general database. Previous work on
-scientific knowledge representation has suggested a possible role for
-``meta-data'' to represent the context of an experiment
-\citep{Bower2009}. Here, we make no distinction between data and
-meta-data. All relevant information which can be represented by values
-in some type can exist as a collection of signals, events and
-durations. There are important reasons to believe that there cannot
-exist a strict distinction between data and meta-data. Is, for
-instance, a measurement of the temperature at which an experiment is
-conducted, data or meta-data?  That surely depends on the intention of
-the experimenter and whether temperature is manipulated, but also
-depends on the person who is analysing or meta-analysing the data. In
-our framework, we do not impose any limits on the nature of such
-information. That does not imply that individual pieces of information
-have no context. Because every value has a temporal context, the
-entire context of that value can be retrieved by gathering other
-values with a similar or enclosing temporal context.
-
-There has been some work on formalising ``workflows'' and creating
-``workflow engines'' for perform large batches of standardised data
-analyses. In the contrasting approach here, all information about the
-experiment is defined by mathematical equations and exists as values
-of well-defined types, and analyses are simply mathematical functions
-that transform and combine signals, event and durations.
-
-We do not exclude the possibility that an elaborate user interface
-could help formulate these equations, or construct new values in
-ad-hoc circumstances. Indeed, we have used a simple interface to enter
-the thresholds for spike detection in Example 1. Such interfaces,
-however, may be unnecessary for scientific inference, even in the
-large scale. This is especially likely to be the case when we can
-write generic functions over types with very flexible definitions.
-
-Lastly, there has been much work on semantic web ontologies that
-describe results from biological experiments. While our approach is at
-variance with some of this work, in other respects it is 
-complementary. There is much relevant information about the
-experiments performed here that we have not represented; for instance,
-the exact position of the locust with respect to the screen, the anatomical
-location of the recording electrodes etc. Such information should be
-represented as a duration, but the question is what type the tag of
-the duration should have. One solution is to allow tags to take values
-that correspond to subjects or relations in a semantic web ontology.
 
 \subsection*{Towards verified scientific inference}
 

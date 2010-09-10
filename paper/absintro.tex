@@ -1,23 +1,23 @@
 \section*{Abstract}
 
-The are many benefits to mathematical reasoning in science;
-nevertheless, there has been almost no work in formalising scientific
-experiments themselves. Here, we propose a formal framework for
-experimentation and analysis in physiology. First, we define a
-structure for physiological quantities. This structure emphasises the
-critical role of time in physiology, but is flexible, in that it can
-carry information of any type. Thus, we define an ontology of
-physiological quantities that can describe a wide range of
-observations. Second, we show that experiments themselves can be
-composed as a wiring of time-dependent quantities, and be expressed as
-purely mathematical equations that can be manipulated
-algebraically. Our framework is concise, allowing entire experiments
-to be defined unambiguously in a few equations. To demonstrate the
-practicality and versatility of our approach, we show the full
-equations for two non-trivial implemented and analysed experiments
-describing visually stimulated neuronal responses and dynamic
-clamp. The brevity of these definitions illustrates the power of our
-approach, and we discuss its implications for neuroinformatics
+Inreasingly complex experiments and the beenfit of sharing structured
+but heterogeneous data demonstrate a clear need for a formal approach
+to scientific data, experimentation, and analysis.  Here, we propose a
+mathematical framework for experimentation and analysis in
+physiology. First, we define a structure for physiological
+observations. This structure emphasises the critical role of time in
+physiology, but is flexible, in that it can carry information of any
+type. Thus, we define an ontology of physiological quantities that can
+describe a wide range of observations. Second, we show that
+experiments themselves can be composed as a wiring of time-dependent
+quantities, and be expressed as purely mathematical equations that can
+be manipulated algebraically. Our framework is concise, allowing
+entire experiments to be defined unambiguously in a few equations. To
+demonstrate the practicality and versatility of our approach, we show
+the full equations for two non-trivial implemented and analysed
+experiments describing visually stimulated neuronal responses and
+dynamic clamp. The brevity of these definitions illustrates the power
+of our approach, and we discuss its implications for neuroinformatics
 research.
 
 \section*{Introduction}
@@ -89,18 +89,18 @@ and facilitating replication and meta-analysis. In addition,
 expressions in our framework can be components of precisely
 formulated scientific theories.
 
-(iii) an new approach to validating scientific inference
-\citep{Editors2003}. By inspecting an experiment definition, automated
-decision procedures can verify statements about experiments that
-indicate sound scientific practice, such as consistent units of
-measure \citep{Kennedy1997} and correct error propagation
-\citep{Taylor1997}. The use of formal languages can thus bring
-transparency to complex experiments and analyses.
+(iii) an new approach to validating scientific inference (``A place
+for preprint archives?'', \citeyear{Editors2003}). By inspecting an
+experiment definition, automated decision procedures can verify
+statements about experiments that indicate sound scientific practice,
+such as consistent units of measure \citep{Kennedy1997} and correct
+error propagation \citep{Taylor1997}. The use of formal languages can
+thus bring transparency to complex experiments and analyses.
 
-(iv) a practical tool that is powerful and generalises to multimodal
-experiments. We have implemented our framework as a new programming
-language and used it for non-trivial neurophysiological experiments
-and data analyses.
+(iv) a practical tool that is powerful and generalises to complex and
+multimodal experiments. We have implemented our framework as a new
+programming language and used it for non-trivial neurophysiological
+experiments and data analyses.
 
 Here, we first describe the theory of \emph{simple types}
 \citep{Pierce2002} and define three types that can represent
@@ -115,59 +115,3 @@ examine the impact of an active potassium conductance on synaptic
 integration using the dynamic clamp technique. These protocols are
 defined unambiguously using only a handful of equations in our
 language.
-
-\section*{Old Introduction}
-
-Mechanical reasoning removes ambiguity and thus allows ideas to be
-formulated and communicated efficiently, and inferences to be
-scrutinised. Consequently, formal languages and calculi have had a
-profound impact on mathematics and the natural sciences. As examples
-we point to Leibniz's notation for calculus, vector notation in
-electromagnetism and first-order logic. Such languages are useful
-because they allow us to calculate --- to re-arrange, isolate and
-substitute terms --- and by doing so, to prove general theorems. These
-symbolic manipulations are possible because terms can be replaced by
-terms with identical meaning without changing the meaning of the
-context. For instance, no matter how or where the quantity |w| is
-defined, |w+w| can always be substituted by |2*w|. This property,
-which is called referential transparency \citep{Whitehead1927}, is
-shared by all ``mathematical'' notations but not by conventional
-programming languages.
-
-Although we can describe quantitative scientific models rigorously,
-there are few formalisms to fully describe how evidence for or against
-these models is obtained and evaluated. A mathematical approach to
-experimentation itself could facilitate replication and meta-analysis,
-permit a better understanding of apparent inconsistencies between
-studies and allow a clearer formulation of what constitutes sound
-scientific practice.  Here, we propose a calculus of physiological
-evidence that can describe experiments on biological organisms such
-that they can be unambiguously replicated and be inspected to certify
-whether analysis procedures are applicable. 
-
-Whether they are carried out by humans or by automated equipment, many
-experiments can be seen as \emph{programs} that manipulate and observe
-the real world. This view suggests that experiment descriptions must
-resemble programming languages, and that a referentially transparent
-calculus of experiments could come from programming language
-theory. Although it is not trivial to describe interactions with the
-real world without breaking referential transparency, several such
-formalisms are available \citep{PeytonJones2002, Roy2004}. Which
-amongst those describe experiments most naturally may depend on the
-kinds of manipulations and observations that are made. Here, we
-describe a structure for physiological evidence that gives rise to an
-elegant approach for purely mathematical transformations to interact
-with the physical world.  We have implemented this calculus of
-evidence in a concrete programming language and used it for
-non-trivial neurophysiological experiments and data analysis. First,
-we describe the theory of \emph{simple types} and define three types
-that can represent physiological evidence. We then present a new
-formal and machine-executable language for defining observations and
-transformations of such evidence. Finally, we show that two very
-different experiments from neurophysiology can be formally defined,
-run and analysed in our calculus. In the first example, we measure
-\emph{in vivo} spike train responses to visual stimulation in
-locusts. In the second example, we examine the impact of an active
-potassium conductance on synaptic integration using the dynamic clamp
-technique. These protocols are defined unambiguously using only a
-handful of equations in our language. 
