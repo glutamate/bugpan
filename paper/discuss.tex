@@ -38,20 +38,21 @@ imaging (refs) and other interactions between physiology and anatomy
 refs). Here, we have focussed on a classical physiology because it
 presents a more limited scope and because FRP exclusively deals with
 temporal and not spatial contexts. Nevertheless, our framework can be
-extended to include spatial observations. This extension is based on
-analogies between signals and images (which are ``indexed'' by
-continuous variables, differing only in the dimensionality of their
-index), between events and points, and between durations and regions
-of space. Points and regions would have tags for carrying information
-We suggest retaining full parametric polymorphism such that images,
-points and regions can represent not only colour or intensity, but
-values in any type. This would also allow nesting of spatial and
-temporal contexts such that movies (signals of images of, say, colour)
-or time-varying quantities recorded at a particular location
-\citep[for instance spot calcium measurements;][]{DiGregorio1999} to
-be representable. These spatial types and their transformations can
-also define visual stimuli, i.e. replace the arbitrary and limited
-geometric primitives in Example 1.
+extended to include spatial observations, based on previous work
+\citep{Elliott2003}. This extension is based on analogies between
+signals and images (which are ``indexed'' by continuous variables,
+differing only in the dimensionality of their index), between events
+and points, and between durations and regions of space. Points and
+regions would have tags for carrying information We suggest retaining
+full parametric polymorphism such that images, points and regions can
+represent not only colour or intensity, but values in any type. This
+would also allow nesting of spatial and temporal contexts such that
+movies (signals of images of, say, colour) or time-varying quantities
+recorded at a particular location \citep[for instance spot calcium
+  measurements;][]{DiGregorio1999} to be representable. These spatial
+types and their transformations can also define visual stimuli,
+i.e. replace the arbitrary and limited geometric primitives in Example
+1.
 
 An additional omission is frequency-domain information, which is
 important in analysing neural oscillations (ref). Time-domain signals
@@ -67,18 +68,32 @@ elsewhere \citep{Eaton2006, Park2005}.
 
 \subsection*{An ontology for physiology}
 
+There are clear advantages to sharing primary data from scientific
+experiments \citep{Insel2003}: preventing needless replication,
+facilitating meta-analysis, giving theoretical neuroscientists access
+to a greater variety of observations and enhancing transparency. These
+benefits are likely to be greater if data are structured and stored in
+standard formats. Despite these advantages, and many attempted
+databases, little data from electrophysiological experiments are
+shared in practice. This is likely due to both technical and social
+barriers \citep{Amari2002}. We suggest the the approach to
+experimentation can overcome social barriers by completely integrating
+the experiment and analysis specification with structured data storage
+that requires no annotation. 
+
 The types we have presented form a linguistic framework and an
-ontology for physiology. This ontology can form the basis for the
-interchange of physiological data without imposing unnecessary
-constraints on what can be shared. This ontology cannot be formulated
-in the various semantic web ontology frameworks (OWL, RDF) which lack
-parametric polymorphism and functional abstraction. Nevertheless, it
-really is an ontology, specifying the categories of mathematical
-objects that constitute evidence. It is unusual as an ontology for
-scientific knowledge in being embedded in a \emph{computational}
-framework, such that it can describe not only mathematical objects but
-also their transformations and observations, and for focusing on
-\emph{evidence} rather than \emph{facts}.
+ontology for physiology that address the technical barriers to data
+sharing. Due to the flexibility of parametric polymorphism, our
+ontology can form the basis for the interchange of physiological data
+without imposing unnecessary constraints on what can be shared. The
+ontology cannot be formulated in the various semantic web ontology
+frameworks (OWL, RDF) which lack parametric polymorphism and
+functional abstraction. Nevertheless, it really is an ontology,
+specifying the categories of mathematical objects that constitute
+evidence. It is unusual as an ontology for scientific knowledge in
+being embedded in a \emph{computational} framework, such that it can
+describe not only mathematical objects but also their transformations
+and observations.
 
 Existing software packages used for the acquisition and analysis of
 physiological data have signal-like (Igor Pro, Wavemetrics; Spike 2,
