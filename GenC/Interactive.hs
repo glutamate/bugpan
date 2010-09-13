@@ -22,9 +22,9 @@ import Data.List
 
 dcmd = unlines $ [
  "module RecordDCMD where",
- "vm :: Signal Real",
- "vm <* ADC 1",
- "vm *> store \"\"",
+ "ec :: Signal Real",
+ "ec <* ADC 1",
+ "ec *> store \"\"",
  "_tmax = 1",
  "_dt = 5.0e-5",
  "stim = {: 0 :}",
@@ -84,7 +84,7 @@ main = do
                      recBoth <- use recBothS
                      
                      action "stimulate leg" "l" $ invoke stimLeg>>plotvm
-                     action "record nerve" "d" $ invoke recdcmd>>plotvm
+                     action "record nerve" "d" $ invoke recdcmd>> iplotSig "ec"
                      action "record both" "b" $ invoke recBoth>> iplot2Sigs "vm" "ec"
                      action "stimulate nerve" "n" $ invoke stimNerve>>plotvm
                      action "show session" "ss" $ showSession

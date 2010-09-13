@@ -181,18 +181,19 @@ dynStepper (stage,ds)
     | otherwise = []
  
 dynBegin ds = 
-    let headOr x [] = x
-        headOr _ (x:_) = x
-        chanIn = headOr "0" [pp chan | ReadSource _ ("ADC",chan) <- ds ] 
-        chanOut = headOr "0" [pp chan | SinkConnect _ ("DAC",chan) <- ds ] in 
-    [LitCmds 
+    let chansIn = [pp chan | ReadSource _ ("ADC",chan) <- ds ] 
+        chansOut = [pp chan | SinkConnect _ ("DAC",chan) <- ds ]
+        withNats = zip [0..] 
+        slength = show . length in 
+    [LitCmds $ 
        ["RTIME until;",
         "RTIME samp_time=dt*1000*1000*1000;",
 	"RT_TASK *task;",
-	"comedi_insn insn_read;",
-	"comedi_insn insn_write;",
+	"comedi_insn insn_read["++show (length chansIn)++"];",
+	"comedi_insn insn_write["++show (length chansOut)++"];",
 	"//lsampl_t *hist;",
-	"lsampl_t data[NCHAN];",
+	"lsampl_t datain["++slength chansIn++"];",
+	"lsampl_t dataout["++slength chansOut++"];",
         "double secondsVal, tnow, tlast, max_t_diff=0;",
 	"signal(SIGKILL, endme);",
 	"signal(SIGTERM, endme);",
@@ -207,34 +208,38 @@ dynBegin ds =
 	"if (init_board()) {;",
 	"       printf(\"Board initialization failed.\\n\");",
 	"       return 1;",
-	"}",
-	"BUILD_AREAD_INSN(insn_read, subdevai, data[0], 1, "++chanIn++" , AI_RANGE, AREF_GROUND);",
-	"BUILD_AWRITE_INSN(insn_write, subdevao, data[1], 1, "++chanOut++", AO_RANGE, AREF_GROUND);",
-        "data[1] = from_phys(0);",
-        "until = rt_get_time();",
-        "tlast = count2nano(until);"]]
+	"}"]++ for (withNats chansIn) (\(n,ch)->"BUILD_AREAD_INSN(insn_read["++show n++"], subdevai, datain["++show n++"], 1, "++ch++" , AI_RANGE, AREF_GROUND);")++
+	for (withNats chansOut) (\(n,ch)->"BUILD_AWRITE_INSN(insn_write["++show n++"], subdevao, dataout["++show n++"], 1, "++ch++", AO_RANGE, AREF_GROUND);")++
+        for  (withNats chansOut) (\(n,ch)->"dataout["++show n++"] = from_phys(0);")++
+        ["until = rt_get_time();",
+        "tlast = count2nano(until);"]] 
 
 dynLoop ds =
+    let chansIn = [(nm, pp chan) | ReadSource nm ("ADC",chan) <- ds ] 
+        chansOut = [(nm, pp chan) | SinkConnect nm ("DAC",chan) <- ds ]
+        withNats = zip [0..] in 
     For (Assign (Var "i") 0) (And (Cmp Lt (Var "i") (Var "npnts")) (Var "!end")) (Assign (Var "i") (Var "i"+1)) $ 
-            [LitCmds ["secondsVal=i*dt;",
-                      "comedi_do_insn(dev,&insn_read);"]]
-            ++(concat$ nub $map stepd ds)++
-            [LitCmds ["comedi_do_insn(dev,&insn_write);",
-                      "tnow = count2nano(rt_get_time());",
-                      "if(tnow-tlast>max_t_diff) max_t_diff = tnow-tlast;",
-                      "tlast= tnow;",
-                      "rt_sleep_until(until += nano2count(samp_time));"]]
+            [LitCmds ["secondsVal=i*dt;"]]++
+            for (withNats chansIn) (\(n,(_,ch))->LitCmds ["comedi_do_insn(dev,&(insn_read["++show n++"]));"])
+            ++for (withNats chansIn) (\(n,(nm,ch))->Assign (Var (nm++"Val")) $ Var "to_phys" $> (Var $"datain["++show n++"]"))
+            ++(concat$ nub $map stepd ds)
+            ++for (withNats chansOut) (\(n,(nm,ch))->Assign  (Var $ "dataout["++show n++"]") (Var "from_phys" $> Var (pp nm++"Val")))
+            ++for (withNats chansOut) (\(n,(_,ch))->LitCmds ["comedi_do_insn(dev,&(insn_write["++show n++"]));"])
+            ++[LitCmds ["//comedi_do_insn(dev,&insn_write);",
+                        "tnow = count2nano(rt_get_time());",
+                        "if(tnow-tlast>max_t_diff) max_t_diff = tnow-tlast;",
+                        "tlast= tnow;",
+                        "rt_sleep_until(until += nano2count(samp_time));"]]
 	
-dynEnd ds= 
-    let headOr x [] = x
-        headOr _ (x:_) = x
-        chanIn = headOr "0" [pp chan | ReadSource _ ("ADC",chan) <- ds ] 
-        chanOut = headOr "0" [pp chan | SinkConnect _ ("DAC",chan) <- ds ] in 
-    [LitCmds 
+dynEnd ds = 
+    let chansIn = [pp chan | ReadSource _ ("ADC",chan) <- ds ] 
+        chansOut = [pp chan | SinkConnect _ ("DAC",chan) <- ds ]
+        withNats = zip [0..] in 
+    [LitCmds $ 
        ["comedi_cancel(dev, subdevai);",
-	"comedi_cancel(dev, subdevao);",
-	"comedi_data_write(dev, subdevao, "++chanOut++", 0, AREF_GROUND, from_phys(0));",
-	"//comedi_data_write(dev, subdevao, 1, 0, AREF_GROUND, 2048);",
+	"comedi_cancel(dev, subdevao);"]
+	++for (withNats chansOut) (\(n,ch)->"comedi_data_write(dev, subdevao, "++ch++", 0, AREF_GROUND, from_phys(0));")++
+	["//comedi_data_write(dev, subdevao, 1, 0, AREF_GROUND, 2048);",
 	"comedi_close(dev);"],
     LitCmds 
        ["//free(hist);",
@@ -244,8 +249,8 @@ dynEnd ds=
         "printf(\"largest time difference %g ns\\n\", max_t_diff);",
         "return 0;"]]
 
-stepd (SinkConnect (Var nm) ("DAC", _)) = [Assign  (Var "data[1]") (Var "from_phys" $> Var (nm++"Val")) ]
-stepd (ReadSource nm ("ADC", _)) = [Assign (Var (nm++"Val")) $ Var "to_phys" $> Var "data[0]"]
+stepd (SinkConnect (Var nm) ("DAC", chan)) = [] --[Assign  (Var "data[1]") (Var "from_phys" $> Var (nm++"Val")) ]
+stepd (ReadSource nm ("ADC", chan)) = [] --
 --stepd (SinkConnect (Var nm) ("store", _)) = [Assign (Var ("("++nm++"->arr)[i]")) $ Var  (nm++"Val")]
 stepd d = step d
 
