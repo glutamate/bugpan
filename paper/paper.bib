@@ -64,7 +64,7 @@ author = {Bower, Mark R and Stead, Matt and Brinkmann, Benjamin H and Dufendach,
 doi = {10.1109/IEMBS.2009.5333570},
 file = {::},
 issn = {1557-170X},
-journal = {Conference proceedings : ... Annual International Conference of the IEEE Engineering in Medicine and Biology Society. IEEE Engineering in Medicine and Biology Society. Conference},
+journal = {Annual International Conference of the IEEE Engineering in Medicine and Biology Society. IEEE Engineering in Medicine and Biology Society},
 keywords = {Algorithms,Automatic Data Processing,Automation,Biomedical Engineering,Biomedical Engineering: methods,Data Compression,Data Interpretation, Statistical,Electroencephalography,Electroencephalography: methods,Electrophysiology,Electrophysiology: instrumentation,Electrophysiology: methods,Humans,Programming Languages,Signal Processing, Computer-Assisted,Software},
 month = jan,
 pages = {2811--4},
@@ -106,6 +106,21 @@ publisher = {OUP},
 title = {{Of Maps and Monkeys}},
 year = {1991}
 }
+@article{DiGregorio1999,
+abstract = {Spatially localized Ca(2+) domains are thought to play a key role in action potential (AP)-evoked neurotransmitter release at fast synapses. We used a stage-scan confocal spot-detection method and the low-affinity Ca(2+) indicator Oregon Green 488 BAPTA-5N to study the spatiotemporal profile of presynaptic AP-induced Ca(2+) domains. Families of scanned AP-induced fluorescence transients were detected from spot locations separated by 200-300 nm, within the vicinity of Ca(2+) entry sites. Typically, the largest transient in a particular scan peaked within approximately 1 msec and decayed with rapid (tau(1) of 1.7 msec) and slow components (tau(2) of 16 msec, tau(3) of 78 msec). As the spot was incrementally displaced, transients progressively exhibited a slowing in their time-to-peak and a loss of the fast decay component. Three-dimensional graphs of fluorescence versus time and spot displacement revealed the presence of AP-induced fluorescence domains that dissipated within approximately 7 msec. The size of fluorescence domains were estimated from the full-width at half-maximum of gaussian fits to isochronal DeltaF/F plots and ranged from 0.6 to 3.0 micrometer, with a mean +/- SD of 1.6 +/- 0.6 micrometer. Model simulations of a localized Ca(2+) entry site predicted the major features of the fluorescence transients and suggested that, within approximately 1 msec of the initiation of the Ca(2+) current, both the fluorescence domain and the underlying Ca(2+) domain do not extend significantly beyond the site of entry. Consistent with this prediction, the intracellular addition of EGTA (up to 2 mM) accelerated the decay of the measured transients but did not affect the domain size.},
+author = {DiGregorio, D A and Peskoff, A and Vergara, J L},
+issn = {1529-2401},
+journal = {The Journal of neuroscience : the official journal of the Society for Neuroscience},
+keywords = {Action Potentials,Action Potentials: drug effects,Action Potentials: physiology,Analysis of Variance,Animals,Calcium,Calcium: metabolism,Cells, Cultured,Coculture Techniques,Egtazic Acid,Egtazic Acid: pharmacology,Embryo, Nonmammalian,Fluorescent Dyes,Microscopy, Confocal,Models, Neurological,Models, Theoretical,Neuromuscular Junction,Neuromuscular Junction: drug effects,Neuromuscular Junction: physiology,Neurons,Neurons: physiology,Patch-Clamp Techniques,Presynaptic Terminals,Presynaptic Terminals: physiology,Xenopus},
+month = sep,
+number = {18},
+pages = {7846--59},
+pmid = {10479687},
+title = {{Measurement of action potential-induced presynaptic calcium domains at a cultured neuromuscular junction.}},
+url = {http://www.ncbi.nlm.nih.gov/pubmed/10479687},
+volume = {19},
+year = {1999}
+}
 @article{Durr2003,
 abstract = {Grooming responses are movements of a multi-jointed limb that are targeted toward a stimulus site on the body. To be successful, they require a continuous transformation of stimulus location into a corresponding motor pattern or selection and blending of a subset of cardinal motor patterns. Tactile stimulation of one forewing of a locust elicits characteristic grooming movements of the ipsilateral hind leg. An initial targeted trajectory that moves the tarsus toward the site of stimulation is followed by a cyclic trajectory in the region of the stimulus. We have analyzed both components of this behavior to quantify the relative effects of somatotopic stimulus position and leg start posture on three parameters: initial movement direction, accuracy, and grooming distribution. Accuracy and grooming distribution were significantly affected by the stimulus location but were not influenced by the initial leg posture. Both cues systematically shifted the initial movement direction from the onset of the response. The subsequent cyclic component of grooming movements forms a behavioral continuum with no clustering in joint angle space. We therefore conclude that forewing grooming in locusts is generated by a single movement pattern that is continuously shifted by a sensory cue signaling position on the forewing surface. Both vertebrates and invertebrates can switch between distinct movement forms to groom different parts of their bodies. Our data provide the first evidence that invertebrates, like vertebrates, also have graded control of limb targeting within the somatosensory receptive field of a single form of motor response.},
 author = {Durr, Volker and Matheson, Thomas},
@@ -122,6 +137,16 @@ url = {http://www.ncbi.nlm.nih.gov/pubmed/12773499},
 volume = {90},
 year = {2003}
 }
+@article{Eaton2006,
+abstract = {Numerical computations are often specified in terms of operations on vectors and matrices. This is partly because it is often natural to do so; but it is also partly because, being otherwise useful, such operations have been provided very fast implementations in linear algebra libraries such as ATLAS (implementing BLAS), LAPACK, fftw, etc. Due to their better cache awareness and use of specialized processor instructions, a high-level invocation of an operation such as matrix multiplication using these libraries may execute orders of magnitude more quickly than a straightforward low-level implementation written in, say, C. The combination of efficiency and expressivity has made the framework of linear algebra an exceedingly popular one for scientists. For example, Matlab[1], an interpreter of a simple linear algebra language, has become a standard research tool in many fields.The process of expressing an algorithm in terms of matrices can be error-prone. Matlab and other popular matrix languages are dynamically-typed, which means that type errors are only detected at run-time. Even statically typed languages rarely keep track of more information in an object type than its tensor rank (e.g., to discriminate between matrices and vectors) and element type.If we could additionally expose object dimensions to the type system then we would ideally be able to detect a much wider variety of common errors at compile time than is currently possible. This would in turn make it easier to build and maintain larger numericsintensive software projects.We call our idea of exposing dimensions to the type system "strongly typed linear algebra". We have written a prototype implementation in Haskell, which is based on Alberto Ruiz's GSLHaskell[2] and which uses techniques from Kiselyov and Shan's "Implicit Configurations" paper[3].The presentation will cover the key aspects of our design such as the use of GADTs to combine matrix and vector types, and the use of higher-rank types and staging (namely, Template Haskell) to closely approximate a dependent-type system. Then, we will give a demonstration of interactive use, and compare our system to existing systems in the areas of speed and usability.},
+author = {Eaton, Frederik},
+journal = {Proceedings of the 2006 ACM SIGPLAN workshop on Haskell},
+keywords = {existential types,higher-rank polymorphism,linear algebra,staging,template Haskell},
+pages = {120},
+title = {{Statically typed linear algebra in Haskell}},
+url = {http://portal.acm.org/citation.cfm?id=1159842.1159859},
+year = {2006}
+}
 @article{Editors2003,
 author = {Editors},
 doi = {10.1038/nn0503-433},
@@ -135,6 +160,18 @@ pmid = {12715004},
 title = {{A place for preprint archives?}},
 url = {http://www.ncbi.nlm.nih.gov/pubmed/12715004},
 volume = {6},
+year = {2003}
+}
+@article{Elliott2003,
+abstract = {Functional languages are particularly well-suited to the interpretive implementations of Domain-Specific Embedded Languages (DSELs). We describe an implemented technique for producing optimizing compilers for DSELs, based on Kamin's idea of DSELs for program generation. The technique uses a data type of syntax for basic types, a set of smart constructors that perform rewriting over those types, some code motion transformations, and a back-end code generator. Domain-specific optimization results from chains of domain-independent rewrites on basic types. New DSELs are defined directly in terms of the basic syntactic types, plus host language functions and tuples. This definition style makes compilers easy to write and, in fact, almost identical to the simplest embedded interpreters. We illustrate this technique with a language Pan for the computationally intensive domain of image synthesis and manipulation.},
+author = {Elliott, Conal and Finne, Sigbj\o rn and Moor, Oege De},
+issn = {0956-7968},
+journal = {Journal of Functional Programming},
+number = {3},
+pages = {455},
+title = {{Compiling embedded languages}},
+url = {http://portal.acm.org/citation.cfm?id=967844},
+volume = {13},
 year = {2003}
 }
 @article{Elliott1997,
@@ -754,6 +791,14 @@ url = {http://www.ncbi.nlm.nih.gov/pubmed/12741990},
 volume = {38},
 year = {2003}
 }
+@article{Murray-Rust2002,
+author = {Murray-Rust, P. and Rzepa, H. S.},
+journal = {Data Science},
+pages = {84--98},
+title = {{Scientific publications in XML - towards a global knowledge base}},
+volume = {1},
+year = {2002}
+}
 @article{Nilsson2002,
 abstract = {Functional Reactive Programming (FRP) extends a host programming language with a notion of time flow. Arrowized FRP (AFRP) is a version of FRP embedded in Haskell based on the arrow combinators. AFRP is a powerful synchronous dataflow programming language with hybrid modeling capabilities, combining advanced synchronous dataflow features with the higher-order lazy functional abstractions of Haskell. In this paper, we describe the AFRP programming style and our Haskell-based implementation. Of particular interest are the AFRP combinators that support dynamic collections and continuation-based switching. We show how these combinators can be used to express systems with an evolving structure that are difficult to model in more traditional dataflow languages.},
 author = {Nilsson, Henrik and Courtney, Antony and Peterson, John},
@@ -817,6 +862,19 @@ title = {{Motor control of aimed limb movements in an insect.}},
 url = {http://www.ncbi.nlm.nih.gov/pubmed/18032564},
 volume = {99},
 year = {2008}
+}
+@article{Park2005,
+abstract = {As probabilistic computations play an increasing role in solving various problems, researchers have designed probabilistic languages that treat probability distributions as primitive datatypes. Most probabilistic languages, however, focus only on discrete distributions and have limited expressive power. In this paper, we present a probabilistic language, called $\lambda$ο, which uniformly supports all kinds of probability distributions -- discrete distributions, continuous distributions, and even those belonging to neither group. Its mathematical basis is sampling functions, i.e., mappings from the unit interval (0.0,1.0] to probability domains.We also briefly describe the implementation of $\lambda$ο as an extension of Objective CAML and demonstrate its practicality with three applications in robotics: robot localization, people tracking, and robotic mapping. All experiments have been carried out with real robots.},
+author = {Park, Sungwoo and Pfenning, Frank and Thrun, Sebastian},
+issn = {0362-1340},
+journal = {ACM SIGPLAN Notices},
+keywords = {probabilistic language,probability distribution,robotics,sampling function},
+number = {1},
+pages = {171},
+title = {{A probabilistic language based upon sampling functions}},
+url = {http://portal.acm.org/citation.cfm?id=1040320},
+volume = {40},
+year = {2005}
 }
 @article{Peron2009,
 abstract = {The Lobula Giant Movement Detector (LGMD) is a higher-order visual interneuron of Orthopteran insects that responds preferentially to objects approaching on a collision course. It receives excitatory input from an entire visual hemifield that anatomical evidence suggests is retinotopic. We show that this excitatory projection activates calcium-permeable nicotinic acetylcholine receptors. In vivo calcium imaging reveals that the excitatory projection preserves retinotopy down to the level of a single ommatidium. Examining the impact of retinotopy on the LGMD's computational properties, we show that sublinear synaptic summation can explain orientation preference in this cell. Exploring retinotopy's impact on directional selectivity leads us to infer that the excitatory input to the LGMD is intrinsically directionally selective. Our results show that precise retinotopy has implications for the dendritic integration of visual information in a single neuron.},
