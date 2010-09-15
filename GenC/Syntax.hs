@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts #-} 
+
 module GenC.Syntax where
 
 import Expr
@@ -6,6 +8,7 @@ import PrettyPrint
 import Data.List
 import Numbers
 import TNUtils
+import Control.Monad.State.Lazy
 
 space = " "
 semicolon = ";"
@@ -13,6 +16,27 @@ semicolon = ";"
 inPar s = "("++s++")"
 
 ind s = "   "++s
+
+include, includeLocal :: String -> State [TopDecl] ()
+include nm = modify (CInclude True nm:)
+includeLocal nm = modify (CInclude False nm:)
+
+define nm e = modify (CDefine nm e:)
+
+global ty nm = modify (DeclareGlobal ty nm Nothing:)
+globalAs ty nm e= modify (DeclareGlobal ty nm (Just e):)
+
+function ::  CType -> String ->  [(String, CType)] -> State [CCmd] () -> State [TopDecl] ()
+function retTy nm args mcmd = let cmds = execState mcmd [] in
+                              modify (CFun retTy nm args cmds:)
+
+(=:) :: E -> E -> State [CCmd] ()
+e1 =: e2 = modify (Assign e1 e2:)
+
+ppCode :: State [TopDecl] a -> String
+ppCode ma = ppCProg $ reverse $ execState ma []
+
+writeCode fp ma = writeFile fp $ ppCode ma
 
 data CType = CIntT
            | CLongT
