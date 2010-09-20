@@ -1,9 +1,9 @@
 \section*{Discussion}
 
 We present an entirely new approach to performing and communicating
-science. We propose that three \emph{types}, signals, events and
-durations, are sufficient to represent physiological evidence when
-they can be parametrised by any other type. We show how observations
+science. We propose that three \emph{types} (signals, events and
+durations), when parametrised by any other type, are sufficient to
+represent most or all physiological evidence. We show how observations
 and calculations of these types can be described in a mathematical
 framework based on the lambda calculus. We use two experiments from
 neurophysiology to demonstrate that this approach works in practise:
@@ -18,67 +18,57 @@ tradition of \emph{formal verification} attached to the lambda
 calculus suggests the possibility that algorithmic procedures can
 complement peer-review in validating scientific inference.
 
-Do we need this paragraph somewhere: We have claimed that most or all
-physiological evidence can be represented by signals, events and
-durations. We have shown two very different examples from
-neurophysiology in this paper to substantiate our claim. In addition,
-we have used the calculus of physiological evidence to analyse an
-experiment with movement data and simultaneous recording of many
-neurons from the locust, and analysed the relationship between neural
-activity in identified cells and bursts in other neurons or movement
-cycles (Calas \& Matheson, in preparation). These analyses used
-exactly the same functions and types as those described above.
-
 \subsection*{Limitations and extensions}
 
-The main omission from our framework for physiological observations
-and experiments are spatial (imaging-based) data. Indeed, this is
-quite an oversight given the increasing use of microscopic calcium
-imaging (refs) and other interactions between physiology and anatomy
-refs). Here, we have focussed on a classical physiology because it
-presents a more limited scope and because FRP exclusively deals with
-temporal and not spatial contexts. Nevertheless, our framework can be
-extended to include spatial observations, based on previous work
-\citep{Elliott2003}. This extension is based on analogies between
-signals and images (which are ``indexed'' by continuous variables,
-differing only in the dimensionality of their index), between events
-and points, and between durations and regions of space. Points and
-regions would have tags for carrying associated information. We
-suggest retaining full parametric polymorphism such that images,
-points and regions can represent not only colour or intensity, but
-values in any type. This would also allow nesting of spatial and
-temporal contexts such that movies (signals of images of, say, colour)
-or time-varying quantities recorded at a particular location
-\citep[for instance spot calcium measurements as points of signals of
-concentration;][]{DiGregorio1999} to be representable without
-introducing new concepts. These spatial types and their
-transformations can also define visual stimuli, i.e. replace the
-arbitrary and limited geometric primitives in Example 1.
+Our framework for physiological observations and experiments does not
+at present include the ability to represent and manipulate spatial
+data from e.g. calcium imaging or animal behaviour. Here, we have
+focussed on electrophysiology because it is a more limited scope and
+because FRP exclusively deals with temporal and not spatial
+contexts. Nevertheless, it is likely our framework can be extended to
+include spatial observations, based on previous work on functional
+image synthesis \citep{Elliott2003}. This extension would be based on
+analogies between signals and images (which are ``indexed'' by
+continuous variables, differing only in the dimensionality of their
+index), between events and points, and between durations and regions
+of space. Points and regions would have tags for carrying associated
+information. We suggest retaining full parametric polymorphism such
+that images, points and regions can represent not only colour or
+intensity, but values in any type. This would also allow nesting of
+spatial and temporal contexts such that movies (signals of images of,
+say, colour) or time-varying quantities recorded at a particular
+location \citep[for instance spot calcium measurements as points of
+signals of concentration;][]{DiGregorio1999} could be represented
+without introducing new concepts. These spatial types and their
+transformations could also define visual stimuli, providing a way to
+replace the arbitrary and limited geometric primitives in Example 1.
 
-An additional omission is frequency-domain information, which is
-important in analysing neural oscillations (ref). Time-domain signals
-transformed into the frequency-domain with e.g. Fourier or Laplace
-transforms can be seen as a generalised signal that is indexed by
-frequency rather than by time. We plan to combine frequency-domain and
-spatial generalisations of signals, events and durations in the future.
+Our current framework also does not permit the manipulation of
+frequency-domain information, which is important in analysing neural
+oscillations (ref). Time-domain signals transformed into the
+frequency-domain can be seen as generalised signals that are indexed
+by frequency rather than by time. We will combine frequency-domain and
+spatial generalisations of signals, events and durations in further
+developements of the calculus of physiological evidence.
 
 We have not pursued any particularly sophisticated analyses of our
-data. Embedding linear algebra or probability theory in typed, purely
-functional programming languages is discussed elsewhere
-\citep{Eaton2006, Park2005}.
+data. Embedding linear algebra or probability theory, which may allow
+such analyses, in typed, purely functional programming languages is
+discussed elsewhere \citep{Eaton2006, Park2005} and could be similarly
+incorporated in our framework.
 
 \subsection*{An ontology for physiology}
 
 There are clear advantages to sharing primary data from scientific
-experiments \citep{Insel2003}: preventing needless replication,
+experiments \citep{Insel2003} which include: preventing needless replication,
 facilitating meta-analysis, giving theoretical neuroscientists access
 to a greater variety of observations and enhancing transparency. These
 benefits are likely to be greater if data are structured and stored in
 standard formats. Despite these advantages, and many attempted
-databases, little data from electrophysiological experiments are
+databases, few data from electrophysiological experiments are
 shared in practice. This is likely due to both technical and social
-barriers \citep{Amari2002}. We suggest the the approach to
-experimentation can help overcome social barriers by completely
+barriers \citep{Amari2002}. We suggest that modifying the approach to
+experimentation may help overcome social barriers by completely
 integrating the experiment and analysis specification with structured
 data storage that requires little annotation.
 
@@ -87,14 +77,14 @@ ontology for physiology that address the technical barriers to data
 sharing. Due to the flexibility of parametric polymorphism, our
 ontology can form the basis for the interchange of physiological data
 without imposing unnecessary constraints on what can be shared. The
-ontology cannot be formulated in the various semantic web ontology
-frameworks (OWL, RDF) which lack parametric polymorphism and
-functional abstraction. Nevertheless, it really is an ontology,
-specifying the categories of mathematical objects that constitute
-evidence. It is unusual as an ontology for scientific knowledge in
-being embedded in a \emph{computational} framework, such that it can
-describe not only mathematical objects but also their transformations
-and observations.
+ontology cannot be formulated in the various existing semantic web
+ontology frameworks (Web Ontology Language or Resource Description
+Framework) which lack parametric polymorphism and functional
+abstraction. Nevertheless, it really is an ontology, specifying the
+categories of mathematical objects that constitute evidence. It is
+unusual as an ontology for scientific knowledge in being embedded in a
+\emph{computational} framework, such that it can describe not only
+mathematical objects but also their transformations and observations.
 
 Existing software packages used for the acquisition and analysis of
 physiological data have signal-like (Igor Pro, Wavemetrics; Spike 2,
@@ -106,7 +96,9 @@ observations and stimuli that can be described with their more limited
 definitions is smaller than in our framework. For instance, the signal
 of shapes that describes a visual stimulus in Example 1, or the two-
 or three dimensional location of a moving animal \emph{cannot} be
-represented by a signal in these systems. Although these data may be
+represented by a signal in these systems. 
+
+Although these data may be
 respresentable in different data structures, they cannot then be
 manipulated by functions written to transform generic
 signals. Therefore, our framework can be seen as a generalisation of
