@@ -1,5 +1,5 @@
 \documentclass[11pt]{article}
-%include polycode.fmt
+%include lhs2TeX.fmt
 %include lhs2tex-braincurry-preamble
 \usepackage[a4paper, top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm]{geometry}
 \usepackage{amsmath, amsthm, amssymb}
@@ -8,11 +8,11 @@
 \usepackage[final]{pdfpages}
 \usepackage{natbib}
 \usepackage{graphicx}
+%\linenumbers
 %\usepackage{epsfig}
-\doublespacing \title{A (mathematical or formal) framework for
-  physiological (quantities, evidence or observations), experiments and
-  analyses} \author{Thomas A. Nielsen, Henrik Nilsson and Tom
-  Matheson}
+\doublespacing \title{A formal mathematical framework for
+  physiological observations, experiments and analyses} \author{Thomas
+  A. Nielsen, Henrik Nilsson and Tom Matheson}
 \begin{document}
 
 \maketitle
@@ -249,7 +249,7 @@ differentiates a real-valued signal with respect to time, such that
 |D s| denote its first derivative and |D D s| the second derivative of the
 signal |s|. Likewise, the differential operator can appear on the left
 side of a definition, in which case it introduces a differential
-equation by pattern matching (ref) on the derivative of a signal (see
+equation by pattern matching (REF) on the derivative of a signal (see
 example 2 below).
 
 In addition, the expression |delay s| denotes the signal that is
@@ -304,10 +304,10 @@ the variable \emph{identifier}. This variable will hold the
 whole signal observed during the course of the experiment. The signal
 source binding construct defines  a simple experiment:
 \begin{code}
-v <* ADC (0, 20000)
+v <* ADC 0
 \end{code}
 which describes the observation of the voltage signal on channel 0 of
-an analog-to-digital converter at 20kHz sampling rate.
+an analog-to-digital converter.
 
 In addition to making appropriate observations, an experiment may also
 involve a perturbation of the experimental preparation. To create a
@@ -327,10 +327,10 @@ sineWave = smap sin seconds
 
 Connecting this signal to the real world requires the opposite of a
 signal source, namely a signal sink. To send the sineWave signal to a
-digital-to-analog converter, we write
+channel of a digital-to-analog converter, we write
 
 \begin{code}
-sineWave *> DAC (0, 20000)
+sineWave *> DAC 0
 \end{code}
 
 In the context of a physiology experiment, these declarations can for
@@ -443,7 +443,7 @@ signals were amplified, filtered (see methods) and converted to a
 digital signal:
 
 \begin{code}
-voltage <* ADC (0, 20000)
+voltage <* ADC 0
 \end{code}
 
 |loomingSquare'| and |voltage| thus define a single approach and the
@@ -537,11 +537,11 @@ Dynamic clamp-experiments follow the same template: the current
 command |i| is calculated at each time-step from the simulated conductance |g|
 and the measured membrane voltage |v|:
 \begin{code}
-v <* ADC (0,20000)
+v <* ADC 0
 
 i = sopen (<: v :> - E)* <: g :> sclose
 
-i *> DAC (0,20000)
+i *> DAC 0
 \end{code}
 The experiment is thus characterised by the conductance signal $g$
 (for clarity, here we omit the amplifier-dependent input and output
@@ -569,7 +569,7 @@ convolution.
 preSpike <* poissonTrain rate
 gsyn =  convolveSE (alpha amp tau) (tag 1 preSpike)
 \end{code}
-The si gnal |gsyn| could be used directly in a dynamic clamp experiment
+The signal |gsyn| could be used directly in a dynamic clamp experiment
 using the above template. Here, we will examine other conductances
 that modulate the response of the cell to synaptic excitation.
 
@@ -586,8 +586,8 @@ equations for inactivation are analogous.
 
 We write the forward and backward rates as functions of the membrane voltage
 \begin{code}
-alphaa = \v-> 20*(-46.9-v*1000)/(exp ((-46.9-v*1000)/10) -1)
-betaa = \v->  17.5*(v*1000+19.9)/(exp ((v*1000+19.9)/10) -1)
+alphaa = \v->  20*(-46.9-v*1000)/(exp ((-46.9-v*1000)/10) -1)
+betaa = \v->   17.5*(v*1000+19.9)/(exp ((v*1000+19.9)/10) -1)
 \end{code}
 
 The time-varying state of the activation gate is given by a

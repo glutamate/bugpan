@@ -1,4 +1,3 @@
-%include polycode.fmt
 %format ...  = "\ldots"
 
 %format >->   = "\succ\!\!\!\!\rightarrow"
