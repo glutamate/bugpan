@@ -6,7 +6,7 @@ durations), when parametrised by any other type, are sufficient to
 represent most or all physiological evidence. We show how observations
 and calculations of these types can be described in a mathematical
 framework based on the lambda calculus. We use two experiments from
-neurophysiology to demonstrate that this approach works in practise:
+neurophysiology to demonstrate that this approach works in practice:
 the \emph{in vivo} spike train response to a visual looming stimulus
 in locusts; and a study of synaptic integration with dynamic
 clamp. Our use of typed, functional and reactive programming overcomes
@@ -23,7 +23,7 @@ complement peer-review in validating scientific inference.
 Our framework for physiological observations and experiments does not
 at present include the ability to represent and manipulate spatial
 data from e.g. calcium imaging or animal behaviour. Here, we have
-focussed on electrophysiology because it is a more limited scope and
+focused on electrophysiology because it is a more limited scope and
 because FRP exclusively deals with temporal and not spatial
 contexts. Nevertheless, it is likely our framework can be extended to
 include spatial observations, based on previous work on functional
@@ -49,7 +49,7 @@ oscillations (ref). Time-domain signals transformed into the
 frequency-domain can be seen as generalised signals that are indexed
 by frequency rather than by time. We will combine frequency-domain and
 spatial generalisations of signals, events and durations in further
-developements of the calculus of physiological evidence.
+developments of the calculus of physiological evidence.
 
 We have not pursued any particularly sophisticated analyses of our
 data. Embedding linear algebra or probability theory, which may allow
@@ -66,7 +66,7 @@ to a greater variety of observations and enhancing transparency. These
 benefits are likely to be greater if data are structured and stored in
 standard formats. Despite these advantages, and many attempted
 databases, few data from electrophysiological experiments are
-shared in practice. This is likely due to both technical and social
+shared in practise. This is likely due to both technical and social
 barriers \citep{Amari2002}. We suggest that modifying the approach to
 experimentation may help overcome social barriers by completely
 integrating the experiment and analysis specification with structured
@@ -96,13 +96,14 @@ observations and stimuli that can be described with their more limited
 definitions is smaller than in our framework. For instance, the signal
 of shapes that describes a visual stimulus in Example 1, or the two-
 or three dimensional location of a moving animal \emph{cannot} be
-represented by a signal in these systems. 
-
-Although these data may be
-respresentable in different data structures, they cannot then be
-manipulated by functions written to transform generic
-signals. Therefore, our framework can be seen as a generalisation of
-existing methods of physiological signal processing.
+represented by a signal in these systems. In frameworks that can only
+represent scalar signals, a location must be represented by two or
+three separate signals, which means they cannot then be packaged in a
+single value that can be manipulated by functions written to transform
+signals. Full parametric polymorphism, on the other hand, gives the
+possibility of creating a small vocabulary of generic functions for
+data analysis. Therefore, our framework can be seen as a
+generalisation of existing methods of physiological signal processing.
 
 Our account of physiological evidence solves or immediately proposes
 solutions to many problems in neuroinformatics. One such problem is
@@ -116,122 +117,121 @@ scientific knowledge representation has suggested a possible role for
 meta-data. All relevant information which can be represented by values
 in some type can exist as a collection of signals, events and
 durations. There are important reasons to believe that there cannot
-exist a strict distinction between data and meta-data. Is, for
-instance, a measurement of the temperature at which an experiment is
-conducted, data or meta-data?  That surely depends on the intention of
-the experimenter and whether temperature is manipulated, but also
-depends on the goals of the person who is analysing or meta-analysing
-the data. In our framework, we do not impose any limits on the nature
-of such information. That does not imply that individual pieces of
-information have no context. Because every value has a temporal
-context, the entire context of that value can be retrieved by
-gathering other values with a similar or enclosing temporal context.
+exist a strict distinction between data and meta-data. Information that
+seems incidental and contextual to the experimenter may after
+dissemination become crucial and even a manipulated parameter in
+subsequent studies. As an example, we point to the effect of
+temperature on measurements of glutamate spillover in the hippocampus
+\citep{Kullmann1996, Asztely1997}.  In our framework, we do not impose
+any such distinctions on information. That does not imply that
+individual observations have no context. Because every value has a
+temporal context, the entire relevant context of that value can be
+retrieved by gathering other values with a similar or enclosing
+temporal context.
 
-There is much relevant information about the experiments performed
-here that we find difficult in representing; for instance, the
-procedure for preparing the biological specimin. This information is
-not manipulated during the experiment and is not needed for a computer
-to execute the experiment, but may be of interest for
-meta-analysis. We suggest that a semantic web ontology may be suited
-for representing this information.
+The experimenter can represent any information about the experiment
+that she feels is relevant in our framework, as long as it can be
+represented in simple types. Nevertheless, there is no obligation to
+do so. ``Minimum Information'' requirements
+\citep{Taylor2007,Gibson2008} that outline standards for reporting
+experimental contexts, can be directly translated to out framework
+with the additional benefit of type checks on those values.
 
 \subsection*{Experiment descriptions}
 
-Using our approach, both stimuli and observations are defined
-concisely and unambiguously by mathematical \emph{equations}. This
-makes it possible to repeat, manipulate and reason about experiments
-in a formal framework. Our mathematical definitions are less ambiguous
-than definitions written in plain English, and are more powerful than
-those specified by graphical user interfaces or in formal languages
-without a facility for defining abstractions. It also makes the
-conditions of the recording very explicit, and can serve as an
-unambiguous communication medium.
+Using the calculus of physiological evidence, both stimuli and
+observations are defined concisely and unambiguously by mathematical
+\emph{equations}. This makes it possible to repeat, manipulate and
+reason about experiments in a formal framework. Our mathematical
+definitions are less ambiguous than definitions written in plain
+English, and are more powerful than those specified by graphical user
+interfaces or in formal languages that lack a facility for defining
+abstractions. Our approach also makes the conditions of the recording very
+explicit, and can serve as an unambiguous communication medium.
 
 Our framework is not only a theoretical formalism, but also a very
-practical tool: a collection of computer programs for executing
-experiments and analyses, and data management. Controlling every
-aspect of the scientific process with programs that share data formats
-is potentially highly efficient and eliminates many sources of human
-error. Our experiment definitions have the further advantage that they
-\emph{compose}, that is, more complex experiments can be formulated by
-joining together elementary building blocks. An explicit
-machine-executable definition is also a necessary step in automating
-experiments.
+practical tool. It is a collection of computer programs for executing
+experiments and analyses, and carrying out data
+management. Controlling experimentation and analysis with programs
+that share data formats is potentially highly efficient and eliminates
+many sources of human error. Our experiment definitions have the
+further advantage that they \emph{compose}; that is, more complex
+experiments can be formulated by joining together elementary building
+blocks. An explicit machine-executable definition is also a necessary
+step in automating experiments.
 
-There has been some work on formalising ``workflows'' and creating
-``workflow engines'' for perform large batches of standardised data
-analyses. In the contrasting approach here, all information about the
-experiment is defined by mathematical equations and exists as values
-of well-defined types, and analyses are simply mathematical functions
-that transform and combine signals, event and durations. We do not
-exclude the possibility that an elaborate user interface could help
-formulate these equations, or construct new values in ad-hoc
-circumstances. We have used a simple interface to enter the
-thresholds for spike detection in Example 1. 
+In contrast to the use of ``workflow engines'' for performing large
+batches of standardised data analyses, all information here is defined
+by mathematical equations and exists as values of well-defined types,
+and analyses are simply mathematical functions that transform and
+combine signals, event and durations. Graphical user interfaces can
+nevertheless be an efficient way of entering specific values based on
+the observed data. For instance, we have used a simple interface to
+enter the thresholds for spike detection in Example 1. We plan to
+facilitate the description of such \emph{ad-hoc} interfaces and also
+build more elaborate interfaces as front-ends explore observations.
 
 \subsection*{Statistics}
 
 We have used the word ``evidence'' to mean direct observations and
-calculated values from experiments. In another sense, evidence carries
-information that is relevant for a particular statistical model. How
-can values with signal, event or duration types be combined with
-statistical models? First, a conservative approach is to take
-measurements on signals and events -- for instance the amplitude of
-signal deflections, event frequencies etc -- and store these in
-durations. The language of event detectors and list semantics for
-durations and events may be sufficiently rich to describe these
-measurements, as we have demonstrated for the limited examples in this
-paper. It is then straightforward to use the tags of durations
+calculated values from experiments. Evidence thus carries information
+that is relevant for statistical models of the systems under study,
+but we have not yet extended our approach to include statistical
+analyses. How could values with signal, event or duration types be
+incorporated into statistical models? A conservative approach would be to
+take measurements on signals and events -- for instance the amplitude
+of signal deflections, or the frequencies of event -- and store these in
+durations. It would then be possible to use the tags of durations
 representing measurements in classical null-hypothesis significance
-tests such as the General Linear Model. This approach differs little
-from the way data are analysed routinely in physiology, but a
-lightweight and executable formalism for describing these analyses
-would make it easier to handle large amounts of data and reduce the
-risk of human error.
+tests such as the General Linear Model. 
 
 A more intriguing possibility is to build statistical models for the
-directly observed data, and to use nested durations to describe a
-hierarchical organisation of conditional dependencies amongst
-parameters in such a model. Although probabilistic models for direct
-observations are used in physics \citep{Daniell1991}, the flexible
-construction of such models for physiological observations may depend
-on the development of new programming languages.
+directly observed data \citep{Daniell1991}, and to use nested
+durations to describe a hierarchical organisation \citep{Rouder2003}
+of conditional dependencies amongst parameters in such a model. In the
+context of physiology, this could be achieved by augmenting a
+WinBUGS-like \citep{Gilks1994} language with constructors and
+distributions for signals, events and durations.
+
 
 \subsection*{Towards verified scientific inference}
 
 If we consider that science is based on logic \citep{Jaynes2003}, it
 must be possible in principle to mechanically verify scientific
 inference, just as mathematical proofs can be verified by a proof
-checker \citep{Harrison2009}. It is of course not possible to verify particular
-hypotheses about the physical world, or an organism. What can be
-verified are statements about experiments --- for instance, that:
-particular variables were randomly controlled and not observed;
+checker \citep{Harrison2009}. It is of course not possible to verify
+particular hypotheses about the physical world, or an organism. What
+might be verifiable are statements about experiments --- for instance,
+that: particular variables were randomly controlled and not observed;
 outcomes have not gained correlation due to the analysis procedure;
-missing data is accounted for by the statistical model
+missing data are accounted for by the statistical model
 \citep{Gelman2003}; errors are propagated correctly
-\citep{Taylor1997}; units of measure are used consistently
+\citep{Taylor1997}; units of measurement are used consistently
 \citep{Kennedy1997}; there is no ``double dipping''
 \citep{Kriegeskorte2009}; and ultimately, that the gathered data
 support the conclusions drawn. Statistics addresses some of these
 issues in relating observations to parameter estimation and hypothesis
-testing, but every procedure makes assumptions about how those
-observations are obtained. Experiment description languages, and the
-reification of experimental observations into values of concrete types
-(which may not always be the real numbers), can play an
-important role in such inference. The statistical framework within
-which such inferences take place has an impact on the amount of
-information that must be analysed. For instance, if we accept the
-likelihood principle \citep{Jaynes2003}, we can safely ignore the
-intention of the experimenter, because all the relevant information is
-in the likelihood of the observed data. 
+testing, but every procedure makes assumptions about how the
+underlying observations were obtained. Experiment description
+languages, and the representation of experimental observations into
+values of concrete types (which may not always be real numbers),
+could play an important role in such inference. The statistical
+framework within which such inferences take place has an impact on the
+amount of information that must be analysed. For instance, if we
+accept the likelihood principle \citep{Jaynes2003}, we can safely
+ignore the intention of the experimenter, because all the relevant
+information is in the likelihood of the observed data.
 
 There has been substantial progress in \emph{automation} in the
-experimental sciences, which in turn has accelerated the acquisition
-of knowledge. In contrast, there has been almost no work in
-verification, which is a seperate but overlapping application of
+experimental sciences \citep{King2004}. In contrast, there has been
+almost no work in algorithmic verification \citep{Kropf1999,
+  Sadat2008}, which is a separate but overlapping application of
 calculating machines to science. Nevertheless, if such verification is
-possible it may lead to a much more radical change in the way
-scientific research is conducted.
+feasible it may lead to a radical change in the way scientific
+research is conducted and communicated. It is likely that at least
+some aspects of validation can be achieved with conservative
+extensions of the calculus of physiological evidence integrated with
+statistical inference.
 
 \section*{Methods}
 
@@ -243,54 +243,59 @@ experimentation and simulation, we have implemented a prototype
 compiler that can execute some programs that contain signals and
 events defined by mutual recursion, as is necessary for many of the
 simulations and experiments in this paper. The program is transformed
-into a normal form that can easily be translated to an imperative
-program that iteratively updates variable corresponsing to signal
-values, with a timestep that is defined by the source or sink sampling
-rates if available, or can be set explicitly. The program is divided
-into a series of stages, where each stage consistes of the signals and
+into a normal form that is translated to an imperative
+program that iteratively updates variable corresponding to signal
+values, with a time step that is set explicitly. The program is divided
+into a series of stages, where each stage consists of the signals and
 events defined by mutual recursion, subject to the constraints of
 input/output sources and sinks. This ensures that signal expressions
 can reference values of other signals at arbitrary time points
 (possibly in the future) as long as referenced signals are computed in
 an earlier stage.
 
-For post-acquisition/simulation analysis, where one often merely
-wishes to calculate a new value from existing observations, we have
-implemented the calculus of physiological evidence as domain-specific
-language embedded in the purely functional programming language
-Haskell.
+To calculate a new value from existing observations after data
+acquisition, we have implemented the calculus of physiological
+evidence as domain-specific language embedded in the purely functional
+programming language Haskell. 
 
-For hard real-time dynamic-clamp experiments, we build a compiler
-backend targeting the LXRT interface to the RTAI extensions of the
-Linux kernel, and the Comedi interface to data acquisition
-hardware. Geometric shapes were rendered using OpenGL.
+For hard real-time dynamic-clamp experiments, we have built a compiler
+back-end targeting the LXRT (user-space) interface to the RTAI (Real-time
+application interface; http://rtai.org) extensions of the Linux
+kernel, and the Comedi (http://comedi.org) interface to data
+acquisition hardware. Geometric shapes were rendered using OpenGL
+(http://opengl.org).
 
 All code is available at http://github.com/glutamate/bugpan.
 
 \subsection*{Locust experiments}
 
-Recordings from the locust DCMD neurons were performed as previously
-described (ref). Briefly, locusts were fixed in plasticine with the
-ventral side upwards. The head was fixed with wax at an 90 degree
-angle and the connectives were exposed. A pair of hook electrodes were
-placed underneath the connectives and the electrodes and connectives
-enclosed in petroleum jelly. The electrode signal was amplified 1000x
-and bandpass filtered 50-5000 Hz, before analog-to-digital conversion
-at 18 bits and 20 kHz with a National Instruments PCI-6281 board. The
-locust was placed in front of a 22'' CRT monitor running with a
-vertical refresh rate of 160 Hz. All aspects of the visual stimulus
-and analog-to-digital conversion were controlled by a single computer.
+Recordings from locust DCMD neurons were performed as previously
+described \citep{Matheson2004}. Briefly, locusts were fixed in
+plasticine with the ventral side upwards. The head was fixed with wax
+at a $90^{\circ}$ angle and the connectives were exposed through an
+incision in the soft tissue of the neck. A pair of silver wire hook
+electrodes were placed underneath the connectives and the electrodes
+and connectives enclosed in petroleum jelly. The electrode signal was
+amplified 1000x and bandpass filtered 50-5000 Hz, before
+analog-to-digital conversion at 18 bits and 20 kHz with a National
+Instruments PCI-6281 board. The locust was placed in front of a 22''
+CRT monitor running with a vertical refresh rate of 160 Hz. All
+aspects of the visual stimulus and analog-to-digital conversion were
+controlled by programs written in the calculus of physiological on a
+single computer.
 
 \subsection*{Zebrafish experiments}
 
 Intracellular patch-clamp recordings from motor neurons in the spinal
 cord from a 2-day old zebrafish embryo were performed as previously
-described (ref). We used a National Instruments PCI-6281 board to
-record the output from BioLogic patch-clamp amplifier in current-clamp
-mode, filtered at 3kHz and digitised at 10 kHz, with the output
-current calculated at the same rate. The measured jitter for updating
-the output voltage was 6 $\mu$s and was similar to that measured
-with the RTAI latency test tool.  
+described \citep{McDearmid2006}. We used a National Instruments PCI-6281 board to
+record the output from a BioLogic patch-clamp amplifier in
+current-clamp mode, filtered at 3kHz and digitised at 10 kHz, with the
+output current calculated at the same rate by programs written in the
+calculus of physiological evidence targeted to the RTAI backend (see
+above). The measured jitter for updating the output voltage was 6
+$\mu$s and was similar to that measured with the RTAI latency test
+tool for the experiment control computer.
 
 \bibliographystyle{apalike}
 \bibliography{paper}
