@@ -638,6 +638,19 @@ spiking.
 \includepdf[pages=-]{Figure2.pdf}
 \includepdf[pages=-]{FigureDyn.pdf}
 %\includepdf[pages=-]{Figure4.pdf}
+
+\begin{tabular}{l  l  p{8cm}}
+\hline
+  Function & Type & Description\\ 
+\hline
+  |peak| & |Signal alpha -> Event alpha| & Peak value of each signal segment\\
+  |freqDuring| & \parbox{4cm}{|Duration alpha | \\ |-> Event beta| \\|-> Duration Real|} & Count events in each occurence\\
+\hline
+\end{tabular}
+\vskip1ex 
+
+Table 2. 
+
 \end{document}
  
 
