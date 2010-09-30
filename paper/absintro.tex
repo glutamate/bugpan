@@ -36,11 +36,12 @@ ascertain whether they provide evidence for a given theory
 experiments themselves is difficult because they produce heterogeneous
 data \citep{Tukey1962}, and because experiments interact with the
 physical world and therefore cannot be described purely by relations
-between mathematical objects. Consequently, experiments are invariably
-described in natural languages and carried out manually or by \emph{ad
-  hoc} computer code. Formalisations have focused on the execution of
-specific experiments \citep{Jenkins1989, Manduchi1990, King2004} that
-seem difficult to generalise.
+between mathematical objects. Consequently, experiments are 
+% invariably
+almost always described in natural language and carried out manually or by
+\emph{ad hoc} computer code. Attempts at formalisation have focused on the
+execution of specific experiments \citep{Jenkins1989, Manduchi1990, King2004}
+that seem difficult to generalise.
 
 Whether they are carried out by humans or by automated equipment, many
 experiments can be seen as \emph{programs} that manipulate and observe
@@ -51,9 +52,10 @@ effects, such as input and output \citep{PeytonJones2002, Roy2004,
   Wadler1995} into purely equational programming languages, that is
 languages that can only evaluate mathematical functions
 \citep{Church1941}. These languages, unlike conventional programming
-languages, retain an important characteristic of mathematics: terms
-can be freely substituted by terms with identical meanings. This
-property \citep[referential transparency;][]{Whitehead1927} enables
+languages, retain an important characteristic of mathematics: a term
+can freely be replaced by another term with identical meaning.
+% HN 2010-09-30: Always "substitute for"
+This property \citep[referential transparency;][]{Whitehead1927} enables
 algebraic manipulation and reasoning about the programs
 \citep{Bird1996}. This is important in the context of experiments,
 because it means that an observation can always be defined with a
@@ -65,7 +67,7 @@ framework. Our work is based on Functional Reactive Programming
 formulation of time-dependent reactive computer programs. We show that
 there is substantial overlap between the concepts introduced by FRP
 and physiological observations; consequently, physiological
-experiments can be concisely defined in a FRP-like language. This
+experiments can be concisely defined in an FRP-like language. This
 framework does not describe the physical components of biological
 organisms. It has no concept of networks, cells or proteins. Instead
 it describes the observation and calculation of the mathematical
@@ -73,7 +75,7 @@ objects that constitute physiological evidence (``observations'').
 
 Our framework provides:
 
-(i) an explicitly defined ontology of physiological observations. We
+(i) An explicitly defined ontology of physiological observations. We
 outline a flexible but concisely defined structure for physiological
 quantities. This ontology can form the basis for repositories of
 physiological data and meta-data. Physiological databases (unlike
@@ -84,14 +86,14 @@ flexibility of our ontology can remedy some of the structural
 shortcomings of existing databases \citep{Gardner2005, Amari2002} and
 thus facilitate data sharing \citep{Insel2003}.
 
-(ii) a new language for describing complex experiments and analysis
+(ii) A new language for describing complex experiments and analysis
 procedures in physiology. Thus experimental protocols can be
 communicated unambiguously, highlighting differences between studies
 and facilitating replication and meta-analysis. In addition,
 expressions in our framework can be components of precisely
 formulated scientific theories.
 
-(iii) an new approach to validating scientific inference
+(iii) A new approach to validating scientific inference
 \citep{Editors2003, Editors2010, DeSchutter2010}. By inspecting an
 experiment definition, automated decision procedures can verify
 statements about experiments that indicate sound scientific practice,
@@ -100,7 +102,7 @@ correct error propagation \citep{Taylor1997}. The use of formal
 languages can thus bring transparency to complex experiments and
 analyses.
 
-(iv) a practical tool that is powerful and generalises to complex and
+(iv) A practical tool that is powerful and generalises to complex and
 multi-modal experiments. We have implemented our framework as a new
 programming language and used it for non-trivial neurophysiological
 experiments and data analyses.
@@ -118,3 +120,6 @@ examine the impact of an active potassium conductance on synaptic
 integration using the dynamic clamp technique. These protocols are
 defined unambiguously using only a handful of equations in our
 language.
+
+% HN 2010-09-30: Introduce CPE as an abbreviation? Would (possibly)
+% address a concern of Angus's.
