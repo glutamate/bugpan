@@ -224,15 +224,16 @@ The construct |let x = e1 in e2| defines a variable |x| bound to the value of
 the expression |e_1| that scopes over |e_2| as well as |e_1| (thus
 allowing recursive definitions).
 
-We now present the concrete syntax for a new calculus defined by
+We now present the concrete syntax for a new calculus, that we call
+the \emph{calculus of physiological evidence} (CPE), defined by
 extending the lambda calculus with notions of signals and events,
 along with the necessary constructs to define and manipulate such
-entities. This calculus borrows some concepts from the previous
-implementations of FRP, but it emphasises signals and events as
-mathematical objects in themselves rather than as control structures
-for creating reactive systems \citep{Elliott1997, Nilsson2002}. The
-syntax and implementation strategy is therefore very different from
-FRP.
+entities. This calculus borrows some concepts from earlier versions of
+FRP, but it emphasises signals and events as mathematical objects in
+themselves rather than as control structures for creating reactive
+systems \citep{Elliott1997, Nilsson2002}. Specifically, the new calculus
+encompass a relaxed notion of \emph{causality}. The syntax and
+implementation strategy is therefore very different from FRP.
 
 Let the construct |sopen e sclose| denote a signal with the value of
 the expression |e| at every time point, and let the construct |<: s
