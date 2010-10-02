@@ -24,8 +24,8 @@
 Examining the temporal evolution of observed quantities, such as
 intrinsic rhythms or responses to external stimuli, is ubiquitous in
 physiology. Often these observations are mediated by actions that are
-said to happen at a certain time point - such as action potentials or
-secretion events - but are themselves manifestations of continuous
+said to happen at a certain time point --- such as action potentials or
+secretion events --- but are themselves manifestations of continuous
 changes in ion channel conductances or fusion pore dilations on a
 different timescale. Time must play a multifaceted role in
 physiological evidence.
@@ -100,7 +100,7 @@ membrane voltages or muscle force, but there are also examples of
 non-scalar signals such as the two- or three dimensional location of
 an animal or of a body part. Here, we generalise this notion such that
 for \emph{any} type |alpha|, a signal of |alpha| is defined as a
-function from time to a value in |alpha|, written formally as:
+\emph{function} from time to a value in |alpha|, written formally as:
 \begin{code}
 Signal alpha = Time -> alpha
 \end{code}
@@ -179,10 +179,11 @@ possibility of re-using common analysis procedures.\vskip1ex
 Some of these quantities are directly observed from equipment such as
 amplifiers or electronic detectors, but may need to be conditioned
 before any conclusions can be drawn from them. Other quantities can
-only be inferred from calculations on other observations. First we
-show how to build programs that calculate with signals and events;
-then we show how annotations allow these programs to interact with
-external systems and measure their behaviour.
+only be inferred from calculations on other observations. 
+
+We now proceed to show how to build programs that calculate with
+signals and events; then we show how annotations allow these programs
+to interact with external systems and measure their behaviour.
 
 \subsubsection*{Calculating with signals and events}
 
