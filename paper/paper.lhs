@@ -205,19 +205,22 @@ classical \citep{Sussman2001} and quantum \citep{Karczmarczuk2003}
 mechanics, evolutionary biochemistry \citep{Fontana1994} and
 programming languages \citep{McCarthy1960}.
 
-In the simple lambda calculus, calculations are performed by function
+In the lambda calculus, calculations are performed by function
 abstraction and application. |\x->e| denotes the function with
-argument |x| and body |e|, and |f y| the application of the function
-|f| to the value |y|. For instance, the function |add2 = \x -> x+2|
-adds two to its argument; hence |add2 3 = (\x->x+2) 3 = 3+2| by
-substituting arguments in the function body. In addition we define a
-number of constructs to improve the readability of the language,
-although strictly they can be defined in terms of function application
-and abstraction. The expression |if p then c else a| equals |c| if |p|
-is |True| and |a| if |a| is |False|. Similarly, |let y = e in w|
-defines a variable |y| with the value of the expression |e| (in which
-|y| is in scope to allow recursive definitions) that can be used as a
-value in the expression |w|.
+argument |x| and body |e|, and |f e| the application of the function
+|f| to the expression |e| (i.e., what more conventionally would be written
+$f(e)$). For instance, the function |add2 = \x -> x+2| adds two to its
+argument; hence |add2 3 = (\x->x+2) 3 = 3+2| by substituting arguments
+in the function body. In addition, we define a number of constructs to
+improve the readability of the language. However, they are not
+\emph{necessary} as they can be defined in terms of function
+application and abstraction (and, depending on the exact version of
+the calculus, some additional primitive functions). The expression |if
+p then e1 else e2| equals |e_1| if |p| evaluates to |True| and |e_2| if
+it evaluates to |False|. Similarly, |let x = e1 in e2| defines a
+variable |x| with the value of the expression |e_1| (in which |x| is in
+scope to allow recursive definitions) that can be used as a value in
+the expression |e_2|.
 
 Here, we present a concrete syntax for a new lambda calculus extended
 with signals and events based on the lambda calculus. This language
