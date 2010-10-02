@@ -207,28 +207,32 @@ programming languages \citep{McCarthy1960}.
 
 In the lambda calculus, calculations are performed by function
 abstraction and application. |\x->e| denotes the function with
-argument |x| and body |e|, and |f e| the application of the function
-|f| to the expression |e| (i.e., what more conventionally would be written
-$f(e)$). For instance, the function |add2 = \x -> x+2| adds two to its
-argument; hence |add2 3 = (\x->x+2) 3 = 3+2| by substituting arguments
-in the function body. In addition, we define a number of constructs to
-improve the readability of the language. However, they are not
-\emph{necessary} as they can be defined in terms of function
-application and abstraction (and, depending on the exact version of
-the calculus, some additional primitive functions). The expression |if
-p then e1 else e2| equals |e_1| if |p| evaluates to |True| and |e_2| if
-it evaluates to |False|. Similarly, |let x = e1 in e2| defines a
-variable |x| with the value of the expression |e_1| (in which |x| is in
-scope to allow recursive definitions) that can be used as a value in
-the expression |e_2|.
+argument |x| and body |e| (i.e., an expression |e| in which the
+variable |x| is in scope that yields the value of the function), and
+|f e| the application of the function |f| to the expression |e| (i.e.,
+what more conventionally would be written $f(e)$, except that |f| here
+in general is a function-valued \emph{expression}). For instance, the
+function |add2 = \x -> x+2| adds two to its argument; hence |add2 3 =
+(\x->x+2) 3 = 3+2| by substituting arguments in the function body. In
+addition, we define a number of constructs to improve the readability
+of the language. However, they are not \emph{necessary} as they can be
+defined in terms of function application and abstraction (and,
+depending on the exact version of the calculus, some additional
+primitive functions). The expression |if p then e1 else e2| equals
+|e_1| if |p| evaluates to |True| and |e_2| if it evaluates to |False|. 
+The construct |let x = e1 in e2| defines a variable |x| bound to the value of
+the expression |e_1| that scopes over |e_2| as well as |e_1| (thus
+allowing recursive definitions).
 
-Here, we present a concrete syntax for a new lambda calculus extended
-with signals and events based on the lambda calculus. This language
-borrows some concepts from the previous implementations of FRP, but it
-emphasises signals and events as mathematical objects in themselves
-rather than as control structures for creating reactive systems
-\citep{Elliott1997, Nilsson2002}. The syntax and implementation
-strategy is therefore very different from FRP.
+We now present the concrete syntax for a new calculus defined by
+extending the lambda calculus with notions of signals and events,
+along with the necessary constructs to define and manipulate such
+entities. This calculus borrows some concepts from the previous
+implementations of FRP, but it emphasises signals and events as
+mathematical objects in themselves rather than as control structures
+for creating reactive systems \citep{Elliott1997, Nilsson2002}. The
+syntax and implementation strategy is therefore very different from
+FRP.
 
 Let the construct |sopen e sclose| denote a signal with the value of
 the expression |e| at every time point, and let the construct |<: s
