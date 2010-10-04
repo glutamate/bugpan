@@ -140,13 +140,14 @@ Duration alpha = [Time times Time times alpha]
 Durations are useful for information about a whole trial or about an
 entire experiment, but could also be observations in their own right,
 such as open times of individual ion channels, or periods in which
-activity of a system exceeds a set threshold (e.g bursts). We have
-used durations to hold information about an entire experiment, for
-instance a session identifier or the animal strain. In that case, the
-duration set contains a single element, with the start and end of the
-experiement as start and end time, respectively. Lastly, durations
-could be used for information that spans multiple trials but not an
-entire experiment - for instance, the presence of a drug.
+activity of a system exceeds a set threshold (e.g during action
+potential bursts). We have used durations to hold information about an
+entire experiment, for instance a session identifier or the animal
+strain. In that case, the duration set contains a single element, with
+the start and end of the experiement as start and end time,
+respectively. Lastly, durations could be used for information that
+spans multiple trials but not an entire experiment - for instance, the
+presence of a drug.
 
 Since signals, events and durations can be instantiated for any type,
 they form a simple but flexible framework for representing many
@@ -286,13 +287,16 @@ operator. For instance,
 \begin{code}
 (\x->x>5) ?? s
 \end{code}
-denotes the event that occurs whenever x crosses the threshold level
-|5| with a positive, but not negative, slope. 
+denotes the event that occurs whenever the value of the signal |s|
+satisfies the predicate |\x->x>5|, i.e. is greater than 5, after being
+smaller than 5 for at least a small period of time, in practice the
+timestep. The expression |(\x->x>5) ?? s| thus defines a threshold
+detector restricted to threshold crossings with a positive slope.
 
 This small number of special constructors, along with the lambda
 calculus and the list semantics of events and durations, have allowed
 us to construct a small ``standard library'' of analysis procedures
-for physiology. Table S1 details the types and names of the functions
+for physiology. Table 2 details the types and names of the functions
 in this library.
 
 \subsubsection*{Observing signals and events}
@@ -354,9 +358,11 @@ probability distributions, which violates referentially transparancy
 (if $rnd$ is a random number generator with an arbitratry distribution
 parametrised by $\theta$, it is not in general the case that $ rnd
 \theta + rnd \theta = 2*rnd \theta$). We have thus implemented sources
-corresponding to common parametrised probability distributions. In
-this more general view, sources and sinks bridge referentially
-transparent and non-transparent computations.
+corresponding to common parametrised probability distributions, such
+that experiments can sample values from these distributions and use
+these values in computations or connect them to sinks. In this more
+general view, sources and sinks bridge referentially transparent and
+non-transparent computations.
 
 \section*{Example 1}
 
