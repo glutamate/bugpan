@@ -348,8 +348,9 @@ initHtml =
              --"table td, thead th { cell-spacing: 5px; }",
              "</style>",
             "</head><body>"] -}
-    ["\\documentclass[a4paper]{article}",
-     "%include polycode.fmt",
+    ["\\documentclass[11pt]{article}",
+     "%include lhs2TeX.fmt",
+     "\\usepackage[a4paper, top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm]{geometry}",
      "\\usepackage{graphicx}",
      "\\begin{document}"]
 
@@ -416,7 +417,7 @@ main = do
                         unless ("-nopdf" `elem` opts) $ do
 --                          print "generating pdf..."
 --                          hFlush stdout
-                          system $ "lhs2TeX --poly -o "++fileProper++".tex "++fileProper++".lhs"
+                          system $ "lhs2TeX --math -o "++fileProper++".tex "++fileProper++".lhs"
                           system $ "pdflatex -interaction=batchmode "++fileProper++".tex"
                           return ()
                         return ()

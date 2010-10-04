@@ -503,6 +503,34 @@ lineType t = Lines [LineType t]
 pointSize t = Points [PointSize t]
 pointType t = Points [PointType t]
 
+data CustAxis = CustAxis {
+      caOrigin :: (Double,Double),
+      caLength :: Double,
+      caVertical :: Bool,
+      caTicLen :: Double,
+      caTicOffset :: Double,
+      caTics :: [(Double, String)]
+}
+
+data WithAxis a = WithAxis CustAxis a
+
+instance PlotWithGnuplot a => PlotWithGnuplot (WithAxis a) where
+    multiPlot r (WithAxis (CustAxis (x0,y0) len True tlen toff tics) x) = do
+      let ticCmds (y,txt)  = 
+              [TopLevelGnuplotCmd ("set arrow from first "++show x0++","++show (y0+y)++
+                                   " to first "++show (x0-tlen)++","++show (y0+y)++" nohead front") 
+                                  "unset arrow",
+               TopLevelGnuplotCmd ("set label "++show txt++" at first "++
+                                    show (x0-toff)++","++show (y0+y)++" right front") 
+                                   "unset label"
+               ]
+      let cmds = TopLevelGnuplotCmd ("set arrow from first "++show x0++","++show y0++
+                                   " to first "++show x0++","++show (y0+len)++" nohead front") 
+                                  "unset arrow" : concatMap ticCmds tics
+      px <- multiPlot r $ x
+      return $ map (\(r', pls) -> (r', cmds++pls)) px
+
+
 data ScaleBars a = ScaleBars (Double, Double) (Double,String) (Double,String) a
                  | XScaleBar (Double, Double) (Double,String) Double a
                  | YScaleBar (Double, Double) (Double,String) Double a
