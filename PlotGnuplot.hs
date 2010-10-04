@@ -184,7 +184,7 @@ showMultiPlot rpls = "set multiplot\n" ++ concatMap pl rpls ++"\nunset multiplot
 data Rectangle = Rect (Double, Double) (Double,Double) deriving Show
 unitRect = Rect (0,0) (1,1)
 
-rectTopLeft (Rect (x1,y1) (x2,y2)) = (x1+0.01,y2-0.01) 
+rectTopLeft (Rect (x1,y1) (x2,y2)) = (x1+0.035,y2-0.010) 
 
 class PlotWithGnuplot a where
     getGnuplotCmd :: a -> IO GnuplotCmd
@@ -432,6 +432,7 @@ data YTics a = YTics [Double] a
 data Noaxis a = Noaxis a
               | NoXaxis a
               | NoYaxis a
+              | NoTRaxis a
 
 
 data Key a = KeyTopLeft Bool a 
@@ -475,6 +476,10 @@ instance PlotWithGnuplot a => PlotWithGnuplot (Noaxis a) where
     multiPlot r m@(NoYaxis x) = do
       px <- multiPlot r x
       let cmd = TopLevelGnuplotCmd "set border 1; set tics" "set border; set tics"
+      return $ map (\(r', pls) -> (r', cmd:pls)) px
+    multiPlot r m@(NoTRaxis x) = do
+      px <- multiPlot r x
+      let cmd = TopLevelGnuplotCmd "set border 3; set tics; set xtics nomirror; set ytics nomirror" "set border; set tics"
       return $ map (\(r', pls) -> (r', cmd:pls)) px
 
 instance PlotWithGnuplot a => PlotWithGnuplot (XTics a) where

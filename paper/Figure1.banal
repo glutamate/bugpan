@@ -44,10 +44,10 @@
 >> plot $ PadX 0.05 0.05 $ Noaxis $ XRange 1749 1788 $ XScaleBar (1784, 0.0) (2, "2 s") (0.03) $
 >>        (TextAtLeft (txtx, 0.142) "Distance (m)" $ WithAxis distAx $ lns "dark-red" 1 (chopx (rescale 0.0035 0.175 distSig))) :+: 
 >>        (TextAtLeft (txtx, 0.52) "Voltage" $ lns "black" 1 (chopx (rescale 4 0.63 ecVoltage))) :+: 
->>        (TextAtLeft (txtx, -0.18) "L/V (s})" $ WithAxis lovAx $ lns "blue" 4 (chopx (rescale 5 (-0.33) lovDur))) :+:
+>>        (TextAtLeft (txtx, -0.18) "l/|v| (s})" $ WithAxis lovAx $ lns "blue" 4 (chopx (rescale 5 (-0.33) lovDur))) :+:
 >>        (TextAtLeft (txtx, 0.8) "Spikes" $ pts "dark-green" 7 0.3 (chopx (jitterys 0.08 $ tag 0.8 spikes))) :+:
->>        (TextAtLeft (txtx, 0.24) "Collision" $ pts "red" 11 1 (chopx (tag 0.24 collision))) :+:
->>        (TextAtLeft (txtx, 0.99) "Frequency" $ TextAt (1748.0, 0.93) "(Hz)" $ WithAxis freqAx $ lns "black" 1 (chopx (rescale 0.0012 0.9 shistMany))) 
+>>        (pts "red" 11 1 (chopx (tag 0.20 collision))) :+:
+>>        (TextAtLeft (txtx, 0.99) "Frequency" $ TextAt (1748.0, 0.93) "(s^{-1})" $ WithAxis freqAx $ lns "black" 1 (chopx (rescale 0.0012 0.9 shistMany))) 
 
 %>>        (TextAtLeft (txtx, 0.52) "Voltage" $ lns "black" 1 (chopx (rescale 4 0.63 ecVoltage))) :+: 
 
@@ -61,13 +61,13 @@
 %>>         (during aroundHit $ rebase running $ tag 0 hitScreen)) :==:
 %>>        ((C $ rebase running visangle :+: rebase running dvisangle) :||: (D $ rebase running lumin))) 
 
-\textbf{Figure 1}. Diagram of experiment to record the looming response
-from a locust DCMD neuron with the first five recorded trials from one
-animal. Experiment design: \emph{blue lines}, simulated object
-approach speed for given approach trial, \emph{red lines}, simulated
-object distance, \emph{red triangles}, apparent collision
-time. Observed signal: \emph{black lines}, recorded extracellular
-voltage. Analysis: \emph{green dots}, spikes, with jittered vertical
-placement for display, \emph{thin black line}, spike rate histogram
-with 50 ms bin size. The inter-trial interval of four minutes is not
-shown.
+\textbf{Figure 1}. Diagram of experiment to record the looming
+response from a locust DCMD neuron with the first five recorded trials
+from one animal. Experiment design: \emph{blue lines}, simulated
+object size-to-approach speed ratio ($\frac{l}{||v||}$) for given approach
+trial, \emph{red lines}, simulated object distance, \emph{red
+triangles}, apparent collision time. Observed signal: \emph{black
+lines}, recorded extracellular voltage. Analysis: \emph{green dots},
+spikes, with jittered vertical placement for display, \emph{thin black
+line}, spike rate histogram with 50 ms bin size. The inter-trial
+interval of four minutes is not shown.

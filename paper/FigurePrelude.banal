@@ -17,8 +17,8 @@
 >> everywhere shist lov =  spikeHistOver (extendDur 1 $ during (speed lov) $ contains spikes $ during longStop notDisplaced) 0.05 spikes
 >> everywhere shistMany  = histManyOver (extendDur 1 $ contains spikes $ during longStop notDisplaced) 0.05 spikes
 >> everywhere peakrate  = sigStat maxF $ shistMany 
->> lovStr = \lov -> "l/v = " ++show (round $ (lov::Double)) ++ " ms^{-1}"
->> lovStrs = \lov -> "l/v = " ++lov ++ " s"
+>> lovStr = \lov -> "l/|v| = " ++show (round $ (lov::Double)) ++ " ms^{-1}"
+>> lovStrs = \lov -> "l/|v| = " ++lov ++ " s"
 >> everywhere oneStdDur = take 1 $ drop 1 stdDur
 >> aroundHit = fromto 4.5 5.5
 >> pos = \x -> if x >0 then x else 0

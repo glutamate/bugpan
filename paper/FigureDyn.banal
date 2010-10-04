@@ -10,6 +10,7 @@
 
 >> gA = \gk -> during (eq gk//gmaxk)
 >> vmrt = reTimeSigsBy running vm
+>> filx = filter (\(t,v)->t<101)
 
 >> spike = crossesUp (durd 25) $ der $ vmrt
 
@@ -24,7 +25,7 @@
 
 >> outrate = freqDuring (ffcurve) spike
 
->> scat = LinesPoints [] . scatter
+>> scat = LinesPoints [] . filx . scatter
 
 >> ffscat = (scat $ gA 0 (zipD inrate outrate)) :+: (scat $ gA 1e-8 (zipD inrate outrate)) :+: (scat $ gA 4e-8 (zipD inrate outrate)) :+: (scat $ gA 1e-7 (zipD inrate outrate))
 
@@ -33,11 +34,12 @@
 >> r1 = 20
 >> vm1 = \gk -> smoothN 4 $ focus1 (vmWhere gk r1)
 
->> oneSyn =  YTics [-75, 5, -50] $ XRange 1.7 1.78 $ YRange (-75) (-50) $ KeyTopLeft True $ ("0 nS", vm1 0) :+: ("10 nS", vm1 1e-8) :+: ("40 nS", vm1 4e-8) :+: ("100 nS", vm1 1e-7)
->> vmplot = AxisLabels "Time (s)" "V_m (mV)" $ YTics [-80, 10, -30] $ XRange 1.2 1.5 $ focus2 (vmWhere 0 120) :+: focus2 (vmWhere 1e-8 120) :+:  focus2 (vmWhere 4e-8 120) :+:  focus2 (vmWhere 1e-7 120)
->> ffplot = AxisLabels "presynaptic rate (Hz)" "postsynaptic rate (Hz)" $ YTics [0, 10, 30] $ XRange 0 105 $ YRange 0 30 $ ffscat
 
->> plot $ 1%(AxisLabels "Time (s)" "V_m (mV)" $ A oneSyn)
+>> oneSyn =  YTics [-75, 5, -50] $ XRange 1.7 1.773 $ YRange (-75) (-50) $ KeyTopLeft True $ ("0 nS", vm1 0) :+: ("10 nS", vm1 1e-8) :+: ("40 nS", vm1 4e-8) :+: ("100 nS", vm1 1e-7)
+>> vmplot = AxisLabels "Time (s)" "V_m (mV)" $ YTics [-80, 10, -30] $ XRange 1.2 1.46 $ focus2 (vmWhere 0 120) :+: focus2 (vmWhere 1e-8 120) :+:  focus2 (vmWhere 4e-8 120) :+:  focus2 (vmWhere 1e-7 120)
+>> ffplot = AxisLabels "Presynaptic rate (s^{-1})" "Postsynaptic rate (s^{-1})" $ YTics [0, 10, 30] $ XRange 0 104 $ YRange 0 30 $ ffscat
+
+>> plot $ NoTRaxis $ 1%(AxisLabels "Time (s)" "V_m (mV)" $ A oneSyn)
 >>        :--: 2%(B vmplot :==: C ffplot)
 
 %>> plot oneSyn
@@ -52,8 +54,8 @@
 conductance injections of a unitary simulated synaptic conductance, in
 the presence of A-type potassium conductances of increasing magnitude
 (values given are for the maximal conductance $g_A$). B, as A, but
-with a simulated prsynaptic spike train with inter-spike intervals
-drawn from a poisson distribution (here a mean of 120 Hz; the spike
+with a simulated presynaptic spike train with inter-spike intervals
+drawn from a Poisson distribution (here a mean of $120 s^{-1}$; the spike
 trains for the different levels of A-type conductance are
 identical). C, the postsynaptic spike rate plotted against the rate of
 simulated presynaptic inputs, with $g_A$ as in A.
