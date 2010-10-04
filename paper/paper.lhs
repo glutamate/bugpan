@@ -48,7 +48,7 @@ signals and events permit the encoding of many kinds of physiological
 evidence. Thus, definitions of experiments can be described concisely
 in an FRP-like language based on the composition and calculuation of
 signals and events.  We begin by describing the types that are central
-to FRP, showing how physiological quantities can be captured in
+to FRP and show how physiological quantities can be captured in
 them. We then describe how values of these types can be observed, and
 how fuctions can be used to refine existing observations or generate
 stimuli for experiments.
@@ -533,20 +533,21 @@ show how the calculus of physiological evidence can be used to
 formulate and execute dynamic-clamp experiments on synaptic
 integration.
 
-A dynamic clamp experiment requires electrical access to the
-intracellular compartment, such that the cell membrane voltage can be
-recorded and current injected into the cell. As opposed to a standard
-current-clamp experiment, where the injected current waveform is known
-in advance, in the dynamic clamp setup the injected current command is
-calculated near-instantaneously from the membrance voltage. Unlike the
-standard current clamp configuration, the dynamic clamp permits the
-imposition of additional simulated ionic conductances on a real
-neuron. For instance, it is possible to record the responce of a cell
-to an added a synaptic conductance or an additional Hodgkin-Huxley
-style voltage-sensitive membrane conductance. Here, we combine these
-possibilities to investigate the effect of an A-type potassium
-conductance \citep{Connor1971} on the response of a zebrafish spinal
-motor neuron to synaptic excitation.
+A dynamic clamp experiment \citep{Robinson1993, Sharp1993} requires
+electrical access to the intracellular compartment, such that the cell
+membrane voltage can be recorded and current injected into the
+cell. As opposed to a standard current-clamp experiment, where the
+injected current waveform is known in advance, in the dynamic clamp
+setup the injected current command is calculated near-instantaneously
+from the membrance voltage. Unlike the standard current clamp
+configuration, the dynamic clamp permits the imposition of additional
+simulated ionic conductances on a real neuron. For instance, it is
+possible to record the responce of a cell to an added a synaptic
+conductance or an additional Hodgkin-Huxley style voltage-sensitive
+membrane conductance. Here, we combine these possibilities to
+investigate the effect of an A-type potassium conductance
+\citep{Connor1971} on the response of a zebrafish spinal motor neuron
+to synaptic excitation.
 
 Dynamic clamp-experiments follow the same template: the current
 command |i| is calculated at each time-step from the simulated conductance |g|
@@ -664,264 +665,7 @@ spiking.
 \end{tabular}
 \vskip1ex 
 
-Table 2. 
+Table 2. (incomplete)
 
 \end{document}
  
-
-
-% To see that this model is not sufficient to explain the variability on
-% different trials even within one approach speed, we calculate the
-% variance of spike time histograms for individual trials simulated with
-% a fixed set of parameters tau, t0, baseline and rate, with histogram
-% variances averaged across draws of parameters from the posterior
-% interred from the spike trains recorded with $L/V=20 ms^{-1}$.  The
-% expected variance from fixed parameter models is much smaller than
-% that observed. To compensate, we draw a new rate for every trial from
-% a distribution $N(mu_{rate}, sd_{rate})$, such that the parameters $mu_{rate}$
-% and $sd_{rate}$ replace rate (and are fixed across trials). This model can
-% better account for the trial-to-trial variability of the spike time
-% histogram (Figure X).
-
-%Implementation of this with [Duration [Int]] and list of priors.
-
-% Finally, any of these parameters may vary across individuals in a
-% population of locusts. We add an additional layer to the hierarchical
-% model for the parameters for the population distribution from which
-% individual-level parameters are drawn. The population parameters form
-% the highest-level hyperprior and can be considered the only (free)
-% parameters (of interest) in the model.
-
-\begin{comment}
---rest of intro
-
-
-effects and equational languages.
-
-
-The adoption of a viable formal notation marks a turning point in the maturation of a scientific field. By reducing or removing ambiguity, such a language allows ideas to be formulated and communicated efficiently, experimental observations to be shared and replicated, and scientific inference to be scrutinized.
-
-Examples: Rhodes? Matrix notation in electromagnetism. Dirac notation.
-
-The is currently no proposed notation for neuroscience in general or neurophysiology in particular, despite calls for this [refs].
-
-
-What would the requirements for a modern notation be:
-
-
--machine and human readable: any notation proposed must be readable by the primary producers and consumers of scientific knowledge who remain human. But computers are almost ubiquitous in experimentation and so may be able to help carrying out a defined experiment, and can also help individual researchers filtering through the vast scientific literature.
-
--models, experiments, many different fields, and new ones
-a successful notation should cover experimentation, simulation and analysis across a large intersection of multidiciplinary fields
-
--concise: the language should be concise; important ideas should be expressible in a short amount of space. A concise, expressive language can form an integral part of the presentation of new ideas and findings; a description in verbose language must be relegated to an appendix or an on-line database. In particular, this means that the language should support abstraction: it must be possible to name any relevant combination of terms such that the name can later be used with no change in meaning (ref: Tennent?).
-
--linguistic framework/ontology?
- 
-
--referentially transparent
-In order to facilitate reasoning about experiments (by computers or by humans), terms should be referentially transparent - that is, it should be possible to substitute any term or combination of terms with their meaning without affecting the value of the whole expression or the outcome of the experiment. Side effects.
-
-
-The essence of the problem lies in the last desideratum; how can something which is purely mathematical describe the real world? A similar problem arises in a different guise of programming language theory: how can a language based entirely on composition and evaluation of mathematical functions interact with the world outside the program, i.e. perform input and output. There are many elegant solutions  to this problem; here we highlight one because it serves as the main inspiration for our language for physiology. Functional Reactive Programming (FRP; REF) recognizes the essential role time plays in certain computations, including animations, robotics and physical simulations. FRP introduces two fundamental concepts to represent information in a temporal concepts: Signals, which represent contiuously varying quantities, and events representing discrete occurances. Both of these concepts are examples of higher-order types, that is they are type constructors that can be instantiated with any basic type. Thus, for any type |alpha|, a signal of |alpha| can be thought of as a function from time to a value in |alpha|, which we write in type theory as
-
-Signal a = Time → a
-
-example of signal.
-
-Likewise, an event of a's is isomorphic to a list of pairs of time values and a values:
-
-Event a = [Time x a]
-
-In FRP implementations, Signals and events or signal transformers are first-class: they can be assigned to variables and consumed and created by functions, just as signal producers and consumers, or indeed any other function, are first-class.
-
-To what extent can these concepts describe scientific experimentation? That almost certainly depends on the role time plays in the particular field. Here, we argue that in physiology, time indeed fulfills a crucial role and that the notions of signals and events capture many aspects of physiological evidence. Firstly, many directly observable quantities can be expressed as signals and events, for instance:
-animal or body part location : Signal (Location, Location)
-joint angles : Signal Degrees
-spikes: event ()
-membrane potention : Signal Voltage
-similarly for membrane conductance, quantal release, multichannel recording.
-
-Latent (non-observable) variables same. Ion concentration, spike
-
-Functional nature gives analysis aspects.
-
-Plan for paper.
-
-
-
---old results organization
-The bugpan language
-
-Bugpan is a purely functional strongly typed programming language designed to serve as a description language for experiments and simulations in physiology. Bugpan has a syntax and type system that places it within the ML family of languages and is in particular similar to the Haskell programming language. It shares the main features of all strongly typed functional languages: Bugpan has first-class functions; that is, functions can be passed as values to other functions or can be created by other functions and stored in variables.    
-
-Example of function.
-
-The types of all values and functions must be consistent and known at compile-time, but need not be specified by the user: types can be inferred automatically if they are used consistently. In addition, there is no global state and the value of variables cannot be changed; the principal mode of computation is through the composition and evaluation of recursive functions. The type system of Bugpan is the well-studied Hindley-Milner system, in which programming and theorem proving are essential the same thing. Parametric polymorphism.
-
-To these characteristics we add constructs for creating and observing signals and events (see introduction). In our syntax, the construct sopen e sclose creates a signal with the value of the expression e at every time point, and <: s :> yields the value of the signal s in the temporal context created by the surrounding sopen ... sclose braces. For instance, the function smap defined as
-
-smap f s = sopen f <: s :> sclose
-
-transforms a signal of |alpha| s into a signal of \beta by apply the function f of type |alpha| → \beta to the value at every timepoint. Likewise, the constructs .. for events..
-
-(?) ::  (a → Bool) → Signal a → Event a
-
-(??) ::  (a → Bool) → Signal a → Duration ()
-
-In addition to the operators for forming and reading signals, two constructs enable signals to have a memory. The operator delay introduces an infinitesimal time-delay in a signal. The switch operator allows the occurence of events to influence the time-course of a signal...
-
-Signals and events can be defined in this language by mutual recursion, for instance a signal can switch on an event defined 
-
--pattern match on derivatives
-
--sinks, sources.
-
--durations
-
--How to describe experiment, simulation.
-
--session storage
--queries and analyses
--statistical models
- 
-
-We illustrate the capability of Bugpan to describe experiments and analyses with one computational and one experimental example. These examples are simple but by no means trivial and both build on active research within the last decade.
-
-Gain control
-
--why important
-
--how to define it.
-
--how to achieve it
-
- 
-
-Locust experiments
-
- 
-
-\end{comment}
-
-
-\begin{comment}
-\pagebreak
-
-\section*{Introduction, take 2}
-
-Gottfried Leibniz was possibly the first person to suggest that
-mechanized reasoning removes ambiguity and thus allows ideas to be
-formulated and communicated efficiently and for inferences to be
-scrutinized. He imagined that a formalism for reasoning rests on two
-pillars: a language for describing entities and a set of rules for
-calculating with them. Since then, formal languages have had a
-profound impact on mathematical methods and the theoretical and
-statistical analysis of the natural sciences. As examples we point to
-Leibniz's own infinitesimals, vector notation in electromagnetism and
-the proliferation of logical formalisms in the 20th century stating
-with Frege's first-order logic and the \emph{Principia Mathematica}.
-
-Unfortunately, this clarity does not extend fully to scientific
-inference. ... 
-
-An endevour to extend mechanical reasoning into this domain would have
-to give precise answers to some fundamental questions:
-
-\begin{itemize}
-  \item What kinds of things are there? From antiquity to the semantic
-    web, we have recognized the importance of a catalogue of
-    existence. In mathematics or any calculational framework, a more
-    fundamental question (the answer to which the feasability of an
-    ontology presupposes) is the catalogue of types, who stand in a
-    one-to-many relation with the objects themselves and which
-    determine which transformations are valid. In developing a
-    calculus of evidence in a scientific field, we must therefore ask:
-    what are the relevant \emph{types} whose values are observed?
-
-  \item How do we construct, observe, and transform values of those
-    types?
-
-  \item What does the observation of these typed values tell us about
-    statistical models? How are statistical models typed?
-\end{itemize}
-
-It may be unlikely that one set of answers can address all of the
-natural sciences. A more achievable aim is to account for part of a
-single scientific field. Thus one way of defining a field is to ask
-what its constituent types are.
-
-There are many ways of writing down a definition of an experiment or
-an analysis, some of which are easier to reason about than
-others. Making judgements about experiments requires us to calculate
---- to re-arrange, isolate and substitute terms. These manipulations
-are are much easier in a language in which a term can be replaced by
-terms with identical meaning without changing the meaning of the
-context. For instance, no matter what $w$ refers to or where it
-appears, it is always true that $w+w$ can be substituted by $2w$. This
-property, which is called referential transparency, is shared by all
-'mathematical' notations, but \emph{not} by conventional (imperative)
-programming languages.
-
-Here, we present a language and a calculus for physiological
-evidence. The language is based on an abstract notion of signals and
-events, and the calculus consists of a referentially transparent
-computational framework for relating these types and a flexible
-statistical framework for specifying and evaluating models. This
-frameworks does not describe the physical components of an organism;
-there are no concepts of organ systems, cells, proteins. Instead it
-describes the mathematical objects that play a role in
-evidence. Therefore, it allows experiments, analyses, simulations and
-models to be defined equationally and concisely.
-
-Our framework is derived from the work in incorporating input and
-output in referentially transparent programming languages. The most
-well-studied of these is the lambda calculus, a general framework for
-computation based entirely on evaluating functions in the purely
-mathematical sense, i.e. as maps between sets. The lambda calculus
-allows both recursive functions and the use of functions as first
-class entities: that is, they can be referenced by variables and
-passed as arguments to other functions (which then become higher-order
-functions). These properties together mean that the lambda calculus
-combines verifiable correctness with a high level of abstraction,
-leading to programs that are in practice more concise (ref). The
-lambda calculus or variants thereof has been used as a general
-framework for the foundation of mathematics (Martin-lof), classical
-(wisdom \& sussman) and quantum mechanics (Karczmarczuk 2003),
-microprocessor design (Grundy), chemistry (fontana \& buss 1994).
-
-But the pure lambda-calculus has
-no constructs for interacting with the real world and therefore cannot
-be used to describe experiments.
-
-Fortunately, it is possible to interact with the real world in a
-manner that maintains referentially transparency. 
-
-Here we highlight
-one approach to effects that seems to be well suited for
-physiology. Functional Reactive Programming (FRP; ref) recognizes the
-essential role time plays in certain computer programs, including
-animations, robotics and physical simulations. FRP augments the lambda
-calculus with two fundamental concepts to place information in a
-temporal concepts: Signals, which represent continuously varying
-quantities, and events representing discrete occurances. These
-concepts are given specific definitions in FRP and in our calculus of
-physiological evidence. Whether directly observed or calculated, they
-form the basis for inference in hierarchical regression models.
-
-We use the calculus of physiological evidence to perform a non-trivial
-experiment in \emph{in vivo} insect neurophysiology. The desert locust
-Schistocerca gregaria, like many other winged insects, has a
-specialised circuit in the optic lobe for detecting approaching
-objects. This system projects to descending ganglia via the DCMD
-neuron which is accessible to recording. The DCMD response is
-sensitive to a variety of parameters including the stimulus contrast,
-approach speed and size (gabbiani). However, few studies have have addressed
-whether the locust looming detection system is an efficient in that it
-can discriminate objects that are on collision course from those that
-are on a non-intercepting trajectory. We show that this is the case
-and that the precision of the looming detector is influenced by the
-approach velocity. The definitions of these experiments and the data
-analysis procedure is contained within the main sections of this paper
-in a handful of equations.
-\end{comment}
