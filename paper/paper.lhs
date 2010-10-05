@@ -146,7 +146,7 @@ entire experiment, for instance a session identifier or the animal
 strain. In that case, the duration set contains a single element, with
 the start and end of the experiement as start and end time,
 respectively. Lastly, durations could be used for information that
-spans multiple trials but not an entire experiment - for instance, the
+spans multiple trials but not an entire experiment --- for instance, the
 presence of a drug.
 
 Since signals, events and durations can be instantiated for any type,
@@ -277,9 +277,9 @@ scans familiar from functional programming languages
 
 In addition, we have added a special construct to detect events from
 existing signals. For instance, a threshold detector generates an
-occurrence in an event whenever the value of a signal exceeds a set
+occurrence of an event whenever the value of a signal exceeds a set
 level (and then not again before the value of the signal has decreased
-below that level and then reached it again.)  Here, we generalise the
+below that level and then reached it again).  Here, we generalise the
 threshold detector slightly by taking a predicate (i.e., a function of
 type |alpha->Bool|) on the instantaneous values of the signal and
 generate an event whenever the predicate becomes true using the |??|
@@ -346,10 +346,16 @@ channel of a digital-to-analog converter, we write
 sineWave *> DAC 0
 \end{code}
 
+\textbf{HN 2010-10-05: the following still needs work. The text below
+suggests that each syntactic occurrence of a source means something
+different. I don't think that's necessary, but if that's teh way it is,
+then fine. However, the story needs to be consistent for ALL sources.
+E.g. what happens if the same ADC is mentioned twice?}
+
 In the context of a physiology experiment, these declarations can for
-instance control the amount of current injected in a cell. Below,
+instance control the amount of current injected into a cell. Below,
 non-numeric signals and signal sinks are used to generate visual
-stimuli on a computer screen. Sinks and sources are thus be used to
+stimuli on a computer screen. Sinks and sources are thus used to
 link values, which have been or will be used in purely mathematical
 expressions, to the real world. There are also operations in
 experiments that are not related to real-world observation or to
@@ -516,7 +522,7 @@ This experiment indicates that the calculus of physiological evidence
 can adequately and concisely describe the visual stimulus, spike
 recording and relevant analysis for activation of the locust looming
 detection circuit. To demonstrate the versatility of this framework,
-we now show that it can be used to implement dynamic clamp in an
+we next show that it can be used to implement dynamic clamp in an
 intracellular recording experiment.
 
 \section*{Example 2}
@@ -609,7 +615,7 @@ The time-varying state of the activation gate is given by a
 differential equation. We use the notation |D x = sopen f
 (x,<:seconds:>) sclose | to denote the ordinary differential equation
 that is conventionally written $\frac{dx}{dt} = f(x,t) $ with starting
-conditions explicitly assigned to the variable $x_0$.
+conditions explicitly assigned to the variable $a_0$.
 \begin{code}
 D a = sopen  alphaa <: vm :> * (1- <:a:> ) -
              betaa <: vm :> * <: a :> sclose
