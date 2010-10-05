@@ -61,9 +61,9 @@ period. An experiment consist of one or more \emph{trials},
 non-overlapping time periods during which the observer is running a
 \emph{program} --- instructions for manipulating the environment and
 for constructing mathematical objects, the \emph{observations}. The
-\emph{analyses} are further programs to be run after the experiment
-that construct other mathematical objects pertaining to this
-experiment.
+\emph{analyses} are further programs to be run after or during the
+experiment that construct other mathematical objects pertaining to
+this experiment.
 
 \subsubsection*{Type theory for physiological evidence}
 
@@ -226,7 +226,7 @@ the expression |e_1| that scopes over |e_2| as well as |e_1| (thus
 allowing recursive definitions).
 
 We now present the concrete syntax for a new calculus, that we call
-the \emph{calculus of physiological evidence} (CPE), defined by
+the \emph{calculus of physiological evidence} (CoPE), defined by
 extending the lambda calculus with notions of signals and events,
 along with the necessary constructs to define and manipulate such
 entities. This calculus borrows some concepts from earlier versions of
@@ -331,7 +331,7 @@ experiment started, which can be read from a clock source
 \begin{code}
 seconds <* clock ()
 \end{code}
-which is paramtrised by the unit type (i.e. no information). The sine
+which is parametrised by the unit type (i.e. no information). The sine
 wave can then be defined with
 
 \begin{code}
@@ -380,12 +380,11 @@ insensitive to the colour, texture, size, velocity and azimuth of the
 approaching object when averaged over several approaches
 \citep{Gabbiani2001}.
 
-We have constructed several experiments in the calculus of
-physiological evidence to record the response of LGMD in locusts to
-visual stimuli that simulate objects approaching with different
-velocities. To generate these stimuli, we augmented the calculus of
-physiological evidence with primitive three-dimensional geometric
-shapes. Let the expression
+We have constructed several experiments in CoPE to record the response
+of LGMD in locusts to visual stimuli that simulate objects approaching
+with different velocities. To generate these stimuli, we augmented
+CoPE with primitive three-dimensional geometric shapes. Let the
+expression
 \begin{code}
 cube l
 \end{code}
@@ -542,7 +541,7 @@ setup the injected current command is calculated near-instantaneously
 from the membrance voltage. Unlike the standard current clamp
 configuration, the dynamic clamp permits the imposition of additional
 simulated ionic conductances on a real neuron. For instance, it is
-possible to record the responce of a cell to an added a synaptic
+possible to record the responce of a cell to an added synaptic
 conductance or an additional Hodgkin-Huxley style voltage-sensitive
 membrane conductance. Here, we combine these possibilities to
 investigate the effect of an A-type potassium conductance
