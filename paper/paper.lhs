@@ -11,12 +11,34 @@
 %\linenumbers
 %\usepackage{epsfig}
 \doublespacing \title{A formal mathematical framework for
-  physiological observations, experiments and analyses} \author{Thomas
-  A. Nielsen, Henrik Nilsson and Tom Matheson}
+  physiological observations, experiments and analyses} 
+
+\author{Thomas A. Nielsen, Henrik Nilsson and Tom Matheson}
+
 \begin{document}
+\begin{titlepage}
 
-\maketitle
+\vspace{50 mm}
+\begin{center}{\LARGE {\bf A formal mathematical framework for
+  physiological observations, experiments and analyses}}
+\end{center}
+\vspace{50 mm}
 
+\begin{center}{\large Thomas A. Nielsen$^{*1}$, Henrik Nilsson$^2$ and Tom Matheson$^1$}
+\end{center}
+\vspace{50 mm}
+
+\begin{flushleft}
+1. Department of Biology, University of Leicester, University Road, Leicester LE1 7RH
+
+2. School of Computer Science, University of Nottingham, Jubilee Campus, Nottingham NG8 1BB
+\vspace{50 mm}
+
+$^*$ To whom correspondence should be sent (tan5@@le.ac.uk)
+
+\end{flushleft}
+
+\end{titlepage}
 \input{absintro}
 
 \section*{The calculus of physiological evidence}
