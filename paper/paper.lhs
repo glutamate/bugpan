@@ -468,8 +468,8 @@ voltage <* ADC 0
 
 |loomingSquare'| and |voltage| thus define a single approach and the
 recording of the elicited response. This approach was repeated every 4
-minutes, with different values of $\frac{l}{v}$. Figure 1 shows
-$\frac{l}{v}$ as values with type |Duration Real|, together with the
+minutes, with different values of $\frac{l}{||v||}$. Figure 1 shows
+$\frac{l}{||v||}$ as values with type |Duration Real|, together with the
 |distance'| and |voltage| signals for the first five trials of one
 experiment on a common time scale.
 
@@ -508,14 +508,14 @@ time) composed (|.|) with the function |between = \x -> \y -> \z ->
 z>x && z<=y|. 
 
 We examined how the LGMD spike response varied with changes in
-$\frac{l}{v}$. The average of |hspike| for three different values of
-$\frac{l}{v}$ are shown in figure 2A, and 2B and 2C show the total
+$\frac{l}{||v||}$. The average of |hspike| for three different values of
+$\frac{l}{||v||}$ are shown in figure 2A, and 2B and 2C show the total
 number of spikes (|length spike|) and largest value of |hspike|, for
-each approach, plotted against the value of $\frac{l}{v}$. These plots
+each approach, plotted against the value of $\frac{l}{||v||}$. These plots
 show that while the peak firing rate is a decreasing
-function of $\frac{l}{v}$, the total number of spikes in the approach
+function of $\frac{l}{||v||}$, the total number of spikes in the approach
 is an increasing function. In addition, the time of the peak rate is
-later with smaller values of $\frac{l}{v}$
+later with smaller values of $\frac{l}{||v||}$
 \citep{Hatsopoulos1995}. 
 
 This experiment indicates that the calculus of physiological evidence

@@ -263,6 +263,9 @@ instance AccuShow Double where
 instance (AccuShow a, AccuShow b) => AccuShow (a,b) where
     accushow (x,y) = "("++accushow x++","++accushow y++")"
 
+instance (AccuShow a, AccuShow b, AccuShow c) => AccuShow (a,b, c) where
+    accushow (x,y,z) = "("++accushow x++","++accushow y++","++accushow z++")"
+
 instance AccuShow a => AccuShow [a] where
     accushow xs = "["++intercalate "," (map accushow xs)++"]"
 
