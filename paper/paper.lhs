@@ -615,7 +615,8 @@ The time-varying state of the activation gate is given by a
 differential equation. We use the notation |D x = sopen f
 (x,<:seconds:>) sclose | to denote the ordinary differential equation
 that is conventionally written $\frac{dx}{dt} = f(x,t) $ with starting
-conditions explicitly assigned to the variable $a_0$.
+conditions explicitly assigned to the variable $x_0$. Here the
+differential equation for the activation variable $a$ is
 \begin{code}
 D a = sopen  alphaa <: vm :> * (1- <:a:> ) -
              betaa <: vm :> * <: a :> sclose
