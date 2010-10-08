@@ -4,4 +4,5 @@ pdf:
 	bibtex paper
 	latex paper
 	pdflatex -halt-on-error paper.tex
-	latex2rtf paper
+
+rtf:	latex2rtf paper

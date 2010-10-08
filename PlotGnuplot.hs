@@ -113,10 +113,11 @@ histList :: Int -> [Double] -> ([Double] , Double, Double, Double)
 histList _ [] = ([], 0, 0, 1)
 histList nbins vls = let lo = foldl1' min vls
                          hi = foldl1' max vls
+                         num = realToFrac $ length vls
                          binSize = (hi-lo)/(realToFrac nbins+1)
                          ixs = map (\v-> floor $! (v-lo)/binSize ) vls
                          hArr = histArr (0,nbins-1) $ ixs
-                     in (elems hArr, lo, hi, binSize)
+                     in ((/num) `fmap` elems hArr, lo, hi, binSize)
 
 histListBZ :: Double -> [Double] -> ([Double] , Double, Double, Double)
 histListBZ _ [] = ([], 0, 0, 1)

@@ -345,6 +345,9 @@ tagRange tgs = let vls = map getTag tgs in
                  _ -> (foldr1 min vls, foldr1 max vls) 
 
 
+adjustDur :: ((Double,Double) -> (Double,Double)) -> [Duration a] -> [Duration a]
+adjustDur f = map $ \(ts,v) -> (f ts, v)
+
 convolveWithin :: (Storable a, Num a) => [Duration b] -> Signal a -> [Event a] -> [Signal a]
 convolveWithin [] _ _ = []
 convolveWithin (dur@((td1, td2), v):durs) irf@(Signal t1 t2 dt sf Eq) evs' =

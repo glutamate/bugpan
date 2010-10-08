@@ -688,12 +688,59 @@ spiking.
   Function & Type & Description\\ 
 \hline
   |peak| & |Signal alpha -> Event alpha| & Peak value of each signal segment\\
-  |freqDuring| & \parbox{4cm}{|Duration alpha | \\ |-> Event beta| \\|-> Duration Real|} & Count events in each occurence\\
+
+  |freqDuring| & 
+\parbox{4cm}{\begin{singlespace}
+|Duration alpha -> Event beta| \\|-> Duration Real|
+\end{singlespace}} 
+& Count events in each occurence\\
+
+  |around| &
+\parbox{4cm}{\begin{singlespace}
+|Event alpha -> Signal beta| \\|-> Signal beta|
+\end{singlespace}} 
+& Align signal around event occurrences\\
+
+  |inout| &
+\parbox{4cm}{\begin{singlespace}
+|Event alpha -> Event beta| \\|-> Duration alpha times beta|
+\end{singlespace}} 
+& Create a durations from start and stop events\\
+
+  |convolveSE| &
+\parbox{4cm}{\begin{singlespace}
+|Signal Real -> Event Real| \\|-> Signal Real|
+\end{singlespace}} 
+& Convolve a signal with an event\\
+
+  |during| &
+\parbox{4cm}{\begin{singlespace}
+|Duration beta -> f alpha | \\ |-> f alpha|
+\end{singlespace}} 
+& Event/Duration/Signals that lie within occurences in a duration\\
+
+  |burst| &
+\parbox{4cm}{\begin{singlespace}
+|Real -> Event alpha | \\|-> Duration ()|
+\end{singlespace}} 
+& Durations when successive inter-event occurrence intervals fall below a minimum\\
+
+  |adjustDur| &
+\parbox{4cm}{\begin{singlespace}
+|Time times Time| \\ | -> Time times Time | \\ |-> Duration alpha | \\|-> Duration alpha|
+\end{singlespace}} 
+& Durations when successive inter-event occurrence intervals fall below a minimum\\
+
+
+
+
 \hline
+
+
 \end{tabular}
 \vskip1ex 
 
-Table 2. (incomplete)
+Table 2. (incomplete;)
 
 \end{document}
  
