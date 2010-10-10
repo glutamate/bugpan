@@ -321,76 +321,126 @@ us to construct a small ``standard library'' of analysis procedures
 for physiology. Table 2 details the types and names of the functions
 in this library.
 
-\subsubsection*{Observing signals and events}
+% \subsubsection*{Observing signals and events}
+\subsubsection*{Interacting with the physical world}
 
-In the previous examples, signals, events and durations exist as
-purely mathematical objects. In order to describe experiments, it must
-also be possible to observe particular values from real-world systems, and
-to create controlled stimuli to perturb these systems. For this
-purpose, we introduce \emph{sources} and \emph{sinks} that bridge
-variables in purely mathematical equations with the physical world.
+In the previous examples, signals, events and durations exist as purely
+mathematical objects. However, in order to describe experiments, it must also
+be possible to observe particular values from real-world systems, and to
+create controlled stimuli to perturb these systems. For this purpose, we
+introduce \emph{sources} and \emph{sinks} that act as a bridge between the
+purely mathematical equations and the physical world.
 
-The construct
+A source is essentially an input port through which the value of some external
+variable can be observed during the course of an experiment. Depending on the
+nature of the variable, whether it can vary or will remain constant throughout
+an experiment, the observation yields a signal or single value, respectively.
+A typical example of a source is an analog-to-digital converter measuring some
+experimental variable. Observing this over the duration of an experiment
+yields a signal.
+
+In more detail, the sources are parametrised, thus denoting a \emph{family}
+of sources with the parameter(s) identifying a specific instance. The
+construct
 \begin{code}
 identifier <* source parameter
 \end{code}
-binds the signal yielded by a parametrised \emph{source} to
-the variable \emph{identifier}. This variable will hold the
-whole signal observed during the course of the experiment. The signal
-source binding construct defines  a simple experiment:
+binds the value or signal resulting by observing the the parametrised
+\emph{source} during the course of an experiment to the variable
+\emph{identifier}. Note that, in the case of a signal, the variable is bound
+to the \emph{whole} signal. For a concrete example, the following code
+defines a simple experiment:
 \begin{code}
 v <* ADC 0
 \end{code}
-which describes the observation of the voltage signal on channel 0 of
-an analog-to-digital converter.
+This describes the observation of the voltage signal on channel 0 of an
+analog-to-digital converter, binding it to the variable |v|.
 
-In addition to making appropriate observations, an experiment may also
-involve a perturbation of the experimental preparation. To create a
-stimulus for an external system, we first construct time-varying signals as
-described above; for instance a sine wave. To build such a signal, we
-start with a clock signal that counts the number of seconds since the
-experiment started, which can be read from a clock source
+What happens if the same source is observed more than once in a description of
+an experiment? Often, for example if the source refers to a single, physical
+input port such as a channel of an analog-to-digital converter, the result
+will necessarily be the same as the same entity is being observed within a
+single run of the experiment. Such sources are called \emph{idempotent}.
+Idempotency ensures that separate experiments referring to a common external
+variable can be composed easily with a predictable outcome. However, there are
+other kinds of sources, notably random sources as discussed below, where
+idempotency is \emph{not} desirable. Each occurrence of a non-idempotent
+source is thus a separate, independent source, even if the name of the
+source and the parameters happen to be the same.
+
+In addition to making appropriate observations, an experiment may also involve
+a perturbation of the experimental preparation. In the context of a physiology
+experiment, the purpose could be to control the amount of current injected
+into a cell. In one of the examples described below, non-numeric signals are
+used to generate visual stimuli on a computer screen. 
+
+This requires the opposite of a source, namely an output port connected to a
+physical device capable of effectuating the desired perturbation. Such a port
+is called a \emph{sink}. The value at the output at any point in time during
+an experiment is defined by connecting the corresponding sink to a signal.
+This is done through the the following construct, mirroring the source
+construct discussed above:
+\begin{code}
+signal *> sink parameter
+\end{code}{}
+
+As a concrete example, suppose we wish to output a sinusoidal stimulus. We
+first construct a time-varying signal describing the desired shape of the
+stimulus. In this case, we start with a clock signal that counts the number of
+seconds since the experiment started, which can be read from a clock source:
 \begin{code}
 seconds <* clock ()
 \end{code}
-which is parametrised by the unit type (i.e. no information). The sine
-wave can then be defined with
-
+(There is only one clock, meaning that the parameter is of the type unit |()|
+that only has one element, also written |()|.) The sine wave can now be
+defined as:
 \begin{code}
 sineWave = smap sin seconds
 \end{code}
-
-Connecting this signal to the real world requires the opposite of a
-signal source, namely a signal sink. To send the sineWave signal to a
-channel of a digital-to-analog converter, we write
-
+To send the |sineWave| signal to channel channel 0 of a digital-to-analog
+converter, we then write
 \begin{code}
 sineWave *> DAC 0
-\end{code}
+\end{code}{}
 
-\textbf{HN 2010-10-05: the following still needs work. The text below
-suggests that each syntactic occurrence of a source means something
-different. I don't think that's necessary, but if that's teh way it is,
-then fine. However, the story needs to be consistent for ALL sources.
-E.g. what happens if the same ADC is mentioned twice?}
+What happens if the same \emph{sink} is defined more than once? One could
+imagine combining the defining signals in various ways. For example, in the
+case of a simple numerical signal, they could simply be added, mirroring
+superposition of waves in the physical world. However, as our signals are more
+general, it is not always clear what the appropriate notion of ``addition''
+should be. For example, if we have signals carrying images, and we wish to
+output these to a single graphical display, it is likely that we also need to
+describe aspects such as which one should be ``on top''. Thus, for flexibility
+and clarity, combination of output signals has to be described explicitly, and
+it is an error to define a sink more than once in an experimental description.
 
-In the context of a physiology experiment, these declarations can for
-instance control the amount of current injected into a cell. Below,
-non-numeric signals and signal sinks are used to generate visual
-stimuli on a computer screen. Sinks and sources are thus used to
-link values, which have been or will be used in purely mathematical
-expressions, to the real world. There are also operations in
-experiments that are not related to real-world observation or to
-purely functional computation --- for instance sampling from
-probability distributions, which violates referentially transparancy
-(if $rnd$ is a random number generator with an arbitratry distribution
-parametrised by $\theta$, it is not in general the case that $ rnd
-\theta + rnd \theta = 2*rnd \theta$). We have thus implemented sources
-corresponding to common parametrised probability distributions, such
-that experiments can sample values from these distributions and use
-these values in computations or connect them to sinks. In this more
-general view, sources and sinks bridge referentially transparent and
-non-transparent computations.
+There are also operations in experiments that are not related to real-world
+observation or to purely functional computation. One example is sampling from
+probability distributions. We have implemented sources corresponding to common
+parametrised probability distributions, such that experiments can sample
+values from the distributions and use these values in computations or
+connect them to sinks. However, these sources are \emph{not} idempotent as it
+is important there are no accidental correlations. Sharing of a single random
+signal, when needed, can be described easily anyway: just bind that signal to a
+variable as discussed above and use the variable to refer to the signal
+instead of repeating the reference to the random source. In this more general
+view, sources and sinks bridge referentially transparent and non-transparent
+computations.
+
+% Sinks and sources are thus used to
+% link values, which have been or will be used in purely mathematical
+% expressions, to the real world. There are also operations in
+% experiments that are not related to real-world observation or to
+% purely functional computation --- for instance sampling from
+% probability distributions, which violates referentially transparancy
+% (if $rnd$ is a random number generator with an arbitratry distribution
+% parametrised by $\theta$, it is not in general the case that $ rnd
+% \theta + rnd \theta = 2*rnd \theta$). We have thus implemented sources
+% corresponding to common parametrised probability distributions, such
+% that experiments can sample values from these distributions and use
+% these values in computations or connect them to sinks. In this more
+% general view, sources and sinks bridge referentially transparent and
+% non-transparent computations.
 
 \section*{Example 1}
 
