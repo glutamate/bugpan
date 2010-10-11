@@ -1,22 +1,22 @@
 \section*{Discussion}
 
 We present an entirely new approach to performing and communicating
-experimental science. We propose that three \emph{types} (signals, events and
-durations), when parametrised by any other type, are sufficient to
-represent most or all physiological evidence. We show how observations
-and calculations of these types can be described in a mathematical
-framework based on the lambda calculus. We use two experiments from
-neurophysiology to demonstrate that this approach works in practice:
-the \emph{in vivo} spike train response to a visual looming stimulus
-in locusts; and a study of synaptic integration with dynamic
-clamp. Our use of typed, functional and reactive programming overcomes
-at least two long-standing issues in informatics: the need for a
-flexible ontology to share heterogeneous data from physiological
-experiments \citep{Amari2002}, and a language for describing
-experiments unambiguously \citep{Murray-Rust2002}. In addition, the
-tradition of \emph{formal verification} attached to the lambda
-calculus suggests the possibility that algorithmic procedures can
-complement peer-review in validating scientific inference.
+experimental science. We propose that three \emph{types} (signals,
+events and durations), when parametrised by any other type, are
+sufficient to represent most or all physiological evidence. We show
+how observations and calculations of these types can be described in a
+mathematical framework based on the lambda calculus. We use two
+experiments from neurophysiology to demonstrate that this approach
+works in practice: the \emph{in vivo} spike train response to a visual
+looming stimulus in locusts; and a study of synaptic integration with
+dynamic clamp. Our use of typed, functional and reactive programming
+overcomes at least two long-standing issues in bioinformatics: the
+need for a flexible ontology to share heterogeneous data from
+physiological experiments \citep{Amari2002}, and a language for
+describing experiments unambiguously \citep{Murray-Rust2002}. In
+addition, the tradition of \emph{formal verification} attached to the
+lambda calculus suggests the possibility that algorithmic procedures
+can complement peer-review in validating scientific inference.
 
 \subsection*{An ontology for physiology}
 
@@ -38,16 +38,18 @@ ontology for physiology that address the technical barriers to data
 sharing. Due to the flexibility of parametric polymorphism, our
 ontology can form the basis for the interchange of physiological data
 without imposing unnecessary constraints on what can be shared. The
-ontology cannot be formulated in the various existing semantic web
-ontology frameworks (Web Ontology Language or Resource Description
-Framework) which lack parametric polymorphism and functional
-abstraction. Nevertheless, in specifying the categories of
-mathematical objects that constitute evidence, it is an ontology. We
-emphasise again that it is an ontology of \emph{evidence}, not of the
-biological entities that give rise to this evidence. It is unusual as
-an ontology for scientific knowledge in being embedded in a
-\emph{computational} framework, such that it can describe not only
-mathematical objects but also their transformations and observations.
+ontology in non-hierarchical and is difficult to formulate in the
+various existing semantic web ontology frameworks (Web Ontology
+Language or Resource Description Framework) which lack parametric
+polymorphism and functional abstraction. Nevertheless, in specifying
+the categories of mathematical objects that constitute evidence, it is
+an ontology in the classical sense of cataloguing the categories of
+being within a specific domain. We emphasise again that it is an
+ontology of \emph{evidence}, not of the biological entities that give
+rise to this evidence. It is unusual as an ontology for scientific
+knowledge in being embedded in a \emph{computational} framework, such
+that it can describe not only mathematical objects but also their
+transformations and observations.
 
 Existing software packages used for the acquisition and analysis of
 physiological data have signal-like (Igor Pro, Wavemetrics; Spike 2,
@@ -71,14 +73,6 @@ other hand, gives the possibility of creating a small vocabulary of
 generic functions for data analysis. Therefore, our framework can be
 seen as a generalisation of existing methods of physiological signal
 processing.
-
-Our account of physiological evidence solves or immediately proposes
-solutions to many problems in neuroinformatics. One such problem is
-the difficulty of sharing primary data \citep{Amari2002}. We have
-shown that fully polymorphic signals, events and durations can
-represent data across many aspects of neurophysiology, which could
-provide the foundation for a general database that can represent the
-variety of physiological evince. 
 
 Previous work on scientific knowledge representation has suggested
 that ``meta-data'' can represent the context of an experiment
@@ -106,9 +100,9 @@ experimenter may after dissemination become crucial and even a
 manipulated parameter in subsequent studies. As an example, we point
 to the effect of temperature on measurements of glutamate spillover in
 the hippocampus \citep{Kullmann1996, Asztely1997}.  In our framework,
-we do not impose any such distinctions on information. That does not
+we do not impose any such distinction on information. That does not
 imply that individual observations have no context. Because every
-value has a temporal context, the entire relevant context of that
+value has a temporal context, the relevant information about that
 value can be retrieved by gathering other values with a similar or
 enclosing temporal context.
 
@@ -122,10 +116,8 @@ definitions are less ambiguous than definitions written in plain
 English, and are more powerful than those specified by graphical user
 interfaces or in formal languages that lack a facility for defining
 abstractions. Our approach also makes the conditions of the recording
-very explicit, and can serve as an unambiguous communication
-medium. In addition, it can also serve as an executable core language
-for experiments and analyses that have been built with graphical user
-interfaces.
+very explicit, and can serve as an unambiguous medium for automating
+and communicating experiments. 
 
 Our framework is not only a theoretical formalism, but also a very
 practical tool. It is a collection of computer programs for executing
@@ -135,19 +127,20 @@ that share data formats is potentially highly efficient and eliminates
 many sources of human error. Our experiment definitions have the
 further advantage that they \emph{compose}; that is, more complex
 experiments can be formulated by joining together elementary building
-blocks. An explicit machine-executable definition is also a necessary
-step in automating experiments. 
+blocks. 
 
-In contrast to the use of ``workflow engines'' for performing large
-batches of standardised data analyses, all information here is defined
-by mathematical equations and exists as values of well-defined types,
-and analyses are simply mathematical functions that transform and
-combine signals, event and durations. Graphical user interfaces can
-nevertheless be an efficient way of entering specific values based on
-the observed data. For instance, we have used a simple interface to
-enter the thresholds for spike detection in Example 1. We plan to
-facilitate the description of such \emph{ad-hoc} interfaces and also
-build more elaborate interfaces as front-ends to explore observations.
+The use of a formal language for formulating experiments does not
+preclude the use of a graphical user interface for helping to
+construct these formulations. On the contrary, user-friendly
+interfaces can be built to primarily generate code in language such as
+CoPE. This relieves designers of innovative user interfaces for
+experimentation and analysis from the burden of interacting with
+hardware in a timely manner. Graphical user interfaces can also be an
+efficient way of entering specific values based on the observed
+data. For instance, we have used a simple interface to enter the
+thresholds for spike detection in Example 1. We plan to facilitate the
+description of such \emph{ad-hoc} interfaces and also build more
+elaborate interfaces as front-ends to explore observations.
 
 \subsection*{Limitations and extensions}
 
