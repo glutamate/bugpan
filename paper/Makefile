@@ -6,3 +6,7 @@ pdf:
 	pdflatex -halt-on-error paper.tex
 
 rtf:	latex2rtf paper
+
+cover:  
+	pdflatex cover_letter
+	latex2rtf cover_letter
