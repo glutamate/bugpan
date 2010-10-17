@@ -1,0 +1,37 @@
+\section*{Generalised Signals}
+\label{sec-gensig}
+
+% HN 2010-10-17: Used to be:
+% \subsection*{Limitations and extensions}
+
+Our framework for physiological observations and experiments does not
+at present include the ability to record or manipulate spatial data
+from e.g. calcium imaging or animal behaviour, or frequency domain
+representation of periodically repeating observations. Here, we have
+focused on electrophysiology because it is a more limited scope and
+because FRP exclusively deals with temporal and not spatial
+contexts. Nevertheless, generalising CoPE to include spatial and
+frequency-domain data is straightforward; we outline this extension
+here. Signals are generalised in the index type, such that values can
+be indexed by \emph{any} data type, such as time for time-varying
+quantities, frequency for spectra or periodograms, or vectors of
+integers or real numbers for images; we merely require functions that
+define how values (of any type but of known size) can be organised in
+memory for the given index type. We define an operation from an index
+type to its \emph{inverse}. For instance, frequency is the inverse of
+time, and spatial frequency the inverse of spatial length. We then
+finally define operations to calculate signals indexed by a type from
+signals indexed by the inverse type, to represent transforms between
+temporal and frequency domains. Events are also generalised to lists
+of pairs of index and value types. This allow nesting of spatial and
+temporal contexts such that movies (signals of images of, say, colour)
+or time-varying quantities recorded at a particular location
+\citep[for instance spot calcium measurements as points of signals of
+concentration;][]{DiGregorio1999} could be represented without
+introducing new concepts. These spatial types and their
+transformations could also define visual stimuli, providing a way to
+replace the arbitrary and limited geometric primitives in Example
+1. This extension of CoPE relies on a more powerful type system than
+the one we have described previously. We have implemented the central
+features in the purely functional language Haskell using common
+extensions.

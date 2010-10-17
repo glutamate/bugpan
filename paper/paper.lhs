@@ -726,6 +726,7 @@ pharmacologically blocked in this experiment, and increases the
 threshold at which imposed simulated synaptic activity causes postsynaptic
 spiking.
 
+\input{gensig}
 \input{discuss}
 
 \includepdf[pages=-]{Figure1.pdf}
