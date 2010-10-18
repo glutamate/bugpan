@@ -55,9 +55,9 @@ inevery t <- session 7 where
      angle! ~ RandomSignal waveform noise
 
 
-^^ thin 100
-^^ chunkSize 2000
-^^ monitorSession 1
-^^ monitorSession 3
-^^ monitorTrial (0,0)
+--^^ thin 100
+--^^ chunkSize 2000
+--^^ monitorSession 1
+--^^ monitorSession 3
+--^^ monitorTrial (0,0)
 --^^ monitorTrial (2,1)

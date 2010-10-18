@@ -14,10 +14,11 @@ import QueryPlots
 main = do
   nm:chain:restArgs <- getArgs
   nfiles <- (length . filter (nm `isPrefixOf`)) `fmap` getDirectoryContents "."
+  print nfiles
   let (lo, hi) = (safeHead restArgs >>= safeRead) `orJust` (0,nfiles)
   xs <- forM [lo..hi] $ \fnum-> do 
           let file =  (nm++"_chain"++chain++"_file"++show fnum++".mcmc")
---          putStr $ file++" "
+          putStr $ file++" "
           ifM (doesFileExist file ) 
               (safeLoad file)             
               (return [])
@@ -29,5 +30,5 @@ main = do
 
 showError ((mu, sd), jf) = "(JF "++accushow (100*jf)++"%) "++accushow mu ++ " +/- " ++accushow sd
 
-padStr n s | n > length s = s ++ replicate (n-length s) ' '
-           | otherwise = s
+--padStr n s | n > length s = s ++ replicate (n-length s) ' '
+--           | otherwise = s
