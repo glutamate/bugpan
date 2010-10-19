@@ -195,6 +195,7 @@ possibility of re-using common analysis procedures.\vskip1ex
   Drug present & |Duration ()| \\
   Trial with parameter |alpha| & |Duration alpha| \\
   Visual stimulus & |Signal Shape| \\
+  Lab notebook & |Event String| \\
 \hline
 \end{tabular}
 \vskip1ex 
