@@ -206,7 +206,7 @@ before any conclusions can be drawn from them. Other quantities can
 only be inferred from calculations on other observations. 
 
 These ideas may seem obvious --- indeed, we see the conceptual
-simplicity as their principal advantage.  But they are not \emph{not}
+simplicity as their principal advantage.  But they are \emph{not}
 available as descriptions of observed data in biomedical ontologies
 and are absent from many programming languages.
 
