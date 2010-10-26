@@ -205,6 +205,11 @@ amplifiers or electronic detectors, but may need to be conditioned
 before any conclusions can be drawn from them. Other quantities can
 only be inferred from calculations on other observations. 
 
+These ideas may seem obvious --- indeed, we see the conceptual
+simplicity as their principal advantage.  But they are not \emph{not}
+available as descriptions of observed data in biomedical ontologies
+and are absent from many programming languages.
+
 We now proceed to show how to build programs that calculate with
 signals and events; then we show how annotations allow these programs
 to interact with external systems and measure their behaviour.
