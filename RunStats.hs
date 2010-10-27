@@ -127,8 +127,11 @@ rvars = rvar []
 
 typeOfDist (App (App (Var "N") _) _) = NumT (Just RealT)
 typeOfDist (App (App (Var "uniform") _) _) = NumT (Just RealT)
+typeOfDist (App (App (Var "uniformInt") _) _) = NumT (Just IntT)
 typeOfDist (App (App (Var "RandomSignal") _) _) = SignalT $ NumT (Just RealT)
 typeOfDist (App (Var "unknown") _) = NumT (Just RealT)
+typeOfDist (App (Var "unknownInt") _) = NumT (Just IntT)
+typeOfDist (App (App (Var "binomial") _) _) = NumT (Just IntT)
 typeOfDist e = error $ "typeOfDist: unknown expr" ++ show e
 
 durExprToName (Var nm) = nm
@@ -184,9 +187,11 @@ ppUpdaters outerPath allrvs ((RVar vnm t ex):rest) =
           dists = unPex outerPath [vnm] allrvs lh : (map (distSum outerPath) $ childrenOf vnm allrvs)
 
 distE (App (App (Var "unknown") _) _)= 1
+distE (App (App (Var "unknownInt") _) _)= 1
 --distE (App (App (Var "N") mue) sde) = Var "P.logGaussD" $> mue $> sde
 distE (App (App (App (Var "N") mue) sde) xe) = Var "P.logGaussD" $> mue $> sde $> xe
 distE (App (App (App (Var "uniform") loe) hie) xe) = Var "P.uniform" $> loe $> hie $> xe
+distE (App (App (App (Var "binomial") ne) pe) xe) = Var "P.logBinomial" $> (ne) $> pe $> xe
 distE (App (App (App (Var "RandomSignal") wfe) noisee) sige) = Var "pdf" $> (Var "RandomSignalFast" $> wfe $> noisee) $> sige
 distE d = error $ "distE: "++show d
 lookupDist :: [RVar] -> String -> E
@@ -363,8 +368,10 @@ initialise allrvs =
 eval' env e = unEvalM $ eval (extsEnv env emptyEvalS) e
 
 distToInit env (App (Var "unknown") e)=  eval' env e 
+distToInit env (App (Var "unknownInt") e)=  eval' env e 
 distToInit env (App (App (Var "N") me) se) = eval' env me
 distToInit env (App (App (Var "uniform") loe) hie) = eval' env $ (loe+hie)/2
+distToInit env (App (App (Var "binomial") ne) pe) = eval' env $ (ne*pe)
 
 {-last2 [] = []
 last2 [x] = [x]

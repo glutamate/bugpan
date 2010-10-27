@@ -224,6 +224,7 @@ manyLikeOver durs lh1 = \obs-> \theta-> sum $ map (lh1 theta) $ chopAndReset dur
 
 class MutateGaussian a where
     mutGauss :: Double -> a -> Sampler a
+    mutGauss cv x = mutGaussAbs x cv x
     mutGaussAbs :: a -> Double -> a -> Sampler a
     --mutGaussAbs _ = mutGauss
     mutGaussMany :: Double -> [a] -> Sampler [a]
@@ -235,6 +236,15 @@ instance MutateGaussian Double where
     mutGaussAbs x0 cv x = gaussD x (cv*x0)
     mutGaussMany cv xs = gaussManyD (map (\x-> (x,cv*x)) xs)
     nearlyEq tol x y = abs(x-y)<tol  
+
+instance MutateGaussian Int where
+    mutGaussAbs _ cv x = do
+      u <- unitSample
+      case u of 
+        _ | u < cv -> return $ x-1
+          | u > 1-cv -> return $ x+1
+          | otherwise -> return x
+    nearlyEq _ x y = x==y
 
 {-instance MutateGaussian Int where
     mutGauss cv x = round `fmap` gaussD (realToFrac x) (cv*realToFrac x)

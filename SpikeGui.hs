@@ -258,7 +258,7 @@ spikeDetectIO = do
                   --initUserInput
                   --plotSize 490 329
                   --overDur <- unitDurations overDurNm
-                  autoSpikes "normV"
+                  autoSpikes "ec"
                   return ()
                   --normV <- signalsDirect "normV"
                   --spikeDetect [overDur] normV []

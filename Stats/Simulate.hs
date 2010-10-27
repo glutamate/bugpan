@@ -19,6 +19,7 @@ import Query
 import QueryTypes
 import Data.List
 import Data.Maybe
+import PrettyPrint
 import Debug.Trace
 
 saveEnv :: String -> Double ->  Double -> [(String,V)] -> IO ()
@@ -109,3 +110,13 @@ drawFake env  (App (App (Var "RandomSignal") me) sde) = do
   let sd = unEvalM $ eval env sde
   u <- sampler $ RandomSignal (unsafeReify m) (unsafeReify sd)
   return $ pack u
+
+drawFake env (App (App (Var "binomial") ne) pe) = do
+  let n = unEvalM $ eval env ne
+  let p = unEvalM $ eval env pe
+  u <- binomial (unsafeReify n) (unsafeReify p)
+  return $ pack u
+
+
+drawFake env e = do
+  fail $ "unknown distribution "++show e
