@@ -94,7 +94,13 @@ unApp e = e
 
 drawFake :: EvalS -> E -> Sampler V
 drawFake env (App (Var "unknown") (Const v)) = return v
+drawFake env (App (Var "unknownInt") (Const v)) = return v
 drawFake env  (App (App (Var "uniform") loe) hie) = do
+  let lo = unEvalM $ eval env loe
+  let hi = unEvalM $ eval env hie
+  u <- uniform lo hi
+  return u
+drawFake env  (App (App (Var "uniformInt") loe) hie) = do
   let lo = unEvalM $ eval env loe
   let hi = unEvalM $ eval env hie
   u <- uniform lo hi

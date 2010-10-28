@@ -238,12 +238,13 @@ instance MutateGaussian Double where
     nearlyEq tol x y = abs(x-y)<tol  
 
 instance MutateGaussian Int where
-    mutGaussAbs _ cv x = do
+    mutGaussAbs _ cv' x = do
       u <- unitSample
+      let cv = 0.5 -- max 0 $ min 0.4 (1/cv')
       case u of 
-        _ | u < cv -> return $ x-1
-          | u > 1-cv -> return $ x+1
-          | otherwise -> return x
+        _ | u < 0.5 -> return $ x-1
+--          | u > 0.5 -> return $ x+1
+          | otherwise -> return $ x+1
     nearlyEq _ x y = x==y
 
 {-instance MutateGaussian Int where

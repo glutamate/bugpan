@@ -11,7 +11,19 @@ import Math.Probably.FoldingStats
 import StatsModel
 import QueryPlots
 
-main = do
+help = do
+  putStrLn "MCAnalyes {chain name} {chain number}"
+  putStrLn "MCAnalyes {chain name} {chain number} '(lo,hi)'"
+
+
+
+main = do 
+  args <- getArgs
+  case args of 
+    [] -> help
+    _ -> main1 
+
+main1 = do
   nm:chain:restArgs <- getArgs
   nfiles <- (length . filter (nm `isPrefixOf`)) `fmap` getDirectoryContents "."
   print nfiles

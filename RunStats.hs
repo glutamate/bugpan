@@ -258,13 +258,15 @@ loadData filtr allrvs =
             ind2++"running <- durations \"running\" ()",
             ind2++"modNm <- durations \"moduleName\" \"foo\"",
             ind2++"sess <- sessionDur",
-            ind2++"io $ putStrLn $ snd $ head sess"]++
+            ind2++"--io $ putStrLn $ snd $ head sess"]++
    (concatMap showGetter $ allExclaim allrvs)++
    unlines [ind2++"let runners = for running $ \\r-> "++getRunner,
             ind2++"let sessVal = Parsession "++
                concatMap (mkval "") (inLevel "session" allrvs)++" runners",
             ind2++"if not $ null $ "++filtr,
-            ind2++"   then return $ Just sessVal",
+            ind2++"   then do",
+            ind2++"      io $ putStrLn $ snd $ head sess",
+            ind2++"      return $ Just sessVal",
             ind2++"   else return Nothing", 
             ind++"return $ AllPars "++mksess ++"sessVls"
             ]
@@ -371,23 +373,31 @@ distToInit env (App (Var "unknown") e)=  eval' env e
 distToInit env (App (Var "unknownInt") e)=  eval' env e 
 distToInit env (App (App (Var "N") me) se) = eval' env me
 distToInit env (App (App (Var "uniform") loe) hie) = eval' env $ (loe+hie)/2
-distToInit env (App (App (Var "binomial") ne) pe) = eval' env $ (ne*pe)
+distToInit env (App (App (Var "binomial") ne) pe) =  
+    let NumV (NReal v) = eval' env $ (ne*pe)
+    in NumV (NInt $round v)                                                     
 
 {-last2 [] = []
 last2 [x] = [x]
 last2 [x,y] = [x,y]
 last2 (x:xs) = last2 xs -}
 
-nmsFromRvars rvs = [vnm | RVar vnm _ _ <- rvs]
+nmsFromRvars rvs = [(vnm, t) | RVar vnm t _ <- rvs]
 
 ppOfInterest ds rvs =
     let tlvars = nmsFromRvars rvs
-        tlvarsPath = map (\vnm-> "unP $ "++vnm++" allPars") tlvars
-        sessvarNms = filter (not . hasExclaim) $ nmsFromRvars $ concat $ [svars | InEvery "session" svars <- rvs]
-        trialvarNms = filter (not . hasExclaim) $ nmsFromRvars $ concat $ [trvars | InEvery "session" svars <- rvs, 
+        tlvarsPath1 (vnm,NumT (Just RealT)) = "unP $ "++vnm++" allPars"
+        tlvarsPath1 (vnm,NumT (Just IntT)) = "realToFrac $ unP $ "++vnm++" allPars"
+        tlvarsPath = map tlvarsPath1 tlvars
+        sessvarNms = filter (not . hasExclaim) $ map fst $ nmsFromRvars $ concat $ [svars | InEvery "session" svars <- rvs]
+        trialvarNms = filter (not . hasExclaim . fst ) $ nmsFromRvars $ concat $ [trvars | InEvery "session" svars <- rvs, 
                                                         InEvery "running" trvars <- svars]
         sessvarsPath i = map (\vnm-> "unP $ "++vnm++" $ (!! "++showInt i++") $ session allPars") sessvarNms
-        trialvarsPath is itr = map (\vnm-> "unP $ "++vnm++" $ (!! "++showInt itr++") $ running $ (!! "++showInt is++") $ session allPars") trialvarNms
+
+        trialvarsPath1 is itr (vnm, NumT (Just RealT)) = "unP $ "++vnm++" $ (!! "++showInt itr++") $ running $ (!! "++showInt is++") $ session allPars"
+        trialvarsPath1 is itr (vnm, NumT (Just IntT)) = "realToFrac $ unP $ "++vnm++" $ (!! "++showInt itr++") $ running $ (!! "++showInt is++") $ session allPars"
+        trialvarsPath is itr = map (trialvarsPath1 is itr) trialvarNms
+
         withSessId i = map (++("s"++showInt i))
         withTrId is itr= map (++("s"++showInt is++"tr"++showInt itr))
         monitSessns::[Int] = catMaybes [reify v | Pragma "monitorSession" (Const v) <- ds]
@@ -397,9 +407,9 @@ ppOfInterest ds rvs =
         sesspaths = concatMap sessvarsPath monitSessns
         trialpaths = concatMap (uncurry trialvarsPath) monitTrials
         sessnames = concatMap (\i->withSessId i sessvarNms) monitSessns
-        trialnames = concatMap (\(itr, is)-> withTrId itr is trialvarNms) monitTrials
+        trialnames = concatMap (\(itr, is)-> withTrId itr is (map fst trialvarNms)) monitTrials
     in "ofInterest allPars = ["++ intercalate ", " (tlvarsPath++sesspaths++trialpaths)++
-       "]\nparNames = "++show (tlvars++sessnames++trialnames)
+       "]\nparNames = "++show (map fst tlvars++sessnames++trialnames)
 
 showInt :: Int -> String
 showInt = show
