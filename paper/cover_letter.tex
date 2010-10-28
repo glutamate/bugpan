@@ -17,12 +17,15 @@ UK
 \vskip2ex
 Dear Sir or Madam,
 \vskip2ex
-\noindent Please find enclosed our paper titled ``A formal mathematical
-framework for physiological observations, experiments and analyses''
-for submission to \emph{Nature Methods}. Our work, which uses
-programming languages theory to model physiological experimentation in
-a mathematical framework, solves two open problems in
-neuroinformatics:
+\noindent Please find enclosed our paper titled ``A formal
+mathematical framework for physiological observations, experiments and
+analyses'' for submission to \emph{Nature Methods}. Although
+scientific experiments can be seen as \emph{programs} that observe and
+manipulate the physical work, there has been very little work in
+applying theoretical computer science to experimentation itself. Here,
+we model physiological experimentation using concepts from modern
+programming languages and type theory. We show that this approach
+gives solutions to several outstanding problems in neuroinformatics:
 
 \begin{itemize}
 
@@ -31,19 +34,27 @@ neuroinformatics:
   contextual information. We propose a simple but flexible
   categorisation of physiological evidence.
 
-\item \emph{Data provenance}: by defining an experiment description
-  language based on mathematical equations, we can unambiguously define
-  the data provenance for experiments with physiological stimuli.
+\item \emph{Experiment definition}: we show that experiments defined
+  in mathematical equations can be manipulated algebraically and
+  composed from smaller components, unlikes those defined in
+  conventional programming languages. 
+
+\item \emph{Data provenance}: without knowning where observed data
+  comes from, it can be difficult to relate it to a specific
+  theory. In our framework, \emph{any} observation can be defined in a
+  \emph{single} equation that includes post-acqusition processing and
+  censure.
+
 \end{itemize}
 
-Although in this paper we have focused on physiology, we outline a
-generalized theory and discuss its interaction with statistics. We
-have validated this framework with two non-trivial experiments in
+We have validated this framework with two non-trivial experiments in
 neurophysiology; one to measure visually evoked \emph{in vivo} spike
 trains, and a dynamic clamp study of spinal neurons. This work has
 serious implications for the scientific publishing in databases: our
 definitions \emph{cannot} be translated to ontology languages used to
-define the semantic web.
+define the semantic web. Although in this paper we have focused on
+physiology, we outline a generalized theory and discuss its
+interaction with statistics.
 
 We suggest the following reviewers for our paper:
 
