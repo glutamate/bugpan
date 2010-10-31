@@ -1,41 +1,104 @@
 \section*{Merged Introduction}
 
-Independent verification and replication of results is one of the cornerstones
-of the scientific process. However, as experiments and analysis are becoming
-increasingly complex and automated, the feasibility of independent
-verification and replication has gradually been undermined. It has been
-recommended that mandatory publication of software for experimentation and
-analysis should be adopted to address this problem. Just to give one example,
-this was one of the findings of the inquiry that followed last year's
-controversy over code quality in climate science \cite{XXX}.
+Reproducible research requires protocols and observations to be
+communicated transparently and efficiently, such that inferences can
+be scrutinised \citep{IEEE journal, Jaynes2003, Krantz1971}. However,
+as experiments and analysis are becoming increasingly complex and
+automated, the feasibility of independent verification and replication
+has gradually been undermined. Several studies indicate that the
+mandatory publication \citep{} of raw data and computer code for
+experiments and analysis does not guarantee reproducibility.  For
+instance, only in eight out of sixteen studies subject to this
+requirement and published in \emph{Nature Genetics} could the findings
+be replicated at all, and only in two of those without discrepancies
+\citep{Ioannides2009}. Studies of papers in a macroeconomic journal
+with a similar requirement also found replicability in a small
+fraction. Indeed, the combination of bias, human error, and
+unverifiable software, has led to the suggestion that the majority of
+published research findings are false \cite{}.
 
-However, a number of studies have shown that a large proportion of scientific
-findings cannot be reproduced even when the underlying data has been archived
-and the used software is available. For instance, in a careful study of 18
-papers about gene expression, the researchers were unable to replicate the
-results in 10 of the papers, despite the availability of software and raw
-data, and they further found discrepancies in six of the remaining ones
-\cite{XXX}. For another example, in a study spanning 10-years and 150 papers
-submitted along with supporting code and data to the \textit{Journal of Money,
-Credit, and Banking}, it was only possible to independently replicate the
-results for fewer than 10 \% of the papers \cite{XXX}. Indeed, the compound of
-bias, human error, and unverifiable software, has led to the suggestion that
-the majority of published research findings are false \cite{}.
-In any case, there are examples where published results have had to
-be retracted due to the subsequent discovery of software errors \cite{XXX}.
+This suggests that it is worth investigating a new approach to
+experimentation and analysis.  In this paper, we argue that some of
+these problems can be mitigated by describing scientific experiments
+and analyses using mathematical objects that directly represent the
+underlying stimuli and evidence, thus making it possible reason in
+familiar terms about their relationships.  Whether they are carried
+out by humans or by automated equipment, many experiments can be seen
+as \emph{programs} that manipulate and observe the real world. This
+view suggests that experiment descriptions should resemble programming
+languages. But formalising experiments themselves is difficult because
+they produce heterogeneous data \citep{Tukey1962}, and because
+experiments interact with the physical world and are difficult to
+describe only with relations between mathematical objects. In creating
+a mathematical framework for experiments, we take advantage of
+progress in embedding side effects, such as input and output
+\citep{PeytonJones2002, Roy2004, Wadler1995} into purely equational
+programming languages, that is languages that can only evaluate
+mathematical functions \citep{Church1941}. These languages, unlike
+conventional programming languages, retain an important characteristic
+of mathematics: a term can freely be replaced by another term with
+identical meaning. This property \citep[referential
+  transparency;][]{Whitehead1927} enables algebraic manipulation and
+reasoning about the programs \citep{Bird1996}. This is important in
+the context of experiments, because it means that an observation can
+always be defined with a single equation.
 
-% We suggest that a fundamentally new approach to experimentation is needed;  
-% new approach: close to mathematics and close to how people think
+The framework we describe here provides:
 
-This suggests that it is worth investigating a new approach to experimentation
-and anlysis to mitigate some of these problems. In this paper, we argue that
-describing experiments and analysis of results using a formally defined
-language based on matematical objects that directly represent the underlying
-stimuli and evidence, and makes it poissble to express familiar ways of
-reasoning about their relationships, can help. We do this in the setting of
-physiology, but the basic ideas should have much wider applicability.
+(i) An explicitly defined ontology of physiological observations. We
+outline a flexible but concisely defined structure for physiological
+quantities.  Unlike in bioinformatics or anatomy, physiological
+databases have not found widespread adoption \citep{Herz2008,
+  Amari2002}. Existing candidates either support only a few different
+kinds of data \citep{Jessop2010}, are unstructured \citep{Teeters2008}
+or based on a large number of concepts \citep{Frishkoff2009}, or
+represent facts without their supporting evidence \citep{Katz2010}.
+%despite many attempts \citep{Katz2010, , Gardner2004, Jessop2010}.  
+We suggest that a flexible and simple ontology
+can remedy some of the structural shortcomings of existing databases
+\citep{Gardner2005, Amari2002} and thus facilitate data and meta-data
+sharing \citep{Insel2003}.
 
+(ii) A concise language for describing complex experiments and
+analysis procedures in physiology. Thus experimental protocols can be
+communicated unambiguously, highlighting differences between studies
+and facilitating replication and meta-analysis. This language solves
+the data provenance problem \citep{Pool2002} for experiments where the
+primary pertubation is a complex but non-physical stimulus --- for
+instance, a visual or electrical stimulation, rather than a chemical
+substance.
 
+(iii) A new approach to validating scientific inference
+\citep{Editors2003, Editors2010, DeSchutter2010}. By inspecting an
+experiment definition, automated decision procedures could verify
+statements about experiments that indicate sound scientific practice,
+such as consistent units of measurement \citep{Kennedy1997} and
+correct error propagation \citep{Taylor1997}. The use of formal
+languages can thus bring transparency to complex experiments and
+analyses.
+
+(iv) A practical tool that is powerful and generalises to complex and
+multi-modal experiments. We have implemented our framework as a new
+programming language and used it for non-trivial neurophysiological
+experiments and data analyses. This language can concisely express and
+run experiments defined by, for instance, differential equations or
+visual stimuli.
+
+Here, we first describe the theory of \emph{simple types}
+\citep{Pierce2002} and define three types that can represent
+physiological evidence. We then present a new formal and
+machine-executable language, the \emph{calculus of physiological
+evidence}, for defining observations and transformations of such
+evidence. We proceed to show that two very different experiments from
+neurophysiology can be formally defined, run and analysed in our
+calculus. In the first example, we measure \emph{in vivo} spike train
+responses to visual stimulation in locusts. In the second example, we
+examine the impact of an active potassium conductance on synaptic
+integration using the dynamic clamp technique. These protocols are
+defined unambiguously using only a handful of equations in our
+language. Then, before the concluding discussion, we sketch how the FRP-like
+language described here, centred around descriptions in the time domain,
+could be generalised for other domains, like frequency or space.
 
 
 ------------------------------------------------------------------------------
