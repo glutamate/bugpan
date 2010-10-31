@@ -1,0 +1,150 @@
+\section*{Merged Introduction}
+
+Independent verification and replication of results is one of the cornerstones
+of the scientific process. 
+
+However, as experiments and analyis are becoming increasingly
+complex and automated, the feasibility of independent verification and
+replication has gradually been undermined.
+
+A number of studies have shown that a large proportion of scientific
+findings cannot be reporoduced even when the underlying data
+has been archived and the used software is available \cite{}.
+
+KILLER EXAMPLES
+
+* Money example
+* Micro array gene expression
+* Climate example
+
+The compound of bias, human error, and
+unverifiable software, has led to the suggestion that the majority of
+published research findings are false \cite{}.
+
+a) We suggest that a fundamentally new approach to experimentation is needed;  
+
+b) This suggests that it is worth investigating a new approach to
+experimentation. 
+ 
+new approach: close to mathematics and close to how people think
+(see reasons below).
+
+------------------------------------------------------------------------------
+
+
+This was highlighted by last year's controversy
+over climate-science results brought about by leaked e-mails from the
+University of East Anglia in Norwich, UK. These e-mails called into question
+the quality of some of the developed, non-public, software that had been used,
+leading the official inquiry to call for scientific code to be published
+as a matter of course.
+
+Formalising scientific inference in mathematical frameworks removes
+ambiguity and thus allows protocols to be formulated efficiently,
+knowledge to be communicated transparently, and inferences to be
+scrutinised \citep{Soldatova2006, Jaynes2003, Krantz1971}. Many
+aspects of the scientific enterprise, including hypothesis testing,
+estimation, and optimal parameter choice, are addressed rigorously in
+\emph{statistics} and \emph{experimental design}. Nevertheless,
+without knowing where observations come from, it is difficult to
+ascertain whether they provide evidence for a given theory
+\citep{Pool2002,MacKenzie-Graham2008,VanHorn2009}. Formalising the
+experiments themselves is difficult because they produce heterogeneous
+data \citep{Tukey1962}, and because experiments interact with the
+physical world and therefore cannot be described purely by relations
+between mathematical objects. Without a formal language, it is
+difficult to reason precisely. Consequently, experiments are often
+communicated in natural language and carried out by \emph{ad hoc}
+computer code that is difficult to validate \citep{Baggerly2009, Merali2010}. 
+%Attempts at formalisation have focused on
+%the execution of specific experiments \citep{Jenkins1989,
+%  Manduchi1990, King2004} that seem difficult to generalise.
+
+
+However:
+
+increasingly complex experiments need automation
+but as the langugages used are too low level,
+the scientific knowledge these codes embody becomes unfeasible
+to verify, also not public, gradually undermines replication and
+verification.
+
+
+\section*{Alternative Introduction}
+
+Independent verification and replication of results is one of the cornerstones
+of the scientific process. A prerequisite for this cross-checking is that
+published results are accompanied by a sufficiently detailed description of
+how they were obtained along with access to any essential raw data. However,
+as software increasingly is becoming an integral part of the scientific
+process, the feasibility of independent verification and replication has
+gradually been undermined. This was highlighted by last year's controversy
+over climate-science results brought about by leaked e-mails from the
+University of East Anglia in Norwich, UK. These e-mails called into question
+the quality of some of the developed, non-public, software that had been used,
+leading the official inquiry to call for scientific code to be published
+as a matter of course.
+
+A couple of recent articles in Nature \cite{XXX} discuss this incident 
+and others, including one case where a structural-biology group had to
+retract five published papers after an error had been discovered in a program
+that had been used to prepare the data. A number of reasons are given for
+this state of affairs, including that scientists are inadequately prepared for
+increasingly prevalent and complex software development tasks, resulting
+in poor quality code that they then, to make matters worse, are reluctant to
+disclose.
+
+However, it is also pointed out that disclosure of software alone is unlikely
+to solve the problem. Verifying conventional code is both very difficult and
+very time-consuming, and thus it would be too much to ask for this to happen
+as part of the peer review process. Moreover, given the rapid development of
+hardware and software environments, archived code can quickly become next to
+impossible to run. As an example, the \textit{Journal of Money, Credit, and
+Banking} have required archiving of software and data associated with
+published papers for over a decade. However, when the effectiveness of this
+requirement was evaluated, it turned out that it was only possible to
+independently replicate the results for fewer than 10 \% of the 150 papers
+that had been subject to the archiving policy over a 10-year period.
+
+Now, these problems are of course complex and multi-faceted, so there is not
+going to be any one way to address them all. However, as a part of a solution,
+the discussion above suggests that it would be valuable to investigate new
+approaches to how scientific experiments, observation, and analysis are
+described. To that end, we propose in the following an approach that we argue
+mitigates some of the outlined problems. We do this in the setting of
+physiology, but the basic ideas should have much wider applicability.
+
+Central to our approach is a mathematically defined, high-level, language for
+describing physiological experiments and subsequent observation and analysis
+in a way that is precise, concise, and phrased in terms that are immediately
+relevant to the problem domain and thus familiar to the scientists themselves.
+We believe this approach offers a number of advantages pertinent to the
+preceding discussion:
+\begin{itemize}
+\item
+    Because the language is based on vocabulary that is immediately
+    scientifically relevant, and because it is precise and concise, it can
+    serve as an effective way to communicate science, thus making verification,
+    for example, as part of the peer review process, and independent
+    replication feasible.
+\item
+    Because descriptions are precise, verification of some aspects
+    can even be mechanised.
+\item
+    Because descriptions are precise, they can be mechanically translated
+    into executable form, thus in many cases obviating the need for
+    developing software in conventional languages.
+\item
+    Because of familiarity with the vocabulary, it should be both
+    easier and less error prone for scientists to describe experiments,
+    observation, and analysis in this way compared with writing code in
+    conventional programming languages.    
+\item
+    Because of the conciseness, our approach is also significantly
+    less laborious compared with coding in conventional languages.
+\item
+    Because the language has a clear, mathematically defined meaning,
+    a description stands on its own and the value of archived descriptions
+    do not deteriorate over time as hardware and software environments
+    evolve.
+\end{itemize}
