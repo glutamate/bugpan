@@ -22,9 +22,191 @@ implications for neuroinformatics-based research.
 
 \pagebreak
 
-%\include{alt-intro}
+\section*{Merged Introduction}
 
-\section*{Introduction}
+
+Reproducible research requires protocols and observations to be
+communicated transparently and efficiently, such that inferences can
+be scrutinised \citep{Fomel2009}. However, as experiments and analysis
+are becoming increasingly complex and automated, the feasibility of
+independent verification and replication has gradually been
+undermined. Several studies indicate that the mandatory publication
+\citep{Baggerly2010, Barnes2010} of raw data and computer code for
+experiments and analysis does not guarantee reproducibility.  For
+instance, only in eight out of sixteen studies subject to this
+requirement and published in \emph{Nature Genetics} could the findings
+be replicated at all, and only in two of those without discrepancies
+\citep{Ioannidis2008}. Low reproducibility even in the presence of
+code and data have been reported elsewhere \citep{Baggerly2009,
+  McCullough2007}. Indeed, the combination of bias, human error, and
+unverifiable software, has led to the suggestion that many published
+research findings contain serious errors \cite{Ioannidis2005,
+  Merali2010}.
+
+This suggests that it is worth investigating a new approach to
+experimentation and analysis.  In this paper, we argue that some of
+these problems can be mitigated by describing scientific experiments
+and analyses using mathematical objects that directly represent the
+underlying stimuli and evidence, thus making it possible reason in
+familiar terms about their relationships.  Whether they are carried
+out by humans or by automated equipment, many experiments can be seen
+as \emph{programs} that manipulate and observe the real world. This
+view suggests that experiment descriptions should resemble programming
+languages. But formalising experiments themselves is difficult because
+they produce heterogeneous data \citep{Tukey1962}, and because
+experiments interact with the physical world and are difficult to
+describe only with relations between mathematical objects. In creating
+a mathematical framework for experiments, we take advantage of
+progress in embedding side effects, such as input and output
+\citep{PeytonJones2002, Roy2004, Wadler1995} into purely equational
+programming languages, that is languages that can only evaluate
+mathematical functions \citep{Church1941}. These languages, unlike
+conventional programming languages, retain an important characteristic
+of mathematics: a term can freely be replaced by another term with
+identical meaning. This property \citep[referential
+  transparency;][]{Whitehead1927} enables algebraic manipulation and
+reasoning about the programs \citep{Bird1996}. This is important in
+the context of experiments, because it means that an observation can
+always be defined with a single equation.
+
+The framework we describe here provides:
+
+(i) An explicitly defined ontology of physiological observations. We
+outline a flexible but concisely defined structure for physiological
+quantities.  Unlike in bioinformatics or anatomy, physiological
+databases have not found widespread adoption \citep{Herz2008,
+  Amari2002}. Existing candidates either support only a few different
+kinds of data \citep{Jessop2010}, are unstructured \citep{Teeters2008}
+or based on a large number of concepts \citep{Frishkoff2009}, or
+represent facts without their supporting evidence \citep{Katz2010}.
+%despite many attempts \citep{Katz2010, , Gardner2004, Jessop2010}.  
+We suggest that a flexible and simple ontology
+can remedy some of the structural shortcomings of existing databases
+\citep{Gardner2005, Amari2002} and thus facilitate data and meta-data
+sharing \citep{Insel2003}.
+
+(ii) A concise language for describing complex experiments and
+analysis procedures in physiology. Thus experimental protocols can be
+communicated unambiguously, highlighting differences between studies
+and facilitating replication and meta-analysis. This language solves
+the data provenance problem \citep{Pool2002} for experiments where the
+primary pertubation is a complex but non-physical stimulus --- for
+instance, a visual or electrical stimulation, rather than a chemical
+substance.
+
+(iii) A new approach to validating scientific inference
+\citep{Editors2003, Editors2010, DeSchutter2010}. By inspecting an
+experiment definition, automated decision procedures could verify
+statements about experiments that indicate sound scientific practice,
+such as consistent units of measurement \citep{Kennedy1997} and
+correct error propagation \citep{Taylor1997}. The use of formal
+languages can thus bring transparency to complex experiments and
+analyses.
+
+(iv) A practical tool that is powerful and generalises to complex and
+multi-modal experiments. We have implemented our framework as a new
+programming language and used it for non-trivial neurophysiological
+experiments and data analyses. This language can concisely express and
+run experiments defined by, for instance, differential equations or
+visual stimuli.
+
+Here, we first describe the theory of \emph{simple types}
+\citep{Pierce2002} and define three types that can represent
+physiological evidence. We then present a new formal and
+machine-executable language, the \emph{calculus of physiological
+evidence}, for defining observations and transformations of such
+evidence. We proceed to show that two very different experiments from
+neurophysiology can be formally defined, run and analysed in our
+calculus. In the first example, we measure \emph{in vivo} spike train
+responses to visual stimulation in locusts. In the second example, we
+examine the impact of an active potassium conductance on synaptic
+integration using the dynamic clamp technique. These protocols are
+defined unambiguously using only a handful of equations in our
+language. Then, before the concluding discussion, we sketch how the FRP-like
+language described here, centred around descriptions in the time domain,
+could be generalised for other domains, like frequency or space.
+
+
+\section*{What Henrik Wrote}
+
+Independent verification and replication of results is one of the cornerstones
+of the scientific process. A prerequisite for this cross-checking is that
+published results are accompanied by a sufficiently detailed description of
+how they were obtained along with access to any essential raw data. However,
+as software increasingly is becoming an integral part of the scientific
+process, the feasibility of independent verification and replication has
+gradually been undermined. This was highlighted by last year's controversy
+over climate-science results brought about by leaked e-mails from the
+University of East Anglia in Norwich, UK. These e-mails called into question
+the quality of some of the developed, non-public, software that had been used,
+leading the official inquiry to call for scientific code to be published
+as a matter of course.
+
+A couple of recent articles in Nature \cite{Merali2010, Barnes2010} discuss this incident 
+and others, including one case where a structural-biology group had to
+retract five published papers after an error had been discovered in a program
+that had been used to prepare the data. A number of reasons are given for
+this state of affairs, including that scientists are inadequately prepared for
+increasingly prevalent and complex software development tasks, resulting
+in poor quality code that they then, to make matters worse, are reluctant to
+disclose.
+
+However, it is also pointed out that disclosure of software alone is unlikely
+to solve the problem. Verifying conventional code is both very difficult and
+very time-consuming, and thus it would be too much to ask for this to happen
+as part of the peer review process. Moreover, given the rapid development of
+hardware and software environments, archived code can quickly become next to
+impossible to run. As an example, the \textit{Journal of Money, Credit, and
+Banking} have required archiving of software and data associated with
+published papers for over a decade. However, when the effectiveness of this
+requirement was evaluated, it turned out that it was only possible to
+independently replicate the results for fewer than 10 \% of the 150 papers
+that had been subject to the archiving policy over a 10-year period.
+
+Now, these problems are of course complex and multi-faceted, so there is not
+going to be any one way to address them all. However, as a part of a solution,
+the discussion above suggests that it would be valuable to investigate new
+approaches to how scientific experiments, observation, and analysis are
+described. To that end, we propose in the following an approach that we argue
+mitigates some of the outlined problems. We do this in the setting of
+physiology, but the basic ideas should have much wider applicability.
+
+Central to our approach is a mathematically defined, high-level, language for
+describing physiological experiments and subsequent observation and analysis
+in a way that is precise, concise, and phrased in terms that are immediately
+relevant to the problem domain and thus familiar to the scientists themselves.
+We believe this approach offers a number of advantages pertinent to the
+preceding discussion:
+\begin{itemize}
+\item
+    Because the language is based on vocabulary that is immediately
+    scientifically relevant, and because it is precise and concise, it can
+    serve as an effective way to communicate science, thus making verification,
+    for example, as part of the peer review process, and independent
+    replication feasible.
+\item
+    Because descriptions are precise, verification of some aspects
+    can even be mechanised.
+\item
+    Because descriptions are precise, they can be mechanically translated
+    into executable form, thus in many cases obviating the need for
+    developing software in conventional languages.
+\item
+    Because of familiarity with the vocabulary, it should be both
+    easier and less error prone for scientists to describe experiments,
+    observation, and analysis in this way compared with writing code in
+    conventional programming languages.    
+\item
+    Because of the conciseness, our approach is also significantly
+    less laborious compared with coding in conventional languages.
+\item
+    Because the language has a clear, mathematically defined meaning,
+    a description stands on its own and the value of archived descriptions
+    do not deteriorate over time as hardware and software environments
+    evolve.
+\end{itemize}
+
+\section*{Old Introduction}
 
 Formalising scientific inference in mathematical frameworks removes
 ambiguity and thus allows protocols to be formulated efficiently,
