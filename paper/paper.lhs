@@ -799,5 +799,8 @@ spiking.
 
 Table 2. (incomplete;)
 
+\bibliographystyle{plainnat}
+
+
 \end{document}
  

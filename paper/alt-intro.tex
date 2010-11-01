@@ -2,20 +2,20 @@
 
 Reproducible research requires protocols and observations to be
 communicated transparently and efficiently, such that inferences can
-be scrutinised \citep{IEEE journal, Jaynes2003, Krantz1971}. However,
-as experiments and analysis are becoming increasingly complex and
-automated, the feasibility of independent verification and replication
-has gradually been undermined. Several studies indicate that the
-mandatory publication \citep{} of raw data and computer code for
+be scrutinised \citep{Fomel2009}. However, as experiments and analysis
+are becoming increasingly complex and automated, the feasibility of
+independent verification and replication has gradually been
+undermined. Several studies indicate that the mandatory publication
+\citep{Baggerly2010, Barnes2010} of raw data and computer code for
 experiments and analysis does not guarantee reproducibility.  For
 instance, only in eight out of sixteen studies subject to this
 requirement and published in \emph{Nature Genetics} could the findings
 be replicated at all, and only in two of those without discrepancies
-\citep{Ioannides2009}. Studies of papers in a macroeconomic journal
-with a similar requirement also found replicability in a small
-fraction. Indeed, the combination of bias, human error, and
-unverifiable software, has led to the suggestion that the majority of
-published research findings are false \cite{}.
+\citep{Ioannides2008}. Low reproducibility even in the presence of
+code and data have been reported elsewhere \citep{}. Indeed, the
+combination of bias, human error, and unverifiable software, has led
+to the suggestion that many published research findings contain
+serious errors \cite{Ioannides2005, Merali2010}.
 
 This suggests that it is worth investigating a new approach to
 experimentation and analysis.  In this paper, we argue that some of
@@ -100,49 +100,7 @@ language. Then, before the concluding discussion, we sketch how the FRP-like
 language described here, centred around descriptions in the time domain,
 could be generalised for other domains, like frequency or space.
 
-
-------------------------------------------------------------------------------
-
-
-This was highlighted by last year's controversy
-over climate-science results brought about by leaked e-mails from the
-University of East Anglia in Norwich, UK. These e-mails called into question
-the quality of some of the developed, non-public, software that had been used,
-leading the official inquiry to call for scientific code to be published
-as a matter of course.
-
-Formalising scientific inference in mathematical frameworks removes
-ambiguity and thus allows protocols to be formulated efficiently,
-knowledge to be communicated transparently, and inferences to be
-scrutinised \citep{Soldatova2006, Jaynes2003, Krantz1971}. Many
-aspects of the scientific enterprise, including hypothesis testing,
-estimation, and optimal parameter choice, are addressed rigorously in
-\emph{statistics} and \emph{experimental design}. Nevertheless,
-without knowing where observations come from, it is difficult to
-ascertain whether they provide evidence for a given theory
-\citep{Pool2002,MacKenzie-Graham2008,VanHorn2009}. Formalising the
-experiments themselves is difficult because they produce heterogeneous
-data \citep{Tukey1962}, and because experiments interact with the
-physical world and therefore cannot be described purely by relations
-between mathematical objects. Without a formal language, it is
-difficult to reason precisely. Consequently, experiments are often
-communicated in natural language and carried out by \emph{ad hoc}
-computer code that is difficult to validate \citep{Baggerly2009, Merali2010}. 
-%Attempts at formalisation have focused on
-%the execution of specific experiments \citep{Jenkins1989,
-%  Manduchi1990, King2004} that seem difficult to generalise.
-
-
-However:
-
-increasingly complex experiments need automation
-but as the langugages used are too low level,
-the scientific knowledge these codes embody becomes unfeasible
-to verify, also not public, gradually undermines replication and
-verification.
-
-
-\section*{Alternative Introduction}
+\section*{What Henrik Wrote}
 
 Independent verification and replication of results is one of the cornerstones
 of the scientific process. A prerequisite for this cross-checking is that
