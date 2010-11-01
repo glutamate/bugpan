@@ -739,7 +739,6 @@ spiking.
 \includepdf[pages=-]{Figure2.pdf}
 \includepdf[pages=-]{FigureDyn.pdf}
 %\includepdf[pages=-]{Figure4.pdf}
-
 \begin{tabular}{l  l  p{8cm}}
 \hline
   Function & Type & Description\\ 
