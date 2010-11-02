@@ -24,27 +24,38 @@ implications for neuroinformatics-based research.
 
 \section*{Merged Introduction}
 
-Reproducible research requires protocols and observations to be
-communicated transparently and efficiently, such that inferences can
-be scrutinised \citep{Fomel2009}. However, as experiments and analysis
-are becoming increasingly complex and automated, the feasibility of
-independent verification and replication has gradually been
-undermined. Several studies indicate that the mandatory publication
-\citep{Baggerly2010, Barnes2010} of raw data and computer code for
-experiments and analysis does not guarantee reproducibility.  For
-instance, only in eight out of sixteen studies subject to this
-requirement and published in \emph{Nature Genetics} could the findings
-be replicated at all, and only in two of those without discrepancies
-\citep{Ioannidis2008}. Low reproducibility even with available 
-code and data has been reported elsewhere \citep{Baggerly2009,
-  McCullough2007}. Indeed, the combination of bias, human error, and
-unverifiable software, has led to the suggestion that many published
-research findings contain serious errors \citep{Ioannidis2005,
-  Merali2010}.
+Reproducible research requires procedures to be described in
+sufficient detail such that the experiments can be replicated and the
+conclusions can be reconstituted from the unprocessed observations
+\citep{Fomel2009}. However, as experiments and analysis are becoming
+increasingly complex and based on computer code, the feasibility of
+independent verification and replication has -- in practice --
+gradually been undermined. Several studies indicate that full
+disclosure of raw data and code for experiments and analysis does not
+guarantee reproducibility.  For instance, only in 8 out of 16 studies
+subject to this requirement and published in \emph{Nature Genetics}
+could the findings be replicated at all, and only in 2 of those
+without discrepancies \citep{Ioannidis2008}. Low reproducibility even
+with available code and data has been reported elsewhere
+\citep{Baggerly2009, McCullough2007}. It is not realistic for peer
+reviewers to verify that computer code correctly implements a intended
+mathematical specification; any inconsistencies can undermine the
+conclusions of a large body of work \citep{Chang2006}. Indeed, the
+combination of bias, human error, and unverified software, has led to
+the suggestion that many published research findings contain serious
+errors \citep{Ioannidis2005, Merali2010}.
 
 This suggests that it is worth investigating a new approach to
 experimentation and analysis.  In this paper, we argue that some of
-these problems can be mitigated by describing scientific experiments
+these problems can be mitigated by a formalism that is at once: (i)
+directly relevant to the scientific field, such that it is possible to
+define experiments and reason about observations familiar terms and
+(ii) composed of terms that directly correspond to mathematical
+entities, unlike conventional programming languages, enabling
+algebraic manipulation and reasoning about the experiments and
+analysis procedures.
+
+describing scientific experiments
 and analyses using mathematical objects that directly represent the
 underlying stimuli and evidence, thus making it possible to reason in
 familiar terms about their relationships.  But formalising experiments
