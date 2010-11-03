@@ -739,6 +739,9 @@ spiking.
 \includepdf[pages=-]{Figure2.pdf}
 \includepdf[pages=-]{FigureDyn.pdf}
 %\includepdf[pages=-]{Figure4.pdf}
+
+\begin{comment}
+
 \begin{tabular}{l  l  p{8cm}}
 \hline
   Function & Type & Description\\ 
@@ -795,6 +798,8 @@ spiking.
 
 \end{tabular}
 \vskip1ex 
+
+\end{comment}
 
 Table 2. (incomplete;)
 
