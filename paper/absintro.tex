@@ -24,12 +24,9 @@ implications for neuroinformatics-based research.
 
 \section*{Merged Introduction}
 
-%Reproducible research requires that published results are accompanied
-%by a sufficiently detailed description of how they were obtained along
-%with access to the raw data \citep{Fomel2009}. However, 
-
-As scientific experiments and analysis are becoming increasingly
-complex, based on computer code and produce large volumes of data, the
+Replicability is a cornerstone of the scientific method. However, as
+scientific experiments and analysis are becoming increasingly complex,
+based on computer code and produce large volumes of data, the
 feasibility of independent verification and replication has -- in
 practice -- gradually been undermined. Several studies indicate that
 full disclosure of raw data and code for experiments and analysis does
@@ -44,27 +41,29 @@ intended mathematical algorithm; any inconsistencies can undermine the
 conclusions of a large body of work \citep{Chang2006}.  In addition,
 primary data sharing is standard in applications of high-throughout
 biology, but not in fields that produce heterogeneous data
-\citep{Gardner2005}. Indeed, the combination of bias,
-human error, and unverified software, has led to the suggestion that
-many published research findings contain serious errors
-\citep{Ioannidis2005, Merali2010}.
+\citep{Gardner2005}, further undermining independent validation.
+Indeed, the combination of bias, human error, and unverified software,
+has led to the suggestion that many --- perhaps most --- published
+research findings contain serious errors \citep{Ioannidis2005,
+  Merali2010}.
 
 This suggests that it is worth investigating a new approach to
 experimentation and analysis.  In this paper, we argue that some of
-these problems can be mitigated by a formalism that is at once: (i)
-directly relevant to the scientific field, such that it is possible to
-define experiments and reason about observations familiar terms and
-(ii) composed of terms that directly correspond to mathematical
-entities, unlike conventional programming languages, enabling
-algebraic manipulation and certification of the experiments and
-analysis procedures. Experiments are difficult to formalise in terms
-of relations between mathematical objects because they produce
-heterogeneous data \citep{Tukey1962}, and because they interact with
-the physical world. In creating a mathematical framework for
-experiments, we take advantage of progress in embedding side effects,
-such as input and output \citep{PeytonJones2002, Roy2004, Wadler1995}
-into purely equational programming languages, that is languages that
-can only evaluate mathematical functions \citep{Church1941}. 
+these problems can be mitigated by a formalism that at once: (i)
+introduces a categorisation directly relevant to the scientific field,
+such that it is possible to define experiments and reason about
+observations in familiar terms and (ii) is composed of terms that
+directly correspond to mathematical entities, unlike conventional
+programming languages, enabling algebraic manipulation and
+certification of the experiments and analysis procedures. Experiments
+are difficult to formalise in terms of relations between mathematical
+objects because they produce heterogeneous data \citep{Tukey1962}, and
+because they interact with the physical world. In creating a
+mathematical framework for experiments, we take advantage of progress
+in embedding side effects, such as input and output
+\citep{PeytonJones2002, Roy2004, Wadler1995} into purely equational
+programming languages, that is languages that can only evaluate
+mathematical functions \citep{Church1941}.
 
 Here, we show that there is a large conceptual overlap between
 physiological experimentation and Functional Reactive Programming
