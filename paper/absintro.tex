@@ -47,34 +47,37 @@ has led to the suggestion that many --- perhaps most --- published
 research findings contain serious errors \citep{Ioannidis2005,
   Merali2010}.
 
-This suggests that it is worth investigating a new approach to
-experimentation and analysis.  In this paper, we argue that some of
-these problems can be mitigated by a formalism that at once: (i)
-introduces a categorisation directly relevant to the scientific field,
-such that it is possible to define experiments and reason about
-observations in familiar terms and (ii) is composed of terms that
-directly correspond to mathematical entities, unlike conventional
-programming languages, enabling algebraic manipulation and
-certification of the experiments and analysis procedures. Experiments
-are difficult to formalise in terms of relations between mathematical
-objects because they produce heterogeneous data \citep{Tukey1962}, and
-because they interact with the physical world. In creating a
-mathematical framework for experiments, we take advantage of progress
-in embedding side effects, such as input and output
-\citep{PeytonJones2002, Roy2004, Wadler1995} into purely equational
-programming languages, that is languages that can only evaluate
-mathematical functions \citep{Church1941}.
+This suggests that it is worth investigating a unified and transparent
+formalism for communication, validation, and automation of
+observations, experiments and analyses. Some of these problems can be
+mitigated by such a formalism that at once: (i) introduces a
+categorisation directly relevant to the scientific field, such that
+scientists can define experiments and reason about observations in
+familiar terms, (ii) is machine executable, therefore unambiguous and
+practically useful, and (iii) is composed of terms that directly
+correspond to mathematical entities, unlike conventional programming
+languages, enabling algebraic manipulation and certification of the
+experiments and analysis procedures.  Experiments are difficult to
+formalise in terms of relations between mathematical objects because
+they produce heterogeneous data \citep{Tukey1962}, and because they
+interact with the physical world. In creating a mathematical framework
+for experiments, we take advantage of progress in embedding side
+effects, such as input and output \citep{PeytonJones2002, Roy2004,
+  Wadler1995} into equational programming languages, that is languages
+that can only evaluate mathematical functions \citep{Church1941}.
 
 Here, we show that there is a large conceptual overlap between
 physiological experimentation and Functional Reactive Programming
-\citep[FRP;][]{Elliott1997, Nilsson2002}, a concise formulation of
-time-dependent reactive computer programs. Consequently, physiological
-experiments can be concisely defined in an FRP-like language. Such a
-language does not describe the physical components of biological
-organisms. It has no concept of networks, cells or proteins. Instead
-it describes the observation and calculation of the mathematical
-objects that constitute physiological evidence (``observations'').
+\citep[FRP;][]{Elliott1997, Nilsson2002}, a concise and purely
+functional formulation of time-dependent reactive computer
+programs. Consequently, physiological experiments can be concisely
+defined in an FRP-like language. Such a language does not describe the
+physical components of biological organisms. It has no concept of
+networks, cells or proteins. Instead it describes the observation and
+calculation of the mathematical objects that constitute physiological
+evidence (``observations'').
 
+This framework provides:
 (i) An explicitly defined ontology of physiological observations. We
 outline a flexible but concisely defined structure for physiological
 quantities.  Unlike in bioinformatics or anatomy, physiological
