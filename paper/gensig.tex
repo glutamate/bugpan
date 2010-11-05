@@ -1,4 +1,4 @@
-\section*{Generalised Signals}
+\subsection*{Generalising Signals}
 \label{sec-gensig}
 
 % HN 2010-10-17: Used to be:
@@ -26,11 +26,11 @@ $\Conid{Signal}\;\alpha\;\beta\mathrel{=}\alpha \to \beta$
 \end{tabbing}
 We merely require functions that define how values (of any type but of
 known size) can be organised in memory for the given index type. We
-define an operation from an index type to its \emph{inverse}. For
-instance, frequency is the inverse of time, and spatial frequency the
-inverse of spatial length. We then finally define operations to
+define an operation from an index type to its \emph{dual}. For
+instance, frequency is the dual of time, and spatial frequency the
+dual of spatial length. We then finally define operations to
 calculate signals indexed by a type from signals indexed by the
-inverse type, to represent transforms between temporal and frequency
+dual type, to represent transforms between temporal and frequency
 domains. Events are also generalised to lists of pairs of index and
 value types. 
 \begin{tabbing}
@@ -51,9 +51,4 @@ more powerful type system than the one we have described
 previously. We have implemented the central features in the purely
 functional language Haskell using extensions that enable type-level
 programming \citep{Kiselyov2010}.
-
-Generalising durations is more difficult, because there are many ways
-of representing a volume in spaces with two or more dimensions:
-implicit (ref), parametric (ref), or bounded by polygons. We do not
-commit to any of these representations here.
 

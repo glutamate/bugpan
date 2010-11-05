@@ -1,23 +1,24 @@
 \section*{Discussion}
 
 We present an entirely new approach to performing and communicating
-experimental science. So far, we have investigated and implemented this
-approach for physiology, where we propose that three \emph{types} (signals,
-events and durations), when parametrised by any other type, are
-sufficient to represent most or all evidence for this field. We show
-how observations and calculations of these types can be described in a
-mathematical framework based on the lambda calculus. We use two
-experiments from neurophysiology to demonstrate that this approach
-works in practice: the \emph{in vivo} spike train response to a visual
-looming stimulus in locusts; and a study of synaptic integration with
-dynamic clamp. Our use of typed, functional and reactive programming
-overcomes at least two long-standing issues in bioinformatics: the
-need for a flexible ontology to share heterogeneous data from
-physiological experiments \citep{Amari2002}, and a language for
-describing experiments unambiguously \citep{Murray-Rust2002}. In
-addition, the tradition of \emph{formal verification} attached to the
-lambda calculus suggests the possibility that algorithmic procedures
-can complement peer-review in validating scientific inference.
+experimental science, here demonstrated for physiology. We propose
+that three \emph{types} (signals, events and durations), when
+parametrised by any other type, are sufficient to represent most or
+all evidence for this field. We show how observations and calculations
+of these types can be described in a mathematical framework based on
+the lambda calculus. We use two experiments from neurophysiology to
+demonstrate that this approach works in practice: the \emph{in vivo}
+spike train response to a visual looming stimulus in locusts; and a
+study of synaptic integration with dynamic clamp in zebrafish. Our use
+of typed, functional and reactive programming overcomes at least three
+long-standing issues in bioinformatics: the need for a flexible
+ontology to share heterogeneous data from physiological experiments
+\citep{Amari2002}, a language for describing experiments unambiguously
+\citep{Murray-Rust2002}, and an equational formulation of data
+provenance \citep{Pool2002}. In addition, the tradition of
+\emph{formal verification} attached to the lambda calculus suggests
+the possibility that algorithmic procedures can complement peer-review
+in validating scientific inference.
 
 \subsection*{An ontology for physiology}
 
@@ -34,22 +35,23 @@ experimentation may help overcome social barriers by completely
 integrating the experiment and analysis specification with structured
 data storage that requires little annotation.
 
-The types we have presented form a linguistic framework and an ontology for
-physiology that address the technical barriers to data sharing. Thanks to the
-flexibility of parametric polymorphism, our ontology can form the basis for
-the interchange of physiological data without imposing unnecessary constraints
-on what can be shared. The ontology in non-hierarchical and is difficult to
-formulate in the various existing semantic web ontology frameworks (Web
-Ontology Language or Resource Description Framework), which lack parametric
-polymorphism and functional abstraction. Nevertheless, in specifying the
-categories of mathematical objects that constitute evidence, it is an ontology
-in the classical sense of cataloguing the categories of being within,
-and providing a vocabulary for, a specific domain. We emphasise again
-that it is an ontology of \emph{evidence}, not of the biological entities that
-give rise to this evidence. It is unusual as an ontology for scientific
-knowledge in being embedded in a \emph{computational} framework, such that it
-can describe not only mathematical objects but also their transformations and
-observations.
+The types we have presented form a linguistic framework and an
+ontology for physiology that address the technical barriers to data
+sharing. Thanks to the flexibility of parametric polymorphism, our
+ontology can form the basis for the interchange of physiological data
+without imposing unnecessary constraints on what can be shared. The
+ontology is non-hierarchical and is difficult to formulate in the
+various existing semantic web ontology frameworks (Web Ontology
+Language or Resource Description Framework), which lack parametric
+polymorphism and functional abstraction. Nevertheless, in specifying
+the categories of mathematical objects that constitute evidence, it is
+an ontology in the classical sense of cataloguing the categories of
+being within, and providing a vocabulary for, a specific domain. We
+emphasise again that it is an ontology of \emph{evidence}, not of the
+biological entities that give rise to this evidence. It is unusual as
+an ontology for scientific knowledge in being embedded in a
+\emph{computational} framework, such that it can describe not only
+mathematical objects but also their transformations and observations.
 
 Existing software packages used for the acquisition and analysis of
 physiological data have signal-like (Igor Pro, Wavemetrics; Spike 2,
@@ -58,21 +60,22 @@ at the core of their operations. Although these package have some
 flexibility in the information that can be carried by signals and
 events, they do not exploit full parametric polymorphism: the range of
 observations and stimuli that can be described with their more limited
-definitions is smaller than in our framework. For instance, the signal
-of shapes that describes a visual stimulus in Example 1, or the two-
-or three dimensional location of a moving animal \emph{cannot} be
-represented by a signal in these systems. In frameworks that can only
-represent scalar signals, a location must be represented by two or
-three separate signals. This is the case even if
+definitions is smaller than in our framework. This is the case even if
 ``multi-dimesionional'' signals are permitted; this allows a value to
 be \emph{indexed} by a vector, but the values themselves remain
-scalar. This means that e.g. signals of locations cannot then be
-packaged in a single value that can be manipulated by functions
-written to transform signals. Full parametric polymorphism, on the
-other hand, gives the possibility of creating a small vocabulary of
-generic functions for data analysis. Therefore, our framework can be
-seen as a generalisation of existing methods of physiological signal
-processing.
+scalar. For instance, the signal of shapes that describes a visual
+stimulus in Example 1 \emph{cannot} be represented by a signal in
+these systems. The two- or three dimensional location of a moving
+animal must be represented either by two or three separate signals, or
+one must resort to \emph{ad-hoc} tricks, such as using the first
+dimension of a multidimensional signal to represent time, and a second
+dimension to index the vector dimension. But this only works for
+vector quantities, and forces us to think in terms of linear
+algebra. Full parametric polymorphism, on the other hand, gives the
+possibility of creating a small vocabulary of generic functions for
+data analysis that can transform any time-varying quantity. Therefore,
+our framework can be seen as a generalisation of existing methods of
+physiological signal processing.
 
 Previous work on scientific knowledge representation has suggested
 that ``meta-data'' can represent the context of an experiment
@@ -143,6 +146,8 @@ used a simple interface to enter the thresholds for spike detection in Example
 1. We plan to facilitate the description of such \emph{ad-hoc} interfaces and
 also build more elaborate interfaces as front-ends to explore observations.
 
+\input{gensig}
+
 \subsection*{Statistics}
 
 We have used the word ``evidence'' to mean direct observations and
@@ -160,10 +165,10 @@ tests such as the General Linear Model.
 A more intriguing possibility is to build statistical models for the
 directly observed data \citep{Daniell1991}, and to use nested
 durations to describe a hierarchical organisation \citep{Rouder2003}
-of conditional dependencies amongst parameters in such a model. In the
-context of physiology, this could be achieved by augmenting a
-WinBUGS-like \citep{Gilks1994} language with constructors and
-distributions for signals, events and durations.
+of conditional dependencies amongst model parameters. In the context
+of physiology, this could be achieved by augmenting a WinBUGS-like
+\citep{Gilks1994} language with constructors and distributions for
+signals, events and durations.
 
 
 \subsection*{Towards verified scientific inference}
@@ -180,19 +185,20 @@ missing data are accounted for by the statistical model
 \citep{Gelman2003}; errors are propagated correctly
 \citep{Taylor1997}; units of measurement are used consistently
 \citep{Kennedy1997}; there is no ``double dipping''
-\citep{Kriegeskorte2009}; and ultimately, that the gathered data
+\citep{Kriegeskorte2009}; and ultimately, that the observed data
 support the conclusions drawn. Statistics addresses some of these
 issues in relating observations to parameter estimation and hypothesis
-testing, but every procedure makes assumptions about how the
-underlying observations were obtained. Experiment description
-languages, and the representation of experimental observations into
-values of concrete types (which may not always be real numbers),
-could play an important role in such inference. The statistical
-framework within which such inferences take place has an impact on the
-amount of information that must be analysed. For instance, if we
-accept the likelihood principle \citep{Jaynes2003}, we can safely
-ignore the intention of the experimenter, because all the relevant
-information is in the likelihood of the observed data.
+testing, but without knowing where observations come from, it is
+difficult to ascertain whether they provide evidence for a given
+theory \citep{Pool2002}. Experiment description languages, and the
+representation of experimental observations into values of concrete
+types (which may not always be real numbers), could play an important
+role in such inference. The statistical framework within which such
+inferences take place has an impact on the amount of information that
+must be analysed. For instance, if we accept the likelihood principle
+\citep{Jaynes2003}, we can safely ignore the intention of the
+experimenter, because all the relevant information is in the
+likelihood of the observed data.
 
 There has been substantial progress in \emph{automation} in the
 experimental sciences \citep{King2004}. In contrast, there has been
@@ -201,7 +207,7 @@ almost no work in algorithmic verification \citep{Kropf1999,
 calculating machines to science. Nevertheless, if such verification is
 feasible it may lead to a radical change in the way scientific
 research is conducted and communicated. It is likely that at least
-some aspects of validation can be achieved with conservative
+some aspects of validation in physiology can be achieved with conservative
 extensions of the calculus of physiological evidence integrated with
 statistical inference.
 
@@ -215,15 +221,15 @@ experimentation and simulation, we have implemented a prototype
 compiler that can execute some programs that contain signals and
 events defined by mutual recursion, as is necessary for many of the
 simulations and experiments in this paper. The program is transformed
-into a normal form that is translated to an imperative
-program that iteratively updates variable corresponding to signal
-values, with a time step that is set explicitly. The program is divided
-into a series of stages, where each stage consists of the signals and
-events defined by mutual recursion, subject to the constraints of
-input/output sources and sinks. This ensures that signal expressions
-can reference values of other signals at arbitrary time points
-(possibly in the future) as long as referenced signals are computed in
-an earlier stage.
+by the compiler into a normal form that is translated to an imperative
+program which iteratively updates variable corresponding to signal
+values, with a time step that is set explicitly. The program is
+divided into a series of stages, where each stage consists of the
+signals and events defined by mutual recursion, subject to the
+constraints of input/output sources and sinks. This ensures that
+signal expressions can reference values of other signals at arbitrary
+time points (possibly in the future) as long as referenced signals are
+computed in an earlier stage.
 
 To calculate a new value from existing observations after data
 acquisition, we have implemented the calculus of physiological
@@ -237,7 +243,8 @@ kernel, and the Comedi (http://comedi.org) interface to data
 acquisition hardware. Geometric shapes were rendered using OpenGL
 (http://opengl.org).
 
-All code is available at http://github.com/glutamate/bugpan.
+All code is available at http://github.com/glutamate/bugpan and
+released under the GPL.
 
 \subsection*{Locust experiments}
 
@@ -272,7 +279,7 @@ tool for the experiment control computer.
 \section*{Acknowledgements}
 We would like to thank Jonathan McDearmid for help with the Zebrafish
 recordings and Angus Silver, Guy Billings, Antonia Hamilton, Nick Hartell
-and XXX for critical comments on the manuscript. This work was funded
+and Rodrigo Quian Quiroga for critical comments on the manuscript. This work was funded
 by the Human Frontier Science Project (TAN), the Biology and Biotechnology
 Research Council (TM, TAN) and the Engineering and Physical Sciences Research
 Council (HN).

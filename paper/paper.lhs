@@ -43,38 +43,6 @@ $^*$ To whom correspondence should be sent (tan5@@le.ac.uk)
 
 \section*{The calculus of physiological evidence}
 
-Examining the temporal evolution of observed quantities, such as
-intrinsic rhythms or responses to external stimuli, is ubiquitous in
-physiology. Often these observations are mediated by actions that are
-said to happen at a certain time point --- such as action potentials or
-secretion events --- but are themselves manifestations of continuous
-changes in ion channel conductances or fusion pore dilations on a
-different timescale. Time must play a multifaceted role in
-physiological evidence.
-
-Time also plays an essential role in some computer programs such as
-animations, video games, robotics and physical simulations. Although
-these time-dependent processes can be implemented in a conventional
-programming language, they can also be composed in a referentially
-transparent manner by combining elementary transformations of the
-whole input, including responses from a user, into the entire output
-from the program. Functional Reactive Programming
-\citep[FRP;][]{Elliott1997, Nilsson2002} is one such computational
-paradigm where these transformations can be defined by purely
-mathematical functions. FRP introduces two types of values to place
-information in a temporal context: signals, which represent
-continuously varying quantities, and events, which represent distinct
-occurrences. These types are flexible, in that they can carry
-information of any other type. We show that these definitions of
-signals and events permit the encoding of many kinds of physiological
-evidence. Thus, definitions of experiments can be described concisely
-in an FRP-like language based on the composition and calculuation of
-signals and events.  We begin by describing the types that are central
-to FRP and show how physiological quantities can be captured in
-them. We then describe how values of these types can be observed, and
-how fuctions can be used to refine existing observations or generate
-stimuli for experiments.
-
 First, we introduce some terminology and basic concepts. We assume
 that \emph{time} is global and is represented by a real number, as in
 classical physics. An \emph{experiment} is an interaction between an
@@ -219,9 +187,15 @@ to interact with external systems and measure their behaviour.
 From direct observations, one often needs to process events and
 signals, create new events from signals, filter data and calculate
 statistics. Here, we formulate these transformations in terms of the
-lambda calculus \citep{Church1941}, a formal language for
-referentially transparent computation based on evaluating purely
-mathematical functions. The lambda calculus allows functions to be
+lambda calculus \citep{Church1941}, a family of formal languages for
+computation based solely on evaluating functions.  These languages,
+unlike conventional programming languages, retain an important
+characteristic of mathematics: a term can freely be replaced by
+another term with identical meaning.
+% HN 2010-09-30: Always "substitute for"
+This property \citep[referential transparency;][]{Whitehead1927} enables
+algebraic manipulation and reasoning about the programs
+\citep{Bird1996}. The lambda calculus allows functions to be
 used as first class entities: that is, they can be referenced by
 variables and passed as arguments to other functions (which then
 become higher-order functions). On the other hand, the lambda calculus
@@ -732,7 +706,6 @@ pharmacologically blocked in this experiment, and increases the
 threshold at which imposed simulated synaptic activity causes postsynaptic
 spiking.
 
-\input{gensig}
 \input{discuss}
 
 \includepdf[pages=-]{Figure1.pdf}
@@ -740,7 +713,7 @@ spiking.
 \includepdf[pages=-]{FigureDyn.pdf}
 %\includepdf[pages=-]{Figure4.pdf}
 
-\begin{comment}
+%\begin{comment}
 
 \begin{tabular}{l  l  p{8cm}}
 \hline
@@ -799,9 +772,9 @@ spiking.
 \end{tabular}
 \vskip1ex 
 
-\end{comment}
+%\end{comment}
 
-Table 2. (incomplete;)
+Table 2. Some common operations for generic manipulation of signals, events and durations.
 
 \end{document}
  
