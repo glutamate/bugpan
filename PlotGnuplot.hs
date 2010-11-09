@@ -7,7 +7,7 @@ module PlotGnuplot where
 import System.IO
 import System.Cmd
 import System.Exit
-import Math.Probably.FoldingStats hiding (F)
+--import Math.Probably.FoldingStats hiding (F)
 import Control.Monad
 import Data.Unique
 import Data.List
