@@ -137,14 +137,17 @@ use of a graphical user interface for helping to construct these formulations.
 On the contrary, user-friendly interfaces can be built to primarily generate
 code in language such as CoPE. This allows designers of innovative user
 interfaces for experimentation and analysis to focus on that aspect, while
-benefiting from an expressive, formally defined foundation; e.g., for
-realising novel functionality, facilitate interoperability, not having to
-worry about interacting with hardware in a timely manner as this is already
-taken care of. Graphical user interfaces can also be an efficient way of
+benefiting from an expressive, formally defined foundation for
+realising new functionality, facilitating interoperability, 
+% HN 2010-11-10: This sentence just didn't parse.
+% not having to worry about
+and interacting with hardware in a timely manner.
+%  as this is already taken care of.
+Graphical user interfaces can also be an efficient way of
 entering specific values based on the observed data. For instance, we have
 used a simple interface to enter the thresholds for spike detection in Example
 1. We plan to facilitate the description of such \emph{ad-hoc} interfaces and
-also build more elaborate interfaces as front-ends to explore observations.
+to build more elaborate interfaces as front-ends to explore observations.
 
 \input{gensig}
 
@@ -202,14 +205,15 @@ likelihood of the observed data.
 
 There has been substantial progress in \emph{automation} in the
 experimental sciences \citep{King2004}. In contrast, there has been
-almost no work in algorithmic verification \citep{Kropf1999,
+almost no work in algorithmic \emph{verification} \citep{Kropf1999,
   Sadot}, which is a separate but overlapping application of
 calculating machines to science. Nevertheless, if such verification is
 feasible it may lead to a radical change in the way scientific
 research is conducted and communicated. It is likely that at least
 some aspects of validation in physiology can be achieved with conservative
-extensions of the calculus of physiological evidence integrated with
-statistical inference.
+extensions of the 
+% calculus of physiological evidence 
+CoPE integrated with statistical inference.
 
 \section*{Methods}
 
@@ -260,18 +264,21 @@ analog-to-digital conversion at 18 bits and 20 kHz with a National
 Instruments PCI-6281 board. The locust was placed in front of a 22''
 CRT monitor running with a vertical refresh rate of 160 Hz. All
 aspects of the visual stimulus and analog-to-digital conversion were
-controlled by programs written in the calculus of physiological on a
-single computer.
+controlled by programs written in 
+% the calculus of physiological evidence
+CoPE on a single computer.
 
 \subsection*{Zebrafish experiments}
 
 Intracellular patch-clamp recordings from motor neurons in the spinal
 cord from a 2-day old zebrafish embryo were performed as previously
-described \citep{McDearmid2006}. We used a National Instruments PCI-6281 board to
+described \citep{McDearmid2006}. We used a National Instruments PCI-6281
+board to
 record the output from a BioLogic patch-clamp amplifier in
 current-clamp mode, filtered at 3kHz and digitised at 10 kHz, with the
-output current calculated at the same rate by programs written in the
-calculus of physiological evidence targeted to the RTAI backend (see
+output current calculated at the same rate by programs written in
+% the calculus of physiological evidence 
+CoPE targeted to the RTAI backend (see
 above). The measured jitter for updating the output voltage was 6
 $\mu$s and was similar to that measured with the RTAI latency test
 tool for the experiment control computer.
