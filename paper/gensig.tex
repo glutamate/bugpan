@@ -11,13 +11,13 @@ or frequency domain representation of periodically repeating
 observations. We have focused on electrophysiology because it is a
 more limited scope and because FRP exclusively deals with temporal and
 not spatial contexts. Nevertheless, generalising CoPE to include
-spatial and frequency-domain data is straightforward; we outline this
-extension here. This more general theory potentially extends our
-framework for observations, experiments and analyses to outside
+spatial and frequency-domain data is in principle straightforward;
+we outline this extension here. This more general theory potentially extends
+our framework for observations, experiments and analyses to outside
 physiology.
 
-Signals are generalised in the index type, such that values can
-be indexed by \emph{any} data type, such as time for time-varying
+Signals are generalised in the index type such that values can
+be indexed by \emph{any} data type; for example, time for time-varying
 quantities, frequency for spectra or periodograms, or vectors of
 integers or real numbers for images.
 \begin{tabbing}
@@ -25,24 +25,32 @@ integers or real numbers for images.
 $\Conid{Signal}\;\alpha\;\beta\mathrel{=}\alpha \to \beta$
 \end{tabbing}
 We merely require functions that define how values (of any type but of
-known size) can be organised in memory for the given index type. We
-define an operation from an index type to its \emph{dual}. For
-instance, frequency is the dual of time, and spatial frequency the
-dual of spatial length. We then finally define operations to
-calculate signals indexed by a type from signals indexed by the
-dual type, to represent transforms between temporal and frequency
-domains. Events are also generalised to lists of pairs of index and
-value types. 
+known size) can be organised in memory for the given index type.
+% HN 2010-11-10: I think the following is a little too much detail,
+% I'm not sure that what it seems to suggests is central, and it
+% is a bit inconsistent in that the actual transforms mentioned
+% only concernt time-frequency. I've added a brief note on transfoms later
+% instead.
+%
+% We define an operation from an index type to its \emph{dual}. For
+% instance, frequency is the dual of time, and spatial frequency the
+% dual of spatial length. We then finally define operations to
+% calculate signals indexed by a type from signals indexed by the
+% dual type, to represent transforms between temporal and frequency
+% domains.
+Events are also generalised to lists of pairs of index and value types. 
 \begin{tabbing}
 \qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
 ${\Conid{Event}\;\alpha\;\beta\mathrel{=}[\mskip1.5mu \alpha\;\!\!\times\!\!\;\beta\mskip1.5mu]}$
 \end{tabbing}
-This allow nesting of spatial and temporal contexts such that movies
+This allows nesting of spatial and temporal contexts such that movies
 (time-signals of images of, say, colour) or time-varying quantities
 recorded at a particular location \citep[for instance spot calcium
 measurements as space-events of time-signals of
 concentration;][]{DiGregorio1999} could be represented without
-introducing new concepts.  
+introducing new concepts. Moreover, where needed, standard transforms
+can be introduced to mediate between different kinds of signals; for example,
+Fourier transforms to mediate between time and frequency domain signals.
 
 These spatial types and their transformations could also define visual
 stimuli, providing a way to replace the arbitrary and limited
