@@ -193,7 +193,11 @@ unlike conventional programming languages, retain an important
 characteristic of mathematics: a term can freely be replaced by
 another term with identical meaning.
 % HN 2010-09-30: Always "substitute for"
-This property \citep[referential transparency;][]{Whitehead1927} enables
+This property \citep[referential transparency;][]{Whitehead1927} 
+% HN 2010-11-10: "enables" is a bit too strong. For example, it is certainly
+% *possible* to reason formally about imperative code.
+% enables
+facilitates
 algebraic manipulation and reasoning about the programs
 \citep{Bird1996}. The lambda calculus allows functions to be
 used as first class entities: that is, they can be referenced by
@@ -259,10 +263,14 @@ Further primitives are needed to form signals that depend on the
 history of other signals. For instance, the differential operator |D|
 differentiates a real-valued signal with respect to time, such that 
 |D s| denote its first derivative and |D D s| the second derivative of the
-signal |s|. Likewise, the differential operator can appear on the left
+signal |s|. Likewise, the differential operator can appear on the \emph{left}
 side of a definition, in which case it introduces a differential
-equation by pattern matching (REF) on the derivative of a signal (see
-example 2 below).
+equation by pattern matching 
+% HN 2010-11-10: This placeholder has been here a while. I don't think
+% a formal reference is necessary: "pattern matching" should be sufficiently
+% self-evident for the use we make of it here.
+% (REF)
+on the derivative of a signal (see example 2 below).
 
 In addition, the expression |delay s| denotes the signal that is
 delayed by a small amount of time. Other FRP implementations have
@@ -284,13 +292,13 @@ level (and then not again before the value of the signal has decreased
 below that level and then reached it again).  Here, we generalise the
 threshold detector slightly by taking a predicate (i.e., a function of
 type |alpha->Bool|) on the instantaneous values of the signal and
-generate an event whenever the predicate becomes true using the |??|
+generate an event whenever the predicate \emph{becomes} true using the |??|
 operator. For instance,
 \begin{code}
 (\x->x>5) ?? s
 \end{code}
 denotes the event that occurs whenever the value of the signal |s|
-satisfies the predicate |\x->x>5|, i.e. is greater than 5, after being
+satisfies the predicate |\x->x>5|, i.e. is greater than 5, after having been
 smaller than 5 for at least a small period of time, in practice the
 timestep. The expression |(\x->x>5) ?? s| thus defines a threshold
 detector restricted to threshold crossings with a positive slope.
