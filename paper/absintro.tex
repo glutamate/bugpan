@@ -30,14 +30,14 @@ based on computer code and produce large volumes of data, the
 feasibility of independent verification and replication has -- in
 practice -- gradually been undermined. Several studies indicate that
 full disclosure of raw data and code for experiments and analysis does
-not guarantee reproducibility.  For instance, only in 8 out of 16
+not guarantee replicability.  For instance, only in 8 out of 16
 studies subject to this requirement and published in \emph{Nature
   Genetics} could the findings be replicated at all, and only in 2 of
-those without discrepancies \citep{Ioannidis2008}. Low reproducibility
-even with available code and data has been reported elsewhere
+those without discrepancies \citep{Ioannidis2008}. Low replicability
+even with available code and data has also been reported elsewhere
 \citep{Baggerly2009, McCullough2007}. It is often not realistic to
-verify that computer code used in analyses correctly implements a
-intended mathematical algorithm; any inconsistencies can undermine the
+verify that computer code used in analyses correctly implements an
+intended mathematical algorithm. Yet, any inconsistencies can undermine the
 conclusions of a large body of work \citep{Chang2006}.  In addition,
 primary data sharing is standard in applications of high-throughout
 biology, but not in fields that produce heterogeneous data
@@ -45,12 +45,14 @@ biology, but not in fields that produce heterogeneous data
 Indeed, the combination of bias, human error, and unverified software,
 has led to the suggestion that many --- perhaps most --- published
 research findings contain serious errors \citep{Ioannidis2005,
-  Merali2010}.
+Merali2010}.
 
 This suggests that it is worth investigating a unified and transparent
 formalism for communication, validation, and automation of
-observations, experiments and analyses. Some of these problems can be
-mitigated by such a formalism that at once: (i) introduces a
+observations, experiments and analyses. We argue that some of the above
+problems can be mitigated by a formalism that 
+% \emph{at once}: 
+\emph{simultaneously}: (i) introduces a
 categorisation directly relevant to the scientific field, such that
 scientists can define experiments and reason about observations in
 familiar terms, (ii) is machine executable, therefore unambiguous and
@@ -66,7 +68,8 @@ effects, such as input and output \citep{PeytonJones2002, Roy2004,
   Wadler1995} into equational programming languages, that is languages
 that can only evaluate mathematical functions \citep{Church1941}.
 
-Here, we define a formal framework for physiology. We show that there
+Here, we define a formal framework for physiology
+that satisfies the above criteria. We show that there
 is a large conceptual overlap between physiological experimentation
 and Functional Reactive Programming \citep[FRP;][]{Elliott1997,
   Nilsson2002}, a concise and purely functional formulation of
@@ -78,7 +81,7 @@ has no concept of networks, cells or proteins. Instead it describes
 the observation and calculation of the mathematical objects that
 constitute physiological evidence (``observations'').
 
-This framework provides:
+Our framework provides:
 
 (i) An explicitly defined ontology of physiological observations. We
 outline a flexible but concisely defined structure for physiological
@@ -97,7 +100,7 @@ sharing \citep{Insel2003}.
 (ii) A concise language for describing complex experiments and
 analysis procedures in physiology. Thus experimental protocols can be
 communicated unambiguously, highlighting differences between studies
-and facilitating replication and meta-analysis. This language solves
+and facilitating replication and meta-analysis. Our language solves
 the data provenance problem \citep{Pool2002,MacKenzie-Graham2008,
   VanHorn2009} for experiments with computable pertubations --- for
 instance, a visual or electrical stimulation, rather than a chemical
@@ -108,8 +111,8 @@ and censure.
 (iii) A new approach to validating scientific inference
 \citep{Editors2003, Editors2010}. Firstly, a concise language with a
 clear mathematical denotation can be verfied manually. Secondly, by
-inspecting an experiment definition, automated decision procedures
-could verify statements about experiments that indicate sound
+inspecting an experiment definition, \emph{automated} decision procedures
+could verify certain statements about experiments that indicate sound
 scientific practice, such as consistent units of measurement
 \citep{Kennedy1997} and correct error propagation \citep{Taylor1997}.
 
@@ -124,7 +127,7 @@ Here, we first describe the theory of \emph{simple types}
 \citep{Pierce2002} and define three types that can represent a wide
 range of physiological evidence. We then present a new formal and
 machine-executable language, the \emph{calculus of physiological
-  evidence}, for defining observations and transformations of such
+  evidence} (CoPE), for defining observations and transformations of such
 evidence. We proceed to show that two very different experiments from
 neurophysiology can be formally defined, run and analysed in our
 calculus. In the first example, we elicit and measure \emph{in vivo}
