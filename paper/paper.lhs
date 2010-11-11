@@ -61,13 +61,13 @@ What kinds of mathematical objects can count as physiological
 evidence? We answer this question within simple type theory
 \citep{Pierce2002}, which assigns to every object a \emph{type}. These
 types include base types, such as integers |Integer|, real numbers
-|Real|, text strings |String| and the boolean type |Bool| with the two
+|Real|, text strings |String| and the Boolean type |Bool| with the two
 values |True| and |False|. In addition, types can be arbitrarily
 combined in several ways, such that if |alpha| and |beta| are types,
 the type |alpha times beta| is the pair formed by one element of
 |alpha| and one of |beta|; |[alpha]| is a list of |alpha|s; and |alpha
 -> beta| is the type of functions that calculate a value in the type
-|beta| from a value in |alpha|. Here, we use the convention that greek
+|beta| from a value in |alpha|. Here, we use the convention that Greek
 letters stand for type variables, which can be substituted by any
 concrete type, such as a base type or a type combination. Types can be
 defined with references to arbitrary types; for instance,
@@ -106,7 +106,7 @@ to an extended period of time. These qualitatively different classes
 of observations are represented by \emph{events} and \emph{durations},
 respectively. 
 
-To model discrete occurences, FRP introduced events as a list of pairs
+To model discrete occurrences, FRP introduced events as a list of pairs
 of time points and a value in a type |alpha|, called the ``tag'':
 \begin{code}
 Event alpha = [Time times alpha]
@@ -118,7 +118,7 @@ value of interest to associate with the time point at which it
 occurred, can be tagged with the unit type |()| which has only one
 element (that is, no information). Therefore, events can represent
 both measurements where the principal information is \emph{when}
-something happend, and measurements concerning \emph{what} happened.
+something happened, and measurements concerning \emph{what} happened.
 
 A third kind of information describes the properties of whole time
 periods. We define a duration of type |alpha| as a set of triples, of
@@ -134,7 +134,7 @@ activity of a system exceeds a set threshold (e.g during action
 potential bursts). We have used durations to hold information about an
 entire experiment, for instance a session identifier or the animal
 strain. In that case, the duration set contains a single element, with
-the start and end of the experiement as start and end time,
+the start and end of the experiment as start and end time,
 respectively. Lastly, durations could be used for information that
 spans multiple trials but not an entire experiment --- for instance, the
 presence of a drug.
@@ -145,7 +145,7 @@ physiological quantities. We show a list of such examples primarily
 drawn from neurophysiology in Table 1. These quantities are all
 representable by signals, events or durations but with different
 instantiations of the free type variable. A framework in a type
-systems that does not support parametric polymophism would have to
+systems that does not support parametric polymorphism would have to
 represent these quantities fundamentally differently, thus removing the
 possibility of re-using common analysis procedures.\vskip1ex
 \begin{tabular}{l  l}
@@ -439,7 +439,7 @@ common component in such species is a visual detector for looming
 objects. In locusts, a single neuron in each brain hemisphere, the
 Lobular Giant Movement Detector (LGMD), responds preferentially to
 looming stimuli \citep{Rind1992}. The response of the LGMD is
-invariant to manipulations of many apsects of the looming
+invariant to manipulations of many aspects of the looming
 stimulus. For instance, a key property, the time of the peak firing
 rate with respect to the retinal angle of the looming stimulus, is
 insensitive to the colour, texture, size, velocity and azimuth of the
@@ -589,7 +589,7 @@ intracellular recording experiment.
 
 The input-output relationship of individual neurons are fundamental to
 the functioning of neuronal networks. Given a stimulus, e.g. pattern
-of synaptic input or injected current waveform, what is the membrance
+of synaptic input or injected current waveform, what is the membrane
 voltage trajectory and firing rate response of a neuron? In
 particular, cell properties such as the dendritic morphology or ionic
 conductances can profoundly influence this relationship. Such
@@ -604,10 +604,10 @@ membrane voltage can be recorded and current injected into the
 cell. As opposed to a standard current-clamp experiment, where the
 injected current waveform is known in advance, in the dynamic clamp
 setup the injected current command is calculated near-instantaneously
-from the membrance voltage. Unlike the standard current clamp
+from the membrane voltage. Unlike the standard current clamp
 configuration, the dynamic clamp permits the imposition of additional
 simulated ionic conductances on a real neuron. For instance, it is
-possible to record the responce of a cell to an added synaptic
+possible to record the response of a cell to an added synaptic
 conductance or an additional Hodgkin-Huxley style voltage-sensitive
 membrane conductance. Here, we combine these possibilities to
 investigate the effect of an A-type potassium conductance
@@ -692,7 +692,7 @@ which is added to the signal |i| defined above that drives the current
 command, completing the definition of this experiment. 
 
 Figure 3A and 3B shows the voltage response to a unitary synaptic
-conductance and a trains of synaptic inputs, respecitively, with
+conductance and a trains of synaptic inputs, respectively, with
 |gmaxk| ranging from 0 to 100 nS. A large A-type membrane conductance
 decreases the amplitude of the EPSP, as expected, and decreases the
 number of spikes in response to the injection of an identical synaptic
@@ -708,7 +708,7 @@ spike = tag () ((\v'->v'>vth') ?? D v)
 and the spike frequency calculated with the |frequncyDuring| function.
 This relationship between the postsynaptic spike frequency and the
 simulated synaptic input |rate| is plotted in Figure 3C for four
-different values of |gmaxk|. Large A-type conductances supress spikes
+different values of |gmaxk|. Large A-type conductances suppress spikes
 resulting from endogenous synaptic activity, which was not
 pharmacologically blocked in this experiment, and increases the
 threshold at which imposed simulated synaptic activity causes postsynaptic
@@ -733,7 +733,7 @@ spiking.
 \parbox{4cm}{\begin{singlespace}
 |Duration alpha -> Event beta| \\|-> Duration Real|
 \end{singlespace}} 
-& Count events in each occurence\\
+& Count events in each occurrence\\
 
   |around| &
 \parbox{4cm}{\begin{singlespace}
@@ -757,7 +757,7 @@ spiking.
 \parbox{4cm}{\begin{singlespace}
 |Duration beta -> f alpha | \\ |-> f alpha|
 \end{singlespace}} 
-& Event/Duration/Signals that lie within occurences in a duration\\
+& Event/Duration/Signals that lie within occurrences in a duration\\
 
   |burst| &
 \parbox{4cm}{\begin{singlespace}
