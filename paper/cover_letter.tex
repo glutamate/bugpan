@@ -1,4 +1,4 @@
-\documentclass[11pt]{article}
+\\documentclass[11pt]{article}
 \usepackage[a4paper, top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm]{geometry}
 \begin{document}
 \begin{flushright}
@@ -19,25 +19,27 @@ Dear Sir or Madam,
 \vskip2ex
 \noindent Please find enclosed our paper titled ``A formal
 mathematical framework for physiological observations, experiments and
-analyses'' for submission to \emph{Nature Methods}. Although
-scientific experiments can be seen as \emph{programs} that observe and
-manipulate the physical work, there has been very little work in
-applying theoretical computer science to experimentation itself. Here,
-we model physiological experimentation using concepts from modern
-programming languages and type theory. We show that this approach
-gives solutions to several outstanding problems in neuroinformatics:
+analyses'' for submission to \emph{Nature Methods}. Our work directly
+addresses recent concerns about the reproducibility and correctness of
+many published findings (e.g. Ioannidis, 2005, PLoS Medicine
+2(8)). Here, we present a mathematical model of physiological
+experimentation using concepts from programming language theory and
+type theory. We show that this approach gives solutions to several
+outstanding problems in neuroinformatics:
 
 \begin{itemize}
 
 \item \emph{Ontology}: the organisation of data sharing requires a
   structure for representing a wide range of observations and
   contextual information. We propose a simple but flexible
-  categorisation of physiological evidence.
+  categorisation of physiological evidence, phrased in terms that are
+  directly relavant to physiology.
 
 \item \emph{Experiment definition}: we show that experiments defined
   in mathematical equations can be manipulated algebraically and
   composed from smaller components, unlikes those defined in
-  conventional programming languages. 
+  conventional programming languages. These definitions are also
+  machine executable, therefore practically useful and unambiguous.
 
 \item \emph{Data provenance}: without knowning where observed data
   comes from, it can be difficult to relate it to a specific
@@ -50,11 +52,11 @@ gives solutions to several outstanding problems in neuroinformatics:
 We have validated this framework with two non-trivial experiments in
 neurophysiology; one to measure visually evoked \emph{in vivo} spike
 trains, and a dynamic clamp study of spinal neurons. This work has
-serious implications for the scientific publishing in databases: our
-definitions \emph{cannot} be translated to ontology languages used to
-define the semantic web. Although in this paper we have focused on
-physiology, we outline a generalized theory and discuss its
-interaction with statistics.
+serious implications for the the structure of data sharing and
+publishing: our definitions \emph{cannot} be translated to ontology
+languages used to define the semantic web. Although in this paper we
+have focused on physiology, we outline a generalized theory and
+discuss its interaction with statistics.
 
 We suggest the following reviewers for our paper:
 
