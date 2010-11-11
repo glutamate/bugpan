@@ -93,21 +93,20 @@ practice, there may be unstated shared assumptions between the
 communicating experimenters. Informal but evolving reporting standards
 are therefore likely to be the only way to delimit this information.
 
-In terms of representing experimental contexts, here we make no
+In terms of representing experimental contexts, here we need make no
 distinction between data and meta-data. All relevant information which
 can be represented by values in some type can exist as a collection of
-signals, events and durations. There are important reasons to believe
-that there cannot exist a strict distinction between data and
+signals, events and durations and be stored in the same location as
+the primary observations. There are important reasons to believe that
+there cannot exist a strict distinction between data and
 meta-data. Information that seems incidental and contextual to the
 experimenter may after dissemination become crucial and even a
 manipulated parameter in subsequent studies. As an example, we point
 to the effect of temperature on measurements of glutamate spillover in
 the hippocampus \citep{Kullmann1996, Asztely1997}.  In our framework,
-we do not impose any such distinction on information. That does not
-imply that individual observations have no context. Because every
-value has a temporal context, the relevant information about that
-value can be retrieved by gathering other values with a similar or
-enclosing temporal context.
+we do not impose any such distinction on information. The different
+values are all indexed by time and thus linked by overlap on a common
+time scale.
 
 \subsection*{Experiment descriptions}
 
@@ -283,13 +282,21 @@ above). The measured jitter for updating the output voltage was 6
 $\mu$s and was similar to that measured with the RTAI latency test
 tool for the experiment control computer.
 
-\section*{Acknowledgements}
+\section*{Acknowledgements} 
+
 We would like to thank Jonathan McDearmid for help with the Zebrafish
-recordings and Angus Silver, Guy Billings, Antonia Hamilton, Nick Hartell
-and Rodrigo Quian Quiroga for critical comments on the manuscript. This work was funded
-by the Human Frontier Science Project (TAN), the Biology and Biotechnology
-Research Council (TM, TAN) and the Engineering and Physical Sciences Research
-Council (HN).
+recordings and Angus Silver, Guy Billings, Antonia Hamilton, Nick
+Hartell and Rodrigo Quian Quiroga for critical comments on the
+manuscript. This work was funded by the Human Frontier Science Project
+(TAN), the Biology and Biotechnology Research Council (TM, TAN) and
+the Engineering and Physical Sciences Research Council (HN).
+
+\section*{Author Contributions}  
+T.N. designed and implemented CoPE, carried out the experiements and
+data analysis, and wrote the draft of the paper. H.N. contributed to
+the language design and wrote several sections of the
+manuscript. T.M. contributed to designing the experiments and the data
+analysis, and finalised the manuscript.
 
 \bibliographystyle{apalike}
 \bibliography{paper}
