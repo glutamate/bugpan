@@ -46,18 +46,18 @@ $^*$ To whom correspondence should be sent (tan5@@le.ac.uk)
 First, we introduce some terminology and basic concepts. We assume
 that \emph{time} is global and is represented by a real number, as in
 classical physics. An \emph{experiment} is an interaction between an
-observer and a fixed number of organisms during a defined time
-period. An experiment consist of one or more \emph{trials},
+observer and a specific number of organisms during a defined time
+period. An experiment consists of one or more \emph{trials}:
 non-overlapping time periods during which the observer is running a
 \emph{program} --- instructions for manipulating the environment and
 for constructing mathematical objects, the \emph{observations}. The
 \emph{analyses} are further programs to be run after or during the
 experiment that construct other mathematical objects pertaining to
-this experiment.
+the experiment.
 
 \subsubsection*{Type theory for physiological evidence}
 
-What kinds of mathematical objects can count as physiological
+What kinds of mathematical objects can be used as physiological
 evidence? We answer this question within simple type theory
 \citep{Pierce2002}, which assigns to every object a \emph{type}. These
 types include base types, such as integers |Integer|, real numbers
@@ -82,9 +82,9 @@ with a small number of concepts, as we show in this section.
 
 What, then, are the types in which physiological evidence can be
 values? We distinguish three type schemas that differ in the manner in
-which measurements appear in a temporal context, but all derive their
-flexibility from parametric polymorphism. \emph{Signals} capture the
-notion of quantities that change in time. In physiology, observed
+which measurements appear in a temporal context, but which all derive
+their flexibility from parametric polymorphism. \emph{Signals} capture
+the notion of quantities that change in time. In physiology, observed
 time-varying quantities often represent scalar quantities, such as
 membrane voltages or muscle force, but there are also examples of
 non-scalar signals such as the two- or three dimensional location of
@@ -99,26 +99,26 @@ represent quantities that vary continuously, although these values may
 be piecewise constant. For instance, the output of a differential
 voltage amplifier might be captured in a |Signal Real|.
 
-But not every physiological observation denotes continuous
+Not every physiological observation denotes continuous
 change. Some measurements are derived from an instant in time --- such
 as the peak amplitude of an electrical potential --- and others pertain
 to an extended period of time. These qualitatively different classes
 of observations are represented by \emph{events} and \emph{durations},
 respectively. 
 
-To model discrete occurrences, FRP introduced events as a list of pairs
+To model discrete occurrences, FRP defines events as a list of pairs
 of time points and a value in a type |alpha|, called the ``tag'':
 \begin{code}
 Event alpha = [Time times alpha]
 \end{code}
 For example, an event could be constructed from a scalar signal such
-that the time of the largest amplitude of a signal was associated with
-the signal amplitude at that time-point. Events that do not have a
+that the time of the largest amplitude of a signal is associated with
+the signal amplitude at that time point. Events that do not have a
 value of interest to associate with the time point at which it
 occurred, can be tagged with the unit type |()| which has only one
-element (that is, no information). Therefore, events can represent
+element (that is, no information). Events can therefore represent
 both measurements where the principal information is \emph{when}
-something happened, and measurements concerning \emph{what} happened.
+something happened, or where it concerns \emph{what} happened.
 
 A third kind of information describes the properties of whole time
 periods. We define a duration of type |alpha| as a set of triples, of
@@ -127,56 +127,30 @@ time. The last component is again a value of any type |alpha|:
 \begin{code}
 Duration alpha = [Time times Time times alpha]
 \end{code}
-Durations are useful for information about a whole trial or about an
-entire experiment, but could also be observations in their own right,
-such as open times of individual ion channels, or periods in which
-activity of a system exceeds a set threshold (e.g during action
-potential bursts). We have used durations to hold information about an
-entire experiment, for instance a session identifier or the animal
-strain. In that case, the duration set contains a single element, with
-the start and end of the experiment as start and end time,
-respectively. Lastly, durations could be used for information that
-spans multiple trials but not an entire experiment --- for instance, the
-presence of a drug.
+Durations are useful for manipulating information about a whole trial
+or about an entire experiment, but could also be observations in their
+own right, such as open times of individual ion channels, or periods
+in which activity of a system exceeds a set threshold (e.g during
+bursts of action potentials). We have used durations to hold
+information about an entire experiment, for instance a session
+identifier or the animal strain. In that case, the duration set
+contains a single element, with the start and end of the experiment as
+start and end time, respectively. Lastly, durations could be used for
+information that spans multiple trials but not an entire experiment
+--- for instance, the presence or absence of a drug.
 
 Since signals, events and durations can be instantiated for any type,
 they form a simple but flexible framework for representing many
 physiological quantities. We show a list of such examples primarily
 drawn from neurophysiology in Table 1. These quantities are all
 representable by signals, events or durations but with different
-instantiations of the free type variable. A framework in a type
-systems that does not support parametric polymorphism would have to
-represent these quantities fundamentally differently, thus removing the
-possibility of re-using common analysis procedures.\vskip1ex
-\begin{tabular}{l  l}
-\hline
-  Quantity & Type \\ 
-\hline
-  Voltage across the cell membrane & |Signal Real| \\
-  Ion concentration & |Signal Real| \\
-  Animal location in 2D & |Signal (Real times Real)| \\
-  Action potential & |Event ()| \\
-  Action potential waveforms & |Event (Signal Real)| \\
-  Spike detection threshold & |Duration Real| \\
-  Spike interval & |Duration ()| \\
-  Synaptic potential amplitude & |Event Real| \\
-  Drug present & |Duration ()| \\
-  Trial with parameter |alpha| & |Duration alpha| \\
-  Visual stimulus & |Signal Shape| \\
-  Lab notebook & |Event String| \\
-\hline
-\end{tabular}
-\vskip1ex 
-
-Some of these quantities are directly observed from equipment such as
-amplifiers or electronic detectors, but may need to be conditioned
-before any conclusions can be drawn from them. Other quantities can
-only be inferred from calculations on other observations. 
-
-These ideas may seem obvious --- indeed, we see the conceptual
-simplicity as their principal advantage.  But they are \emph{not}
-available as descriptions of observed data in biomedical ontologies
-and are absent from many programming languages.
+instantiations of the free type variable. A framework in any type
+system that did not support parametric polymorphism would have to
+represent these quantities fundamentally differently, thus removing
+the possibility of re-using common analysis procedures. Although
+parametric polymorphism is conceptually simple and the distinctions we
+are introducing are intuitive, common biomedical ontologies
+\emph{cannot} accommodate these definitions. 
 
 We now proceed to show how to build programs that calculate with
 signals and events; then we show how annotations allow these programs
@@ -197,25 +171,25 @@ This property \citep[referential transparency;][]{Whitehead1927}
 % HN 2010-11-10: "enables" is a bit too strong. For example, it is certainly
 % *possible* to reason formally about imperative code.
 % enables
-facilitates
-algebraic manipulation and reasoning about the programs
-\citep{Bird1996}. The lambda calculus allows functions to be
-used as first class entities: that is, they can be referenced by
-variables and passed as arguments to other functions (which then
-become higher-order functions). On the other hand, the lambda calculus
-excludes variable or state mutation. These properties together mean
-that the lambda calculus combines verifiable correctness with a high
-level of abstraction, leading to programs that are in practise more
-concise \citep{Hughes1989}. The lambda calculus or variants thereof
-has been used as a foundation for mathematics \citep{Martin-Lof1985},
+facilitates algebraic manipulation and reasoning about the programs
+\citep{Bird1996}. The lambda calculus allows functions to be used as
+first class entities: that is, they can be referenced by variables and
+passed as arguments to other functions (which then become higher-order
+functions). On the other hand, the lambda calculus excludes changes in
+the value of variables or global states. These properties together
+mean that the lambda calculus combines verifiable correctness with a
+high level of abstraction, leading to programs that are in practise
+more concise \citep{Hughes1989} than those written in conventional
+programming languages. The lambda calculus or variants thereof has
+been used as a foundation for mathematics \citep{Martin-Lof1985},
 classical \citep{Sussman2001} and quantum \citep{Karczmarczuk2003}
 mechanics, evolutionary biochemistry \citep{Fontana1994} and
 programming languages \citep{McCarthy1960}.
 
 In the lambda calculus, calculations are performed by function
 abstraction and application. |\x->e| denotes the function with
-argument |x| and body |e| (i.e., an expression |e| in which the
-variable |x| is in scope that yields the value of the function), and
+argument |x| and body |e| (i.e., |e| is an expression, in which the
+variable |x| is in scope, that defines the function), and
 |f e| the application of the function |f| to the expression |e| (i.e.,
 what more conventionally would be written $f(e)$, except that |f| here
 in general is a function-valued \emph{expression}). For instance, the
@@ -722,7 +696,31 @@ spiking.
 %\includepdf[pages=-]{Figure4.pdf}
 
 %\begin{comment}
+\pagebreak
 
+\begin{tabular}{l  l}
+\hline
+  Quantity & Type \\ 
+\hline
+  Voltage across the cell membrane & |Signal Real| \\
+  Ion concentration & |Signal Real| \\
+  Animal location in 2D & |Signal (Real times Real)| \\
+  Action potential & |Event ()| \\
+  Action potential waveforms & |Event (Signal Real)| \\
+  Spike detection threshold & |Duration Real| \\
+  Spike interval & |Duration ()| \\
+  Synaptic potential amplitude & |Event Real| \\
+  Drug present & |Duration ()| \\
+  Trial with parameter |alpha| & |Duration alpha| \\
+  Visual stimulus & |Signal Shape| \\
+  Lab notebook & |Event String| \\
+\hline
+\end{tabular}
+\vskip1ex 
+
+Table 1. Some common operations for generic manipulation of signals, events and durations.
+
+\pagebreak
 \begin{tabular}{l  l  p{8cm}}
 \hline
   Function & Type & Description\\ 

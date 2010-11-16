@@ -1,71 +1,70 @@
 
 \section*{Abstract}
 
-Increasingly complex and irreproducible experiments and the benefit of
-sharing structured but heterogeneous data demonstrate a clear need for
-a formal approach to science.  Here, we propose a mathematical model
-for experimentation and analysis in physiology. First, we define a
-structure for representing physiological observations. This structure
-emphasises the critical role of time in physiology, but is flexible,
-in that it can carry information of any type. Thus, we define an
-ontology of physiological quantities that can describe a wide range of
-observations. Second, we show that experiments themselves can be
-composed from time-dependent quantities, and be expressed as purely
-mathematical equations that can be manipulated algebraically. Our
-framework is concise, allowing entire experiments to be defined
-unambiguously in a few equations. To demonstrate the practicality and
-versatility of our approach, we show the full equations for two
-non-trivial implemented and analysed experiments describing visually
-stimulated neuronal responses and dynamic clamp. The brevity of these
-definitions illustrates the power of our approach, and we discuss its
-implications for neuroinformatics-based research.
+Experiments can be complex and produce large volumes of heterogeneous
+data, which makes their execution, analysis, independent replication
+and meta-analysis difficult. Here, we propose a mathematical model for
+experimentation and analysis in physiology that addresses these
+problems. First, we define a structure for representing physiological
+observations. This structure emphasises the critical role of time in
+physiology, but is flexible, in that it can carry information of any
+type. Thus, we define an ontology of physiological quantities that can
+describe a wide range of observations. Second, we show that
+experiments themselves can be composed from time-dependent quantities,
+and be expressed as purely mathematical equations that can be
+manipulated algebraically. Our framework is concise, allowing entire
+experiments to be defined unambiguously in a few equations. To
+demonstrate the practicality and versatility of our approach, we show
+the full equations for two non-trivial implemented and analysed
+experiments describing visually stimulated neuronal responses and
+dynamic clamp of vertebrate neurons. The brevity of these definitions
+illustrates the power of our approach, and we discuss its implications
+for neuroinformatics-based research.
 
 \pagebreak
 
 \section*{Introduction}
 
-Reproducibility is a cornerstone of the scientific method. However, as
-scientific experiments and analysis are becoming increasingly complex,
-based on computer code and produce large volumes of data, the
+Reproducibility is a cornerstone of the scientific method. As
+scientific experiments and analysis are become increasingly complex,
+reliant on computer code and produce larger volumes of data, the
 feasibility of independent verification and replication has -- in
-practice -- gradually been undermined. Several studies indicate that
-full disclosure of raw data and code for experiments and analysis does
-not guarantee reproducibility.  For instance, only in 8 out of 16
-studies subject to this requirement and published in \emph{Nature
-  Genetics} could the findings be replicated at all, and only in 2 of
-those without discrepancies \citep{Ioannidis2008}. Low reproducibility
-even with available code and data has also been reported elsewhere
-\citep{Baggerly2009, McCullough2007}. It is often not realistic to
-verify that computer code used in analyses correctly implements an
-intended mathematical algorithm. Yet, any inconsistencies can undermine the
-conclusions of a large body of work \citep{Chang2006}.  In addition,
-primary data sharing is standard in applications of high-throughout
-biology, but not in fields that produce heterogeneous data
-\citep{Gardner2005}, further undermining independent validation.
-Indeed, the combination of bias, human error, and unverified software,
-has led to the suggestion that many --- perhaps most --- published
-research findings contain serious errors \citep{Ioannidis2005,
-Merali2010}.
+practice -- been undermined. Full disclosure of raw data and code for
+experiments and analysis does not guarantee reproducibility.  For
+instance, in only 8 out of 16 studies subject to this requirement and
+published in \emph{Nature Genetics} could the findings be replicated
+at all, and in only 2 of those, without discrepancies
+(\citealt{Ioannidis2008}; see also \citealt{Baggerly2009,
+  McCullough2007}). It is often not realistic to verify that computer
+code used in analyses correctly implements an intended mathematical
+algorithm, yet errors can undermine the conclusions of a
+large body of work \citep{Chang2006}.  In addition, primary data
+sharing is standard in areas of high-throughout biology, but
+not in fields that produce heterogeneous data \citep{Gardner2005},
+further undermining independent validation.  Indeed, the combination
+of bias, human error, and unverified software, has led to the
+suggestion that many --- perhaps most --- published research findings
+contain serious errors \citep{Ioannidis2005, Merali2010}.
 
-This suggests that it is worth investigating a unified and transparent
-formalism for communication, validation, and automation of
-observations, experiments and analyses. We argue that some of the above
-problems can be mitigated by a formalism that 
+The problems outlined above suggest that it is worth investigating a
+unified and transparent formalism for communication, validation, and
+automation of observations, experiments and analyses. We argue that
+some of the above problems can be mitigated by a formalism that
 % \emph{at once}: 
-\emph{simultaneously}: (i) introduces a
-categorisation directly relevant to the scientific field, such that
-scientists can define experiments and reason about observations in
-familiar terms, (ii) is machine executable, therefore unambiguous and
-practically useful, and (iii) is composed of terms that directly
-correspond to mathematical entities, unlike conventional programming
-languages, enabling algebraic manipulation and certification of the
-experiments and analysis procedures.  Experiments are difficult to
-formalise in terms of relations between mathematical objects because
-they produce heterogeneous data \citep{Tukey1962}, and because they
+\emph{simultaneously}: (i) introduces a system of categorisation
+directly relevant to the scientific field, such that scientists can
+define experiments and reason about observations in familiar terms,
+(ii) is machine executable, therefore unambiguous and practically
+useful, and (iii) is composed of terms that directly correspond to
+mathematical entities, unlike conventional programming languages,
+enabling algebraic manipulation and certification of the experiments
+and analysis procedures.  Experiments are difficult to formalise in
+terms of relations between mathematical objects because they
+produce heterogeneous data \citep{Tukey1962}, and because they
 interact with the physical world. In creating a mathematical framework
 for experiments, we take advantage of progress in embedding side
 effects, such as input and output \citep{PeytonJones2002, Roy2004,
-  Wadler1995} into equational programming languages, that is languages
+  Wadler1995}, into equational programming languages; that is, languages
 that can only evaluate mathematical functions \citep{Church1941}.
 
 Here, we define a formal framework for physiology
@@ -85,32 +84,32 @@ Our framework provides:
 
 (i) An explicitly defined ontology of physiological observations. We
 outline a flexible but concisely defined structure for physiological
-quantities.  Unlike in bioinformatics or anatomy, physiological
-databases have not found widespread adoption \citep{Herz2008,
-  Amari2002}. Existing candidates either support only a few different
-kinds of data \citep{Jessop2010}, are unstructured \citep{Teeters2008}
-or based on a large number of concepts \citep{Frishkoff2009}, or
-represent facts without their supporting evidence \citep{Katz2010}.
+quantities.  Physiological databases have not been widely adopted,
+unlike in bioinformatics or anatomy \citep{Herz2008,
+  Amari2002}. Existing candidates support only a few different kinds
+of data \citep{Jessop2010}, are unstructured \citep{Teeters2008},
+based on a large number of concepts \citep{Frishkoff2009}, or represent
+facts without their supporting evidence \citep{Katz2010}.
 %despite many attempts \citep{Katz2010, , Gardner2004, Jessop2010}.  
-We suggest that a flexible and simple ontology
-can remedy some of the structural shortcomings of existing databases
-\citep{Gardner2005, Amari2002} and thus facilitate data and meta-data
-sharing \citep{Insel2003}.
+We suggest that a flexible and simple ontology can remedy some of the
+structural shortcomings of existing databases \citep{Gardner2005,
+  Amari2002} and thus facilitate the sharing of data and meta-data
+\citep{Insel2003}.
 
 (ii) A concise language for describing complex experiments and
-analysis procedures in physiology. Thus experimental protocols can be
+analysis procedures in physiology. Experimental protocols can be
 communicated unambiguously, highlighting differences between studies
 and facilitating replication and meta-analysis. Our language solves
 the data provenance problem \citep{Pool2002,MacKenzie-Graham2008,
   VanHorn2009} for experiments with computable perturbations --- for
 instance, a visual or electrical stimulation, rather than a chemical
-substance. By construction, \emph{any} observation can be defined in a
+stimulation. By construction, \emph{any} observation can be defined in a
 single equation that must include post-acquisition processing
 and censure.
 
 (iii) A new approach to validating scientific inference
-\citep{Editors2003, Editors2010}. Firstly, a concise language with a
-clear mathematical denotation can be verfied manually. Secondly, by
+\citep{Editors2003, Editors2010}. First, a concise language with a
+clear mathematical denotation can be verified manually. Second, by
 inspecting an experiment definition, \emph{automated} decision procedures
 could verify certain statements about experiments that indicate sound
 scientific practice, such as consistent units of measurement
@@ -120,22 +119,22 @@ scientific practice, such as consistent units of measurement
 multi-modal experiments. We have implemented our framework as a new
 programming language and used it for non-trivial neurophysiological
 experiments and data analyses. This language can concisely express and
-run experiments defined by, for instance, differential equations or
-visual stimuli.
+run experiment with stimuli defined by, for instance, differential
+equations or complex animations.
 
-Here, we first describe the theory of \emph{simple types}
+We first describe the theory of \emph{simple types}
 \citep{Hindley2008} and define three types that can represent a wide
 range of physiological evidence. We then present a new formal and
 machine-executable language, the \emph{calculus of physiological
   evidence} (CoPE), for defining observations and transformations of such
-evidence. We proceed to show that two very different experiments from
+evidence. We show that two very different experiments from
 neurophysiology can be formally defined, run and analysed in our
 calculus. In the first example, we elicit and measure \emph{in vivo}
 spike train responses to visual stimulation in locusts. In the second
 example, we examine the impact of an active potassium conductance on
-synaptic integration in zebrafish using the dynamic clamp
+synaptic integration in zebrafish neurons using the dynamic clamp
 technique. These protocols are defined unambiguously using only a
-handful of equations in our language. 
+handful of equations in CoPE. 
 
 \begin{comment}
 
