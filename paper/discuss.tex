@@ -158,10 +158,10 @@ that is relevant for statistical models of the systems under study,
 but we have not yet extended our approach to include statistical
 analyses. How could values with signal, event or duration types be
 incorporated into statistical models? A conservative approach would be to
-take measurements on signals and events -- for instance the amplitude
+take measurements on signals and events -- for instance the amplitudes
 of signal deflections, or the frequencies of event -- and store these in
-durations. It would then be possible to use the tags of durations
-representing measurements in classical null-hypothesis significance
+durations. The tags of durations representing measurements could then
+be used in classical null-hypothesis significance
 tests such as the General Linear Model. 
 
 A more intriguing possibility is to build statistical models for the
@@ -187,12 +187,12 @@ missing data are accounted for by the statistical model
 \citep{Gelman2003}; errors are propagated correctly
 \citep{Taylor1997}; units of measurement are used consistently
 \citep{Kennedy1997}; there is no ``double dipping''
-\citep{Kriegeskorte2009}; and ultimately, that the observed data
-support the conclusions drawn. Statistics addresses some of these
+\citep{Kriegeskorte2009}; and, ultimately, that the observed data
+support the conclusions drawn. Statistical analyses address some of these
 issues in relating observations to parameter estimation and hypothesis
-testing, but without knowing where observations come from, it is
+testing. However, without knowing where observations come from, it is
 difficult to ascertain whether they provide evidence for a given
-theory \citep{Pool2002}. Experiment description languages, and the
+hypothesis \citep{Pool2002}. Experiment description languages, and the
 representation of experimental observations into values of concrete
 types (which may not always be real numbers), could play an important
 role in such inference. The statistical framework within which such
@@ -206,12 +206,12 @@ There has been substantial progress in \emph{automation} in the
 experimental sciences \citep{King2004}. In contrast, there has been
 almost no work in algorithmic \emph{verification} \citep{Kropf1999,
   Sadot}, which is a separate but overlapping application of
-calculating machines to science. Nevertheless, if such verification is
+computers to science. Nevertheless, if such verification is
 feasible it may lead to a radical change in the way scientific
 research is conducted and communicated. It is likely that at least
 some aspects of validation in physiology can be achieved with conservative
-extensions of the 
-% calculus of physiological evidence 
+extensions of
+% the calculus of physiological evidence 
 CoPE integrated with statistical inference.
 
 \section*{Methods}
@@ -225,7 +225,7 @@ compiler that can execute some programs that contain signals and
 events defined by mutual recursion, as is necessary for many of the
 simulations and experiments in this paper. The program is transformed
 by the compiler into a normal form that is translated to an imperative
-program which iteratively updates variable corresponding to signal
+program which iteratively updates variables corresponding to signal
 values, with a time step that is set explicitly. The program is
 divided into a series of stages, where each stage consists of the
 signals and events defined by mutual recursion, subject to the
@@ -236,7 +236,7 @@ computed in an earlier stage.
 
 To calculate a new value from existing observations after data
 acquisition, we have implemented the calculus of physiological
-evidence as domain-specific language embedded in the purely functional
+evidence as a domain-specific language embedded in the purely functional
 programming language Haskell. 
 
 For hard real-time dynamic-clamp experiments, we have built a compiler
@@ -254,18 +254,20 @@ released under the GPL.
 Recordings from locust DCMD neurons were performed as previously
 described \citep{Matheson2004}. Briefly, locusts were fixed in
 plasticine with the ventral side upwards. The head was fixed with wax
-at a $90^{\circ}$ angle and the connectives were exposed through an
+% at a $90^{\circ}$ angle 
+and the connectives were exposed through an
 incision in the soft tissue of the neck. A pair of silver wire hook
 electrodes were placed underneath the connectives and the electrodes
 and connectives enclosed in petroleum jelly. The electrode signal was
-amplified 1000x and bandpass filtered 50-5000 Hz, before
+amplified 1000x and bandpass filtered 50--5000 Hz, before
 analog-to-digital conversion at 18 bits and 20 kHz with a National
 Instruments PCI-6281 board. The locust was placed in front of a 22''
 CRT monitor running with a vertical refresh rate of 160 Hz. All
-aspects of the visual stimulus and analog-to-digital conversion were
-controlled by programs written in 
+aspects of the visual stimulus displayed on this monitor and of
+the analog-to-digital conversion performed by the National Instruments
+board were controlled by programs written in 
 % the calculus of physiological evidence
-CoPE on a single computer.
+CoPE running on a single computer.
 
 \subsection*{Zebrafish experiments}
 
