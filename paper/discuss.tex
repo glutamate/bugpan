@@ -8,8 +8,8 @@ all evidence for this field. We show how observations and calculations
 of these types can be described in a mathematical framework based on
 the lambda calculus. We use two experiments from neurophysiology to
 demonstrate that this approach works in practice: the \emph{in vivo}
-spike train response to a visual looming stimulus in locusts; and a
-study of synaptic integration with dynamic clamp in zebrafish. Our use
+spike train response to a visual looming stimulus in locusts; and an
+analysis of synaptic integration with dynamic clamp in zebrafish. Our use
 of typed, functional and reactive programming overcomes at least three
 long-standing issues in bioinformatics: the need for a flexible
 ontology to share heterogeneous data from physiological experiments
@@ -25,10 +25,10 @@ in validating scientific inference.
 There are clear advantages to sharing primary data from scientific
 experiments \citep{Insel2003} which include: preventing needless replication,
 facilitating meta-analysis, giving theoretical neuroscientists access
-to a greater variety of observations and enhancing transparency. These
+to a greater variety of observations, and enhancing transparency. These
 benefits are likely to be greater if data are structured and stored in
 standard formats. Despite these advantages, and many attempted
-databases, little data from electrophysiological experiments are
+databases, few data from electrophysiological experiments are
 shared in practise. This is likely due to both technical and social
 barriers \citep{Amari2002}. We suggest that modifying the approach to
 experimentation may help overcome social barriers by completely
@@ -40,13 +40,13 @@ ontology for physiology that address the technical barriers to data
 sharing. Thanks to the flexibility of parametric polymorphism, our
 ontology can form the basis for the interchange of physiological data
 without imposing unnecessary constraints on what can be shared. The
-ontology is non-hierarchical and is difficult to formulate in the
+ontology is non-hierarchical and would be difficult to formulate in the
 various existing semantic web ontology frameworks (Web Ontology
 Language or Resource Description Framework), which lack parametric
 polymorphism and functional abstraction. Nevertheless, in specifying
 the categories of mathematical objects that constitute evidence, it is
-an ontology in the classical sense of cataloguing the categories of
-being within, and providing a vocabulary for, a specific domain. We
+an ontology in the classical sense of cataloguing the categories within
+a specific domain, and providing a vocabulary for that domain. We
 emphasise again that it is an ontology of \emph{evidence}, not of the
 biological entities that give rise to this evidence. It is unusual as
 an ontology for scientific knowledge in being embedded in a
@@ -61,7 +61,7 @@ flexibility in the information that can be carried by signals and
 events, they do not exploit full parametric polymorphism: the range of
 observations and stimuli that can be described with their more limited
 definitions is smaller than in our framework. This is the case even if
-``multi-dimesionional'' signals are permitted; this allows a value to
+``multi-dimensional'' signals are permitted; this allows a value to
 be \emph{indexed} by a vector, but the values themselves remain
 scalar. For instance, the signal of shapes that describes a visual
 stimulus in Example 1 \emph{cannot} be represented by a signal in
@@ -87,11 +87,11 @@ have been suggested for different fields
 distinguishing the experimental context into those aspects that can
 practically be executed by a machine, and those that must be carried
 out by a human experimenter. Machine-executable aspects of the
-experiment can be described unambiguously; it is difficult to prove
-that human-executable aspects can. Even if a description works well in
-practice, there may be unstated shared assumptions between the
-communicating experimenters. Informal but evolving reporting standards
-are therefore likely to be the only way to delimit this information.
+experiment can be described unambiguously, but it is difficult to prove
+that human-executable aspects can be similarly described. Even if a
+description works well in practice, there may be unstated shared assumptions
+between the communicating experimenters. Informal but evolving reporting
+standards are therefore likely to be the only way to delimit this information.
 
 In terms of representing experimental contexts, here we need make no
 distinction between data and meta-data. All relevant information which
@@ -99,9 +99,9 @@ can be represented by values in some type can exist as a collection of
 signals, events and durations and be stored in the same location as
 the primary observations. There are important reasons to believe that
 there cannot exist a strict distinction between data and
-meta-data. Information that seems incidental and contextual to the
-experimenter may after dissemination become crucial and even a
-manipulated parameter in subsequent studies. As an example, we point
+meta-data. Information that seems incidental and contextual to the primary
+experimenter may after dissemination become crucial
+manipulated parameters in subsequent studies. As an example, we point
 to the effect of temperature on measurements of glutamate spillover in
 the hippocampus \citep{Kullmann1996, Asztely1997}.  In our framework,
 we do not impose any such distinction on information. The different
@@ -125,7 +125,7 @@ Our framework is not only a theoretical formalism, but also a very
 practical tool. It is a collection of computer programs for executing
 experiments and analyses, and carrying out data
 management. Controlling experimentation and analysis with programs
-that share data formats is potentially highly efficient and eliminates
+that share data formats can be highly efficient and eliminates
 many sources of human error. Our experiment definitions have the
 further advantage that they \emph{compose}; that is, more complex
 experiments can be formulated by joining together elementary building
@@ -133,7 +133,7 @@ blocks.
 
 The use of a formal language for formulating experiments does not preclude the
 use of a graphical user interface for helping to construct these formulations.
-On the contrary, user-friendly interfaces can be built to primarily generate
+On the contrary, user-friendly interfaces can be built to generate
 code in language such as CoPE. This allows designers of innovative user
 interfaces for experimentation and analysis to focus on that aspect, while
 benefiting from an expressive, formally defined foundation for
