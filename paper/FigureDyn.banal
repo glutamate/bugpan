@@ -35,8 +35,8 @@
 >> vm1 = \gk -> smoothN 4 $ focus1 (vmWhere gk r1)
 
 
->> oneSyn =  YTics [-75, 5, -50] $ XRange 1.7 1.773 $ YRange (-75) (-50) $ KeyTopLeft True $ ("0 nS", vm1 0) :+: ("10 nS", vm1 1e-8) :+: ("40 nS", vm1 4e-8) :+: ("100 nS", vm1 1e-7)
->> vmplot = AxisLabels "Time (s)" "V_m (mV)" $ YTics [-80, 10, -30] $ XRange 1.2 1.46 $ focus2 (vmWhere 0 120) :+: focus2 (vmWhere 1e-8 120) :+:  focus2 (vmWhere 4e-8 120) :+:  focus2 (vmWhere 1e-7 120)
+>> oneSyn =  TicFormat X "%.2f" $ YTics [-75, 5, -50] $ XRange 1.7 1.773 $ YRange (-75) (-49) $ KeyTopLeft True $ ("0 nS", vm1 0) :+: ("10 nS", vm1 1e-8) :+: ("40 nS", vm1 4e-8) :+: ("100 nS", vm1 1e-7)
+>> vmplot = TicFormat X "%.2f" $AxisLabels "Time (s)" "V_m (mV)" $ YTics [-80, 10, -30] $ XRange 1.2 1.46 $ focus2 (vmWhere 0 120) :+: focus2 (vmWhere 1e-8 120) :+:  focus2 (vmWhere 4e-8 120) :+:  focus2 (vmWhere 1e-7 120)
 >> ffplot = AxisLabels "Presynaptic rate (s^{-1})" "Postsynaptic rate (s^{-1})" $ YTics [0, 10, 30] $ XRange 0 104 $ YRange 0 30 $ ffscat
 
 >> plot $ NoTRaxis $ 1%(AxisLabels "Time (s)" "V_m (mV)" $ A oneSyn)
@@ -56,6 +56,6 @@ the presence of A-type potassium conductances of increasing magnitude
 (values given are for the maximal conductance $g_A$). B, as A, but
 with a simulated presynaptic spike train with inter-spike intervals
 drawn from a Poisson distribution (here a mean of $120 s^{-1}$; the spike
-trains for the different levels of A-type conductance are
+trains used to test the different levels of A-type conductance are
 identical). C, the postsynaptic spike rate plotted against the rate of
 simulated presynaptic inputs, with $g_A$ as in A.

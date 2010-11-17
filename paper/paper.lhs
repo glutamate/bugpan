@@ -6,7 +6,7 @@
 \usepackage{setspace} 
 \usepackage{verbatim} 
 \usepackage[final]{pdfpages}
-\usepackage{natbib}
+\usepackage[super]{natbib}
 \usepackage{graphicx}
 %\linenumbers
 %\usepackage{epsfig}
@@ -41,25 +41,25 @@ $^*$ To whom correspondence should be sent (tan5@@le.ac.uk)
 \end{titlepage}
 \input{absintro}
 
-\section*{The calculus of physiological evidence}
+\section*{Results}
 
-First, we introduce some terminology and basic concepts. We assume
-that \emph{time} is global and is represented by a real number, as in
-classical physics. An \emph{experiment} is an interaction between an
-observer and a specific number of organisms during a defined time
-period. An experiment consists of one or more \emph{trials}:
-non-overlapping time periods during which the observer is running a
-\emph{program} --- instructions for manipulating the environment and
-for constructing mathematical objects, the \emph{observations}. The
-\emph{analyses} are further programs to be run after or during the
-experiment that construct other mathematical objects pertaining to
-the experiment.
+To introduce the calculus of physiological evidence, we must first
+define some terminology and basic concepts. We assume that \emph{time}
+is global and is represented by a real number, as in classical
+physics. An \emph{experiment} is an interaction between an observer
+and a specific number of organisms during a defined time period. An
+experiment consists of one or more \emph{trials}: non-overlapping time
+periods during which the observer is running a \emph{program} ---
+instructions for manipulating the environment and for constructing
+mathematical objects, the \emph{observations}. The \emph{analyses} are
+further programs to be run after or during the experiment that
+construct other mathematical objects pertaining to the experiment.
 
 \subsubsection*{Type theory for physiological evidence}
 
 What kinds of mathematical objects can be used as physiological
 evidence? We answer this question within simple type theory
-\citep{Pierce2002}, which assigns to every object a \emph{type}. These
+\citep{Pierce2002, Hindley2008}, which assigns to every object a \emph{type}. These
 types include base types, such as integers |Integer|, real numbers
 |Real|, text strings |String| and the Boolean type |Bool| with the two
 values |True| and |False|. In addition, types can be arbitrarily
@@ -189,21 +189,20 @@ programming languages \citep{McCarthy1960}.
 In the lambda calculus, calculations are performed by function
 abstraction and application. |\x->e| denotes the function with
 argument |x| and body |e| (i.e., |e| is an expression, in which the
-variable |x| is in scope, that defines the function), and
-|f e| the application of the function |f| to the expression |e| (i.e.,
-what more conventionally would be written $f(e)$, except that |f| here
-in general is a function-valued \emph{expression}). For instance, the
-function |add2 = \x -> x+2| adds two to its argument; hence |add2 3 =
-(\x->x+2) 3 = 3+2| by substituting arguments in the function body. In
-addition, we define a number of constructs to improve the readability
-of the language. However, they are not \emph{necessary} as they can be
-defined in terms of function application and abstraction (and,
-depending on the exact version of the calculus, some additional
-primitive functions). The expression |if p then e1 else e2| equals
-|e_1| if |p| evaluates to |True| and |e_2| if it evaluates to |False|. 
-The construct |let x = e1 in e2| defines a variable |x| bound to the value of
-the expression |e_1| that scopes over |e_2| as well as |e_1| (thus
-allowing recursive definitions).
+variable |x| is in scope, that defines the function), and |f e| the
+application of the variable |f|, denoting a function, to the
+expression |e| (i.e., what more conventionally would be written
+$f(e)$). For instance, the function |add2 = \x -> x+2| adds two to its
+argument; hence |add2 3 = (\x->x+2) 3 = 3+2| by substituting arguments
+in the function body. In addition, we define a number of constructs to
+improve the readability of the language. However, they are not
+\emph{necessary} as they can be defined in terms of function
+application and abstraction (and, depending on the exact version of
+the calculus, some additional primitive functions). The expression |if
+p then e1 else e2| equals |e_1| if |p| evaluates to |True| and |e_2|
+if it evaluates to |False|.  The construct |let x = e1 in e2| defines
+a variable |x| bound to the value of the expression |e_1| that scopes
+over |e_2| as well as |e_1| (thus allowing recursive definitions).
 
 We now present the concrete syntax for a new calculus, that we call
 the \emph{calculus of physiological evidence} (CoPE), defined by
@@ -211,10 +210,10 @@ extending the lambda calculus with notions of signals and events,
 along with the necessary constructs to define and manipulate such
 entities. This calculus borrows some concepts from earlier versions of
 FRP, but it emphasises signals and events as mathematical objects in
-themselves rather than as control structures for creating reactive
+themselves, rather than as control structures for creating reactive
 systems \citep{Elliott1997, Nilsson2002}. Specifically, the new calculus
 encompass a relaxed notion of \emph{causality}. The syntax and
-implementation strategy is therefore very different from FRP.
+implementation strategy is therefore different from FRP.
 
 Let the construct |sopen e sclose| denote a signal with the value of
 the expression |e| at every time point, and let the construct |<: s
@@ -236,7 +235,7 @@ into a signal of |beta| by applying the function |f| of type |alpha
 Further primitives are needed to form signals that depend on the
 history of other signals. For instance, the differential operator |D|
 differentiates a real-valued signal with respect to time, such that 
-|D s| denote its first derivative and |D D s| the second derivative of the
+|D s| denotes its first derivative and |D D s| the second derivative of the
 signal |s|. Likewise, the differential operator can appear on the \emph{left}
 side of a definition, in which case it introduces a differential
 equation by pattern matching 
@@ -247,11 +246,11 @@ equation by pattern matching
 on the derivative of a signal (see example 2 below).
 
 In addition, the expression |delay s| denotes the signal that is
-delayed by a small amount of time. Other FRP implementations have
-other primitives, in particular a |switch| statement that changes the
-definition of a signal depending on the occurrence of specific
-events. We have not needed such a construct in the experiments
-described here.
+delayed by a short period, in practice a time step or the sampling
+period. Other FRP implementations have other primitives, in particular
+a |switch| statement that changes the definition of a signal depending
+on the occurrence of specific events. We have not needed such a
+construct in the experiments described here.
 
 Events and durations are defined as lists and can be manipulated and
 constructed as such. Thus, a large number of transformations can be
@@ -266,15 +265,15 @@ level (and then not again before the value of the signal has decreased
 below that level and then reached it again).  Here, we generalise the
 threshold detector slightly by taking a predicate (i.e., a function of
 type |alpha->Bool|) on the instantaneous values of the signal and
-generate an event whenever the predicate \emph{becomes} true using the |??|
+generating an event whenever the predicate \emph{becomes} true using the |??|
 operator. For instance,
 \begin{code}
 (\x->x>5) ?? s
 \end{code}
 denotes the event that occurs whenever the value of the signal |s|
 satisfies the predicate |\x->x>5|, i.e. is greater than 5, after having been
-smaller than 5 for at least a small period of time, in practice the
-timestep. The expression |(\x->x>5) ?? s| thus defines a threshold
+smaller than 5 for at least a short period of time, in practice the
+time step. The expression |(\x->x>5) ?? s| thus defines a threshold
 detector restricted to threshold crossings with a positive slope.
 
 This small number of special constructors, along with the lambda
@@ -287,10 +286,10 @@ in this library.
 \subsubsection*{Interacting with the physical world}
 
 In the previous examples, signals, events and durations exist as purely
-mathematical objects. However, in order to describe experiments, it must also
+mathematical objects. To describe experiments, however, it must also
 be possible to observe particular values from real-world systems, and to
 create controlled stimuli to perturb these systems. For this purpose, we
-introduce \emph{sources} and \emph{sinks} that act as a bridge between the
+introduce \emph{sources} and \emph{sinks} that act as a bridge between 
 purely mathematical equations and the physical world.
 
 A source is essentially an input port through which the value of some external
@@ -307,11 +306,11 @@ construct
 \begin{code}
 identifier <* source parameter
 \end{code}
-binds the value or signal resulting by observing the the parametrised
-\emph{source} during the course of an experiment to the variable
-\emph{identifier}. Note that, in the case of a signal, the variable is bound
-to the \emph{whole} signal. For a concrete example, the following code
-defines a simple experiment:
+binds the value or signal resulting from the observation of the the
+parametrised \emph{source} during the course of an experiment to the
+variable \emph{identifier}. Note that, in the case of a signal, the
+variable is bound to the \emph{whole} signal. For a concrete example,
+the following code defines a simple experiment:
 \begin{code}
 v <* ADC 0
 \end{code}
@@ -319,9 +318,9 @@ This describes the observation of the voltage signal on channel 0 of an
 analog-to-digital converter, binding it to the variable |v|.
 
 What happens if the same source is observed more than once in a description of
-an experiment? Often, for example if the source refers to a single, physical
+an experiment? If the source refers to a single, physical
 input port such as a channel of an analog-to-digital converter, the result
-will necessarily be the same as the same entity is being observed within a
+will necessarily be the same, because the same entity is being observed within a
 single run of the experiment. Such sources are called \emph{idempotent}.
 Idempotency ensures that separate experiments referring to a common external
 variable can be composed easily with a predictable outcome. However, there are
@@ -330,18 +329,18 @@ idempotency is \emph{not} desirable. Each occurrence of a non-idempotent
 source is thus a separate, independent source, even if the name of the
 source and the parameters happen to be the same.
 
-In addition to making appropriate observations, an experiment may also involve
-a perturbation of the experimental preparation. In the context of a physiology
-experiment, the purpose could be to control the amount of current injected
-into a cell. In one of the examples described below, non-numeric signals are
-used to generate visual stimuli on a computer screen. 
-
-This requires the opposite of a source, namely an output port connected to a
-physical device capable of effectuating the desired perturbation. Such a port
-is called a \emph{sink}. The value at the output at any point in time during
-an experiment is defined by connecting the corresponding sink to a signal.
-This is done through the the following construct, mirroring the source
-construct discussed above:
+In addition to making appropriate observations, an experiment may also
+involve a perturbation of the experimental preparation. In the context
+of a physiology experiment, the manipulation could to control the
+amount of electric current injected into a cell. Alternatively, in one
+of the examples described below, non-numeric signals are used to
+generate visual stimuli on a computer screen. Such manipulations
+require the opposite of a source, namely an output port connected to a
+physical device capable of effecting the desired perturbation. Such
+a port is called a \emph{sink}. The value at the output at any point
+in time during an experiment is defined by connecting the
+corresponding sink to a signal.  This is done through the the
+following construct, mirroring the source construct discussed above:
 \begin{code}
 signal *> sink parameter
 \end{code}{}
@@ -382,9 +381,9 @@ probability distributions. We have implemented sources corresponding to common
 parametrised probability distributions, such that experiments can sample
 values from the distributions and use these values in computations or
 connect them to sinks. However, these sources are \emph{not} idempotent as it
-is important there are no accidental correlations. Sharing of a single random
-signal, when needed, can be described easily anyway: just bind that signal to a
-variable as discussed above and use the variable to refer to the signal
+is important that there are no accidental correlations. Sharing of a single random
+signal, when needed, can also be described easily: just bind that signal to a
+variable as discussed above and the variable is used to refer to the signal
 instead of repeating the reference to the random source. In this more general
 view, sources and sinks bridge referentially transparent and non-transparent
 computations.
@@ -404,31 +403,31 @@ computations.
 % general view, sources and sinks bridge referentially transparent and
 % non-transparent computations.
 
-\section*{Example 1}
+\subsubsection*{Example 1}
 
 Most animals can benefit from a mechanism for detecting and avoiding
 obstacles and predators. In addition, movement in social animals might
 be constrained by the need to avoid collisions with conspecifics. A
 common component in such species is a visual detector for looming
 objects. In locusts, a single neuron in each brain hemisphere, the
-Lobular Giant Movement Detector (LGMD), responds preferentially to
+Lobula Giant Movement Detector (LGMD), responds preferentially to
 looming stimuli \citep{Rind1992}. The response of the LGMD is
 invariant to manipulations of many aspects of the looming
-stimulus. For instance, a key property, the time of the peak firing
+stimulus. For instance, the time of the peak firing
 rate with respect to the retinal angle of the looming stimulus, is
 insensitive to the colour, texture, size, velocity and azimuth of the
 approaching object when averaged over several approaches
 \citep{Gabbiani2001}.
 
 We have constructed several experiments in CoPE to record the response
-of LGMD in locusts to visual stimuli that simulate objects approaching
+of LGMD to visual stimuli that simulate objects approaching
 with different velocities. To generate these stimuli, we augmented
 CoPE with primitive three-dimensional geometric shapes. Let the
 expression
 \begin{code}
 cube l
 \end{code}
-denote a cube located at the origin with the side length |l|,
+denote a cube located at the origin, with side length |l|,
 \begin{code}
 translate (x,y,z) s
 \end{code}
@@ -461,14 +460,15 @@ loomingSquare =
 \end{code}
 
 |loomingSquare| differs from conventional protocols
-\citep{Gabbiani2001} for stimulating the LGMD in that the object
-appears to pass through the observer after collision. In order not to
-evoke a large OFF response from the LGMD \citep{O'shea1976}
-immediately after simulated collision, the object is frozen in space
-as it reaches the plane of the surface onto which the animation is
-projected \citep{Hatsopoulos1995}. To achieve this effect, we define a
-new signal that has a lower bound of the distance from the eye to the
-screen |zscreen|
+\citep{Gabbiani2001} for stimulating the LGMD in that it describes an
+object that passes through the physical screen and the observer, and
+when displayed would thus disappear from the screen just before
+collision. In order not to evoke a large OFF response from the LGMD
+\citep{O'shea1976} immediately after simulated collision, the object
+is frozen in space as it reaches the plane of the surface onto which
+the animation is projected \citep{Hatsopoulos1995}. To achieve this
+effect, we define a new signal that has a lower bound of the distance
+from the eye to the visual display screen |zscreen|
 \begin{code}
 distance' = sopen max zscreen spc <: distance :>  sclose
 \end{code}
@@ -484,17 +484,18 @@ three-dimensional shapes onto a two-dimensional surface.
 loomingSquare' *> screen ()
 \end{code}
 
-The response to the looming stimulus in the LGMD neuron can be
+The response of the LGMD neuron to the looming stimulus can be
 recorded from the main longitudinal nerves (``connectives'') in the
-ventral nerve cord. Although the LGMD does not make a long-range
-projection, it reliably activates the descending contralateral
+ventral nerve cord. Although the axon of LGMD does not itself run in
+this connective, LGMD reliably activates the descending contralateral
 movement detector (DCMD) with a strong synaptic connection, such that
 spikes in the DCMD follow LGMD spikes one to one
-\citep{O'Shea1974}. Extracellular hook electrodes wrapped around one
-connective can record activity in the contralateral DCMD, which produces the
-largest-amplitude action potential in such recordings. These analogue
-signals were amplified, filtered (see methods) and converted to a
-digital signal:
+\citep{O'Shea1974}. The DCMD runs in the connective and it is this
+signal that we record. Extracellular hook electrodes wrapped around
+one connective can record activity in the DCMD, which produces the
+largest amplitude action potential in such recordings. In our
+experiments, these analogue signals were amplified, filtered (see
+methods) and converted to a digital signal:
 
 \begin{code}
 voltage <* ADC 0
@@ -542,27 +543,27 @@ time) composed (|.|) with the function |between = \x -> \y -> \z ->
 z>x && z<=y|. 
 
 We examined how the LGMD spike response varied with changes in
-$\frac{l}{||v||}$. The average of |hspike| for three different values of
-$\frac{l}{||v||}$ are shown in figure 2A, and 2B and 2C show the total
+$\frac{l}{||v||}$. The average of |hspike| for three different values
+of $\frac{l}{||v||}$ are shown in Figure 2A; 2B and 2C show the total
 number of spikes (|length spike|) and largest value of |hspike|, for
-each approach, plotted against the value of $\frac{l}{||v||}$. These plots
-show that while the peak firing rate is a decreasing
-function of $\frac{l}{||v||}$, the total number of spikes in the approach
-is an increasing function. In addition, the time of the peak rate is
-later with smaller values of $\frac{l}{||v||}$
-\citep{Hatsopoulos1995}. 
+each approach, plotted against the value of $\frac{l}{||v||}$. These
+plots show that while the peak firing rate is a decreasing function of
+$\frac{l}{||v||}$, the total number of spikes in the approach is an
+increasing function. In addition, the time of the peak rate is later
+relative to collision with smaller values of $\frac{l}{||v||}$
+\citep{Hatsopoulos1995}.
 
-This experiment indicates that the calculus of physiological evidence
-can adequately and concisely describe the visual stimulus, spike
-recording and relevant analysis for activation of the locust looming
-detection circuit. To demonstrate the versatility of this framework,
-we next show that it can be used to implement dynamic clamp in an
-intracellular recording experiment.
+This experiment demonstrates that the calculus of physiological
+evidence can adequately and concisely describe visual stimuli,
+spike recording and relevant analyses for activation of a locust
+looming detection circuit. To demonstrate the versatility of this
+framework, we next show that it can be used to implement dynamic clamp
+in an \emph{in vivo} patch clamp recording experiment.
 
-\section*{Example 2}
+\subsubsection*{Example 2}
 
-The input-output relationship of individual neurons are fundamental to
-the functioning of neuronal networks. Given a stimulus, e.g. pattern
+The input-output relationships of individual neurons are fundamental to
+the functioning of neuronal networks. Given a stimulus, e.g. a pattern
 of synaptic input or injected current waveform, what is the membrane
 voltage trajectory and firing rate response of a neuron? In
 particular, cell properties such as the dendritic morphology or ionic
@@ -574,21 +575,20 @@ integration.
 
 A dynamic clamp experiment \citep{Robinson1993, Sharp1993} requires
 electrical access to the intracellular compartment, such that the cell
-membrane voltage can be recorded and current injected into the
+membrane voltage can be recorded, and current injected into the
 cell. As opposed to a standard current-clamp experiment, where the
 injected current waveform is known in advance, in the dynamic clamp
 setup the injected current command is calculated near-instantaneously
-from the membrane voltage. Unlike the standard current clamp
-configuration, the dynamic clamp permits the imposition of additional
-simulated ionic conductances on a real neuron. For instance, it is
-possible to record the response of a cell to an added synaptic
-conductance or an additional Hodgkin-Huxley style voltage-sensitive
-membrane conductance. Here, we combine these possibilities to
-investigate the effect of an A-type potassium conductance
-\citep{Connor1971} on the response of a zebrafish spinal motor neuron
-to synaptic excitation.
+from the membrane voltage. The dynamic clamp thus permits the
+imposition of additional simulated ionic conductances on a real
+neuron. For instance, it is possible to record the response of a cell
+to an added synaptic conductance or an additional Hodgkin-Huxley style
+voltage-sensitive membrane conductance. Here, we combine these
+possibilities to investigate the effect of an A-type potassium
+conductance \citep{Connor1971} on the response of a zebrafish spinal
+motor neuron to synaptic excitation.
 
-Dynamic clamp-experiments follow the same template: the current
+Many dynamic clamp-experiments follow a common template: the current
 command |i| is calculated at each time-step from the simulated conductance |g|
 and the measured membrane voltage |v|:
 \begin{code}
@@ -605,18 +605,18 @@ gains).
 In the simplest case, $g$ is independent of $v$; for instance, when
 considering linear synaptic conductances \citep{Mitchell2003}. Here,
 we consider the addition of a simulated fast excitatory synaptic
-conductance to a real neuron. Simple models of synapses
-approximate the conductance waveform with an alpha function.
+conductance to a real neuron. Simple models of synapses approximate
+the conductance waveform with an alpha function \citep{Carnevale2006}.
 \begin{code}
 alpha = \tau -> sopen tau **2 * <: seconds :> *exp (- <: seconds :> *tau) sclose
 \end{code}
 
 To simulate a barrage of synaptic input to a cell, this waveform is
-convolved with a presynaptic spike train. The spike train itself is
-first bound from a source representing a random probability
+convolved with a simulated presynaptic spike train. The spike train
+itself is first bound from a source representing a random probability
 distribution, in this case series of recurrent events of type |Event
 ()| for which the inter-occurrence interval is Poisson distributed.
-Secondly, our standard library contains a function |convolveSE| which
+Our standard library contains a function |convolveSE| which
 convolves an impulse response signal with a numerically-tagged event,
 such that the impulse response is multiplied by the tag before
 convolution.
@@ -666,7 +666,7 @@ which is added to the signal |i| defined above that drives the current
 command, completing the definition of this experiment. 
 
 Figure 3A and 3B shows the voltage response to a unitary synaptic
-conductance and a trains of synaptic inputs, respectively, with
+conductance and a train of synaptic inputs, respectively, with
 |gmaxk| ranging from 0 to 100 nS. A large A-type membrane conductance
 decreases the amplitude of the EPSP, as expected, and decreases the
 number of spikes in response to the injection of an identical synaptic
@@ -674,7 +674,7 @@ conductance waveform.
 
 By varying the value of |rate|, we can examine the input-output
 relationship of the neuron by measuring the frequency of postsynaptic
-spikes. Firstly, spikes were detected from the first derivative of the
+spikes. First, spikes were detected from the first derivative of the
 |v| signal with
 \begin{code}
 spike = tag () ((\v'->v'>vth') ?? D v)
@@ -683,8 +683,8 @@ and the spike frequency calculated with the |frequncyDuring| function.
 This relationship between the postsynaptic spike frequency and the
 simulated synaptic input |rate| is plotted in Figure 3C for four
 different values of |gmaxk|. Large A-type conductances suppress spikes
-resulting from endogenous synaptic activity, which was not
-pharmacologically blocked in this experiment, and increases the
+resulting from endogenous synaptic activity (which was not
+pharmacologically blocked in this experiment) and increases the
 threshold at which imposed simulated synaptic activity causes postsynaptic
 spiking.
 
@@ -721,6 +721,7 @@ spiking.
 Table 1. Some common operations for generic manipulation of signals, events and durations.
 
 \pagebreak
+
 \begin{tabular}{l  l  p{8cm}}
 \hline
   Function & Type & Description\\ 
@@ -743,7 +744,7 @@ Table 1. Some common operations for generic manipulation of signals, events and 
 \parbox{4cm}{\begin{singlespace}
 |Event alpha -> Event beta| \\|-> Duration alpha times beta|
 \end{singlespace}} 
-& Create a durations from start and stop events\\
+& Create a duration from start and stop events\\
 
   |convolveSE| &
 \parbox{4cm}{\begin{singlespace}
@@ -755,19 +756,19 @@ Table 1. Some common operations for generic manipulation of signals, events and 
 \parbox{4cm}{\begin{singlespace}
 |Duration beta -> f alpha | \\ |-> f alpha|
 \end{singlespace}} 
-& Event/Duration/Signals that lie within occurrences in a duration\\
+& \begin{singlespace}Events/Durations/Signals that lie within occurrences in a duration\end{singlespace}\\
 
   |burst| &
 \parbox{4cm}{\begin{singlespace}
 |Real -> Event alpha | \\|-> Duration ()|
 \end{singlespace}} 
-& Durations when successive inter-event occurrence intervals fall below a minimum\\
+& \begin{singlespace}Durations when successive inter-event occurrence intervals fall below a minimum\end{singlespace}\\
 
   |adjustDur| &
 \parbox{4cm}{\begin{singlespace}
 |Time times Time| \\ | -> Time times Time | \\ |-> Duration alpha | \\|-> Duration alpha|
 \end{singlespace}} 
-& Durations when successive inter-event occurrence intervals fall below a minimum\\
+& \begin{singlespace}Apply a function to adjust the beginning and end of each duration occurrence\end{singlespace}\\
 
 
 
@@ -776,6 +777,7 @@ Table 1. Some common operations for generic manipulation of signals, events and 
 
 
 \end{tabular}
+
 \vskip1ex 
 
 %\end{comment}

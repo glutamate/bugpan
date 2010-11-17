@@ -430,6 +430,10 @@ data YRange a = YRange Double Double a
 data XTics a = XTics [Double] a
 data YTics a = YTics [Double] a
 
+data TicFormat a = TicFormat XY String a 
+
+data XY = X | Y | XY
+
 data Noaxis a = Noaxis a
               | NoXaxis a
               | NoYaxis a
@@ -460,6 +464,15 @@ instance PlotWithGnuplot a => PlotWithGnuplot (XRange a) where
       px <- multiPlot r x
       let setit = "set xrange ["++show lo++":"++show hi++"]\n"
       return $ map (\(r', pls) -> (r', (TopLevelGnuplotCmd setit "set xrange [*:*]"):pls)) px
+
+instance PlotWithGnuplot a => PlotWithGnuplot (TicFormat a) where
+    multiPlot r m@(TicFormat xy s x) = do
+      px <- multiPlot r x
+      let whereStr X = "x"
+          whereStr Y = "y"
+          whereStr XY = "xy"
+      let setit = "set format "++whereStr xy++" "++show s++"\n"
+      return $ map (\(r', pls) -> (r', (TopLevelGnuplotCmd setit "unset format"):pls)) px
 
 
 instance PlotWithGnuplot a => PlotWithGnuplot (Key a) where

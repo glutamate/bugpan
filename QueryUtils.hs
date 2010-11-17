@@ -241,6 +241,11 @@ baseline tb1 tb2 = map f where
      let bsig = limitSig (t1+tb1) (t1+tb2) s
          bval = snd $ sigStat' meanF bsig
      in fmap (subtract bval) s
+  f s = s
+
+noConst = concatMap noConst' where
+    noConst' (ConstSig _) = []
+    noConst' (s) = [s]
 
 x === ys = (x `isPrefixOf`)//ys
 

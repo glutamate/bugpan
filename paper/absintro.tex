@@ -34,7 +34,7 @@ experiments and analysis does not guarantee reproducibility.  For
 instance, in only 8 out of 16 studies subject to this requirement and
 published in \emph{Nature Genetics} could the findings be replicated
 at all, and in only 2 of those, without discrepancies
-(\citealt{Ioannidis2008}; see also \citealt{Baggerly2009,
+\citep{Ioannidis2008} (see also \citep{Baggerly2009,
   McCullough2007}). It is often not realistic to verify that computer
 code used in analyses correctly implements an intended mathematical
 algorithm, yet errors can undermine the conclusions of a
@@ -70,8 +70,8 @@ that can only evaluate mathematical functions \citep{Church1941}.
 Here, we define a formal framework for physiology
 that satisfies the above criteria. We show that there
 is a large conceptual overlap between physiological experimentation
-and Functional Reactive Programming \citep[FRP;][]{Elliott1997,
-  Nilsson2002}, a concise and purely functional formulation of
+and Functional Reactive Programming (FRP\citep{Elliott1997,
+  Nilsson2002}), a concise and purely functional formulation of
 time-dependent reactive computer programs. Consequently, physiological
 experiments can be concisely defined in the vocabulary of
 \emph{signals} and \emph{events} introduced by FRP. Such a language
@@ -92,20 +92,19 @@ based on a large number of concepts \citep{Frishkoff2009}, or represent
 facts without their supporting evidence \citep{Katz2010}.
 %despite many attempts \citep{Katz2010, , Gardner2004, Jessop2010}.  
 We suggest that a flexible and simple ontology can remedy some of the
-structural shortcomings of existing databases \citep{Gardner2005,
-  Amari2002} and thus facilitate the sharing of data and meta-data
+structural shortcomings\citep{Gardner2005, Amari2002} of existing
+databases and thus facilitate the sharing of data and meta-data
 \citep{Insel2003}.
 
 (ii) A concise language for describing complex experiments and
 analysis procedures in physiology. Experimental protocols can be
 communicated unambiguously, highlighting differences between studies
-and facilitating replication and meta-analysis. Our language solves
-the data provenance problem \citep{Pool2002,MacKenzie-Graham2008,
-  VanHorn2009} for experiments with computable perturbations --- for
-instance, a visual or electrical stimulation, rather than a chemical
-stimulation. By construction, \emph{any} observation can be defined in a
-single equation that must include post-acquisition processing
-and censure.
+and facilitating replication and meta-analysis. Our language thus
+describes the the data provenance
+\citep{Pool2002,MacKenzie-Graham2008, VanHorn2009} for experiments
+with that can be fully executed by a computer. By construction,
+\emph{any} observation can be defined in a single equation that must
+include post-acquisition processing and censure.
 
 (iii) A new approach to validating scientific inference
 \citep{Editors2003, Editors2010}. First, a concise language with a
@@ -123,18 +122,18 @@ run experiment with stimuli defined by, for instance, differential
 equations or complex animations.
 
 We first describe the theory of \emph{simple types}
-\citep{Hindley2008} and define three types that can represent a wide
+\citep{Pierce2002, Hindley2008} and define three types that can represent a wide
 range of physiological evidence. We then present a new formal and
 machine-executable language, the \emph{calculus of physiological
-  evidence} (CoPE), for defining observations and transformations of such
-evidence. We show that two very different experiments from
+  evidence} (CoPE), for defining observations and transformations of
+such evidence. We show that two very different experiments from
 neurophysiology can be formally defined, run and analysed in our
 calculus. In the first example, we elicit and measure \emph{in vivo}
 spike train responses to visual stimulation in locusts. In the second
-example, we examine the impact of an active potassium conductance on
-synaptic integration in zebrafish neurons using the dynamic clamp
-technique. These protocols are defined unambiguously using only a
-handful of equations in CoPE. 
+example, we use the dynamic clamp technique to examine the impact of
+an active potassium conductance on synaptic integration in zebrafish
+neurons recorded \emph{in vivo}. These protocols are defined
+unambiguously using only a handful of equations in CoPE.
 
 \begin{comment}
 

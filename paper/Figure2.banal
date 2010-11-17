@@ -6,15 +6,18 @@
 
 >> dur35 = [((4,5.1),())]
 >> thefit = \lov -> during dur35 $ fitS fitf1 fitinit $ shist lov
+>> pts = \c ty sz -> Points [PointType ty, PointSize sz, LineColor c]  
 
->> plot $ (1%( NoTRaxis $ KeyTopLeft True $ AxisLabels "Time (s)" "Spike rate (s^{-1})" $ XRange 0.0 5.2 $ A $ (lovStrs "0.04", shist 40) :+: (lovStrs "0.02", shist 20) :+: (lovStrs "0.01", shist 10))) :--:
+>> collision = pts "black" 11 1.2 [((5::Double),(280::Double))]
+
+>> plot $ (1%( NoTRaxis $ KeyTopLeft True $ AxisLabels "Time (s)" "Spike rate (s^{-1})" $ YRange 0 310 $ XRange 0.0 5.2 $ A $ (lovStrs "0.04", shist 40) :+: (lovStrs "0.02", shist 20) :+: (lovStrs "0.01", shist 10) :+: collision)) :--:
 >>        (2%((B (NoTRaxis $ AxisLabels "l/|v| (s)" "Spikes per trial" $ XRange 0.007 0.052 $ YTics [40,20,120] $ YRange 30 130 $ XTics [0.01, 0.01, 0.05] $ Points [PointType 7, PointSize 0.4]  $ jitterxs 0.001 $ scatter $ zipD (contains spikes $ during longNotDisplaced approachLoV) nspikes)) :==: 
 >>        C (NoTRaxis $ AxisLabels "l/|v| (s)" "Peak spike rate (s^{-1})" $ XRange 0.007 0.052 $ YTics [100, 50, 350] $ YRange 100 350 $ XTics [0.01, 0.01, 0.05] $ Points [PointType 7, PointSize 0.3] $ jitterxs 0.001 $ scatter $ zipD (contains spikes $ during longNotDisplaced approachLoV) peakrate)))
 
 %>> plot $ (lovStr 40, during dur35 $ shist 40) :+: (lovStr 20, during dur35 $shist 20) :+: (lovStr 10, during dur35 $shist 10) :+: thefit 10 :+: thefit 20 :+: thefit 40
 
-\textbf{Figure 2}. A, Spike rate histogram for approaches with
-$\frac{l}{||v||}$ of 0.01, 0.02 and 0.04 s, with 50 ms bin size. B,
+\textbf{Figure 2}. A, Spike rate histograms for approaches with
+$\frac{l}{||v||}$ of 0.01, 0.02 and 0.04 s, with 50 ms bin size, with collision time indicated by a black triangle. B,
 Scatter plot of number of counted spikes against approach
 $\frac{l}{||v||}$ for individual trials. C, Scatter plot of the maximum
 rate of spiking against $\frac{l}{||v||}$ for individual
