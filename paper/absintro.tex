@@ -55,17 +55,17 @@ some of the above problems can be mitigated by a formalism that
 directly relevant to the scientific field, such that scientists can
 define experiments and reason about observations in familiar terms,
 (ii) is machine executable, therefore unambiguous and practically
-useful, and (iii) is composed of terms that directly correspond to
-mathematical entities, unlike conventional programming languages,
-enabling algebraic manipulation and certification of the experiments
+useful, and (iii) is composed only of terms that directly correspond
+to mathematical entities, enabling, unlike in conventional programming
+languages, algebraic manipulation and certification of the experiments
 and analysis procedures.  Experiments are difficult to formalise in
-terms of relations between mathematical objects because they
-produce heterogeneous data \cite{Tukey1962}, and because they
-interact with the physical world. In creating a mathematical framework
-for experiments, we take advantage of progress in embedding side
-effects, such as input and output \cite{PeytonJones2002, Roy2004,
-  Wadler1995}, into equational programming languages; that is, languages
-that can only evaluate mathematical functions \cite{Church1941}.
+terms of relations between mathematical objects because they produce
+heterogeneous data \cite{Tukey1962}, and because they interact with
+the physical world. In creating a mathematical framework for
+experiments, we take advantage of progress in embedding side effects
+\cite{PeytonJones2002, Roy2004, Wadler1995}, such as input and output,
+into equational programming languages; that is, languages that can
+only evaluate mathematical functions \cite{Church1941}.
 
 Here, we define a formal framework for physiology
 that satisfies the above criteria. We show that there

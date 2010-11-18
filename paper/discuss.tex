@@ -71,7 +71,7 @@ animal must be represented either by two or three separate signals, or
 one must resort to \emph{ad-hoc} tricks, such as using the first
 dimension of a multidimensional signal to represent time, and the
 remaining dimensions to index the vector dimensions. But this only
-works for vector quantities, and forces us to think in terms of linear
+works for vector quantities, and forces one to think in terms of linear
 algebra. Full parametric polymorphism, on the other hand, gives the
 possibility of creating a small vocabulary of generic functions for
 data analysis that can transform any time-varying quantity. Therefore,
@@ -104,11 +104,11 @@ meta-data. Information that seems incidental and contextual to the
 primary experimenter may after dissemination become important in
 subsequent studies. As an example, we point to the measurements of
 glutamate spillover in the hippocampus, where the temperature at which
-early experiments \cite{Kullmann1996} experiments were conducted
-appeared to influence key findings, when manipulated in a later
-study \cite{Asztely1997}.  In our framework, we do not impose any
-such distinction on information. The different values are all indexed
-by time and thus linked by overlap on a common time scale.
+early experiments \cite{Kullmann1996} were conducted, when manipulated
+in a later study \cite{Asztely1997}, influenced key
+findings.  In our framework, we do not impose any such distinction on
+information. The different values are all indexed by time and thus
+linked by overlap on a common time scale.
 
 \subsection*{Experiment descriptions}
 
@@ -186,15 +186,15 @@ might be verifiable are statements about experiments --- for instance,
 that: particular variables were randomly controlled and not observed;
 outcomes have not gained correlation due to the analysis procedure;
 missing data are accounted for by the statistical model
-\cite{Gelman2003}; errors are propagated correctly
-\cite{Taylor1997}; units of measurement are used consistently
-\cite{Kennedy1997}; there is no ``double dipping''
-\cite{Kriegeskorte2009}; and, ultimately, that the observed data
-support the conclusions drawn. Statistical analyses address some of these
-issues in relating observations to parameter estimation and hypothesis
-testing. However, without knowing where observations come from, it is
-difficult to ascertain whether they provide evidence for a given
-hypothesis \cite{Pool2002}. Experiment description languages, and the
+\cite{Gelman2003}; errors are propagated correctly \cite{Taylor1997};
+units of measurement are used consistently \cite{Kennedy1997}; there
+is no ``double dipping'' \cite{Kriegeskorte2009}; and, ultimately,
+that the observed data support the conclusions drawn. Statistical
+analyses address some of these issues in relating observations to
+parameter estimation and hypothesis testing. However, without knowing
+where observations come from, it is difficult to ascertain whether
+they provide evidence for a given scientific hypothesis
+\cite{Pool2002}. Experiment description languages, and the
 representation of experimental observations into values of concrete
 types (which may not always be real numbers), could play an important
 role in such inference. The statistical framework within which such

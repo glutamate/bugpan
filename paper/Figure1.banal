@@ -1,4 +1,5 @@
 >> importBanal FigurePrelude
+>> importHs Data.Ord
 
 %> inSessionsWhere zStopDist  & spikes & notDisplaced
 
@@ -13,8 +14,8 @@
 >> lns = \c w -> Lines [LineType 1, LineWidth w, LineColor c]
 
 >> pts = \c ty sz -> Points [PointType ty, PointSize sz, LineColor c]  
-
-
+>> extrapks = take 2 $ (<(-0.06)) ?? (head $ drop 8 ecVoltage)
+>> spikes1 = sortBy (comparing fst) (extrapks ++ spikes)
 >> accu3 = (take 3 . accushow) :: Double -> String
 >> sbars = ScaleBars (0.14,4) (0.02,"20 ms") (1, "1 mV")
 
@@ -29,7 +30,7 @@
 %>> plot $ NoYaxis $ AxisLabels "time (s)" "" $ lns "dark-red" 1 (chopx ((/200) <$$> distSig)) :+: 
 %>>        lns "black" 1 (chopx (rescale 8 1 ecVoltage)) :+: 
 %>>        lns "blue" 4 (chopx (rescale 20 (-1.6) lovDur)) :+:
-%>>        pts "dark-green" 7 0.3 (chopx (jitterys 0.08 $ tag 1.2 spikes)) :+:
+%>>        pts "dark-green" 7 0.3 (chopx (jitterys 0.08 $ tag 1.2 (spikes1)) :+:
 %>>        pts "red" 11 1 (chopx (tag 0.1 collision)) :+:
 %>>        lns "black" 1 (chopx (rescale 0.0015 1.35 shistMany))
 
@@ -45,11 +46,12 @@
 >>        (TextAtLeft (txtx, 0.142) "Distance (m)" $ WithAxis distAx $ lns "dark-red" 1 (chopx (rescale 0.0035 0.175 distSig))) :+: 
 >>        (TextAtLeft (txtx, 0.52) "Voltage" $ lns "black" 1 (chopx (rescale 4 0.63 ecVoltage))) :+: 
 >>        (TextAtLeft (txtx, -0.18) "l/|v| (s})" $ WithAxis lovAx $ lns "blue" 4 (chopx (rescale 5 (-0.33) lovDur))) :+:
->>        (TextAtLeft (txtx, 0.8) "Spikes" $ pts "dark-green" 7 0.3 (chopx (jitterys 0.08 $ tag 0.8 spikes))) :+:
+>>        (TextAtLeft (txtx, 0.8) "Spikes" $ pts "dark-green" 7 0.3 (chopx (jitterys 0.08 $ tag 0.8 spikes1))) :+:
 >>        (pts "red" 11 1 (chopx (tag 0.20 collision))) :+:
 >>        (TextAtLeft (txtx, 0.99) "Frequency" $ TextAt (1748.0, 0.93) "(s^{-1})" $ WithAxis freqAx $ lns "black" 1 (chopx (rescale 0.0012 0.9 shistMany))) 
 
 %>>        (TextAtLeft (txtx, 0.52) "Voltage" $ lns "black" 1 (chopx (rescale 4 0.63 ecVoltage))) :+: 
+
 
 >> close
 
@@ -62,3 +64,4 @@
 %>>        ((C $ rebase running visangle :+: rebase running dvisangle) :||: (D $ rebase running lumin))) 
 
 Figure 1.
+

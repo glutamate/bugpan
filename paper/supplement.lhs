@@ -175,8 +175,8 @@ ecVoltage *> store ""
 
 \end{verbatim}
 
-\flushleft Listing 1. Code for experiment in Example 1, as used to
-obtain the data (not typeset). There are minor syntactical differences
+\flushleft Listing 1. Full code for experiment in Example 1, as used to
+obtain the data (without formatting). There are minor syntactical differences
 between equations the paper and this code, which were run by an early
 implementation of CoPE.
 
@@ -231,7 +231,7 @@ outv *> DAC 0
 vm *> store ""
 \end{verbatim}
 
-\flushleft Listing 2. Code for experiment in Example 2. 
+\flushleft Listing 2. Full code for experiment in Example 2. 
 
 
 \end{document}

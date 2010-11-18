@@ -82,16 +82,16 @@ type schemata in this manner and define generic functions over them
 calculus for representing a large range of physiological quantities
 with a small number of concepts, as we show in this section.
 
-What, then, are the types in which physiological evidence can be
-values? We distinguish three type schemas that differ in the manner in
-which measurements appear in a temporal context, but which all derive
-their flexibility from parametric polymorphism. \emph{Signals} capture
-the notion of quantities that change in time. In physiology, observed
-time-varying quantities often represent scalar quantities, such as
-membrane voltages or muscle force, but there are also examples of
-non-scalar signals such as the two- or three dimensional location of
-an animal or of a body part. Here, we generalise this notion such that
-for \emph{any} type |alpha|, a signal of |alpha| is defined as a
+We distinguish three type schemas in which physiological evidence can
+be values. These differ in the manner in which measurements appear in
+a temporal context, but which all derive their flexibility from
+parametric polymorphism. \emph{Signals} capture the notion of
+quantities that change in time. In physiology, observed time-varying
+quantities often represent scalar quantities, such as membrane
+voltages or muscle force, but there are also examples of non-scalar
+signals such as the two- or three dimensional location of an animal or
+of a body part. Here, we generalise this notion such that for
+\emph{any} type |alpha|, a signal of |alpha| is defined as a
 \emph{function} from time to a value in |alpha|, written formally as:
 \begin{code}
 Signal alpha = Time -> alpha
@@ -169,7 +169,7 @@ unlike conventional programming languages, retain an important
 characteristic of mathematics: a term can freely be replaced by
 another term with identical meaning.
 % HN 2010-09-30: Always "substitute for"
-This property \cite[referential transparency;][]{Whitehead1927} 
+This property (referential transparency\cite{Whitehead1927})
 % HN 2010-11-10: "enables" is a bit too strong. For example, it is certainly
 % *possible* to reason formally about imperative code.
 % enables
@@ -201,8 +201,8 @@ improve the readability of the language. However, they are not
 \emph{necessary} as they can be defined in terms of function
 application and abstraction (and, depending on the exact version of
 the calculus, some additional primitive functions). The expression |if
-p then e1 else e2| equals |e_1| if |p| evaluates to |True| and |e_2|
-if it evaluates to |False|.  The construct |let x = e1 in e2| defines
+p then e_1 else e_2| equals |e_1| if |p| evaluates to |True| and |e_2|
+if it evaluates to |False|.  The construct |let x = e_1 in e_2| defines
 a variable |x| bound to the value of the expression |e_1| that scopes
 over |e_2| as well as |e_1| (thus allowing recursive definitions).
 
@@ -238,7 +238,7 @@ Further primitives are needed to form signals that depend on the
 history of other signals. For instance, the differential operator |D|
 differentiates a real-valued signal with respect to time, such that 
 |D s| denotes its first derivative and |D D s| the second derivative of the
-signal |s|. Likewise, the differential operator can appear on the \emph{left}
+signal |s|. Likewise, the differential operator can appear on the left
 side of a definition, in which case it introduces a differential
 equation by pattern matching 
 % HN 2010-11-10: This placeholder has been here a while. I don't think
@@ -267,7 +267,7 @@ level (and then not again before the value of the signal has decreased
 below that level and then reached it again).  Here, we generalise the
 threshold detector slightly by taking a predicate (i.e., a function of
 type |alpha->Bool|) on the instantaneous values of the signal and
-generating an event whenever the predicate \emph{becomes} true using the |??|
+generating an event whenever the predicate becomes true using the |??|
 operator. For instance,
 \begin{code}
 (\x->x>5) ?? s
@@ -459,7 +459,7 @@ The |distance| signal is the basis of shape-valued signal
 loomingSquare = 
      sopen colour  (0,0,0) 
                    (translate  (0,0, <: distance :> ) 
-                               (cube l)) sclose
+                               (cube l))               sclose
 \end{code}
 
 |loomingSquare| differs from conventional protocols
@@ -697,6 +697,8 @@ spiking.
 \bibliographystyle{nature}
 \bibliography{paper}
 
+\pagebreak
+
 \section*{Figure Legends}
 
 \textbf{Figure 1}. Diagram of an experiment to record the looming
@@ -706,9 +708,9 @@ simulated object size-to-approach speed ratio ($\frac{l}{||v||}$) for
 given approach trial, \emph{red lines}, simulated object distance,
 \emph{red triangles}, apparent collision time. Observed signal:
 \emph{black lines}, recorded extracellular voltage. By convention,
-absolute amplitude values are not shown for extracellular because they
-differ markedly from experiment to experiment depending on recording
-conditions. The largest amplitude deflections are DCMD
+absolute amplitude values are not shown for extracellular recordings
+because they differ markedly from experiment to experiment depending
+on recording conditions. The largest amplitude deflections are DCMD
 spikes. Analysis: \emph{green dots}, DCMD spikes, with randomly
 jittered vertical placement for display, \emph{thin black line}, spike
 rate histogram with 50 ms bin size. The inter-trial interval of four
