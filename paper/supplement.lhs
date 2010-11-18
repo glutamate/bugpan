@@ -84,9 +84,6 @@ Table S1. Some common operations for generic manipulation of signals, events and
 
   |x| & The value of the variable |x|\\
 
-  |sopen e sclose| & The signal whose value is given by expression |e|\\
-
-  |<: s :>| & \parbox{9cm}{\begin{singlespace}The value of the signal, in the temporal context of the surrounding |sopen ... sclose| brackets\end{singlespace}}\\
   |e::t| & Annotation: the expression |e| has type |t|\\
 
   |let x = e in y| & Define |x| as the value of |e| in the expression |y|\\
@@ -94,6 +91,20 @@ Table S1. Some common operations for generic manipulation of signals, events and
   |if p then c else a| & If |p| is |True| then yield |c|; if |p| is |False| yield |a|\\
 
   |(x,y)| & Form a pair (Cartesian product) of x and y \\
+
+  |sopen e sclose| & The signal whose value is given by expression |e|\\
+
+  |<: s :>| & \parbox{9cm}{\begin{singlespace}The value of the signal, in the temporal context of the surrounding |sopen ... sclose| brackets\end{singlespace}}\\
+
+  |D s| & \parbox{9cm}{\begin{singlespace}The derivative of signal |s|. When used on the left-hand side of a definition, it introduces a differential equation\end{singlespace}}\\
+
+  |s_0| & \parbox{9cm}{\begin{singlespace}The initial value of the signal |s| (can also be used on the left-hand side of a definition)\end{singlespace}}\\
+
+  |x <* src p| & \parbox{9cm}{\begin{singlespace}(Top-level only) Bind the value x to the observation of the source |src|, with parameter |p|\end{singlespace}}\\
+
+  |e *> snk p| & \parbox{9cm}{\begin{singlespace}(Top-level only) Send the value x to the sink |snk|, with parameter |p|\end{singlespace}}\\
+
+
  & \\
 
 

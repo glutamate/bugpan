@@ -36,6 +36,7 @@
 %format e_0 = "e_0"
 %format e_1 = "e_1"
 %format e_2 = "e_2"
+%format s_0 = "s_0"
 %format v_rest = "v_{rest}"
 %format alphaa = "\alpha_a"
 %format betaa = "\beta_a"
