@@ -45,19 +45,51 @@
 \parbox{4cm}{\begin{singlespace}
 |Duration beta -> f alpha | \\ |-> f alpha|
 \end{singlespace}} 
-& \parbox{6cm}{\begin{singlespace}Events/Durations/Signals that lie within occurrences in a duration\end{singlespace}}\\
+& \parbox{8cm}{\begin{singlespace}Events/Durations/Signals (|f|) that lie within occurrences in a duration\end{singlespace}}\\
 
   |burst| &
 \parbox{4cm}{\begin{singlespace}
 |Real -> Event alpha | \\|-> Duration ()|
 \end{singlespace}} 
-& \parbox{6cm}{\begin{singlespace}Durations when successive inter-event occurrence intervals fall below a minimum\end{singlespace}}\\
+& \parbox{8cm}{\begin{singlespace}Durations when successive inter-event occurrence intervals are smaller than a set minimum\end{singlespace}}\\
 
   |adjustDur| &
 \parbox{4cm}{\begin{singlespace}
 |Time times Time| \\ | -> Time times Time | \\ |-> Duration alpha | \\|-> Duration alpha|
 \end{singlespace}} 
-& \parbox{6cm}{\begin{singlespace}Apply a function to adjust the beginning and end of each duration occurrence\end{singlespace}}\\
+& \parbox{8cm}{\begin{singlespace}Apply a function to adjust the beginning and end of each duration occurrence\end{singlespace}}\\
+
+  |later| &
+\parbox{4cm}{\begin{singlespace}
+|Real -> Event alpha| \\ |-> Event alpha|
+\end{singlespace}} 
+& \parbox{8cm}{\begin{singlespace}Delay each event occurrence by a fixed amount of time\end{singlespace}}\\
+
+  |//| &
+\parbox{4cm}{\begin{singlespace}
+|(alpha -> Bool) -> f alpha | \\ | -> f alpha|
+\end{singlespace}} 
+& \parbox{8cm}{\begin{singlespace}Exclude events or durations (|f|) where the tag does not satisfy a predicate\end{singlespace}}\\
+
+  |area| & |Signal Real -> Event Real|
+& \parbox{8cm}{\begin{singlespace}Calculate the centre of mass (time of the event) and area (tag of the event) of a signal\end{singlespace}}\\
+
+  |tag| & |alpha -> f beta -> f beta|
+& \parbox{8cm}{\begin{singlespace}Change all tags of events or durations (|f|) to a fixed value\end{singlespace}}\\
+
+  |baseline| & 
+\parbox{4cm}{\begin{singlespace}|Real -> Real | \\ |-> Signal Real -> Signal Real|
+\end{singlespace}}
+& \parbox{8cm}{\begin{singlespace}Subtract from a signal its mean value between two time points\end{singlespace}}\\
+
+  |intervals| & |Event alpha -> Event Real|
+& \parbox{8cm}{\begin{singlespace}Replace the tag of each occurrence with the time period to the next occurrence\end{singlespace}}\\
+
+  |smoothN| & 
+\parbox{4cm}{\begin{singlespace}|Int -> Signal Real | \\ |-> Signal Real|
+\end{singlespace}}
+& \parbox{8cm}{\begin{singlespace}Smooth a signal with the binomial filter\end{singlespace}}\\
+
 
  & & \\
 
@@ -88,7 +120,7 @@ Table S1. Some common operations for generic manipulation of signals, events and
 
   |let x = e in y| & Define |x| as the value of |e| in the expression |y|\\
 
-  |if p then c else a| & If |p| is |True| then yield |c|; if |p| is |False| yield |a|\\
+  |if p then e_1 else e_2| & If |p| is |True| then yield |e_1|; if |p| is |False| yield |e_2|\\
 
   |(x,y)| & The pair (Cartesian product) of x and y \\
 
@@ -102,11 +134,11 @@ Table S1. Some common operations for generic manipulation of signals, events and
 
   |delay s| & The signal |s|, dealyed by a short time period\\
 
-  |p ?? s| & Events that occur when the value of |s| satisfies the predicate |p| \\
+  |p ?? s| &  \parbox{9cm}{\begin{singlespace}Events that occur when the value of |s| satisfies the predicate |p| \end{singlespace}}\\
 
-  |x <* src p| & \parbox{9cm}{\begin{singlespace}(Top-level only) Bind the value x to the observation of the source |src|, with parameter |p|\end{singlespace}}\\
+  |x <* src e| & \parbox{9cm}{\begin{singlespace}(Top-level only) Bind the value x to the observation of the source |src|, with parameter |e|\end{singlespace}}\\
 
-  |e *> snk p| & \parbox{9cm}{\begin{singlespace}(Top-level only) Send the value x to the sink |snk|, with parameter |p|\end{singlespace}}\\
+  |e *> snk e_1| & \parbox{9cm}{\begin{singlespace}(Top-level only) Send the value |e| to the sink |snk|, with parameter |e_1|\end{singlespace}}\\
 
 
  & \\

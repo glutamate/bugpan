@@ -281,8 +281,9 @@ detector restricted to threshold crossings with a positive slope.
 This small number of special constructors, along with the lambda
 calculus and the list semantics of events and durations, have allowed
 us to construct a small ``standard library'' of analysis procedures
-for physiology. Table S1 details the types and names of some of the
-functions in this library.
+for physiology. Table S1 in the supplementary information details the
+types and names of some of the functions in this library; Table S2 has
+an informal overview of the syntax of CoPE.
 
 % \subsubsection*{Observing signals and events}
 \subsubsection*{Interacting with the physical world}
@@ -556,11 +557,12 @@ relative to collision with smaller values of $\frac{l}{||v||}$
 \cite{Hatsopoulos1995}.
 
 This experiment demonstrates that the calculus of physiological
-evidence can adequately and concisely describe visual stimuli,
-spike recording and relevant analyses for activation of a locust
-looming detection circuit. To demonstrate the versatility of this
-framework, we next show that it can be used to implement dynamic clamp
-in an \emph{in vivo} patch clamp recording experiment.
+evidence can adequately and concisely describe visual stimuli, spike
+recording and relevant analyses for activation of a locust looming
+detection circuit (see supplementary information for full code
+listings.) To demonstrate the versatility of this framework, we next
+show that it can be used to implement dynamic clamp in an \emph{in
+  vivo} patch clamp recording experiment.
 
 \subsubsection*{Example 2}
 
