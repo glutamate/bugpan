@@ -14,6 +14,14 @@
 %format <: = "\langle:"
 %format :> = ":\rangle"
 
+%format let = "\textrm {let}"
+%format in = "\textrm {in}"
+
+%format if = "\textrm {if}"
+%format then = "\textrm {then}"
+%format else = "\textrm {else}"
+
+
 %format <* = "\,<\!\!\!*\,\,"
 %format *> = "\,\,*\!\!\!>\,"
 

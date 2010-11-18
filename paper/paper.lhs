@@ -190,7 +190,7 @@ In the lambda calculus, calculations are performed by function
 abstraction and application. |\x->e| denotes the function with
 argument |x| and body |e| (i.e., |e| is an expression, in which the
 variable |x| is in scope, that defines the function), and |f e| the
-application of the variable |f|, denoting a function, to the
+application of function |f| to the
 expression |e| (i.e., what more conventionally would be written
 $f(e)$). For instance, the function |add2 = \x -> x+2| adds two to its
 argument; hence |add2 3 = (\x->x+2) 3 = 3+2| by substituting arguments
@@ -279,7 +279,7 @@ detector restricted to threshold crossings with a positive slope.
 This small number of special constructors, along with the lambda
 calculus and the list semantics of events and durations, have allowed
 us to construct a small ``standard library'' of analysis procedures
-for physiology. Table 2 details the types and names of the functions
+for physiology. Table S1 details the types and names of the functions
 in this library.
 
 % \subsubsection*{Observing signals and events}
@@ -719,70 +719,6 @@ spiking.
 \vskip1ex 
 
 Table 1. Some common operations for generic manipulation of signals, events and durations.
-
-\pagebreak
-
-\begin{tabular}{l  l  p{8cm}}
-\hline
-  Function & Type & Description\\ 
-\hline
-  |peak| & |Signal alpha -> Event alpha| & Peak value of each signal segment\\
-
-  |freqDuring| & 
-\parbox{4cm}{\begin{singlespace}
-|Duration alpha -> Event beta| \\|-> Duration Real|
-\end{singlespace}} 
-& Count events in each occurrence\\
-
-  |around| &
-\parbox{4cm}{\begin{singlespace}
-|Event alpha -> Signal beta| \\|-> Signal beta|
-\end{singlespace}} 
-& Align signal around event occurrences\\
-
-  |inout| &
-\parbox{4cm}{\begin{singlespace}
-|Event alpha -> Event beta| \\|-> Duration alpha times beta|
-\end{singlespace}} 
-& Create a duration from start and stop events\\
-
-  |convolveSE| &
-\parbox{4cm}{\begin{singlespace}
-|Signal Real -> Event Real| \\|-> Signal Real|
-\end{singlespace}} 
-& Convolve a signal with an event\\
-
-  |during| &
-\parbox{4cm}{\begin{singlespace}
-|Duration beta -> f alpha | \\ |-> f alpha|
-\end{singlespace}} 
-& \begin{singlespace}Events/Durations/Signals that lie within occurrences in a duration\end{singlespace}\\
-
-  |burst| &
-\parbox{4cm}{\begin{singlespace}
-|Real -> Event alpha | \\|-> Duration ()|
-\end{singlespace}} 
-& \begin{singlespace}Durations when successive inter-event occurrence intervals fall below a minimum\end{singlespace}\\
-
-  |adjustDur| &
-\parbox{4cm}{\begin{singlespace}
-|Time times Time| \\ | -> Time times Time | \\ |-> Duration alpha | \\|-> Duration alpha|
-\end{singlespace}} 
-& \begin{singlespace}Apply a function to adjust the beginning and end of each duration occurrence\end{singlespace}\\
-
-
-
-
-\hline
-
-
-\end{tabular}
-
-\vskip1ex 
-
-%\end{comment}
-
-Table 2. Some common operations for generic manipulation of signals, events and durations.
 
 \end{document}
  

@@ -11,3 +11,7 @@ rtf:
 cover:  
 	pdflatex cover_letter
 	latex2rtf cover_letter
+
+suppl:
+	lhs2TeX --math -o supplement.tex supplement.lhs
+	pdflatex supplement
