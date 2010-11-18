@@ -7,6 +7,8 @@
 \usepackage{verbatim} 
 \usepackage[final]{pdfpages}
 \usepackage[super]{natbib}
+%\usepackage{citesupernumber}
+
 \usepackage{graphicx}
 %\linenumbers
 %\usepackage{epsfig}
@@ -24,7 +26,7 @@
 \end{center}
 \vspace{50 mm}
 
-\begin{center}{\large Thomas A. Nielsen$^{*1}$, Henrik Nilsson$^2$ and Tom Matheson$^1$}
+\begin{center}{\large Thomas A. Nielsen$^{1}$, Henrik Nilsson$^2$ and Tom Matheson$^{1*}$}
 \end{center}
 \vspace{50 mm}
 
@@ -34,7 +36,7 @@
 2. School of Computer Science, University of Nottingham, Jubilee Campus, Nottingham NG8 1BB
 \vspace{50 mm}
 
-$^*$ To whom correspondence should be sent (tan5@@le.ac.uk)
+$^*$ To whom correspondence should be sent (tm75@@le.ac.uk)
 
 \end{flushleft}
 
@@ -279,8 +281,8 @@ detector restricted to threshold crossings with a positive slope.
 This small number of special constructors, along with the lambda
 calculus and the list semantics of events and durations, have allowed
 us to construct a small ``standard library'' of analysis procedures
-for physiology. Table S1 details the types and names of the functions
-in this library.
+for physiology. Table S1 details the types and names of some of the
+functions in this library.
 
 % \subsubsection*{Observing signals and events}
 \subsubsection*{Interacting with the physical world}
@@ -689,6 +691,42 @@ threshold at which imposed simulated synaptic activity causes postsynaptic
 spiking.
 
 \input{discuss}
+
+\section*{Figure Legends}
+
+\textbf{Figure 1}. Diagram of an experiment to record the looming
+response from a locust DCMD neuron, showing the first five recorded
+trials from one animal. Experiment design: \emph{blue lines},
+simulated object size-to-approach speed ratio ($\frac{l}{||v||}$) for
+given approach trial, \emph{red lines}, simulated object distance,
+\emph{red triangles}, apparent collision time. Observed signal:
+\emph{black lines}, recorded extracellular voltage. By convention,
+absolute amplitude values are not shown for extracellular because they
+differ markedly from experiment to experiment depending on recording
+conditions. The largest amplitude deflections are DCMD
+spikes. Analysis: \emph{green dots}, DCMD spikes, with randomly
+jittered vertical placement for display, \emph{thin black line}, spike
+rate histogram with 50 ms bin size. The inter-trial interval of four
+minutes is not shown.
+
+\textbf{Figure 2}. A, Spike rate histograms for approaches with
+$\frac{l}{||v||}$ of 0.01, 0.02 and 0.04 s, with 50 ms bin size, with
+collision time indicated by a black triangle. B, Scatter plot of
+number of counted spikes against approach $\frac{l}{||v||}$ for
+individual trials. C, Scatter plot of the maximum rate of spiking
+against $\frac{l}{||v||}$ for individual trials. N=1 animal, 272
+approaches.
+
+\textbf{Figure 3}. A, recorded intracellular voltage following
+conductance injections of a unitary simulated synaptic conductance, in
+the presence of A-type potassium conductances of increasing magnitude
+(values given are for the maximal conductance $g_A$). B, as A, but
+with a simulated presynaptic spike train with inter-spike intervals
+drawn from a Poisson distribution (here a mean of $120 s^{-1}$; the spike
+trains used to test the different levels of A-type conductance are
+identical). C, the postsynaptic spike rate plotted against the rate of
+simulated presynaptic inputs, with $g_A$ as in A.
+
 
 \includepdf[pages=-]{Figure1.pdf}
 \includepdf[pages=-]{Figure2.pdf}

@@ -90,7 +90,7 @@ Table S1. Some common operations for generic manipulation of signals, events and
 
   |if p then c else a| & If |p| is |True| then yield |c|; if |p| is |False| yield |a|\\
 
-  |(x,y)| & Form a pair (Cartesian product) of x and y \\
+  |(x,y)| & The pair (Cartesian product) of x and y \\
 
   |sopen e sclose| & The signal whose value is given by expression |e|\\
 

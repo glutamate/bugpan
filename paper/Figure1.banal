@@ -61,17 +61,4 @@
 %>>         (during aroundHit $ rebase running $ tag 0 hitScreen)) :==:
 %>>        ((C $ rebase running visangle :+: rebase running dvisangle) :||: (D $ rebase running lumin))) 
 
-\textbf{Figure 1}. Diagram of an experiment to record the looming
-response from a locust DCMD neuron, showing the first five recorded
-trials from one animal. Experiment design: \emph{blue lines},
-simulated object size-to-approach speed ratio ($\frac{l}{||v||}$) for
-given approach trial, \emph{red lines}, simulated object distance,
-\emph{red triangles}, apparent collision time. Observed signal:
-\emph{black lines}, recorded extracellular voltage. By convention,
-absolute amplitude values are not shown for extracellular because they
-differ markedly from experiment to experiment depending on recording
-conditions. The largest amplitude deflections are DCMD
-spikes. Analysis: \emph{green dots}, DCMD spikes, with randomly
-jittered vertical placement for display, \emph{thin black line}, spike
-rate histogram with 50 ms bin size. The inter-trial interval of four
-minutes is not shown.
+

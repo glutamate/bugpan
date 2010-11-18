@@ -50,12 +50,3 @@
 
 %>> plot $ der (vmWhere 1e-7 100) :+: der (vmWhere 1e-8 100) :+:  der (vmWhere 0 100)
 
-\textbf{Figure 3}. A, recorded intracellular voltage following
-conductance injections of a unitary simulated synaptic conductance, in
-the presence of A-type potassium conductances of increasing magnitude
-(values given are for the maximal conductance $g_A$). B, as A, but
-with a simulated presynaptic spike train with inter-spike intervals
-drawn from a Poisson distribution (here a mean of $120 s^{-1}$; the spike
-trains used to test the different levels of A-type conductance are
-identical). C, the postsynaptic spike rate plotted against the rate of
-simulated presynaptic inputs, with $g_A$ as in A.

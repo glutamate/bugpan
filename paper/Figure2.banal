@@ -16,10 +16,3 @@
 
 %>> plot $ (lovStr 40, during dur35 $ shist 40) :+: (lovStr 20, during dur35 $shist 20) :+: (lovStr 10, during dur35 $shist 10) :+: thefit 10 :+: thefit 20 :+: thefit 40
 
-\textbf{Figure 2}. A, Spike rate histograms for approaches with
-$\frac{l}{||v||}$ of 0.01, 0.02 and 0.04 s, with 50 ms bin size, with collision time indicated by a black triangle. B,
-Scatter plot of number of counted spikes against approach
-$\frac{l}{||v||}$ for individual trials. C, Scatter plot of the maximum
-rate of spiking against $\frac{l}{||v||}$ for individual
-trials. N=1 animal, 272 approaches.
-
