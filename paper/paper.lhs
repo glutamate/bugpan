@@ -45,7 +45,7 @@ $^*$ To whom correspondence should be sent (tm75@@le.ac.uk)
 
 \section*{Results}
 
-To introduce the calculus of physiological evidence, we must first
+To introduce the calculus of physiological evidence (CoPE), we must first
 define some terminology and basic concepts. We assume that \emph{time}
 is global and is represented by a real number, as in classical
 physics. An \emph{experiment} is an interaction between an observer
@@ -77,10 +77,10 @@ defined with references to arbitrary types; for instance,
 |alpha| the list of pairs of integers and |alpha|s. The hole |alpha|
 in the type definition can then be filled in to form a concrete type,
 for instance |withIntergers String|. The ability to build flexible
-type schemata in this manner and define generic functions over them
-\cite[``parametric polymorphism'';][]{Pierce2002} is essential in our
+type schemata in this manner and define generic functions is called
+``parametric polymorphism''\cite{Pierce2002} \underline{is essential in our
 calculus for representing a large range of physiological quantities
-with a small number of concepts, as we show in this section.
+with a small number of concepts, as we show in this section.}
 
 We distinguish three type schemas in which physiological evidence can
 be values. These differ in the manner in which measurements appear in
@@ -101,15 +101,16 @@ represent quantities that vary continuously, although these values may
 be piecewise constant. For instance, the output of a differential
 voltage amplifier might be captured in a |Signal Real|.
 
-Not every physiological observation denotes continuous
+\underline{Not every physiological observation denotes continuous
 change. Some measurements are derived from an instant in time --- such
 as the peak amplitude of an electrical potential --- and others pertain
 to an extended period of time. These qualitatively different classes
 of observations are represented by \emph{events} and \emph{durations},
-respectively. 
+respectively. }
 
-To model discrete occurrences, FRP defines events as a list of pairs
-of time points and a value in a type |alpha|, called the ``tag'':
+To model occurrences pertaining to specific instances in time,
+FRP defines events as a list of pairs of time points and a value in a
+type |alpha|, called the ``tag'':
 \begin{code}
 Event alpha = [Time times alpha]
 \end{code}
@@ -130,23 +131,23 @@ time. The last component is again a value of any type |alpha|:
 Duration alpha = [Time times Time times alpha]
 \end{code}
 Durations are useful for manipulating information about a whole trial
-or about an entire experiment, but could also be observations in their
-own right, such as open times of individual ion channels, or periods
-in which activity of a system exceeds a set threshold (e.g during
-bursts of action potentials). We have used durations to hold
-information about an entire experiment, for instance a session
-identifier or the animal strain. In that case, the duration set
-contains a single element, with the start and end of the experiment as
-start and end time, respectively. Lastly, durations could be used for
-information that spans multiple trials but not an entire experiment
---- for instance, the presence or absence of a drug.
+or a single annotation of an entire experiment, but could also be
+observations in their own right, such as open times of individual ion
+channels, or periods in which activity of a system exceeds a set
+threshold (e.g during bursts of action potentials). \underline{We have used
+durations to hold information about an entire experiment, for instance
+a session identifier or the animal strain. In that case, the duration
+set contains a single element, with the start and end of the
+experiment as start and end time, respectively.} Lastly, durations
+could be used for information that spans multiple trials but not an
+entire experiment --- for instance, the presence or absence of a drug.
 
 Since signals, events and durations can be instantiated for any type,
 they form a simple but flexible framework for representing many
 physiological quantities. We show a list of such examples primarily
-drawn from neurophysiology in Table 1. These quantities are all
+drawn from neurophysiology in Table 1. \underline{These quantities are all
 representable by signals, events or durations but with different
-instantiations of the free type variable. A framework in any type
+instantiations of the free type variable.} A framework in any type
 system that did not support parametric polymorphism would have to
 represent these quantities fundamentally differently, thus removing
 the possibility of re-using common analysis procedures. Although
@@ -154,9 +155,9 @@ parametric polymorphism is conceptually simple and the distinctions we
 are introducing are intuitive, common biomedical ontologies
 \emph{cannot} accommodate these definitions. 
 
-We now proceed to show how to build programs that calculate with
+\underline{We now proceed to show how to build programs that calculate with
 signals and events; then we show how annotations allow these programs
-to interact with external systems and measure their behaviour.
+to interact with external systems and measure their behaviour.}
 
 \subsubsection*{Calculating with signals and events}
 
@@ -196,7 +197,7 @@ application of function |f| to the
 expression |e| (i.e., what more conventionally would be written
 $f(e)$). For instance, the function |add2 = \x -> x+2| adds two to its
 argument; hence |add2 3 = (\x->x+2) 3 = 3+2| by substituting arguments
-in the function body. In addition, we define a number of constructs to
+in the function body. \underline{In addition, we define a number of constructs to
 improve the readability of the language. However, they are not
 \emph{necessary} as they can be defined in terms of function
 application and abstraction (and, depending on the exact version of
@@ -204,18 +205,16 @@ the calculus, some additional primitive functions). The expression |if
 p then e_1 else e_2| equals |e_1| if |p| evaluates to |True| and |e_2|
 if it evaluates to |False|.  The construct |let x = e_1 in e_2| defines
 a variable |x| bound to the value of the expression |e_1| that scopes
-over |e_2| as well as |e_1| (thus allowing recursive definitions).
+over |e_2| as well as |e_1| (thus allowing recursive definitions).}
 
-We now present the concrete syntax for a new calculus, that we call
-the \emph{calculus of physiological evidence} (CoPE), defined by
-extending the lambda calculus with notions of signals and events,
-along with the necessary constructs to define and manipulate such
-entities. This calculus borrows some concepts from earlier versions of
+We now present the concrete syntax CoPE, which extends the lambda
+calculus with constructs to define and manipulate signals and
+events. This calculus borrows some concepts from earlier versions of
 FRP, but it emphasises signals and events as mathematical objects in
 themselves, rather than as control structures for creating reactive
-systems \cite{Elliott1997, Nilsson2002}. Specifically, the new calculus
-encompass a relaxed notion of \emph{causality}. The syntax and
-implementation strategy is therefore different from FRP.
+systems \cite{Elliott1997, Nilsson2002}. \underline{Specifically, the new
+calculus encompass a relaxed notion of \emph{causality}. The syntax
+and implementation strategy is therefore different from FRP.}
 
 Let the construct |sopen e sclose| denote a signal with the value of
 the expression |e| at every time point, and let the construct |<: s
@@ -234,31 +233,30 @@ transforms, for any two types |alpha| and |beta|, a signal of |alpha|
 into a signal of |beta| by applying the function |f| of type |alpha
 -> beta| to the value of the signal at every time point.
 
-Further primitives are needed to form signals that depend on the
-history of other signals. For instance, the differential operator |D|
-differentiates a real-valued signal with respect to time, such that 
-|D s| denotes its first derivative and |D D s| the second derivative of the
-signal |s|. Likewise, the differential operator can appear on the left
-side of a definition, in which case it introduces a differential
-equation by pattern matching 
+\underline{Further primitives are needed to form signals that depend
+  on the history of other signals. For instance, } The differential
+operator |D| differentiates a real-valued signal with respect to time,
+such that |D s| denotes its first derivative and |D D s| the second
+derivative of the signal |s|. When the differential operator can
+appear on the left-hand side of a definition, it
+introduces a differential equation \underline{by pattern matching
 % HN 2010-11-10: This placeholder has been here a while. I don't think
 % a formal reference is necessary: "pattern matching" should be sufficiently
 % self-evident for the use we make of it here.
 % (REF)
-on the derivative of a signal (see example 2 below).
+on the derivative of a signal} (see example 2 below).
 
-In addition, the expression |delay s| denotes the signal that is
+\underline{In addition, the expression |delay s| denotes the signal that is
 delayed by a short period, in practice a time step or the sampling
 period. Other FRP implementations have other primitives, in particular
 a |switch| statement that changes the definition of a signal depending
 on the occurrence of specific events. We have not needed such a
-construct in the experiments described here.
+construct in the experiments described here.}
 
-Events and durations are defined as lists and can be manipulated and
-constructed as such. Thus, a large number of transformations can be
-defined with simple recursive equations including filters, folds and
-scans familiar from functional programming languages
-\cite{Hughes1989}.
+Events and durations can be manipulated as \emph{lists}. Thus, a large
+number of transformations can be defined with simple recursive
+equations including filters, folds and scans familiar from functional
+programming languages \cite{Hughes1989}.
 
 In addition, we have added a special construct to detect events from
 existing signals. For instance, a threshold detector generates an
@@ -278,12 +276,13 @@ smaller than 5 for at least a short period of time, in practice the
 time step. The expression |(\x->x>5) ?? s| thus defines a threshold
 detector restricted to threshold crossings with a positive slope.
 
-This small number of special constructors, along with the lambda
-calculus and the list semantics of events and durations, have allowed
-us to construct a small ``standard library'' of analysis procedures
-for physiology. Table S1 in the supplementary information details the
-types and names of some of the functions in this library; Table S2 has
-an informal overview of the syntax of CoPE.
+\underline{This small number of special constructors, along with the
+  lambda calculus and the list semantics of events and durations, have
+  allowed us to construct a small ``standard library'' of analysis
+  procedures for physiology.} Table S1 in the supplementary
+information details the types and names of some of functions we have
+defined using these definitions; Table S2 has an informal overview of
+the syntax of CoPE.
 
 % \subsubsection*{Observing signals and events}
 \subsubsection*{Interacting with the physical world}
@@ -320,18 +319,6 @@ v <* ADC 0
 This describes the observation of the voltage signal on channel 0 of an
 analog-to-digital converter, binding it to the variable |v|.
 
-What happens if the same source is observed more than once in a description of
-an experiment? If the source refers to a single, physical
-input port such as a channel of an analog-to-digital converter, the result
-will necessarily be the same, because the same entity is being observed within a
-single run of the experiment. Such sources are called \emph{idempotent}.
-Idempotency ensures that separate experiments referring to a common external
-variable can be composed easily with a predictable outcome. However, there are
-other kinds of sources, notably random sources as discussed below, where
-idempotency is \emph{not} desirable. Each occurrence of a non-idempotent
-source is thus a separate, independent source, even if the name of the
-source and the parameters happen to be the same.
-
 In addition to making appropriate observations, an experiment may also
 involve a perturbation of the experimental preparation. In the context
 of a physiology experiment, the manipulation could to control the
@@ -361,36 +348,12 @@ defined as:
 \begin{code}
 sineWave = smap sin seconds
 \end{code}
-To send the |sineWave| signal to channel channel 0 of a digital-to-analog
-converter, we then write
+We then write
 \begin{code}
 sineWave *> DAC 0
 \end{code}{}
-
-What happens if the same \emph{sink} is defined more than once? One could
-imagine combining the defining signals in various ways. For example, in the
-case of a simple numerical signal, they could simply be added, mirroring
-superposition of waves in the physical world. However, as our signals are more
-general, it is not always clear what the appropriate notion of ``addition''
-should be. For example, if we have signals carrying images, and we wish to
-output these to a single graphical display, it is likely that we also need to
-describe aspects such as which one should be ``on top''. Thus, for flexibility
-and clarity, combination of output signals has to be described explicitly, and
-it is an error to define a sink more than once in an experimental description.
-
-There are also operations in experiments that are not related to real-world
-observation or to purely functional computation. One example is sampling from
-probability distributions. We have implemented sources corresponding to common
-parametrised probability distributions, such that experiments can sample
-values from the distributions and use these values in computations or
-connect them to sinks. However, these sources are \emph{not} idempotent as it
-is important that there are no accidental correlations. Sharing of a single random
-signal, when needed, can also be described easily: just bind that signal to a
-variable as discussed above and the variable is used to refer to the signal
-instead of repeating the reference to the random source. In this more general
-view, sources and sinks bridge referentially transparent and non-transparent
-computations.
-
+to send the |sineWave| signal to channel channel 0 of a digital-to-analog
+converter, completing the example.
 % Sinks and sources are thus used to
 % link values, which have been or will be used in purely mathematical
 % expressions, to the real world. There are also operations in
@@ -566,7 +529,7 @@ show that it can be used to implement dynamic clamp in an \emph{in
 
 \subsubsection*{Example 2}
 
-The input-output relationships of individual neurons are fundamental to
+\underline{The input-output relationships of individual neurons are fundamental to
 the functioning of neuronal networks. Given a stimulus, e.g. a pattern
 of synaptic input or injected current waveform, what is the membrane
 voltage trajectory and firing rate response of a neuron? In
@@ -575,7 +538,7 @@ conductances can profoundly influence this relationship. Such
 influences can be examined with experiments or simulations; here we
 show how the calculus of physiological evidence can be used to
 formulate and execute dynamic-clamp experiments on synaptic
-integration.
+integration.}
 
 A dynamic clamp experiment \cite{Robinson1993, Sharp1993} requires
 electrical access to the intracellular compartment, such that the cell
@@ -686,12 +649,12 @@ spike = tag () ((\v'->v'>vth') ?? D v)
 and the spike frequency calculated with the |frequncyDuring| function.
 This relationship between the postsynaptic spike frequency and the
 simulated synaptic input |rate| is plotted in Figure 3C for four
-different values of |gmaxk|. Large A-type conductances suppress spikes
+different values of |gmaxk|. \underline{Large A-type conductances suppress spikes
 resulting from endogenous synaptic activity (which was not
 pharmacologically blocked in this experiment) and increases the
 threshold at which imposed simulated synaptic activity causes postsynaptic
 spiking.
-
+}
 \input{discuss}
 
 \bibliographystyle{nature}

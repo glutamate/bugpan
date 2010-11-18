@@ -1,7 +1,7 @@
 \section*{Discussion}
 
 We present an entirely new approach to performing and communicating
-experimental science, here demonstrated for physiology. We propose
+experimental science, here demonstrated for physiology. \underline{We propose
 that three \emph{types} (signals, events and durations), when
 parametrised by any other type, are sufficient to represent most or
 all evidence for this field. We show how observations and calculations
@@ -9,21 +9,19 @@ of these types can be described in a mathematical framework based on
 the lambda calculus. We use two experiments from neurophysiology to
 demonstrate that this approach works in practice: the \emph{in vivo}
 spike train response to a visual looming stimulus in locusts; and an
-analysis of synaptic integration with dynamic clamp in zebrafish. Our use
+analysis of synaptic integration with dynamic clamp in zebrafish.} Our use
 of typed, functional and reactive programming overcomes at least three
 long-standing issues in bioinformatics: the need for a flexible
 ontology to share heterogeneous data from physiological experiments
 \cite{Amari2002}, a language for describing experiments unambiguously
 \cite{Murray-Rust2002}, and an equational formulation of data
-provenance \cite{Pool2002}. In addition, the tradition of
+provenance \cite{Pool2002}. \underline{In addition, the tradition of
 \emph{formal verification} attached to the lambda calculus
 \cite{Harrison2009,DeBruijn1968,Bird1996,Hindley2008}
 suggests the possibility that algorithmic procedures can complement
-peer-review in validating scientific inference.
+peer-review in validating scientific inference.}
 
-\subsection*{An ontology for physiology}
-
-There are clear advantages to sharing primary data from scientific
+\underline{There are clear advantages to sharing primary data from scientific
 experiments \cite{Insel2003} which include: preventing needless replication,
 facilitating meta-analysis, giving theoretical neuroscientists access
 to a greater variety of observations, and enhancing transparency. These
@@ -34,27 +32,28 @@ shared in practise. This is likely due to both technical and social
 barriers \cite{Amari2002}. We suggest that modifying the approach to
 experimentation may help overcome social barriers by completely
 integrating the experiment and analysis specification with structured
-data storage that requires little annotation.
+data storage that requires little annotation.}
 
 The types we have presented form a linguistic framework and an
-ontology for physiology that address the technical barriers to data
-sharing. Thanks to the flexibility of parametric polymorphism, our
+ontology for physiology. \underline{that address the technical barriers to data
+sharing.} Thanks to the flexibility of parametric polymorphism, our
 ontology can form the basis for the interchange of physiological data
-without imposing unnecessary constraints on what can be shared. The
-ontology is non-hierarchical and would be difficult to formulate in the
-various existing semantic web ontology frameworks (Web Ontology
-Language or Resource Description Framework), which lack parametric
-polymorphism and functional abstraction. Nevertheless, in specifying
-the categories of mathematical objects that constitute evidence, it is
-an ontology in the classical sense of cataloguing the categories within
-a specific domain, and providing a vocabulary for that domain. We
-emphasise again that it is an ontology of \emph{evidence}, not of the
-biological entities that give rise to this evidence. It is unusual as
-an ontology for scientific knowledge in being embedded in a
-\emph{computational} framework, such that it can describe not only
-mathematical objects but also their transformations and observations.
+and meta-data without imposing unnecessary constraints on what can be
+shared. The ontology is non-hierarchical and would be difficult to
+formulate in the various existing semantic web ontology frameworks
+(Web Ontology Language or Resource Description Framework), which lack
+parametric polymorphism and functional abstraction. Nevertheless, in
+specifying the categories of mathematical objects that constitute
+evidence, it is an ontology in the classical sense of cataloguing the
+categories within a specific domain, and providing a vocabulary for
+that domain. We emphasise again that it is an ontology of
+\emph{evidence}, not of the biological entities that give rise to this
+evidence. It is unusual as an ontology for scientific knowledge in
+being embedded in a \emph{computational} framework, such that it can
+describe not only mathematical objects but also their transformations
+and observations.
 
-Existing software packages used for the acquisition and analysis of
+\underline{Existing software packages used for the acquisition and analysis of
 physiological data have signal-like (Igor Pro, Wavemetrics; Spike 2,
 Cambridge Electronic Design), and event-like (Spike 2) data structures
 at the core of their operations. Although these package have some
@@ -76,15 +75,15 @@ algebra. Full parametric polymorphism, on the other hand, gives the
 possibility of creating a small vocabulary of generic functions for
 data analysis that can transform any time-varying quantity. Therefore,
 our framework can be seen as a generalisation of existing methods of
-physiological signal processing.
+physiological signal processing.}
 
-Previous work on scientific knowledge representation has suggested
+\underline{Previous work on scientific knowledge representation has suggested
 that ``meta-data'' can represent the context of an experiment
-\cite{Bower2009}. This raises at least two questions: what
+. This raises at least two questions: what
 information must be communicated, and how should it be represented?
 Minimal standards for reporting information from scientific studies
 have been suggested for different fields
-\cite{Taylor2007,Gibson2008}, but remain informal. We suggest
+, but remain informal. We suggest
 distinguishing the experimental context into those aspects that can
 practically be executed by a machine, and those that must be carried
 out by a human experimenter. Machine-executable aspects of the
@@ -92,9 +91,9 @@ experiment can be described unambiguously, but it is difficult to prove
 that human-executable aspects can be similarly described. Even if a
 description works well in practice, there may be unstated shared assumptions
 between the communicating experimenters. Informal but evolving reporting
-standards are therefore likely to be the only way to delimit this information.
+standards are therefore likely to be the only way to delimit this information.}
 
-In terms of representing experimental contexts, here we need make no
+\underline{In terms of representing experimental contexts, here we need make no
 distinction between data and meta-data. All relevant information which
 can be represented by values in some type can exist as a collection of
 signals, events and durations and be stored in the same location as
@@ -104,24 +103,22 @@ meta-data. Information that seems incidental and contextual to the
 primary experimenter may after dissemination become important in
 subsequent studies. As an example, we point to the measurements of
 glutamate spillover in the hippocampus, where the temperature at which
-early experiments \cite{Kullmann1996} were conducted, when manipulated
-in a later study \cite{Asztely1997}, influenced key
+early experiments were conducted, when manipulated
+in a later study , influenced key
 findings.  In our framework, we do not impose any such distinction on
 information. The different values are all indexed by time and thus
-linked by overlap on a common time scale.
+linked by overlap on a common time scale.}
 
-\subsection*{Experiment descriptions}
-
-Using the calculus of physiological evidence, both stimuli and
+\underline{Using the calculus of physiological evidence, both stimuli and
 observations are defined concisely and unambiguously by mathematical
 \emph{equations}. This makes it possible to repeat, manipulate and
-reason about experiments in a formal framework. Our mathematical
+reason about experiments in a formal framework.} Our mathematical
 definitions are less ambiguous than definitions written in plain
 English, and are more powerful than those specified by graphical user
 interfaces or in formal languages that lack a facility for defining
-abstractions. Our approach also makes the conditions of the recording
+abstractions. \underline{Our approach also makes the conditions of the recording
 very explicit, and can serve as an unambiguous medium for automating
-and communicating experiments. 
+and communicating experiments. }
 
 Our framework is not only a theoretical formalism, but also a very
 practical tool. It is a collection of computer programs for executing
@@ -133,7 +130,7 @@ further advantage that they \emph{compose}; that is, more complex
 experiments can be formulated by joining together elementary building
 blocks. 
 
-The use of a formal language for formulating experiments does not preclude the
+\underline{The use of a formal language for formulating experiments does not preclude the
 use of a graphical user interface for helping to construct these formulations.
 On the contrary, user-friendly interfaces can be built to generate
 code in language such as CoPE. This allows designers of innovative user
@@ -142,19 +139,17 @@ benefiting from an expressive, formally defined foundation for
 realising new functionality, facilitating interoperability, 
 % HN 2010-11-10: This sentence just didn't parse.
 % not having to worry about
-and interacting with hardware in a timely manner.
+and interacting with hardware in a timely manner.}
 %  as this is already taken care of.
-Graphical user interfaces can also be an efficient way of
+\underline{Graphical user interfaces can also be an efficient way of
 entering specific values based on the observed data. For instance, we have
 used a simple interface to enter the thresholds for spike detection in Example
 1. We plan to facilitate the description of such \emph{ad-hoc} interfaces and
-to build more elaborate interfaces as front-ends to explore observations.
+to build more elaborate interfaces as front-ends to explore observations.}
 
-\input{gensig}
+%\input{gensig}
 
-\subsection*{Statistics}
-
-We have used the word ``evidence'' to mean direct observations and
+\underline{We have used the word ``evidence'' to mean direct observations and
 calculated values from experiments. Evidence thus carries information
 that is relevant for statistical models of the systems under study,
 but we have not yet extended our approach to include statistical
@@ -164,23 +159,21 @@ take measurements on signals and events -- for instance the amplitudes
 of signal deflections, or the frequencies of event -- and store these in
 durations. The tags of durations representing measurements could then
 be used in classical null-hypothesis significance
-tests such as the General Linear Model. 
+tests such as the General Linear Model. }
 
-A more intriguing possibility is to build statistical models for the
-directly observed data \cite{Daniell1991}, and to use nested
-durations to describe a hierarchical organisation \cite{Rouder2003}
+\underline{A more intriguing possibility is to build statistical models for the
+directly observed data, and to use nested
+durations to describe a hierarchical organisation 
 of conditional dependencies amongst model parameters. In the context
 of physiology, this could be achieved by augmenting a BUGS-like
-\cite{Gilks1994} language with constructors and distributions for
-signals, events and durations.
+ language with constructors and distributions for
+signals, events and durations.}
 
-
-\subsection*{Towards verified scientific inference}
 
 If we consider that science is based on logic \cite{Jaynes2003}, it
 must be possible in principle to mechanically verify scientific
 inference, just as mathematical proofs can be verified by a proof
-checker \cite{Harrison2009}. It is of course not possible to verify
+checker \cite{DeBruijn1968, Harrison2009}. It is of course not possible to verify
 particular hypotheses about the physical world, or an organism. What
 might be verifiable are statements about experiments --- for instance,
 that: particular variables were randomly controlled and not observed;
@@ -202,23 +195,21 @@ inferences take place has an impact on the amount of information that
 must be analysed. For instance, if we accept the likelihood principle
 \cite{Jaynes2003}, we can safely ignore the intention of the
 experimenter, because all the relevant information is in the
-likelihood of the observed data.
-
-There has been substantial progress in \emph{automation} in the
-experimental sciences \cite{King2004}. In contrast, there has been
-almost no work in algorithmic \emph{verification} \cite{Kropf1999,
-  Sadot}, which is a separate but overlapping application of
-computers to science. Nevertheless, if such verification is
-feasible it may lead to a radical change in the way scientific
-research is conducted and communicated. It is likely that at least
-some aspects of validation in physiology can be achieved with conservative
-extensions of
+likelihood of the observed data.\underline{There has been substantial
+  progress in \emph{automation} in the experimental sciences . In
+  contrast, there has been almost no work in algorithmic
+  \emph{verification} \, which is a separate but overlapping
+  application of computers to science. Nevertheless, if such
+  verification is feasible it may lead to a radical change in the way
+  scientific research is conducted and communicated.} It is likely
+that at least some aspects of validation in physiology can be achieved
+with conservative extensions of
 % the calculus of physiological evidence 
 CoPE integrated with statistical inference.
 
 \section*{Methods}
 
-\subsection*{Language implementation} 
+\subsubsection*{Language implementation} 
 
 We have used two different implementation strategies for reasons of
 rapid development and execution efficiency. For purposes of
@@ -251,7 +242,45 @@ acquisition hardware. Geometric shapes were rendered using OpenGL
 All code is available at http://github.com/glutamate/bugpan and
 released under the GPL.
 
-\subsection*{Locust experiments}
+\subsubsection*{Sources and Sinks}
+
+What happens if the same source is observed more than once in a description of
+an experiment? If the source refers to a single, physical
+input port such as a channel of an analog-to-digital converter, the result
+will necessarily be the same, because the same entity is being observed within a
+single run of the experiment. Such sources are called \emph{idempotent}.
+Idempotency ensures that separate experiments referring to a common external
+variable can be composed easily with a predictable outcome. However, there are
+other kinds of sources, notably random sources as discussed below, where
+idempotency is \emph{not} desirable. Each occurrence of a non-idempotent
+source is thus a separate, independent source, even if the name of the
+source and the parameters happen to be the same.
+
+What happens if the same \emph{sink} is defined more than once? One could
+imagine combining the defining signals in various ways. For example, in the
+case of a simple numerical signal, they could simply be added, mirroring
+superposition of waves in the physical world. However, as our signals are more
+general, it is not always clear what the appropriate notion of ``addition''
+should be. For example, if we have signals carrying images, and we wish to
+output these to a single graphical display, it is likely that we also need to
+describe aspects such as which one should be ``on top''. Thus, for flexibility
+and clarity, combination of output signals has to be described explicitly, and
+it is an error to define a sink more than once in an experimental description.
+
+There are also operations in experiments that are not related to real-world
+observation or to purely functional computation. One example is sampling from
+probability distributions. We have implemented sources corresponding to common
+parametrised probability distributions, such that experiments can sample
+values from the distributions and use these values in computations or
+connect them to sinks. However, these sources are \emph{not} idempotent as it
+is important that there are no accidental correlations. Sharing of a single random
+signal, when needed, can also be described easily: just bind that signal to a
+variable as discussed above and the variable is used to refer to the signal
+instead of repeating the reference to the random source. In this more general
+view, sources and sinks bridge referentially transparent and non-transparent
+computations.
+
+\subsubsection*{Locust experiments}
 
 Recordings from locust DCMD neurons were performed as previously
 described \cite{Matheson2004}. Briefly, locusts were fixed in
@@ -271,7 +300,7 @@ board were controlled by programs written in
 % the calculus of physiological evidence
 CoPE running on a single computer.
 
-\subsection*{Zebrafish experiments}
+\subsubsection*{Zebrafish experiments}
 
 Intracellular patch-clamp recordings from motor neurons in the spinal
 cord from a 2-day old zebrafish embryo were performed as previously
