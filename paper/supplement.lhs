@@ -100,6 +100,10 @@ Table S1. Some common operations for generic manipulation of signals, events and
 
   |s_0| & \parbox{9cm}{\begin{singlespace}The initial value of the signal |s| (can also be used on the left-hand side of a definition)\end{singlespace}}\\
 
+  |delay s| & The signal |s|, dealyed by a short time period\\
+
+  |p ?? s| & Events that occur when the value of |s| satisfies the predicate |p| \\
+
   |x <* src p| & \parbox{9cm}{\begin{singlespace}(Top-level only) Bind the value x to the observation of the source |src|, with parameter |p|\end{singlespace}}\\
 
   |e *> snk p| & \parbox{9cm}{\begin{singlespace}(Top-level only) Send the value x to the sink |snk|, with parameter |p|\end{singlespace}}\\
