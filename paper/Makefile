@@ -1,8 +1,8 @@
 pdf: 
 	lhs2TeX --math -o paper.tex paper.lhs
-	latex paper
+	latex -halt-on-error paper
 	bibtex paper
-	latex paper
+	latex -halt-on-error paper
 	pdflatex -halt-on-error paper.tex
 
 rtf:	

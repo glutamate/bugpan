@@ -13,25 +13,25 @@ analysis of synaptic integration with dynamic clamp in zebrafish. Our use
 of typed, functional and reactive programming overcomes at least three
 long-standing issues in bioinformatics: the need for a flexible
 ontology to share heterogeneous data from physiological experiments
-\citep{Amari2002}, a language for describing experiments unambiguously
-\citep{Murray-Rust2002}, and an equational formulation of data
-provenance \citep{Pool2002}. In addition, the tradition of
+\cite{Amari2002}, a language for describing experiments unambiguously
+\cite{Murray-Rust2002}, and an equational formulation of data
+provenance \cite{Pool2002}. In addition, the tradition of
 \emph{formal verification} attached to the lambda calculus
-\citep{Harrison2009,DeBruijn1968,Bird1996,Hindley2008}
+\cite{Harrison2009,DeBruijn1968,Bird1996,Hindley2008}
 suggests the possibility that algorithmic procedures can complement
 peer-review in validating scientific inference.
 
 \subsection*{An ontology for physiology}
 
 There are clear advantages to sharing primary data from scientific
-experiments \citep{Insel2003} which include: preventing needless replication,
+experiments \cite{Insel2003} which include: preventing needless replication,
 facilitating meta-analysis, giving theoretical neuroscientists access
 to a greater variety of observations, and enhancing transparency. These
 benefits are likely to be greater if data are structured and stored in
 standard formats. Despite these advantages, and many attempted
 databases, few data from electrophysiological experiments are
 shared in practise. This is likely due to both technical and social
-barriers \citep{Amari2002}. We suggest that modifying the approach to
+barriers \cite{Amari2002}. We suggest that modifying the approach to
 experimentation may help overcome social barriers by completely
 integrating the experiment and analysis specification with structured
 data storage that requires little annotation.
@@ -80,11 +80,11 @@ physiological signal processing.
 
 Previous work on scientific knowledge representation has suggested
 that ``meta-data'' can represent the context of an experiment
-\citep{Bower2009}. This raises at least two questions: what
+\cite{Bower2009}. This raises at least two questions: what
 information must be communicated, and how should it be represented?
 Minimal standards for reporting information from scientific studies
 have been suggested for different fields
-\citep{Taylor2007,Gibson2008}, but remain informal. We suggest
+\cite{Taylor2007,Gibson2008}, but remain informal. We suggest
 distinguishing the experimental context into those aspects that can
 practically be executed by a machine, and those that must be carried
 out by a human experimenter. Machine-executable aspects of the
@@ -104,9 +104,9 @@ meta-data. Information that seems incidental and contextual to the
 primary experimenter may after dissemination become important in
 subsequent studies. As an example, we point to the measurements of
 glutamate spillover in the hippocampus, where the temperature at which
-early experiments \citep{Kullmann1996} experiments were conducted
+early experiments \cite{Kullmann1996} experiments were conducted
 appeared to influence key findings, when manipulated in a later
-study \citep{Asztely1997}.  In our framework, we do not impose any
+study \cite{Asztely1997}.  In our framework, we do not impose any
 such distinction on information. The different values are all indexed
 by time and thus linked by overlap on a common time scale.
 
@@ -167,46 +167,46 @@ be used in classical null-hypothesis significance
 tests such as the General Linear Model. 
 
 A more intriguing possibility is to build statistical models for the
-directly observed data \citep{Daniell1991}, and to use nested
-durations to describe a hierarchical organisation \citep{Rouder2003}
+directly observed data \cite{Daniell1991}, and to use nested
+durations to describe a hierarchical organisation \cite{Rouder2003}
 of conditional dependencies amongst model parameters. In the context
 of physiology, this could be achieved by augmenting a BUGS-like
-\citep{Gilks1994} language with constructors and distributions for
+\cite{Gilks1994} language with constructors and distributions for
 signals, events and durations.
 
 
 \subsection*{Towards verified scientific inference}
 
-If we consider that science is based on logic \citep{Jaynes2003}, it
+If we consider that science is based on logic \cite{Jaynes2003}, it
 must be possible in principle to mechanically verify scientific
 inference, just as mathematical proofs can be verified by a proof
-checker \citep{Harrison2009}. It is of course not possible to verify
+checker \cite{Harrison2009}. It is of course not possible to verify
 particular hypotheses about the physical world, or an organism. What
 might be verifiable are statements about experiments --- for instance,
 that: particular variables were randomly controlled and not observed;
 outcomes have not gained correlation due to the analysis procedure;
 missing data are accounted for by the statistical model
-\citep{Gelman2003}; errors are propagated correctly
-\citep{Taylor1997}; units of measurement are used consistently
-\citep{Kennedy1997}; there is no ``double dipping''
-\citep{Kriegeskorte2009}; and, ultimately, that the observed data
+\cite{Gelman2003}; errors are propagated correctly
+\cite{Taylor1997}; units of measurement are used consistently
+\cite{Kennedy1997}; there is no ``double dipping''
+\cite{Kriegeskorte2009}; and, ultimately, that the observed data
 support the conclusions drawn. Statistical analyses address some of these
 issues in relating observations to parameter estimation and hypothesis
 testing. However, without knowing where observations come from, it is
 difficult to ascertain whether they provide evidence for a given
-hypothesis \citep{Pool2002}. Experiment description languages, and the
+hypothesis \cite{Pool2002}. Experiment description languages, and the
 representation of experimental observations into values of concrete
 types (which may not always be real numbers), could play an important
 role in such inference. The statistical framework within which such
 inferences take place has an impact on the amount of information that
 must be analysed. For instance, if we accept the likelihood principle
-\citep{Jaynes2003}, we can safely ignore the intention of the
+\cite{Jaynes2003}, we can safely ignore the intention of the
 experimenter, because all the relevant information is in the
 likelihood of the observed data.
 
 There has been substantial progress in \emph{automation} in the
-experimental sciences \citep{King2004}. In contrast, there has been
-almost no work in algorithmic \emph{verification} \citep{Kropf1999,
+experimental sciences \cite{King2004}. In contrast, there has been
+almost no work in algorithmic \emph{verification} \cite{Kropf1999,
   Sadot}, which is a separate but overlapping application of
 computers to science. Nevertheless, if such verification is
 feasible it may lead to a radical change in the way scientific
@@ -254,7 +254,7 @@ released under the GPL.
 \subsection*{Locust experiments}
 
 Recordings from locust DCMD neurons were performed as previously
-described \citep{Matheson2004}. Briefly, locusts were fixed in
+described \cite{Matheson2004}. Briefly, locusts were fixed in
 plasticine with the ventral side upwards. The head was fixed with wax
 % at a $90^{\circ}$ angle 
 and the connectives were exposed through an
@@ -275,7 +275,7 @@ CoPE running on a single computer.
 
 Intracellular patch-clamp recordings from motor neurons in the spinal
 cord from a 2-day old zebrafish embryo were performed as previously
-described \citep{McDearmid2006}. We used a National Instruments PCI-6281
+described \cite{McDearmid2006}. We used a National Instruments PCI-6281
 board to
 record the output from a BioLogic patch-clamp amplifier in
 current-clamp mode, filtered at 3kHz and digitised at 10 kHz, with the
@@ -305,6 +305,4 @@ experiments and the data analysis, and made extensive comments on
 drafts of the manuscript. All authors obtained grant funding to
 support this project as described in the Acknowledgements.
 
-\bibliographystyle{apalike}
-\bibliography{paper}
 

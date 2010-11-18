@@ -61,4 +61,4 @@
 %>>         (during aroundHit $ rebase running $ tag 0 hitScreen)) :==:
 %>>        ((C $ rebase running visangle :+: rebase running dvisangle) :||: (D $ rebase running lumin))) 
 
-
+Figure 1.

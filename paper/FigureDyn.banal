@@ -50,3 +50,4 @@
 
 %>> plot $ der (vmWhere 1e-7 100) :+: der (vmWhere 1e-8 100) :+:  der (vmWhere 0 100)
 
+Figure 3.

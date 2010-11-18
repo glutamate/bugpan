@@ -16,3 +16,4 @@
 
 %>> plot $ (lovStr 40, during dur35 $ shist 40) :+: (lovStr 20, during dur35 $shist 20) :+: (lovStr 10, during dur35 $shist 10) :+: thefit 10 :+: thefit 20 :+: thefit 40
 
+Figure 2.

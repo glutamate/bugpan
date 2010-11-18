@@ -6,7 +6,7 @@
 \usepackage{setspace} 
 \usepackage{verbatim} 
 \usepackage[final]{pdfpages}
-\usepackage[super]{natbib}
+\usepackage[super, comma]{natbib}
 %\usepackage{citesupernumber}
 
 \usepackage{graphicx}
@@ -61,7 +61,7 @@ construct other mathematical objects pertaining to the experiment.
 
 What kinds of mathematical objects can be used as physiological
 evidence? We answer this question within simple type theory
-\citep{Pierce2002, Hindley2008}, which assigns to every object a \emph{type}. These
+\cite{Pierce2002, Hindley2008}, which assigns to every object a \emph{type}. These
 types include base types, such as integers |Integer|, real numbers
 |Real|, text strings |String| and the Boolean type |Bool| with the two
 values |True| and |False|. In addition, types can be arbitrarily
@@ -78,7 +78,7 @@ defined with references to arbitrary types; for instance,
 in the type definition can then be filled in to form a concrete type,
 for instance |withIntergers String|. The ability to build flexible
 type schemata in this manner and define generic functions over them
-\citep[``parametric polymorphism'';][]{Pierce2002} is essential in our
+\cite[``parametric polymorphism'';][]{Pierce2002} is essential in our
 calculus for representing a large range of physiological quantities
 with a small number of concepts, as we show in this section.
 
@@ -163,30 +163,30 @@ to interact with external systems and measure their behaviour.
 From direct observations, one often needs to process events and
 signals, create new events from signals, filter data and calculate
 statistics. Here, we formulate these transformations in terms of the
-lambda calculus \citep{Church1941}, a family of formal languages for
+lambda calculus \cite{Church1941}, a family of formal languages for
 computation based solely on evaluating functions.  These languages,
 unlike conventional programming languages, retain an important
 characteristic of mathematics: a term can freely be replaced by
 another term with identical meaning.
 % HN 2010-09-30: Always "substitute for"
-This property \citep[referential transparency;][]{Whitehead1927} 
+This property \cite[referential transparency;][]{Whitehead1927} 
 % HN 2010-11-10: "enables" is a bit too strong. For example, it is certainly
 % *possible* to reason formally about imperative code.
 % enables
 facilitates algebraic manipulation and reasoning about the programs
-\citep{Bird1996}. The lambda calculus allows functions to be used as
+\cite{Bird1996}. The lambda calculus allows functions to be used as
 first class entities: that is, they can be referenced by variables and
 passed as arguments to other functions (which then become higher-order
 functions). On the other hand, the lambda calculus excludes changes in
 the value of variables or global states. These properties together
 mean that the lambda calculus combines verifiable correctness with a
 high level of abstraction, leading to programs that are in practise
-more concise \citep{Hughes1989} than those written in conventional
+more concise \cite{Hughes1989} than those written in conventional
 programming languages. The lambda calculus or variants thereof has
-been used as a foundation for mathematics \citep{Martin-Lof1985},
-classical \citep{Sussman2001} and quantum \citep{Karczmarczuk2003}
-mechanics, evolutionary biochemistry \citep{Fontana1994} and
-programming languages \citep{McCarthy1960}.
+been used as a foundation for mathematics \cite{Martin-Lof1985},
+classical \cite{Sussman2001} and quantum \cite{Karczmarczuk2003}
+mechanics, evolutionary biochemistry \cite{Fontana1994} and
+programming languages \cite{McCarthy1960}.
 
 In the lambda calculus, calculations are performed by function
 abstraction and application. |\x->e| denotes the function with
@@ -213,7 +213,7 @@ along with the necessary constructs to define and manipulate such
 entities. This calculus borrows some concepts from earlier versions of
 FRP, but it emphasises signals and events as mathematical objects in
 themselves, rather than as control structures for creating reactive
-systems \citep{Elliott1997, Nilsson2002}. Specifically, the new calculus
+systems \cite{Elliott1997, Nilsson2002}. Specifically, the new calculus
 encompass a relaxed notion of \emph{causality}. The syntax and
 implementation strategy is therefore different from FRP.
 
@@ -258,7 +258,7 @@ Events and durations are defined as lists and can be manipulated and
 constructed as such. Thus, a large number of transformations can be
 defined with simple recursive equations including filters, folds and
 scans familiar from functional programming languages
-\citep{Hughes1989}.
+\cite{Hughes1989}.
 
 In addition, we have added a special construct to detect events from
 existing signals. For instance, a threshold detector generates an
@@ -413,13 +413,13 @@ be constrained by the need to avoid collisions with conspecifics. A
 common component in such species is a visual detector for looming
 objects. In locusts, a single neuron in each brain hemisphere, the
 Lobula Giant Movement Detector (LGMD), responds preferentially to
-looming stimuli \citep{Rind1992}. The response of the LGMD is
+looming stimuli \cite{Rind1992}. The response of the LGMD is
 invariant to manipulations of many aspects of the looming
 stimulus. For instance, the time of the peak firing
 rate with respect to the retinal angle of the looming stimulus, is
 insensitive to the colour, texture, size, velocity and azimuth of the
 approaching object when averaged over several approaches
-\citep{Gabbiani2001}.
+\cite{Gabbiani2001}.
 
 We have constructed several experiments in CoPE to record the response
 of LGMD to visual stimuli that simulate objects approaching
@@ -462,13 +462,13 @@ loomingSquare =
 \end{code}
 
 |loomingSquare| differs from conventional protocols
-\citep{Gabbiani2001} for stimulating the LGMD in that it describes an
+\cite{Gabbiani2001} for stimulating the LGMD in that it describes an
 object that passes through the physical screen and the observer, and
 when displayed would thus disappear from the screen just before
 collision. In order not to evoke a large OFF response from the LGMD
-\citep{O'shea1976} immediately after simulated collision, the object
+\cite{O'shea1976} immediately after simulated collision, the object
 is frozen in space as it reaches the plane of the surface onto which
-the animation is projected \citep{Hatsopoulos1995}. To achieve this
+the animation is projected \cite{Hatsopoulos1995}. To achieve this
 effect, we define a new signal that has a lower bound of the distance
 from the eye to the visual display screen |zscreen|
 \begin{code}
@@ -492,7 +492,7 @@ ventral nerve cord. Although the axon of LGMD does not itself run in
 this connective, LGMD reliably activates the descending contralateral
 movement detector (DCMD) with a strong synaptic connection, such that
 spikes in the DCMD follow LGMD spikes one to one
-\citep{O'Shea1974}. The DCMD runs in the connective and it is this
+\cite{O'Shea1974}. The DCMD runs in the connective and it is this
 signal that we record. Extracellular hook electrodes wrapped around
 one connective can record activity in the DCMD, which produces the
 largest amplitude action potential in such recordings. In our
@@ -513,7 +513,7 @@ experiment on a common time scale.
 The simplest method for detecting spikes from a raw voltage trace is
 to search for threshold crossings, which works well in practise for
 calculating DCMD activity from recordings of the locust connectives
-\citep{Gabbiani2001}. If the threshold voltage for spike detection is
+\cite{Gabbiani2001}. If the threshold voltage for spike detection is
 |vth|, the event |spike| can be calculated with
 \begin{code}
 spike = (\v->v>vth) ?? voltage
@@ -553,7 +553,7 @@ plots show that while the peak firing rate is a decreasing function of
 $\frac{l}{||v||}$, the total number of spikes in the approach is an
 increasing function. In addition, the time of the peak rate is later
 relative to collision with smaller values of $\frac{l}{||v||}$
-\citep{Hatsopoulos1995}.
+\cite{Hatsopoulos1995}.
 
 This experiment demonstrates that the calculus of physiological
 evidence can adequately and concisely describe visual stimuli,
@@ -575,7 +575,7 @@ show how the calculus of physiological evidence can be used to
 formulate and execute dynamic-clamp experiments on synaptic
 integration.
 
-A dynamic clamp experiment \citep{Robinson1993, Sharp1993} requires
+A dynamic clamp experiment \cite{Robinson1993, Sharp1993} requires
 electrical access to the intracellular compartment, such that the cell
 membrane voltage can be recorded, and current injected into the
 cell. As opposed to a standard current-clamp experiment, where the
@@ -587,7 +587,7 @@ neuron. For instance, it is possible to record the response of a cell
 to an added synaptic conductance or an additional Hodgkin-Huxley style
 voltage-sensitive membrane conductance. Here, we combine these
 possibilities to investigate the effect of an A-type potassium
-conductance \citep{Connor1971} on the response of a zebrafish spinal
+conductance \cite{Connor1971} on the response of a zebrafish spinal
 motor neuron to synaptic excitation.
 
 Many dynamic clamp-experiments follow a common template: the current
@@ -605,10 +605,10 @@ The experiment is thus characterised by the conductance signal $g$
 gains).
 
 In the simplest case, $g$ is independent of $v$; for instance, when
-considering linear synaptic conductances \citep{Mitchell2003}. Here,
+considering linear synaptic conductances \cite{Mitchell2003}. Here,
 we consider the addition of a simulated fast excitatory synaptic
 conductance to a real neuron. Simple models of synapses approximate
-the conductance waveform with an alpha function \citep{Carnevale2006}.
+the conductance waveform with an alpha function \cite{Carnevale2006}.
 \begin{code}
 alpha = \tau -> sopen tau **2 * <: seconds :> *exp (- <: seconds :> *tau) sclose
 \end{code}
@@ -637,8 +637,8 @@ conductance on cells with dynamic clamp. In the Hodgkin-Huxley
 formalism for ion channels, the conductance depends on one or more
 state variables, for which the forward and backward rate constants
 depend on the membrane voltage. Here we show the equations for the
-activation gate of an A-type potassium current \citep{Connor1971},
-following \citet[we use SI units and absolute voltages]{Traub1991}. The
+activation gate of an A-type potassium current \cite{Connor1971},
+following \cite{Traub1991} (we use SI units and absolute voltages). The
 equations for inactivation are analogous.
 
 We write the forward and backward rates as functions of the membrane voltage
@@ -692,6 +692,9 @@ spiking.
 
 \input{discuss}
 
+\bibliographystyle{nature}
+\bibliography{paper}
+
 \section*{Figure Legends}
 
 \textbf{Figure 1}. Diagram of an experiment to record the looming
@@ -709,7 +712,7 @@ jittered vertical placement for display, \emph{thin black line}, spike
 rate histogram with 50 ms bin size. The inter-trial interval of four
 minutes is not shown.
 
-\textbf{Figure 2}. A, Spike rate histograms for approaches with
+\flushleft \textbf{Figure 2}. A, Spike rate histograms for approaches with
 $\frac{l}{||v||}$ of 0.01, 0.02 and 0.04 s, with 50 ms bin size, with
 collision time indicated by a black triangle. B, Scatter plot of
 number of counted spikes against approach $\frac{l}{||v||}$ for
@@ -717,7 +720,7 @@ individual trials. C, Scatter plot of the maximum rate of spiking
 against $\frac{l}{||v||}$ for individual trials. N=1 animal, 272
 approaches.
 
-\textbf{Figure 3}. A, recorded intracellular voltage following
+\flushleft \textbf{Figure 3}. A, recorded intracellular voltage following
 conductance injections of a unitary simulated synaptic conductance, in
 the presence of A-type potassium conductances of increasing magnitude
 (values given are for the maximal conductance $g_A$). B, as A, but
