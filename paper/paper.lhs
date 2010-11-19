@@ -96,9 +96,9 @@ of a body part. Here, we generalise this notion such that for
 \begin{code}
 Signal alpha = Time -> alpha
 \end{code}
-Signals can thus take a new value for every different time point and
+\underline{Signals can thus take a new value for every different time point and
 represent quantities that vary continuously, although these values may
-be piecewise constant. For instance, the output of a differential
+be piecewise constant.} For instance, the output of a differential
 voltage amplifier might be captured in a |Signal Real|.
 
 \underline{Not every physiological observation denotes continuous
@@ -177,8 +177,8 @@ This property (referential transparency\cite{Whitehead1927})
 facilitates algebraic manipulation and reasoning about the programs
 \cite{Bird1996}. The lambda calculus allows functions to be used as
 first class entities: that is, they can be referenced by variables and
-passed as arguments to other functions (which then become higher-order
-functions). On the other hand, the lambda calculus excludes changes in
+passed as arguments to other functions \underline{(which then become higher-order
+functions)}. On the other hand, the lambda calculus excludes changes in
 the value of variables or global states. These properties together
 mean that the lambda calculus combines verifiable correctness with a
 high level of abstraction, leading to programs that are in practise
@@ -193,7 +193,7 @@ In the lambda calculus, calculations are performed by function
 abstraction and application. |\x->e| denotes the function with
 argument |x| and body |e| (i.e., |e| is an expression, in which the
 variable |x| is in scope, that defines the function), and |f e| the
-application of function |f| to the
+application of the function |f| to the
 expression |e| (i.e., what more conventionally would be written
 $f(e)$). For instance, the function |add2 = \x -> x+2| adds two to its
 argument; hence |add2 3 = (\x->x+2) 3 = 3+2| by substituting arguments
@@ -371,19 +371,19 @@ converter, completing the example.
 
 \subsubsection*{Example 1}
 
-Most animals can benefit from a mechanism for detecting and avoiding
-obstacles and predators. In addition, movement in social animals might
-be constrained by the need to avoid collisions with conspecifics. A
-common component in such species is a visual detector for looming
-objects. In locusts, a single neuron in each brain hemisphere, the
-Lobula Giant Movement Detector (LGMD), responds preferentially to
-looming stimuli \cite{Rind1992}. The response of the LGMD is
-invariant to manipulations of many aspects of the looming
-stimulus. For instance, the time of the peak firing
-rate with respect to the retinal angle of the looming stimulus, is
-insensitive to the colour, texture, size, velocity and azimuth of the
-approaching object when averaged over several approaches
-\cite{Gabbiani2001}.
+\underline{Most animals can benefit from a mechanism for detecting and
+  avoiding obstacles and predators. In addition, movement in social
+  animals might be constrained by the need to avoid collisions with
+  conspecifics. A common component in such species is a visual
+  detector for looming objects.} In locusts, the DCMD neuron signals
+the appearance of looming visual stimuli to a distributed nervous
+system.  \cite{Rind1992}. \underline{The response of the LGMD is
+  invariant to manipulations of many aspects of the looming
+  stimulus. For instance, the time of the peak firing rate with
+  respect to the retinal angle of the looming stimulus, is insensitive
+  to the colour, texture, size, velocity and azimuth of the
+  approaching object when averaged over several approaches
+  \cite{Gabbiani2001}.}
 
 We have constructed several experiments in CoPE to record the response
 of LGMD to visual stimuli that simulate objects approaching
@@ -450,7 +450,7 @@ three-dimensional shapes onto a two-dimensional surface.
 loomingSquare' *> screen ()
 \end{code}
 
-The response of the LGMD neuron to the looming stimulus can be
+\underline{The response of the LGMD neuron to the looming stimulus can be
 recorded from the main longitudinal nerves (``connectives'') in the
 ventral nerve cord. Although the axon of LGMD does not itself run in
 this connective, LGMD reliably activates the descending contralateral
@@ -459,8 +459,8 @@ spikes in the DCMD follow LGMD spikes one to one
 \cite{O'Shea1974}. The DCMD runs in the connective and it is this
 signal that we record. Extracellular hook electrodes wrapped around
 one connective can record activity in the DCMD, which produces the
-largest amplitude action potential in such recordings. In our
-experiments, these analogue signals were amplified, filtered (see
+largest amplitude action potential in such recordings.} In our
+experiments, the analogue signals were amplified, filtered (see
 methods) and converted to a digital signal:
 
 \begin{code}
@@ -512,11 +512,11 @@ We examined how the LGMD spike response varied with changes in
 $\frac{l}{||v||}$. The average of |hspike| for three different values
 of $\frac{l}{||v||}$ are shown in Figure 2A; 2B and 2C show the total
 number of spikes (|length spike|) and largest value of |hspike|, for
-each approach, plotted against the value of $\frac{l}{||v||}$. These
+each approach, plotted against the value of $\frac{l}{||v||}$. \underline{These
 plots show that while the peak firing rate is a decreasing function of
 $\frac{l}{||v||}$, the total number of spikes in the approach is an
 increasing function. In addition, the time of the peak rate is later
-relative to collision with smaller values of $\frac{l}{||v||}$
+relative to collision with smaller values of $\frac{l}{||v||}$}
 \cite{Hatsopoulos1995}.
 
 This experiment demonstrates that the calculus of physiological

@@ -102,7 +102,7 @@
 
 %\end{comment}
 
-Table S1. Some common operations for generic manipulation of signals, events and durations.
+Table S1. Examples of common operations in CoPE for generic manipulation of signals, events and durations.
 
 \pagebreak
 
@@ -169,16 +169,15 @@ loomObj = {: colour black (translate (0, 0, <: distance :>) (cube l)) :}
 loomObj *> screen ""
 
 _tmax=6
+_dt = 5.0e-5
 
-ecVoltage <* adc (0,20000,6) 
+ecVoltage <* ADC 0 
 ecVoltage *> store ""
 
 \end{verbatim}
 
-\flushleft Listing 1. Full code for experiment in Example 1, as used to
-obtain the data (without formatting). There are minor syntactical differences
-between equations the paper and this code, which were run by an early
-implementation of CoPE.
+\flushleft Listing 1. Entire unformatted code for the experiment in
+Example 1.
 
 \pagebreak
 \singlespacing 
@@ -231,7 +230,7 @@ outv *> DAC 0
 vm *> store ""
 \end{verbatim}
 
-\flushleft Listing 2. Full code for experiment in Example 2. 
+\flushleft Listing 2. Entire code for the experiment in Example 2. 
 
 
 \end{document}

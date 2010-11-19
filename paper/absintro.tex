@@ -17,9 +17,9 @@ experiments to be defined unambiguously in a few equations. To
 demonstrate the practicality and versatility of our approach, we show
 the full equations for two non-trivial implemented and analysed
 experiments describing visually stimulated neuronal responses and
-dynamic clamp of vertebrate neurons. The brevity of these definitions
+dynamic clamp of vertebrate neurons. \underline{The brevity of these definitions
 illustrates the power of our approach, and we discuss its implications
-for neuroinformatics-based research.
+for neuroinformatics-based research.}
 
 \pagebreak
 
@@ -39,7 +39,7 @@ at all, and in only 2 of those, without discrepancies
 code used in analyses correctly implements an intended mathematical
 algorithm, yet errors can undermine the conclusions of a
 large body of work \cite{Chang2006}.  In addition, primary data
-sharing is standard in areas of high-throughout biology, but
+sharing is standard in high-throughout biology, but
 not in fields that produce heterogeneous data \cite{Gardner2005},
 further undermining independent validation.  The combination
 of bias, human error, and unverified software, has led to the
@@ -48,24 +48,24 @@ are flawed \cite{Ioannidis2005, Merali2010}.
 
 The problems outlined above suggest that it is worth investigating a
 unified and transparent formalism for communication, validation, and
-automation of observations, experiments and analyses. We argue that
+automation of experiments and analyses. We argue that
 some of the above problems can be mitigated by a formalism that
 % \emph{at once}: 
 \emph{simultaneously}: (i) introduces a system of categorisation
 directly relevant to the scientific field, such that scientists can
 define experiments and reason about observations in familiar terms,
 (ii) is machine executable, therefore unambiguous and practically
-useful, and (iii) is composed only of terms that directly correspond
-to mathematical entities, enabling, unlike in conventional programming
-languages, algebraic manipulation and certification of the experiments
-and analysis procedures.  Experiments are difficult to formalise in
-terms of relations between mathematical objects because they produce
-heterogeneous data \cite{Tukey1962}, and because they interact with
-the physical world. In creating a mathematical framework for
-experiments, we take advantage of progress in embedding side effects
-\cite{PeytonJones2002, Roy2004, Wadler1995}, such as input and output,
-into equational programming languages; that is, languages that can
-only evaluate mathematical functions \cite{Church1941}.
+useful, and (iii) is composed exclusively of terms that directly
+correspond to mathematical entities, enabling, unlike in conventional
+programming languages, algebraic reasoning about procedures.
+Experiments are difficult to formalise in terms of relations between
+mathematical objects because they produce heterogeneous data
+\cite{Tukey1962}, and because they interact with the physical
+world. In creating a mathematical framework for experiments, we take
+advantage of progress in embedding side effects \cite{PeytonJones2002,
+  Roy2004, Wadler1995}, such as input and output, into programming
+languages that can only evaluate mathematical functions
+\cite{Church1941}.
 
 Here, we define a formal framework for physiology
 that satisfies the above criteria. We show that there
@@ -82,9 +82,9 @@ constitute physiological evidence (``observations'').
 
 Our framework provides:
 
-(i) An explicitly defined ontology of physiological observations. We
+(i) An explicitly defined ontology of physiological observations. \underline{We
 outline a flexible but concisely defined structure for physiological
-quantities.  Physiological databases have not been widely
+quantities.} Physiological databases have not been widely
 adopted\cite{Herz2008, Amari2002}, unlike in bioinformatics or
 anatomy, despite many candidates \cite{Jessop2010, Teeters2008,
   Frishkoff2009, Katz2010}. \underline{Existing candidates support only a
@@ -93,20 +93,21 @@ anatomy, despite many candidates \cite{Jessop2010, Teeters2008,
   , or represent facts without their supporting
   evidence.}
 %despite many attempts \cite{Katz2010, , Gardner2004, Jessop2010}.  
-We suggest that a flexible and simple ontology can remedy some of the
-structural shortcomings\cite{Gardner2005, Amari2002} of existing
-databases and thus facilitate the sharing of data and meta-data
-\cite{Insel2003}.
+We suggest that a flexible, concise and simple structure for
+physiological quantities can remedy some of the
+shortcomings\cite{Gardner2005, Amari2002} of existing databases and
+thus facilitate the sharing of data and meta-data \cite{Insel2003}.
 
 (ii) A concise language for describing complex experiments and
-analysis procedures in physiology. Experimental protocols can be
-communicated unambiguously, highlighting differences between studies
-and facilitating replication and meta-analysis. Our language thus
-describes the the data provenance
-\cite{Pool2002,MacKenzie-Graham2008, VanHorn2009} for experiments
-with that can be fully executed by a computer. By construction,
-\emph{any} observation can be defined in a single equation that must
-include post-acquisition processing and censure.
+analysis procedures in physiology using only mathematical
+equations. Experimental protocols can be communicated unambiguously,
+highlighting differences between studies and facilitating replication
+and meta-analysis. \underline{Our language thus describes the the data
+  provenance \cite{Pool2002,MacKenzie-Graham2008, VanHorn2009} for
+  experiments with that can be fully executed by a computer.} By
+construction, the data provenance \cite{Pool2002,MacKenzie-Graham2008,
+  VanHorn2009} of \emph{any} observation can be defined in a single
+equation that must include post-acquisition processing and censure.
 
 (iii) A new approach to validating scientific inference
 \cite{Editors2003, Editors2010}. First, a concise language with a
