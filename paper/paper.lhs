@@ -78,9 +78,7 @@ defined with references to arbitrary types; for instance,
 in the type definition can then be filled in to form a concrete type,
 for instance |withIntergers String|. The ability to build flexible
 type schemata in this manner and define generic functions is called
-``parametric polymorphism''\cite{Pierce2002} \underline{is essential in our
-calculus for representing a large range of physiological quantities
-with a small number of concepts, as we show in this section.}
+``parametric polymorphism''\cite{Pierce2002}.
 
 We distinguish three type schemas in which physiological evidence can
 be values. These differ in the manner in which measurements appear in
@@ -96,17 +94,8 @@ of a body part. Here, we generalise this notion such that for
 \begin{code}
 Signal alpha = Time -> alpha
 \end{code}
-\underline{Signals can thus take a new value for every different time point and
-represent quantities that vary continuously, although these values may
-be piecewise constant.} For instance, the output of a differential
+For instance, the output of a differential
 voltage amplifier might be captured in a |Signal Real|.
-
-\underline{Not every physiological observation denotes continuous
-change. Some measurements are derived from an instant in time --- such
-as the peak amplitude of an electrical potential --- and others pertain
-to an extended period of time. These qualitatively different classes
-of observations are represented by \emph{events} and \emph{durations},
-respectively. }
 
 To model occurrences pertaining to specific instances in time,
 FRP defines events as a list of pairs of time points and a value in a
@@ -134,30 +123,20 @@ Durations are useful for manipulating information about a whole trial
 or a single annotation of an entire experiment, but could also be
 observations in their own right, such as open times of individual ion
 channels, or periods in which activity of a system exceeds a set
-threshold (e.g during bursts of action potentials). \underline{We have used
-durations to hold information about an entire experiment, for instance
-a session identifier or the animal strain. In that case, the duration
-set contains a single element, with the start and end of the
-experiment as start and end time, respectively.} Lastly, durations
+threshold (e.g during bursts of action potentials). Lastly, durations
 could be used for information that spans multiple trials but not an
 entire experiment --- for instance, the presence or absence of a drug.
 
 Since signals, events and durations can be instantiated for any type,
 they form a simple but flexible framework for representing many
 physiological quantities. We show a list of such examples primarily
-drawn from neurophysiology in Table 1. \underline{These quantities are all
-representable by signals, events or durations but with different
-instantiations of the free type variable.} A framework in any type
+drawn from neurophysiology in Table 1. A framework in any type
 system that did not support parametric polymorphism would have to
 represent these quantities fundamentally differently, thus removing
 the possibility of re-using common analysis procedures. Although
 parametric polymorphism is conceptually simple and the distinctions we
 are introducing are intuitive, common biomedical ontologies
 \emph{cannot} accommodate these definitions. 
-
-\underline{We now proceed to show how to build programs that calculate with
-signals and events; then we show how annotations allow these programs
-to interact with external systems and measure their behaviour.}
 
 \subsubsection*{Calculating with signals and events}
 
@@ -177,8 +156,7 @@ This property (referential transparency\cite{Whitehead1927})
 facilitates algebraic manipulation and reasoning about the programs
 \cite{Bird1996}. The lambda calculus allows functions to be used as
 first class entities: that is, they can be referenced by variables and
-passed as arguments to other functions \underline{(which then become higher-order
-functions)}. On the other hand, the lambda calculus excludes changes in
+passed as arguments to other functions. On the other hand, the lambda calculus excludes changes in
 the value of variables or global states. These properties together
 mean that the lambda calculus combines verifiable correctness with a
 high level of abstraction, leading to programs that are in practise
@@ -197,24 +175,14 @@ application of the function |f| to the
 expression |e| (i.e., what more conventionally would be written
 $f(e)$). For instance, the function |add2 = \x -> x+2| adds two to its
 argument; hence |add2 3 = (\x->x+2) 3 = 3+2| by substituting arguments
-in the function body. \underline{In addition, we define a number of constructs to
-improve the readability of the language. However, they are not
-\emph{necessary} as they can be defined in terms of function
-application and abstraction (and, depending on the exact version of
-the calculus, some additional primitive functions). The expression |if
-p then e_1 else e_2| equals |e_1| if |p| evaluates to |True| and |e_2|
-if it evaluates to |False|.  The construct |let x = e_1 in e_2| defines
-a variable |x| bound to the value of the expression |e_1| that scopes
-over |e_2| as well as |e_1| (thus allowing recursive definitions).}
+in the function body. 
 
 We now present the concrete syntax CoPE, which extends the lambda
 calculus with constructs to define and manipulate signals and
 events. This calculus borrows some concepts from earlier versions of
 FRP, but it emphasises signals and events as mathematical objects in
 themselves, rather than as control structures for creating reactive
-systems \cite{Elliott1997, Nilsson2002}. \underline{Specifically, the new
-calculus encompass a relaxed notion of \emph{causality}. The syntax
-and implementation strategy is therefore different from FRP.}
+systems \cite{Elliott1997, Nilsson2002}. 
 
 Let the construct |sopen e sclose| denote a signal with the value of
 the expression |e| at every time point, and let the construct |<: s
@@ -233,38 +201,23 @@ transforms, for any two types |alpha| and |beta|, a signal of |alpha|
 into a signal of |beta| by applying the function |f| of type |alpha
 -> beta| to the value of the signal at every time point.
 
-\underline{Further primitives are needed to form signals that depend
-  on the history of other signals. For instance, } The differential
-operator |D| differentiates a real-valued signal with respect to time,
-such that |D s| denotes its first derivative and |D D s| the second
-derivative of the signal |s|. When the differential operator can
-appear on the left-hand side of a definition, it
-introduces a differential equation \underline{by pattern matching
-% HN 2010-11-10: This placeholder has been here a while. I don't think
-% a formal reference is necessary: "pattern matching" should be sufficiently
-% self-evident for the use we make of it here.
-% (REF)
-on the derivative of a signal} (see example 2 below).
-
-\underline{In addition, the expression |delay s| denotes the signal that is
-delayed by a short period, in practice a time step or the sampling
-period. Other FRP implementations have other primitives, in particular
-a |switch| statement that changes the definition of a signal depending
-on the occurrence of specific events. We have not needed such a
-construct in the experiments described here.}
+The differential operator |D| differentiates a real-valued signal with
+respect to time, such that |D s| denotes its first derivative and |D D
+s| the second derivative of the signal |s|. When the differential
+operator can appear on the left-hand side of a definition, it
+introduces a differential equation (see example 2 below).
 
 Events and durations can be manipulated as \emph{lists}. Thus, a large
 number of transformations can be defined with simple recursive
 equations including filters, folds and scans familiar from functional
-programming languages \cite{Hughes1989}.
-
-In addition, we have added a special construct to detect events from
-existing signals. For instance, a threshold detector generates an
-occurrence of an event whenever the value of a signal exceeds a set
-level (and then not again before the value of the signal has decreased
-below that level and then reached it again).  Here, we generalise the
-threshold detector slightly by taking a predicate (i.e., a function of
-type |alpha->Bool|) on the instantaneous values of the signal and
+programming languages \cite{Hughes1989}. In addition, we have added a
+special construct to detect events from existing signals. For
+instance, a threshold detector generates an occurrence of an event
+whenever the value of a signal exceeds a set level (and then not again
+before the value of the signal has decreased below that level and then
+reached it again).  Here, we generalise the threshold detector
+slightly by taking a predicate (i.e., a function of type
+|alpha->Bool|) on the instantaneous values of the signal and
 generating an event whenever the predicate becomes true using the |??|
 operator. For instance,
 \begin{code}
@@ -275,14 +228,10 @@ satisfies the predicate |\x->x>5|, i.e. is greater than 5, after having been
 smaller than 5 for at least a short period of time, in practice the
 time step. The expression |(\x->x>5) ?? s| thus defines a threshold
 detector restricted to threshold crossings with a positive slope.
-
-\underline{This small number of special constructors, along with the
-  lambda calculus and the list semantics of events and durations, have
-  allowed us to construct a small ``standard library'' of analysis
-  procedures for physiology.} Table S1 in the supplementary
-information details the types and names of some of functions we have
-defined using these definitions; Table S2 has an informal overview of
-the syntax of CoPE.
+ 
+Table S1 in the supplementary information details the types and names
+of some of functions we have defined using these definitions; Table S2
+has an informal overview of the syntax of CoPE.
 
 % \subsubsection*{Observing signals and events}
 \subsubsection*{Interacting with the physical world}
@@ -333,7 +282,7 @@ corresponding sink to a signal.  This is done through the the
 following construct, mirroring the source construct discussed above:
 \begin{code}
 signal *> sink parameter
-\end{code}{}
+\end{code}
 
 As a concrete example, suppose we wish to output a sinusoidal stimulus. We
 first construct a time-varying signal describing the desired shape of the
@@ -371,22 +320,12 @@ converter, completing the example.
 
 \subsubsection*{Example 1}
 
-\underline{Most animals can benefit from a mechanism for detecting and
-  avoiding obstacles and predators. In addition, movement in social
-  animals might be constrained by the need to avoid collisions with
-  conspecifics. A common component in such species is a visual
-  detector for looming objects.} In locusts, the DCMD neuron signals
+In locusts, the DCMD neuron signals
 the appearance of looming visual stimuli to a distributed nervous
-system.  \cite{Rind1992}. \underline{The response of the LGMD is
-  invariant to manipulations of many aspects of the looming
-  stimulus. For instance, the time of the peak firing rate with
-  respect to the retinal angle of the looming stimulus, is insensitive
-  to the colour, texture, size, velocity and azimuth of the
-  approaching object when averaged over several approaches
-  \cite{Gabbiani2001}.}
+system \cite{Rind1992}.
 
 We have constructed several experiments in CoPE to record the response
-of LGMD to visual stimuli that simulate objects approaching
+of DCMD to visual stimuli that simulate objects approaching
 with different velocities. To generate these stimuli, we augmented
 CoPE with primitive three-dimensional geometric shapes. Let the
 expression
@@ -426,10 +365,10 @@ loomingSquare =
 \end{code}
 
 |loomingSquare| differs from conventional protocols
-\cite{Gabbiani2001} for stimulating the LGMD in that it describes an
+\cite{Gabbiani2001} for stimulating DCMS in that it describes an
 object that passes through the physical screen and the observer, and
 when displayed would thus disappear from the screen just before
-collision. In order not to evoke a large OFF response from the LGMD
+collision. In order not to evoke a large OFF response
 \cite{O'shea1976} immediately after simulated collision, the object
 is frozen in space as it reaches the plane of the surface onto which
 the animation is projected \cite{Hatsopoulos1995}. To achieve this
@@ -450,17 +389,7 @@ three-dimensional shapes onto a two-dimensional surface.
 loomingSquare' *> screen ()
 \end{code}
 
-\underline{The response of the LGMD neuron to the looming stimulus can be
-recorded from the main longitudinal nerves (``connectives'') in the
-ventral nerve cord. Although the axon of LGMD does not itself run in
-this connective, LGMD reliably activates the descending contralateral
-movement detector (DCMD) with a strong synaptic connection, such that
-spikes in the DCMD follow LGMD spikes one to one
-\cite{O'Shea1974}. The DCMD runs in the connective and it is this
-signal that we record. Extracellular hook electrodes wrapped around
-one connective can record activity in the DCMD, which produces the
-largest amplitude action potential in such recordings.} In our
-experiments, the analogue signals were amplified, filtered (see
+In our experiments, the analogue signals were amplified, filtered (see
 methods) and converted to a digital signal:
 
 \begin{code}
@@ -508,15 +437,11 @@ elements in |xs| for which the predicate holds. Here the predicate is
 time) composed (|.|) with the function |between = \x -> \y -> \z ->
 z>x && z<=y|. 
 
-We examined how the LGMD spike response varied with changes in
+We examined how the DCMD spike response varied with changes in
 $\frac{l}{||v||}$. The average of |hspike| for three different values
 of $\frac{l}{||v||}$ are shown in Figure 2A; 2B and 2C show the total
 number of spikes (|length spike|) and largest value of |hspike|, for
-each approach, plotted against the value of $\frac{l}{||v||}$. \underline{These
-plots show that while the peak firing rate is a decreasing function of
-$\frac{l}{||v||}$, the total number of spikes in the approach is an
-increasing function. In addition, the time of the peak rate is later
-relative to collision with smaller values of $\frac{l}{||v||}$}
+each approach, plotted against the value of $\frac{l}{||v||}$
 \cite{Hatsopoulos1995}.
 
 This experiment demonstrates that the calculus of physiological
@@ -528,17 +453,6 @@ show that it can be used to implement dynamic clamp in an \emph{in
   vivo} patch clamp recording experiment.
 
 \subsubsection*{Example 2}
-
-\underline{The input-output relationships of individual neurons are fundamental to
-the functioning of neuronal networks. Given a stimulus, e.g. a pattern
-of synaptic input or injected current waveform, what is the membrane
-voltage trajectory and firing rate response of a neuron? In
-particular, cell properties such as the dendritic morphology or ionic
-conductances can profoundly influence this relationship. Such
-influences can be examined with experiments or simulations; here we
-show how the calculus of physiological evidence can be used to
-formulate and execute dynamic-clamp experiments on synaptic
-integration.}
 
 A dynamic clamp experiment \cite{Robinson1993, Sharp1993} requires
 electrical access to the intracellular compartment, such that the cell
@@ -560,9 +474,7 @@ command |i| is calculated at each time-step from the simulated conductance |g|
 and the measured membrane voltage |v|:
 \begin{code}
 v <* ADC 0
-
 i = sopen (<: v :> - E)* <: g :> sclose
-
 i *> DAC 0
 \end{code}
 The experiment is thus characterised by the conductance signal $g$
@@ -649,12 +561,7 @@ spike = tag () ((\v'->v'>vth') ?? D v)
 and the spike frequency calculated with the |frequncyDuring| function.
 This relationship between the postsynaptic spike frequency and the
 simulated synaptic input |rate| is plotted in Figure 3C for four
-different values of |gmaxk|. \underline{Large A-type conductances suppress spikes
-resulting from endogenous synaptic activity (which was not
-pharmacologically blocked in this experiment) and increases the
-threshold at which imposed simulated synaptic activity causes postsynaptic
-spiking.
-}
+different values of |gmaxk|. 
 \input{discuss}
 
 \bibliographystyle{nature}
