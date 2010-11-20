@@ -245,11 +245,10 @@ purely mathematical equations and the physical world.
 
 A source is an input port through which the value of some external
 quantity can be observed during the course of an experiment by binding
-it to a variable. If the quantity is time-varying, the
-bound variable will denote a signal; but sources could also observe
-basic types. A typical example of a source is an analog-to-digital
-converter measuring some experimental. Observing this over the
-duration of an experiment yields a signal.
+it to a variable. If the quantity is time-varying, the bound variable
+will denote a signal; but sources could also observe basic types. For
+instance, binding a variable to source denoting a typical
+analog-to-digital converter yields a signal of real numbers.
 
 The construct
 \begin{code}
