@@ -80,7 +80,7 @@ for instance |withIntergers String|. The ability to build flexible
 type schemata in this manner and define generic functions is called
 ``parametric polymorphism''\cite{Pierce2002}.
 
-We distinguish three type schemas in which physiological evidence can
+We distinguish three type schemata in which physiological evidence can
 be values. These differ in the manner in which measurements appear in
 a temporal context, but which all derive their flexibility from
 parametric polymorphism. \emph{Signals} capture the notion of
@@ -177,7 +177,7 @@ $f(e)$). For instance, the function |add2 = \x -> x+2| adds two to its
 argument; hence |add2 3 = (\x->x+2) 3 = 3+2| by substituting arguments
 in the function body. 
 
-We now present the concrete syntax CoPE, which extends the lambda
+We now present the concrete syntax of CoPE, which extends the lambda
 calculus with constructs to define and manipulate signals and
 events. This calculus borrows some concepts from earlier versions of
 FRP, but it emphasises signals and events as mathematical objects in
@@ -216,7 +216,7 @@ instance, a threshold detector generates an occurrence of an event
 whenever the value of a signal exceeds a set level (and then not again
 before the value of the signal has decreased below that level and then
 reached it again).  Here, we generalise the threshold detector
-slightly by taking a predicate (i.e., a function of type
+by taking a predicate (i.e., a function of type
 |alpha->Bool|) on the instantaneous values of the signal and
 generating an event whenever the predicate becomes true using the |??|
 operator. For instance,
@@ -243,30 +243,29 @@ create controlled stimuli to perturb these systems. For this purpose, we
 introduce \emph{sources} and \emph{sinks} that act as a bridge between 
 purely mathematical equations and the physical world.
 
-A source is essentially an input port through which the value of some external
-variable can be observed during the course of an experiment. Depending on the
-nature of the variable, whether it can vary or will remain constant throughout
-an experiment, the observation yields a signal or single value, respectively.
-A typical example of a source is an analog-to-digital converter measuring some
-experimental variable. Observing this over the duration of an experiment
-yields a signal.
+A source is an input port through which the value of some external
+quantity can be observed during the course of an experiment by binding
+it to a variable. If the quantity is time-varying, the
+bound variable will denote a signal; but sources could also observe
+basic types. A typical example of a source is an analog-to-digital
+converter measuring some experimental. Observing this over the
+duration of an experiment yields a signal.
 
-In more detail, the sources are parametrised, thus denoting a \emph{family}
-of sources with the parameter(s) identifying a specific instance. The
-construct
+The construct
 \begin{code}
-identifier <* source parameter
+identifier <* source
 \end{code}
-binds the value or signal resulting from the observation of the the
-parametrised \emph{source} during the course of an experiment to the
-variable \emph{identifier}. Note that, in the case of a signal, the
-variable is bound to the \emph{whole} signal. For a concrete example,
-the following code defines a simple experiment:
+binds the value or signal resulting from the observation of the
+\emph{source} during the course of an experiment to the variable
+\emph{identifier}. For a concrete example, the following code defines
+a simple experiment:
 \begin{code}
 v <* ADC 0
 \end{code}
-This describes the observation of the voltage signal on channel 0 of an
-analog-to-digital converter, binding it to the variable |v|.
+This describes the observation of the voltage signal on channel 0 of
+an analog-to-digital converter, binding the whole signal to the
+variable |v|. We have also used sources to sample value from
+probability distributions (see Methods).
 
 In addition to making appropriate observations, an experiment may also
 involve a perturbation of the experimental preparation. In the context
@@ -274,14 +273,15 @@ of a physiology experiment, the manipulation could to control the
 amount of electric current injected into a cell. Alternatively, in one
 of the examples described below, non-numeric signals are used to
 generate visual stimuli on a computer screen. Such manipulations
-require the opposite of a source, namely an output port connected to a
-physical device capable of effecting the desired perturbation. Such
-a port is called a \emph{sink}. The value at the output at any point
-in time during an experiment is defined by connecting the
-corresponding sink to a signal.  This is done through the the
-following construct, mirroring the source construct discussed above:
+require the opposite of a source, namely an output port --- a \emph{sink} --
+connected to a physical device capable of effecting the desired
+perturbation. The value at the
+output at any point in time during an experiment is defined by
+connecting the corresponding sink to a signal.  This is done through
+the the following construct, mirroring the source construct discussed
+above:
 \begin{code}
-signal *> sink parameter
+signal *> sink
 \end{code}
 
 As a concrete example, suppose we wish to output a sinusoidal stimulus. We
@@ -289,11 +289,9 @@ first construct a time-varying signal describing the desired shape of the
 stimulus. In this case, we start with a clock signal that counts the number of
 seconds since the experiment started, which can be read from a clock source:
 \begin{code}
-seconds <* clock ()
+seconds <* clock 
 \end{code}
-(There is only one clock, meaning that the parameter is of the type unit |()|
-that only has one element, also written |()|.) The sine wave can now be
-defined as:
+The sine wave can now be defined as:
 \begin{code}
 sineWave = smap sin seconds
 \end{code}

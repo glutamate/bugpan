@@ -136,9 +136,9 @@ Table S1. Examples of common operations in CoPE for generic manipulation of sign
 
   |p ?? s| &  \parbox{9cm}{\begin{singlespace}Events that occur when the value of |s| satisfies the predicate |p| \end{singlespace}}\\
 
-  |x <* src e| & \parbox{9cm}{\begin{singlespace}(Top-level only) Bind the value x to the observation of the source |src|, with parameter |e|\end{singlespace}}\\
+  |x <* src| & \parbox{9cm}{\begin{singlespace}(Top-level only) Bind the value x to the observation of the source |src|\end{singlespace}}\\
 
-  |e *> snk e_1| & \parbox{9cm}{\begin{singlespace}(Top-level only) Send the value |e| to the sink |snk|, with parameter |e_1|\end{singlespace}}\\
+  |e *> snk| & \parbox{9cm}{\begin{singlespace}(Top-level only) Send the value |e| to the sink |snk|\end{singlespace}}\\
 
 
  & \\
