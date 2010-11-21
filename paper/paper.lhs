@@ -61,23 +61,17 @@ construct other mathematical objects pertaining to the experiment.
 
 What kinds of mathematical objects can be used as physiological
 evidence? We answer this question within simple type theory
-\cite{Pierce2002, Hindley2008}, which assigns to every object a \emph{type}. These
-types include base types, such as integers |Integer|, real numbers
-|Real|, text strings |String| and the Boolean type |Bool| with the two
-values |True| and |False|. In addition, types can be arbitrarily
-combined in several ways, such that if |alpha| and |beta| are types,
-the type |alpha times beta| is the pair formed by one element of
-|alpha| and one of |beta|; |[alpha]| is a list of |alpha|s; and |alpha
--> beta| is the type of functions that calculate a value in the type
-|beta| from a value in |alpha|. Here, we use the convention that Greek
-letters stand for type variables, which can be substituted by any
-concrete type, such as a base type or a type combination. Types can be
-defined with references to arbitrary types; for instance,
-|withIntegers alpha = [Integer times alpha]| denotes for any type
-|alpha| the list of pairs of integers and |alpha|s. The hole |alpha|
-in the type definition can then be filled in to form a concrete type,
-for instance |withIntergers String|. The ability to build flexible
-type schemata in this manner and define generic functions is called
+\cite{Pierce2002, Hindley2008}, which assigns to every object a
+\emph{type}. These types include base types, such as integers
+|Integer|, real numbers |Real|, text strings |String| and the Boolean
+type |Bool| with the two values |True| and |False|. In addition, types
+can be arbitrarily combined in several ways, such that if |alpha| and
+|beta| are types, the type |alpha times beta| is the pair formed by
+one element of |alpha| and one of |beta|; |[alpha]| is a list of
+|alpha|s; and |alpha -> beta| is the type of functions that calculate
+a value in the type |beta| from a value in |alpha|. The ability to
+write flexible type schemata and generic functions containing type
+variables (which can later be substituted with any concrete type) is called
 ``parametric polymorphism''\cite{Pierce2002}.
 
 We distinguish three type schemata in which physiological evidence can
@@ -103,14 +97,14 @@ type |alpha|, called the ``tag'':
 \begin{code}
 Event alpha = [Time times alpha]
 \end{code}
-For example, an event could be constructed from a scalar signal such
-that the time of the largest amplitude of a signal is associated with
-the signal amplitude at that time point. Events that do not have a
-value of interest to associate with the time point at which it
+For example, an event can be constructed from a number-valued signal
+that represents the time of the largest amplitude
+value of of the signal, with that amplitude in the tag. Events that do not have
+a value of interest to associate with the time point at which it
 occurred, can be tagged with the unit type |()| which has only one
-element (that is, no information). Events can therefore represent
-both measurements where the principal information is \emph{when}
-something happened, or where it concerns \emph{what} happened.
+element (that is, no information). Events can therefore represent both
+measurements where the principal information is \emph{when} something
+happened, or where it concerns \emph{what} happened.
 
 A third kind of information describes the properties of whole time
 periods. We define a duration of type |alpha| as a set of triples, of
@@ -152,30 +146,28 @@ another term with identical meaning.
 This property (referential transparency\cite{Whitehead1927})
 % HN 2010-11-10: "enables" is a bit too strong. For example, it is certainly
 % *possible* to reason formally about imperative code.
-% enables
-facilitates algebraic manipulation and reasoning about the programs
-\cite{Bird1996}. The lambda calculus allows functions to be used as
-first class entities: that is, they can be referenced by variables and
-passed as arguments to other functions. On the other hand, the lambda calculus excludes changes in
-the value of variables or global states. These properties together
-mean that the lambda calculus combines verifiable correctness with a
-high level of abstraction, leading to programs that are in practise
-more concise \cite{Hughes1989} than those written in conventional
-programming languages. The lambda calculus or variants thereof has
-been used as a foundation for mathematics \cite{Martin-Lof1985},
-classical \cite{Sussman2001} and quantum \cite{Karczmarczuk2003}
-mechanics, evolutionary biochemistry \cite{Fontana1994} and
+% enables facilitates algebraic manipulation and reasoning about the
+programs \cite{Bird1996}. The lambda calculus allows functions to be
+used as first class entities: that is, they can be referenced by
+variables and passed as arguments to other functions. On the other
+hand, the lambda calculus disallows changing the value of variables or
+global states. These properties together mean that the lambda calculus
+combines verifiable correctness with a high level of abstraction,
+leading to programs that are in practise more concise
+\cite{Hughes1989} than those written in conventional programming
+languages. The lambda calculus or variants thereof has been used as a
+foundation for mathematics \cite{Martin-Lof1985}, classical
+\cite{Sussman2001} and quantum \cite{Karczmarczuk2003} mechanics,
+evolutionary biochemistry \cite{Fontana1994} and functional
 programming languages \cite{McCarthy1960}.
 
 In the lambda calculus, calculations are performed by function
 abstraction and application. |\x->e| denotes the function with
-argument |x| and body |e| (i.e., |e| is an expression, in which the
-variable |x| is in scope, that defines the function), and |f e| the
-application of the function |f| to the
-expression |e| (i.e., what more conventionally would be written
-$f(e)$). For instance, the function |add2 = \x -> x+2| adds two to its
-argument; hence |add2 3 = (\x->x+2) 3 = 3+2| by substituting arguments
-in the function body. 
+argument |x| and body |e|, and |f e| the application of the function
+|f| to the expression |e| (more conventionally written $f(e)$). For
+instance, the function |add2 = \x -> x+2| adds two to its argument;
+hence |add2 3 = (\x->x+2) 3 = 3+2| by substituting arguments in the
+function body.
 
 We now present the concrete syntax of CoPE, which extends the lambda
 calculus with constructs to define and manipulate signals and
@@ -204,7 +196,7 @@ into a signal of |beta| by applying the function |f| of type |alpha
 The differential operator |D| differentiates a real-valued signal with
 respect to time, such that |D s| denotes its first derivative and |D D
 s| the second derivative of the signal |s|. When the differential
-operator can appear on the left-hand side of a definition, it
+operator appears on the left-hand side of a definition, it
 introduces a differential equation (see example 2 below).
 
 Events and durations can be manipulated as \emph{lists}. Thus, a large
@@ -213,21 +205,19 @@ equations including filters, folds and scans familiar from functional
 programming languages \cite{Hughes1989}. In addition, we have added a
 special construct to detect events from existing signals. For
 instance, a threshold detector generates an occurrence of an event
-whenever the value of a signal exceeds a set level (and then not again
-before the value of the signal has decreased below that level and then
-reached it again).  Here, we generalise the threshold detector
-by taking a predicate (i.e., a function of type
-|alpha->Bool|) on the instantaneous values of the signal and
-generating an event whenever the predicate becomes true using the |??|
-operator. For instance,
+whenever the value of a signal crosses from below to above a specific
+value level.  Here, we generalise the threshold detector by taking a
+predicate (i.e., a function of type |alpha->Bool|) on the
+instantaneous values of the signal and generating an event whenever
+the predicate becomes true using the |??| operator. For instance,
 \begin{code}
 (\x->x>5) ?? s
 \end{code}
 denotes the event that occurs whenever the value of the signal |s|
-satisfies the predicate |\x->x>5|, i.e. is greater than 5, after having been
-smaller than 5 for at least a short period of time, in practice the
-time step. The expression |(\x->x>5) ?? s| thus defines a threshold
-detector restricted to threshold crossings with a positive slope.
+satisfies the predicate |\x->x>5|, i.e. is greater than 5, after
+having been smaller than 5 for a time step. The expression |(\x->x>5)
+?? s| thus defines a threshold detector restricted to threshold
+crossings with a positive slope.
  
 Table S1 in the supplementary information details the types and names
 of some of functions we have defined using these definitions; Table S2
@@ -267,26 +257,25 @@ variable |v|. We have also used sources to sample value from
 probability distributions (see Methods).
 
 In addition to making appropriate observations, an experiment may also
-involve a perturbation of the experimental preparation. In the context
-of a physiology experiment, the manipulation could to control the
-amount of electric current injected into a cell. Alternatively, in one
-of the examples described below, non-numeric signals are used to
+involve a perturbation of the experimental preparation. For example,
+the manipulation could control the amount of electric current injected
+into a cell. Alternatively, non-numeric signals are used below to
 generate visual stimuli on a computer screen. Such manipulations
-require the opposite of a source, namely an output port --- a \emph{sink} --
-connected to a physical device capable of effecting the desired
-perturbation. The value at the
-output at any point in time during an experiment is defined by
-connecting the corresponding sink to a signal.  This is done through
-the the following construct, mirroring the source construct discussed
-above:
+require the opposite of a source, an output port --- a
+\emph{sink} -- connected to a physical device capable of effecting the
+desired perturbation. The value at the output at any point in time
+during an experiment is defined by connecting the corresponding sink
+to a signal.  This is done through the the following construct,
+mirroring the source construct discussed above:
 \begin{code}
 signal *> sink
 \end{code}
 
-As a concrete example, suppose we wish to output a sinusoidal stimulus. We
-first construct a time-varying signal describing the desired shape of the
-stimulus. In this case, we start with a clock signal that counts the number of
-seconds since the experiment started, which can be read from a clock source:
+As a concrete example, suppose we wish to output a sinusoidal
+stimulus. We first construct a time-varying signal describing the
+desired shape of the stimulus. In this case, we read a clock source
+that yields a signal counting the number of seconds since the
+experiment started:
 \begin{code}
 seconds <* clock 
 \end{code}
@@ -298,8 +287,10 @@ We then write
 \begin{code}
 sineWave *> DAC 0
 \end{code}{}
-to send the |sineWave| signal to channel channel 0 of a digital-to-analog
-converter, completing the example.
+to send the |sineWave| signal to channel channel 0 of a
+digital-to-analog converter, completing the example. Below we show how
+these primitives can be used to define two detailed experiments in
+neurophysiology.
 % Sinks and sources are thus used to
 % link values, which have been or will be used in purely mathematical
 % expressions, to the real world. There are also operations in
@@ -317,15 +308,13 @@ converter, completing the example.
 
 \subsubsection*{Example 1}
 
-In locusts, the DCMD neuron signals
-the appearance of looming visual stimuli to a distributed nervous
-system \cite{Rind1992}.
-
-We have constructed several experiments in CoPE to record the response
-of DCMD to visual stimuli that simulate objects approaching
-with different velocities. To generate these stimuli, we augmented
-CoPE with primitive three-dimensional geometric shapes. Let the
-expression
+In locusts, the Descending Contralateral Movement Detector (DCMD)
+signals the appearance of looming objects to a distributed
+nervous system \cite{Rind1992}. We have constructed several
+experiments in CoPE to record the response of DCMD to visual stimuli
+that simulate objects approaching with different velocities. To
+generate these stimuli, we augmented CoPE with primitive
+three-dimensional geometric shapes. Let the expression
 \begin{code}
 cube l
 \end{code}
@@ -362,7 +351,7 @@ loomingSquare =
 \end{code}
 
 |loomingSquare| differs from conventional protocols
-\cite{Gabbiani2001} for stimulating DCMS in that it describes an
+\cite{Gabbiani2001} for stimulating DCMD in that it describes an
 object that passes through the physical screen and the observer, and
 when displayed would thus disappear from the screen just before
 collision. In order not to evoke a large OFF response
@@ -383,22 +372,23 @@ represents a visual display unit capable of projecting
 three-dimensional shapes onto a two-dimensional surface.
 
 \begin{code}
-loomingSquare' *> screen ()
+loomingSquare' *> screen 
 \end{code}
 
-In our experiments, the analogue signals were amplified, filtered (see
-methods) and converted to a digital signal:
+In our experiments, the extracellular voltage from the locust
+connectives, in which the DCMD forms the largest amplitude spike, were
+amplified, filtered (see methods) and digitised:
 
 \begin{code}
 voltage <* ADC 0
 \end{code}
 
-|loomingSquare'| and |voltage| thus define a single approach and the
-recording of the elicited response. This approach was repeated every 4
-minutes, with different values of $\frac{l}{||v||}$. Figure 1 shows
-$\frac{l}{||v||}$ as values with type |Duration Real|, together with the
-|distance'| and |voltage| signals for the first five trials of one
-experiment on a common time scale.
+|loomingSquare'| and |voltage| thus define a single object approach
+and the recording of the elicited response. This approach was repeated
+every 4 minutes, with different values of $\frac{l}{||v||}$. Figure 1
+shows $\frac{l}{||v||}$ as values with type |Duration Real|, together
+with the |distance'| and |voltage| signals for the first five trials
+of one experiment on a common time scale.
 
 The simplest method for detecting spikes from a raw voltage trace is
 to search for threshold crossings, which works well in practise for
@@ -406,21 +396,11 @@ calculating DCMD activity from recordings of the locust connectives
 \cite{Gabbiani2001}. If the threshold voltage for spike detection is
 |vth|, the event |spike| can be calculated with
 \begin{code}
-spike = (\v->v>vth) ?? voltage
-\end{code}
-Which yields a value of type |Event Real|, where the tag of each event
-holds the voltage at which the threshold was crossed. The value of
-this tag is likely to be close to the threshold |vth| and holds little
-relevant information. Therefore, replacing each tag with the unit type
-|()|, such that |spike| has type |Event ()| is a more meaningful
-representation of the spike train. The function |tag| conveniently
-replaces every tag in some events with a fixed value.
-\begin{code}
 spike = tag () ((\v->v>vth) ?? voltage)
 \end{code}
-so that |spike| has type |Event ()|. This event is displayed on the
-common time scale in Figure 1. The top row displays the spike rate
-histogram
+where |tag| replaces every tag in some event with a fixed value, so
+that spike has type |Event ()|. This event is displayed on the common
+time scale in Figure 1. The top row displays the spike rate histogram
 \begin{code}
 hspike  =
         sopen length (filter  (between <: delay seconds:> <: seconds:> . fst)
@@ -432,7 +412,8 @@ arguments predicate |p| and a list |xs|, and returns the list of
 elements in |xs| for which the predicate holds. Here the predicate is
 |fst| (which returns the first element of a pair, here the occurrence
 time) composed (|.|) with the function |between = \x -> \y -> \z ->
-z>x && z<=y|. 
+z>x && z<=y|, which tests whether the last of three numbers lies
+between the first two.
 
 We examined how the DCMD spike response varied with changes in
 $\frac{l}{||v||}$. The average of |hspike| for three different values
@@ -451,16 +432,11 @@ show that it can be used to implement dynamic clamp in an \emph{in
 
 \subsubsection*{Example 2}
 
-A dynamic clamp experiment \cite{Robinson1993, Sharp1993} requires
-electrical access to the intracellular compartment, such that the cell
-membrane voltage can be recorded, and current injected into the
-cell. As opposed to a standard current-clamp experiment, where the
-injected current waveform is known in advance, in the dynamic clamp
-setup the injected current command is calculated near-instantaneously
-from the membrane voltage. The dynamic clamp thus permits the
-imposition of additional simulated ionic conductances on a real
-neuron. For instance, it is possible to record the response of a cell
-to an added synaptic conductance or an additional Hodgkin-Huxley style
+A dynamic clamp experiment \cite{Robinson1993, Sharp1993} calculates
+the current to inject into a cell at every timepoint from the recorded
+membrane potential. The dynamic clamp thus permits recording the
+response of a real neuron to added simulated ionic conductances, for
+instance, a synaptic conductance or an additional Hodgkin-Huxley style
 voltage-sensitive membrane conductance. Here, we combine these
 possibilities to investigate the effect of an A-type potassium
 conductance \cite{Connor1971} on the response of a zebrafish spinal
@@ -480,7 +456,7 @@ gains).
 
 In the simplest case, $g$ is independent of $v$; for instance, when
 considering linear synaptic conductances \cite{Mitchell2003}. Here,
-we consider the addition of a simulated fast excitatory synaptic
+we first consider the addition of a simulated fast excitatory synaptic
 conductance to a real neuron. Simple models of synapses approximate
 the conductance waveform with an alpha function \cite{Carnevale2006}.
 \begin{code}
@@ -505,21 +481,26 @@ using the above template. Here, we will examine other conductances
 that modulate the response of the cell to synaptic excitation.
 
 Both the subthreshold properties of a cell and its spiking rate can be
-regulated by active ionic conductances. One way to examine this
-regulation of synaptic integration is to impose an additional active
-conductance on cells with dynamic clamp. In the Hodgkin-Huxley
-formalism for ion channels, the conductance depends on one or more
-state variables, for which the forward and backward rate constants
-depend on the membrane voltage. Here we show the equations for the
-activation gate of an A-type potassium current \cite{Connor1971},
-following \cite{Traub1991} (we use SI units and absolute voltages). The
-equations for inactivation are analogous.
+regulated by active ionic conductances, which can also be examined
+with the dynamic clamp. In the Hodgkin-Huxley formalism for ion
+channels, the conductance depends on one or more state variables, for
+which the forward and backward rate constants depend on the membrane
+voltage. Here we show the equations for the activation gate of an
+A-type potassium current \cite{Connor1971}, following \cite{Traub1991}
+(we use SI units and absolute voltages). The equations for
+inactivation are analogous.
 
 We write the forward and backward rates as functions of the membrane voltage
-\begin{code}
-alphaa = \v->  20*(-46.9-v*1000)/(exp ((-46.9-v*1000)/10) -1)
-betaa = \v->   17.5*(v*1000+19.9)/(exp ((v*1000+19.9)/10) -1)
-\end{code}
+\begin{tabbing}
+\qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
+${\alpha_a\mathrel{=}\lambda \Varid{v}\to \frac{\mathrm{20}\!\cdot\!(\mathbin{-}\mathrm{46.9}\mathbin{-}\Varid{v}\!\cdot\!\mathrm{1000})}{\Varid{exp}\;\frac{\mathbin{-}\mathrm{46.9}\mathbin{-}\Varid{v}\!\cdot\!\mathrm{1000}}{\mathrm{10}}\mathbin{-}\mathrm{1}}}$\\
+${\beta_a\mathrel{=}\lambda \Varid{v}\to \frac{\mathrm{17.5}\!\cdot\!(\Varid{v}\!\cdot\!\mathrm{1000}\mathbin{+}\mathrm{19.9})}{\Varid{exp}\;\frac{\Varid{v}\!\cdot\!\mathrm{1000}\mathbin{+}\mathrm{19.9}}{\mathrm{10}}\mathbin{-}\mathrm{1}}}$
+\end{tabbing}
+%
+%\begin{code}
+%alphaa = \v->  20*(-46.9-v*1000)/(exp ((-46.9-v*1000)/10) -1)
+%betaa = \v->   17.5*(v*1000+19.9)/(exp ((v*1000+19.9)/10) -1)
+%\end{code}
 
 The time-varying state of the activation gate is given by a
 differential equation. We use the notation |D x = sopen f
@@ -542,20 +523,15 @@ which is added to the signal |i| defined above that drives the current
 command, completing the definition of this experiment. 
 
 Figure 3A and 3B shows the voltage response to a unitary synaptic
-conductance and a train of synaptic inputs, respectively, with
-|gmaxk| ranging from 0 to 100 nS. A large A-type membrane conductance
-decreases the amplitude of the EPSP, as expected, and decreases the
-number of spikes in response to the injection of an identical synaptic
-conductance waveform.
-
-By varying the value of |rate|, we can examine the input-output
-relationship of the neuron by measuring the frequency of postsynaptic
-spikes. First, spikes were detected from the first derivative of the
-|v| signal with
+conductance and a train of synaptic inputs, respectively, with |gmaxk|
+ranging from 0 to 100 nS. By varying the value of |rate|, we can
+examine the input-output relationship of the neuron by measuring the
+frequency of postsynaptic spikes. Spikes were detected from the first
+derivative of the |v| signal with
 \begin{code}
 spike = tag () ((\v'->v'>vth') ?? D v)
 \end{code}
-and the spike frequency calculated with the |frequncyDuring| function.
+and the spike frequency calculated with the |frequencyDuring| function.
 This relationship between the postsynaptic spike frequency and the
 simulated synaptic input |rate| is plotted in Figure 3C for four
 different values of |gmaxk|. 

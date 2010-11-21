@@ -15,3 +15,8 @@ cover:
 suppl:
 	lhs2TeX --math -o supplement.tex supplement.lhs
 	pdflatex supplement
+
+diff:
+	~/tnutils/Tex2One paper >paper_cuts.tex
+	latexdiff paper_nocuts.tex paper_cuts.tex >paper_diff.tex
+	pdflatex paper_diff.tex

@@ -1,0 +1,1327 @@
+\documentclass[11pt]{article}
+%% ODER: format ==         = "\mathrel{==}"
+%% ODER: format /=         = "\neq "
+%
+%
+\makeatletter
+\@ifundefined{lhs2tex.lhs2tex.sty.read}%
+  {\@namedef{lhs2tex.lhs2tex.sty.read}{}%
+   \newcommand\SkipToFmtEnd{}%
+   \newcommand\EndFmtInput{}%
+   \long\def\SkipToFmtEnd#1\EndFmtInput{}%
+  }\SkipToFmtEnd
+
+\newcommand\ReadOnlyOnce[1]{\@ifundefined{#1}{\@namedef{#1}{}}\SkipToFmtEnd}
+\usepackage{amstext}
+\usepackage{amssymb}
+\usepackage{stmaryrd}
+\DeclareFontFamily{OT1}{cmtex}{}
+\DeclareFontShape{OT1}{cmtex}{m}{n}
+  {<5><6><7><8>cmtex8
+   <9>cmtex9
+   <10><10.95><12><14.4><17.28><20.74><24.88>cmtex10}{}
+\DeclareFontShape{OT1}{cmtex}{m}{it}
+  {<-> ssub * cmtt/m/it}{}
+\newcommand{\texfamily}{\fontfamily{cmtex}\selectfont}
+\DeclareFontShape{OT1}{cmtt}{bx}{n}
+  {<5><6><7><8>cmtt8
+   <9>cmbtt9
+   <10><10.95><12><14.4><17.28><20.74><24.88>cmbtt10}{}
+\DeclareFontShape{OT1}{cmtex}{bx}{n}
+  {<-> ssub * cmtt/bx/n}{}
+\newcommand{\tex}[1]{\text{\texfamily#1}}	% NEU
+
+\newcommand{\Sp}{\hskip.33334em\relax}
+
+\newlength{\lwidth}\setlength{\lwidth}{4.5cm}
+\newlength{\cwidth}\setlength{\cwidth}{8mm} % 3mm
+
+\newcommand{\Conid}[1]{\mathit{#1}}
+\newcommand{\Varid}[1]{\mathit{#1}}
+\newcommand{\anonymous}{\kern0.06em \vbox{\hrule\@width.5em}}
+\newcommand{\plus}{\mathbin{+\!\!\!+}}
+\newcommand{\bind}{\mathbin{>\!\!\!>\mkern-6.7mu=}}
+\newcommand{\rbind}{\mathbin{=\mkern-6.7mu<\!\!\!<}}% suggested by Neil Mitchell
+\newcommand{\sequ}{\mathbin{>\!\!\!>}}
+\renewcommand{\leq}{\leqslant}
+\renewcommand{\geq}{\geqslant}
+\newcommand{\NB}{\textbf{NB}}
+\newcommand{\Todo}[1]{$\langle$\textbf{To do:}~#1$\rangle$}
+
+\EndFmtInput
+\makeatother
+%
+
+
+
+
+
+
+
+%%format ?? = "\,\text{?`}\!\text{?}"
+
+\usepackage[a4paper, top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm]{geometry}
+\usepackage{amsmath, amsthm, amssymb}
+\usepackage{setspace} 
+\usepackage{verbatim} 
+\usepackage[final]{pdfpages}
+\usepackage[super, comma]{natbib}
+%\usepackage{citesupernumber}
+
+\usepackage{graphicx}
+%\linenumbers
+%\usepackage{epsfig}
+\doublespacing \title{A formal mathematical framework for
+  physiological observations, experiments and analyses} 
+
+\author{Thomas A. Nielsen, Henrik Nilsson and Tom Matheson}
+
+\begin{document}
+\begin{titlepage}
+
+\vspace{50 mm}
+\begin{center}{\LARGE {\bf A formal mathematical framework for
+  physiological observations, experiments and analyses}}
+\end{center}
+\vspace{50 mm}
+
+\begin{center}{\large Thomas A. Nielsen$^{1}$, Henrik Nilsson$^2$ and Tom Matheson$^{1*}$}
+\end{center}
+\vspace{50 mm}
+
+\begin{flushleft}
+1. Department of Biology, University of Leicester, University Road, Leicester LE1 7RH
+
+2. School of Computer Science, University of Nottingham, Jubilee Campus, Nottingham NG8 1BB
+\vspace{50 mm}
+
+$^*$ To whom correspondence should be sent (tm75@le.ac.uk)
+
+\end{flushleft}
+
+\end{titlepage}
+
+\section*{Abstract}
+
+Experiments can be complex and produce large volumes of heterogeneous
+data, which makes their execution, analysis, independent replication
+and meta-analysis difficult. Here, we propose a mathematical model for
+experimentation and analysis in physiology that addresses these
+problems. First, we define a structure for representing physiological
+observations. This structure emphasises the critical role of time in
+physiology, but is flexible, in that it can carry information of any
+type. Thus, we define an ontology of physiological quantities that can
+describe a wide range of observations. Second, we show that
+experiments themselves can be composed from time-dependent quantities,
+and be expressed as purely mathematical equations that can be
+manipulated algebraically. Our framework is concise, allowing entire
+experiments to be defined unambiguously in a few equations. To
+demonstrate the practicality and versatility of our approach, we show
+the full equations for two non-trivial implemented and analysed
+experiments describing visually stimulated neuronal responses and
+dynamic clamp of vertebrate neurons. The brevity of these definitions
+illustrates the power of our approach, and we discuss its implications
+for neuroinformatics-based research.
+
+\pagebreak
+
+\section*{Introduction}
+
+Reproducibility is a cornerstone of the scientific method. As
+scientific experiments and analysis are become increasingly complex,
+reliant on computer code and produce larger volumes of data, the
+feasibility of independent verification and replication has -- in
+practice -- been undermined. Full disclosure of raw data and code for
+experiments and analysis does not guarantee reproducibility.  For
+instance, in only 8 out of 16 studies subject to this requirement and
+published in \emph{Nature Genetics} could the findings be replicated
+at all, and in only 2 of those, without discrepancies
+\cite{Ioannidis2008} (see also \cite{Baggerly2009,
+  McCullough2007}). It is often not realistic to verify that computer
+code used in analyses correctly implements an intended mathematical
+algorithm, yet errors can undermine the conclusions of a
+large body of work \cite{Chang2006}.  In addition, primary data
+sharing is standard in areas of high-throughout biology, but
+not in fields that produce heterogeneous data \cite{Gardner2005},
+further undermining independent validation.  Indeed, the combination
+of bias, human error, and unverified software, has led to the
+suggestion that many --- perhaps most --- published research findings
+contain serious errors \cite{Ioannidis2005, Merali2010}.
+
+The problems outlined above suggest that it is worth investigating a
+unified and transparent formalism for communication, validation, and
+automation of observations, experiments and analyses. We argue that
+some of the above problems can be mitigated by a formalism that
+% \emph{at once}: 
+\emph{simultaneously}: (i) introduces a system of categorisation
+directly relevant to the scientific field, such that scientists can
+define experiments and reason about observations in familiar terms,
+(ii) is machine executable, therefore unambiguous and practically
+useful, and (iii) is composed only of terms that directly correspond
+to mathematical entities, enabling, unlike in conventional programming
+languages, algebraic manipulation and certification of the experiments
+and analysis procedures.  Experiments are difficult to formalise in
+terms of relations between mathematical objects because they produce
+heterogeneous data \cite{Tukey1962}, and because they interact with
+the physical world. In creating a mathematical framework for
+experiments, we take advantage of progress in embedding side effects
+\cite{PeytonJones2002, Roy2004, Wadler1995}, such as input and output,
+into equational programming languages; that is, languages that can
+only evaluate mathematical functions \cite{Church1941}.
+
+Here, we define a formal framework for physiology
+that satisfies the above criteria. We show that there
+is a large conceptual overlap between physiological experimentation
+and Functional Reactive Programming (FRP\cite{Elliott1997,
+  Nilsson2002}), a concise and purely functional formulation of
+time-dependent reactive computer programs. Consequently, physiological
+experiments can be concisely defined in the vocabulary of
+\emph{signals} and \emph{events} introduced by FRP. Such a language
+does not describe the physical components of biological organisms. It
+has no concept of networks, cells or proteins. Instead it describes
+the observation and calculation of the mathematical objects that
+constitute physiological evidence (``observations'').
+
+Our framework provides:
+
+(i) An explicitly defined ontology of physiological observations. We
+outline a flexible but concisely defined structure for physiological
+quantities.  Physiological databases have not been widely adopted,
+unlike in bioinformatics or anatomy \cite{Herz2008,
+  Amari2002}. Existing candidates support only a few different kinds
+of data \cite{Jessop2010}, are unstructured \cite{Teeters2008},
+based on a large number of concepts \cite{Frishkoff2009}, or represent
+facts without their supporting evidence \cite{Katz2010}.
+%despite many attempts \cite{Katz2010, , Gardner2004, Jessop2010}.  
+We suggest that a flexible and simple ontology can remedy some of the
+structural shortcomings\cite{Gardner2005, Amari2002} of existing
+databases and thus facilitate the sharing of data and meta-data
+\cite{Insel2003}.
+
+(ii) A concise language for describing complex experiments and
+analysis procedures in physiology. Experimental protocols can be
+communicated unambiguously, highlighting differences between studies
+and facilitating replication and meta-analysis. Our language thus
+describes the the data provenance
+\cite{Pool2002,MacKenzie-Graham2008, VanHorn2009} for experiments
+with that can be fully executed by a computer. By construction,
+\emph{any} observation can be defined in a single equation that must
+include post-acquisition processing and censure.
+
+(iii) A new approach to validating scientific inference
+\cite{Editors2003, Editors2010}. First, a concise language with a
+clear mathematical denotation can be verified manually. Second, by
+inspecting an experiment definition, \emph{automated} decision procedures
+could verify certain statements about experiments that indicate sound
+scientific practice, such as consistent units of measurement
+\cite{Kennedy1997} and correct error propagation \cite{Taylor1997}.
+
+(iv) A practical tool that is powerful and generalises to complex and
+multi-modal experiments. We have implemented our framework as a new
+programming language and used it for non-trivial neurophysiological
+experiments and data analyses. This language can concisely express and
+run experiment with stimuli defined by, for instance, differential
+equations or complex animations.
+
+We first describe the theory of \emph{simple types}
+\cite{Pierce2002, Hindley2008} and define three types that can represent a wide
+range of physiological evidence. We then present a new formal and
+machine-executable language, the \emph{calculus of physiological
+  evidence} (CoPE), for defining observations and transformations of
+such evidence. We show that two very different experiments from
+neurophysiology can be formally defined, run and analysed in our
+calculus. In the first example, we elicit and measure \emph{in vivo}
+spike train responses to visual stimulation in locusts. In the second
+example, we use the dynamic clamp technique to examine the impact of
+an active potassium conductance on synaptic integration in zebrafish
+neurons recorded \emph{in vivo}. These protocols are defined
+unambiguously using only a handful of equations in CoPE.
+
+
+\section*{Results}
+
+To introduce the calculus of physiological evidence, we must first
+define some terminology and basic concepts. We assume that \emph{time}
+is global and is represented by a real number, as in classical
+physics. An \emph{experiment} is an interaction between an observer
+and a specific number of organisms during a defined time period. An
+experiment consists of one or more \emph{trials}: non-overlapping time
+periods during which the observer is running a \emph{program} ---
+instructions for manipulating the environment and for constructing
+mathematical objects, the \emph{observations}. The \emph{analyses} are
+further programs to be run after or during the experiment that
+construct other mathematical objects pertaining to the experiment.
+
+\subsubsection*{Type theory for physiological evidence}
+
+What kinds of mathematical objects can be used as physiological
+evidence? We answer this question within simple type theory
+\cite{Pierce2002, Hindley2008}, which assigns to every object a \emph{type}. These
+types include base types, such as integers \ensuremath{\mathbb{Z}}, real numbers
+\ensuremath{\mathbb{R}}, text strings \ensuremath{\Conid{String}} and the Boolean type \ensuremath{\Conid{Bool}} with the two
+values \ensuremath{\Conid{True}} and \ensuremath{\Conid{False}}. In addition, types can be arbitrarily
+combined in several ways, such that if \ensuremath{\alpha} and \ensuremath{\beta} are types,
+the type \ensuremath{\alpha\;\!\!\times\!\!\;\beta} is the pair formed by one element of
+\ensuremath{\alpha} and one of \ensuremath{\beta}; \ensuremath{[\mskip1.5mu \alpha\mskip1.5mu]} is a list of \ensuremath{\alpha}s; and \ensuremath{\alpha\to \beta} is the type of functions that calculate a value in the type
+\ensuremath{\beta} from a value in \ensuremath{\alpha}. Here, we use the convention that Greek
+letters stand for type variables, which can be substituted by any
+concrete type, such as a base type or a type combination. Types can be
+defined with references to arbitrary types; for instance,
+\ensuremath{\Varid{withIntegers}\;\alpha\mathrel{=}[\mskip1.5mu \mathbb{Z}\;\!\!\times\!\!\;\alpha\mskip1.5mu]} denotes for any type
+\ensuremath{\alpha} the list of pairs of integers and \ensuremath{\alpha}s. The hole \ensuremath{\alpha}
+in the type definition can then be filled in to form a concrete type,
+for instance \ensuremath{\Varid{withIntergers}\;\Conid{String}}. The ability to build flexible
+type schemata in this manner and define generic functions over them
+\cite[``parametric polymorphism'';][]{Pierce2002} is essential in our
+calculus for representing a large range of physiological quantities
+with a small number of concepts, as we show in this section.
+
+We distinguish three type schemas in which physiological evidence can
+be values. These differ in the manner in which measurements appear in
+a temporal context, but which all derive their flexibility from
+parametric polymorphism. \emph{Signals} capture the notion of
+quantities that change in time. In physiology, observed time-varying
+quantities often represent scalar quantities, such as membrane
+voltages or muscle force, but there are also examples of non-scalar
+signals such as the two- or three dimensional location of an animal or
+of a body part. Here, we generalise this notion such that for
+\emph{any} type \ensuremath{\alpha}, a signal of \ensuremath{\alpha} is defined as a
+\emph{function} from time to a value in \ensuremath{\alpha}, written formally as:
+\begin{tabbing}
+\qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
+${\Conid{Signal}\;\alpha\mathrel{=}\Conid{Time}\to \alpha}$
+\end{tabbing}Signals can thus take a new value for every different time point and
+represent quantities that vary continuously, although these values may
+be piecewise constant. For instance, the output of a differential
+voltage amplifier might be captured in a \ensuremath{\Conid{Signal}\;\mathbb{R}}.
+
+Not every physiological observation denotes continuous
+change. Some measurements are derived from an instant in time --- such
+as the peak amplitude of an electrical potential --- and others pertain
+to an extended period of time. These qualitatively different classes
+of observations are represented by \emph{events} and \emph{durations},
+respectively. 
+
+To model discrete occurrences, FRP defines events as a list of pairs
+of time points and a value in a type \ensuremath{\alpha}, called the ``tag'':
+\begin{tabbing}
+\qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
+${\Conid{Event}\;\alpha\mathrel{=}[\mskip1.5mu \Conid{Time}\;\!\!\times\!\!\;\alpha\mskip1.5mu]}$
+\end{tabbing}For example, an event could be constructed from a scalar signal such
+that the time of the largest amplitude of a signal is associated with
+the signal amplitude at that time point. Events that do not have a
+value of interest to associate with the time point at which it
+occurred, can be tagged with the unit type \ensuremath{()} which has only one
+element (that is, no information). Events can therefore represent
+both measurements where the principal information is \emph{when}
+something happened, or where it concerns \emph{what} happened.
+
+A third kind of information describes the properties of whole time
+periods. We define a duration of type \ensuremath{\alpha} as a set of triples, of
+which the first two components denote a start time and an end
+time. The last component is again a value of any type \ensuremath{\alpha}:
+\begin{tabbing}
+\qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
+${\Conid{Duration}\;\alpha\mathrel{=}[\mskip1.5mu \Conid{Time}\;\!\!\times\!\!\;\Conid{Time}\;\!\!\times\!\!\;\alpha\mskip1.5mu]}$
+\end{tabbing}Durations are useful for manipulating information about a whole trial
+or about an entire experiment, but could also be observations in their
+own right, such as open times of individual ion channels, or periods
+in which activity of a system exceeds a set threshold (e.g during
+bursts of action potentials). We have used durations to hold
+information about an entire experiment, for instance a session
+identifier or the animal strain. In that case, the duration set
+contains a single element, with the start and end of the experiment as
+start and end time, respectively. Lastly, durations could be used for
+information that spans multiple trials but not an entire experiment
+--- for instance, the presence or absence of a drug.
+
+Since signals, events and durations can be instantiated for any type,
+they form a simple but flexible framework for representing many
+physiological quantities. We show a list of such examples primarily
+drawn from neurophysiology in Table 1. These quantities are all
+representable by signals, events or durations but with different
+instantiations of the free type variable. A framework in any type
+system that did not support parametric polymorphism would have to
+represent these quantities fundamentally differently, thus removing
+the possibility of re-using common analysis procedures. Although
+parametric polymorphism is conceptually simple and the distinctions we
+are introducing are intuitive, common biomedical ontologies
+\emph{cannot} accommodate these definitions. 
+
+We now proceed to show how to build programs that calculate with
+signals and events; then we show how annotations allow these programs
+to interact with external systems and measure their behaviour.
+
+\subsubsection*{Calculating with signals and events}
+
+From direct observations, one often needs to process events and
+signals, create new events from signals, filter data and calculate
+statistics. Here, we formulate these transformations in terms of the
+lambda calculus \cite{Church1941}, a family of formal languages for
+computation based solely on evaluating functions.  These languages,
+unlike conventional programming languages, retain an important
+characteristic of mathematics: a term can freely be replaced by
+another term with identical meaning.
+% HN 2010-09-30: Always "substitute for"
+This property (referential transparency\cite{Whitehead1927})
+% HN 2010-11-10: "enables" is a bit too strong. For example, it is certainly
+% *possible* to reason formally about imperative code.
+% enables
+facilitates algebraic manipulation and reasoning about the programs
+\cite{Bird1996}. The lambda calculus allows functions to be used as
+first class entities: that is, they can be referenced by variables and
+passed as arguments to other functions (which then become higher-order
+functions). On the other hand, the lambda calculus excludes changes in
+the value of variables or global states. These properties together
+mean that the lambda calculus combines verifiable correctness with a
+high level of abstraction, leading to programs that are in practise
+more concise \cite{Hughes1989} than those written in conventional
+programming languages. The lambda calculus or variants thereof has
+been used as a foundation for mathematics \cite{Martin-Lof1985},
+classical \cite{Sussman2001} and quantum \cite{Karczmarczuk2003}
+mechanics, evolutionary biochemistry \cite{Fontana1994} and
+programming languages \cite{McCarthy1960}.
+
+In the lambda calculus, calculations are performed by function
+abstraction and application. \ensuremath{\lambda \Varid{x}\to \Varid{e}} denotes the function with
+argument \ensuremath{\Varid{x}} and body \ensuremath{\Varid{e}} (i.e., \ensuremath{\Varid{e}} is an expression, in which the
+variable \ensuremath{\Varid{x}} is in scope, that defines the function), and \ensuremath{\Varid{f}\;\Varid{e}} the
+application of function \ensuremath{\Varid{f}} to the
+expression \ensuremath{\Varid{e}} (i.e., what more conventionally would be written
+$f(e)$). For instance, the function \ensuremath{\Varid{add2}\mathrel{=}\lambda \Varid{x}\to \Varid{x}\mathbin{+}\mathrm{2}} adds two to its
+argument; hence \ensuremath{\Varid{add2}\;\mathrm{3}\mathrel{=}(\lambda \Varid{x}\to \Varid{x}\mathbin{+}\mathrm{2})\;\mathrm{3}\mathrel{=}\mathrm{3}\mathbin{+}\mathrm{2}} by substituting arguments
+in the function body. In addition, we define a number of constructs to
+improve the readability of the language. However, they are not
+\emph{necessary} as they can be defined in terms of function
+application and abstraction (and, depending on the exact version of
+the calculus, some additional primitive functions). The expression \ensuremath{\textrm {if}\;\Varid{p}\;\textrm {then}\;e_1\;\textrm {else}\;e_2} equals \ensuremath{e_1} if \ensuremath{\Varid{p}} evaluates to \ensuremath{\Conid{True}} and \ensuremath{e_2}
+if it evaluates to \ensuremath{\Conid{False}}.  The construct \ensuremath{\textrm {let}\;\Varid{x}\mathrel{=}e_1\;\textrm {in}\;e_2} defines
+a variable \ensuremath{\Varid{x}} bound to the value of the expression \ensuremath{e_1} that scopes
+over \ensuremath{e_2} as well as \ensuremath{e_1} (thus allowing recursive definitions).
+
+We now present the concrete syntax for a new calculus, that we call
+the \emph{calculus of physiological evidence} (CoPE), defined by
+extending the lambda calculus with notions of signals and events,
+along with the necessary constructs to define and manipulate such
+entities. This calculus borrows some concepts from earlier versions of
+FRP, but it emphasises signals and events as mathematical objects in
+themselves, rather than as control structures for creating reactive
+systems \cite{Elliott1997, Nilsson2002}. Specifically, the new calculus
+encompass a relaxed notion of \emph{causality}. The syntax and
+implementation strategy is therefore different from FRP.
+
+Let the construct \ensuremath{\{\!:\!\;\Varid{e}\;\!:\!\}} denote a signal with the value of
+the expression \ensuremath{\Varid{e}} at every time point, and let the construct \ensuremath{\langle:\Varid{s}:\rangle} denote the current value of the signal \ensuremath{\Varid{s}} in the temporal context
+created by the surrounding \ensuremath{\{\!:\!} \ldots \ensuremath{\!:\!\}} braces. For
+instance,
+\begin{tabbing}
+\qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
+${\{\!:\!\;\mathrm{1}\;\!:\!\}}$
+\end{tabbing}denotes the signal that always has the value 1; and the function \ensuremath{\Varid{smap}}
+defined as
+\begin{tabbing}
+\qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
+${\Varid{smap}\mathrel{=}\lambda \Varid{f}\to \lambda \Varid{s}\to \{\!:\!\;\Varid{f}\langle:\Varid{s}:\rangle\!:\!\}}$
+\end{tabbing}transforms, for any two types \ensuremath{\alpha} and \ensuremath{\beta}, a signal of \ensuremath{\alpha}
+into a signal of \ensuremath{\beta} by applying the function \ensuremath{\Varid{f}} of type \ensuremath{\alpha\to \beta} to the value of the signal at every time point.
+
+Further primitives are needed to form signals that depend on the
+history of other signals. For instance, the differential operator \ensuremath{\Conid{D}}
+differentiates a real-valued signal with respect to time, such that 
+\ensuremath{\Conid{D}\;\Varid{s}} denotes its first derivative and \ensuremath{\Conid{D}\;\Conid{D}\;\Varid{s}} the second derivative of the
+signal \ensuremath{\Varid{s}}. Likewise, the differential operator can appear on the left
+side of a definition, in which case it introduces a differential
+equation by pattern matching 
+% HN 2010-11-10: This placeholder has been here a while. I don't think
+% a formal reference is necessary: "pattern matching" should be sufficiently
+% self-evident for the use we make of it here.
+% (REF)
+on the derivative of a signal (see example 2 below).
+
+In addition, the expression \ensuremath{\Varid{delay}\;\Varid{s}} denotes the signal that is
+delayed by a short period, in practice a time step or the sampling
+period. Other FRP implementations have other primitives, in particular
+a \ensuremath{\Varid{switch}} statement that changes the definition of a signal depending
+on the occurrence of specific events. We have not needed such a
+construct in the experiments described here.
+
+Events and durations are defined as lists and can be manipulated and
+constructed as such. Thus, a large number of transformations can be
+defined with simple recursive equations including filters, folds and
+scans familiar from functional programming languages
+\cite{Hughes1989}.
+
+In addition, we have added a special construct to detect events from
+existing signals. For instance, a threshold detector generates an
+occurrence of an event whenever the value of a signal exceeds a set
+level (and then not again before the value of the signal has decreased
+below that level and then reached it again).  Here, we generalise the
+threshold detector slightly by taking a predicate (i.e., a function of
+type \ensuremath{\alpha\to \Conid{Bool}}) on the instantaneous values of the signal and
+generating an event whenever the predicate becomes true using the \ensuremath{\,??\,}
+operator. For instance,
+\begin{tabbing}
+\qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
+${(\lambda \Varid{x}\to \Varid{x}\mathbin{>}\mathrm{5})\,??\,\Varid{s}}$
+\end{tabbing}denotes the event that occurs whenever the value of the signal \ensuremath{\Varid{s}}
+satisfies the predicate \ensuremath{\lambda \Varid{x}\to \Varid{x}\mathbin{>}\mathrm{5}}, i.e. is greater than 5, after having been
+smaller than 5 for at least a short period of time, in practice the
+time step. The expression \ensuremath{(\lambda \Varid{x}\to \Varid{x}\mathbin{>}\mathrm{5})\,??\,\Varid{s}} thus defines a threshold
+detector restricted to threshold crossings with a positive slope.
+
+This small number of special constructors, along with the lambda
+calculus and the list semantics of events and durations, have allowed
+us to construct a small ``standard library'' of analysis procedures
+for physiology. Table S1 in the supplementary information details the
+types and names of some of the functions in this library; Table S2 has
+an informal overview of the syntax of CoPE.
+
+% \subsubsection*{Observing signals and events}
+\subsubsection*{Interacting with the physical world}
+
+In the previous examples, signals, events and durations exist as purely
+mathematical objects. To describe experiments, however, it must also
+be possible to observe particular values from real-world systems, and to
+create controlled stimuli to perturb these systems. For this purpose, we
+introduce \emph{sources} and \emph{sinks} that act as a bridge between 
+purely mathematical equations and the physical world.
+
+A source is essentially an input port through which the value of some external
+variable can be observed during the course of an experiment. Depending on the
+nature of the variable, whether it can vary or will remain constant throughout
+an experiment, the observation yields a signal or single value, respectively.
+A typical example of a source is an analog-to-digital converter measuring some
+experimental variable. Observing this over the duration of an experiment
+yields a signal.
+
+In more detail, the sources are parametrised, thus denoting a \emph{family}
+of sources with the parameter(s) identifying a specific instance. The
+construct
+\begin{tabbing}
+\qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
+${\Varid{identifier}\,<\!\!\!*\,\,\Varid{source}\;\Varid{parameter}}$
+\end{tabbing}binds the value or signal resulting from the observation of the the
+parametrised \emph{source} during the course of an experiment to the
+variable \emph{identifier}. Note that, in the case of a signal, the
+variable is bound to the \emph{whole} signal. For a concrete example,
+the following code defines a simple experiment:
+\begin{tabbing}
+\qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
+${\Varid{v}\,<\!\!\!*\,\,\Conid{ADC}\;\mathrm{0}}$
+\end{tabbing}This describes the observation of the voltage signal on channel 0 of an
+analog-to-digital converter, binding it to the variable \ensuremath{\Varid{v}}.
+
+What happens if the same source is observed more than once in a description of
+an experiment? If the source refers to a single, physical
+input port such as a channel of an analog-to-digital converter, the result
+will necessarily be the same, because the same entity is being observed within a
+single run of the experiment. Such sources are called \emph{idempotent}.
+Idempotency ensures that separate experiments referring to a common external
+variable can be composed easily with a predictable outcome. However, there are
+other kinds of sources, notably random sources as discussed below, where
+idempotency is \emph{not} desirable. Each occurrence of a non-idempotent
+source is thus a separate, independent source, even if the name of the
+source and the parameters happen to be the same.
+
+In addition to making appropriate observations, an experiment may also
+involve a perturbation of the experimental preparation. In the context
+of a physiology experiment, the manipulation could to control the
+amount of electric current injected into a cell. Alternatively, in one
+of the examples described below, non-numeric signals are used to
+generate visual stimuli on a computer screen. Such manipulations
+require the opposite of a source, namely an output port connected to a
+physical device capable of effecting the desired perturbation. Such
+a port is called a \emph{sink}. The value at the output at any point
+in time during an experiment is defined by connecting the
+corresponding sink to a signal.  This is done through the the
+following construct, mirroring the source construct discussed above:
+\begin{tabbing}
+\qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
+${\Varid{signal}\,\,*\!\!\!>\,\Varid{sink}\;\Varid{parameter}}$
+\end{tabbing}{}
+
+As a concrete example, suppose we wish to output a sinusoidal stimulus. We
+first construct a time-varying signal describing the desired shape of the
+stimulus. In this case, we start with a clock signal that counts the number of
+seconds since the experiment started, which can be read from a clock source:
+\begin{tabbing}
+\qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
+${\Varid{seconds}\,<\!\!\!*\,\,\Varid{clock}\;()}$
+\end{tabbing}(There is only one clock, meaning that the parameter is of the type unit \ensuremath{()}
+that only has one element, also written \ensuremath{()}.) The sine wave can now be
+defined as:
+\begin{tabbing}
+\qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
+${\Varid{sineWave}\mathrel{=}\Varid{smap}\;\Varid{sin}\;\Varid{seconds}}$
+\end{tabbing}To send the \ensuremath{\Varid{sineWave}} signal to channel channel 0 of a digital-to-analog
+converter, we then write
+\begin{tabbing}
+\qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
+${\Varid{sineWave}\,\,*\!\!\!>\,\Conid{DAC}\;\mathrm{0}}$
+\end{tabbing}{}
+
+What happens if the same \emph{sink} is defined more than once? One could
+imagine combining the defining signals in various ways. For example, in the
+case of a simple numerical signal, they could simply be added, mirroring
+superposition of waves in the physical world. However, as our signals are more
+general, it is not always clear what the appropriate notion of ``addition''
+should be. For example, if we have signals carrying images, and we wish to
+output these to a single graphical display, it is likely that we also need to
+describe aspects such as which one should be ``on top''. Thus, for flexibility
+and clarity, combination of output signals has to be described explicitly, and
+it is an error to define a sink more than once in an experimental description.
+
+There are also operations in experiments that are not related to real-world
+observation or to purely functional computation. One example is sampling from
+probability distributions. We have implemented sources corresponding to common
+parametrised probability distributions, such that experiments can sample
+values from the distributions and use these values in computations or
+connect them to sinks. However, these sources are \emph{not} idempotent as it
+is important that there are no accidental correlations. Sharing of a single random
+signal, when needed, can also be described easily: just bind that signal to a
+variable as discussed above and the variable is used to refer to the signal
+instead of repeating the reference to the random source. In this more general
+view, sources and sinks bridge referentially transparent and non-transparent
+computations.
+
+% Sinks and sources are thus used to
+% link values, which have been or will be used in purely mathematical
+% expressions, to the real world. There are also operations in
+% experiments that are not related to real-world observation or to
+% purely functional computation --- for instance sampling from
+% probability distributions, which violates referentially transparancy
+% (if $rnd$ is a random number generator with an arbitratry distribution
+% parametrised by $\theta$, it is not in general the case that $ rnd
+% \theta + rnd \theta = 2*rnd \theta$). We have thus implemented sources
+% corresponding to common parametrised probability distributions, such
+% that experiments can sample values from these distributions and use
+% these values in computations or connect them to sinks. In this more
+% general view, sources and sinks bridge referentially transparent and
+% non-transparent computations.
+
+\subsubsection*{Example 1}
+
+Most animals can benefit from a mechanism for detecting and avoiding
+obstacles and predators. In addition, movement in social animals might
+be constrained by the need to avoid collisions with conspecifics. A
+common component in such species is a visual detector for looming
+objects. In locusts, a single neuron in each brain hemisphere, the
+Lobula Giant Movement Detector (LGMD), responds preferentially to
+looming stimuli \cite{Rind1992}. The response of the LGMD is
+invariant to manipulations of many aspects of the looming
+stimulus. For instance, the time of the peak firing
+rate with respect to the retinal angle of the looming stimulus, is
+insensitive to the colour, texture, size, velocity and azimuth of the
+approaching object when averaged over several approaches
+\cite{Gabbiani2001}.
+
+We have constructed several experiments in CoPE to record the response
+of LGMD to visual stimuli that simulate objects approaching
+with different velocities. To generate these stimuli, we augmented
+CoPE with primitive three-dimensional geometric shapes. Let the
+expression
+\begin{tabbing}
+\qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
+${\Varid{cube}\;\Varid{l}}$
+\end{tabbing}denote a cube located at the origin, with side length \ensuremath{\Varid{l}},
+\begin{tabbing}
+\qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
+${\Varid{translate}\;(\Varid{x},\Varid{y},\Varid{z})\;\Varid{s}}$
+\end{tabbing}the shape that results from translating the shape \ensuremath{\Varid{s}} by the
+vector \ensuremath{(\Varid{x},\Varid{y},\Varid{z})} and
+\begin{tabbing}
+\qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
+${\Varid{colour}\;(\Varid{r},\Varid{g},\Varid{b})\;\Varid{s}}$
+\end{tabbing}the shape identical to \ensuremath{\Varid{s}} except with the colour intensity red \ensuremath{\Varid{r}},
+green \ensuremath{\Varid{g}} and blue \ensuremath{\Varid{b}}. Additional constructors can be introduced for
+more complex stimuli, but these are sufficient for the experiments
+reported here. Since signals are polymorphic, they can carry not just
+numeric values but also shapes, so we represent visual stimuli as
+values in \ensuremath{\Conid{Signal}\;\Conid{Shape}}. The looming stimulus consists of a cube of
+side length l approaching a locust with constant velocity v. The
+time-varying distance from the locust to the cube in real-world
+coordinates is a real-valued signal:
+\begin{tabbing}
+\qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
+${\Varid{distance}\mathrel{=}\{\!:\!\;\Varid{v}\!\cdot\!(\langle:\Varid{seconds}:\rangle\mathbin{-}\mathrm{5})\;\!:\!\}}$
+\end{tabbing}
+The \ensuremath{\Varid{distance}} signal is the basis of shape-valued signal
+\ensuremath{\Varid{loomingSquare}} representing the approaching square:
+
+\begin{tabbing}
+\qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
+${\Varid{loomingSquare}\mathrel{=}}$\\
+${\hskip2.50em\relax\{\!:\!\;\Varid{colour}\;(\mathrm{0},\mathrm{0},\mathrm{0})\;}$\\
+${\hskip2.50em\relax\phantom{\{\!:\!\;\Varid{colour}\;\mbox{}}(\Varid{translate}\;(\mathrm{0},\mathrm{0},\langle:\Varid{distance}:\rangle)\;}$\\
+${\hskip2.50em\relax\phantom{\{\!:\!\;\Varid{colour}\;\mbox{}}\phantom{(\Varid{translate}\;\mbox{}}(\Varid{cube}\;\Varid{l}))\;\!:\!\}}$
+\end{tabbing}
+\ensuremath{\Varid{loomingSquare}} differs from conventional protocols
+\cite{Gabbiani2001} for stimulating the LGMD in that it describes an
+object that passes through the physical screen and the observer, and
+when displayed would thus disappear from the screen just before
+collision. In order not to evoke a large OFF response from the LGMD
+\cite{O'shea1976} immediately after simulated collision, the object
+is frozen in space as it reaches the plane of the surface onto which
+the animation is projected \cite{Hatsopoulos1995}. To achieve this
+effect, we define a new signal that has a lower bound of the distance
+from the eye to the visual display screen \ensuremath{z_{screen}}
+\begin{tabbing}
+\qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
+${\Varid{distance'}\mathrel{=}\{\!:\!\;\Varid{max}\;z_{screen}\;\,\langle:\Varid{distance}:\rangle\!:\!\}}$
+\end{tabbing}where \ensuremath{\Varid{max}\;\Varid{x}\;\Varid{y}} returns the larger of the two numbers \ensuremath{\Varid{x}} and
+\ensuremath{\Varid{y}}. \ensuremath{\Varid{loomingSquare'}} is identical to \ensuremath{\Varid{loomingSquare}} except for the
+use of \ensuremath{\Varid{distance'}}.
+
+Finally, \ensuremath{\Varid{loomingSquare'}} is connected to a screen signal sink that
+represents a visual display unit capable of projecting
+three-dimensional shapes onto a two-dimensional surface.
+
+\begin{tabbing}
+\qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
+${\Varid{loomingSquare'}\,\,*\!\!\!>\,\Varid{screen}\;()}$
+\end{tabbing}
+The response of the LGMD neuron to the looming stimulus can be
+recorded from the main longitudinal nerves (``connectives'') in the
+ventral nerve cord. Although the axon of LGMD does not itself run in
+this connective, LGMD reliably activates the descending contralateral
+movement detector (DCMD) with a strong synaptic connection, such that
+spikes in the DCMD follow LGMD spikes one to one
+\cite{O'Shea1974}. The DCMD runs in the connective and it is this
+signal that we record. Extracellular hook electrodes wrapped around
+one connective can record activity in the DCMD, which produces the
+largest amplitude action potential in such recordings. In our
+experiments, these analogue signals were amplified, filtered (see
+methods) and converted to a digital signal:
+
+\begin{tabbing}
+\qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
+${\Varid{voltage}\,<\!\!\!*\,\,\Conid{ADC}\;\mathrm{0}}$
+\end{tabbing}
+\ensuremath{\Varid{loomingSquare'}} and \ensuremath{\Varid{voltage}} thus define a single approach and the
+recording of the elicited response. This approach was repeated every 4
+minutes, with different values of $\frac{l}{|v|}$. Figure 1 shows
+$\frac{l}{|v|}$ as values with type \ensuremath{\Conid{Duration}\;\mathbb{R}}, together with the
+\ensuremath{\Varid{distance'}} and \ensuremath{\Varid{voltage}} signals for the first five trials of one
+experiment on a common time scale.
+
+The simplest method for detecting spikes from a raw voltage trace is
+to search for threshold crossings, which works well in practise for
+calculating DCMD activity from recordings of the locust connectives
+\cite{Gabbiani2001}. If the threshold voltage for spike detection is
+\ensuremath{v_{th}}, the event \ensuremath{\Varid{spike}} can be calculated with
+\begin{tabbing}
+\qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
+${\Varid{spike}\mathrel{=}(\lambda \Varid{v}\to \Varid{v}\mathbin{>}v_{th})\,??\,\Varid{voltage}}$
+\end{tabbing}Which yields a value of type \ensuremath{\Conid{Event}\;\mathbb{R}}, where the tag of each event
+holds the voltage at which the threshold was crossed. The value of
+this tag is likely to be close to the threshold \ensuremath{v_{th}} and holds little
+relevant information. Therefore, replacing each tag with the unit type
+\ensuremath{()}, such that \ensuremath{\Varid{spike}} has type \ensuremath{\Conid{Event}\;()} is a more meaningful
+representation of the spike train. The function \ensuremath{\Varid{tag}} conveniently
+replaces every tag in some events with a fixed value.
+\begin{tabbing}
+\qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
+${\Varid{spike}\mathrel{=}\Varid{tag}\;()\;((\lambda \Varid{v}\to \Varid{v}\mathbin{>}v_{th})\,??\,\Varid{voltage})}$
+\end{tabbing}so that \ensuremath{\Varid{spike}} has type \ensuremath{\Conid{Event}\;()}. This event is displayed on the
+common time scale in Figure 1. The top row displays the spike rate
+histogram
+\begin{tabbing}
+\qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
+${H_{spike}\mathrel{=}}$\\
+${\phantom{H_{spike}\mbox{}}\{\!:\!\;\Varid{length}\;(\Varid{filter}\;(\Varid{between}\langle:\Varid{delay}\;\Varid{seconds}:\rangle\langle:\Varid{seconds}:\rangle\mathbin{\circ}\Varid{fst})\;}$\\
+${\phantom{H_{spike}\mbox{}}\phantom{\{\!:\!\;\Varid{length}\;(\Varid{filter}\;\mbox{}}\Varid{spikes})\;\!:\!\}}$
+\end{tabbing}for each trial. This definition exploits the list semantics of events
+by using the generic list-processing function \ensuremath{\Varid{filter}} which takes as
+arguments predicate \ensuremath{\Varid{p}} and a list \ensuremath{\Varid{xs}}, and returns the list of
+elements in \ensuremath{\Varid{xs}} for which the predicate holds. Here the predicate is
+\ensuremath{\Varid{fst}} (which returns the first element of a pair, here the occurrence
+time) composed (\ensuremath{\mathbin{\circ}}) with the function \ensuremath{\Varid{between}\mathrel{=}\lambda \Varid{x}\to \lambda \Varid{y}\to \lambda \Varid{z}\to \Varid{z}\mathbin{>}\Varid{x}\mathrel{\wedge}\Varid{z}\leq \Varid{y}}. 
+
+We examined how the LGMD spike response varied with changes in
+$\frac{l}{|v|}$. The average of \ensuremath{H_{spike}} for three different values
+of $\frac{l}{|v|}$ are shown in Figure 2A; 2B and 2C show the total
+number of spikes (\ensuremath{\Varid{length}\;\Varid{spike}}) and largest value of \ensuremath{H_{spike}}, for
+each approach, plotted against the value of $\frac{l}{|v|}$. These
+plots show that while the peak firing rate is a decreasing function of
+$\frac{l}{|v|}$, the total number of spikes in the approach is an
+increasing function. In addition, the time of the peak rate is later
+relative to collision with smaller values of $\frac{l}{|v|}$
+\cite{Hatsopoulos1995}.
+
+This experiment demonstrates that the calculus of physiological
+evidence can adequately and concisely describe visual stimuli, spike
+recording and relevant analyses for activation of a locust looming
+detection circuit (see supplementary information for full code
+listings.) To demonstrate the versatility of this framework, we next
+show that it can be used to implement dynamic clamp in an \emph{in
+  vivo} patch clamp recording experiment.
+
+\subsubsection*{Example 2}
+
+The input-output relationships of individual neurons are fundamental to
+the functioning of neuronal networks. Given a stimulus, e.g. a pattern
+of synaptic input or injected current waveform, what is the membrane
+voltage trajectory and firing rate response of a neuron? In
+particular, cell properties such as the dendritic morphology or ionic
+conductances can profoundly influence this relationship. Such
+influences can be examined with experiments or simulations; here we
+show how the calculus of physiological evidence can be used to
+formulate and execute dynamic-clamp experiments on synaptic
+integration.
+
+A dynamic clamp experiment \cite{Robinson1993, Sharp1993} requires
+electrical access to the intracellular compartment, such that the cell
+membrane voltage can be recorded, and current injected into the
+cell. As opposed to a standard current-clamp experiment, where the
+injected current waveform is known in advance, in the dynamic clamp
+setup the injected current command is calculated near-instantaneously
+from the membrane voltage. The dynamic clamp thus permits the
+imposition of additional simulated ionic conductances on a real
+neuron. For instance, it is possible to record the response of a cell
+to an added synaptic conductance or an additional Hodgkin-Huxley style
+voltage-sensitive membrane conductance. Here, we combine these
+possibilities to investigate the effect of an A-type potassium
+conductance \cite{Connor1971} on the response of a zebrafish spinal
+motor neuron to synaptic excitation.
+
+Many dynamic clamp-experiments follow a common template: the current
+command \ensuremath{\Varid{i}} is calculated at each time-step from the simulated conductance \ensuremath{\Varid{g}}
+and the measured membrane voltage \ensuremath{\Varid{v}}:
+\begin{tabbing}
+\qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
+${\Varid{v}\,<\!\!\!*\,\,\Conid{ADC}\;\mathrm{0}}$\\
+${}$\\
+${\Varid{i}\mathrel{=}\{\!:\!\;(\langle:\Varid{v}:\rangle\mathbin{-}\Conid{E})\!\cdot\!\langle:\Varid{g}:\rangle\!:\!\}}$\\
+${}$\\
+${\Varid{i}\,\,*\!\!\!>\,\Conid{DAC}\;\mathrm{0}}$
+\end{tabbing}The experiment is thus characterised by the conductance signal $g$
+(for clarity, here we omit the amplifier-dependent input and output
+gains).
+
+In the simplest case, $g$ is independent of $v$; for instance, when
+considering linear synaptic conductances \cite{Mitchell2003}. Here,
+we consider the addition of a simulated fast excitatory synaptic
+conductance to a real neuron. Simple models of synapses approximate
+the conductance waveform with an alpha function \cite{Carnevale2006}.
+\begin{tabbing}
+\qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
+${\alpha\mathrel{=}\lambda \Varid{tau}\to \{\!:\!\;\Varid{tau}^\mathrm{2}\!\cdot\!\langle:\Varid{seconds}:\rangle\!\cdot\!\Varid{exp}\;(\mathbin{-}\langle:\Varid{seconds}:\rangle\!\cdot\!\Varid{tau})\;\!:\!\}}$
+\end{tabbing}
+To simulate a barrage of synaptic input to a cell, this waveform is
+convolved with a simulated presynaptic spike train. The spike train
+itself is first bound from a source representing a random probability
+distribution, in this case series of recurrent events of type \ensuremath{\Conid{Event}\;()} for which the inter-occurrence interval is Poisson distributed.
+Our standard library contains a function \ensuremath{\Varid{convolveSE}} which
+convolves an impulse response signal with a numerically-tagged event,
+such that the impulse response is multiplied by the tag before
+convolution.
+\begin{tabbing}
+\qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
+${\Varid{preSpike}\,<\!\!\!*\,\,\Varid{poissonTrain}\;\Varid{rate}}$\\
+${\Varid{gsyn}\mathrel{=}\Varid{convolveSE}\;(\alpha\;\Varid{amp}\;\Varid{tau})\;(\Varid{tag}\;\mathrm{1}\;\Varid{preSpike})}$
+\end{tabbing}The signal \ensuremath{\Varid{gsyn}} could be used directly in a dynamic clamp experiment
+using the above template. Here, we will examine other conductances
+that modulate the response of the cell to synaptic excitation.
+
+Both the subthreshold properties of a cell and its spiking rate can be
+regulated by active ionic conductances. One way to examine this
+regulation of synaptic integration is to impose an additional active
+conductance on cells with dynamic clamp. In the Hodgkin-Huxley
+formalism for ion channels, the conductance depends on one or more
+state variables, for which the forward and backward rate constants
+depend on the membrane voltage. Here we show the equations for the
+activation gate of an A-type potassium current \cite{Connor1971},
+following \cite{Traub1991} (we use SI units and absolute voltages). The
+equations for inactivation are analogous.
+
+We write the forward and backward rates as functions of the membrane voltage
+\begin{tabbing}
+\qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
+${\alpha_a\mathrel{=}\lambda \Varid{v}\to \mathrm{20}\!\cdot\!(\mathbin{-}\mathrm{46.9}\mathbin{-}\Varid{v}\!\cdot\!\mathrm{1000})\mathbin{/}(\Varid{exp}\;((\mathbin{-}\mathrm{46.9}\mathbin{-}\Varid{v}\!\cdot\!\mathrm{1000})\mathbin{/}\mathrm{10})\mathbin{-}\mathrm{1})}$\\
+${\beta_a\mathrel{=}\lambda \Varid{v}\to \mathrm{17.5}\!\cdot\!(\Varid{v}\!\cdot\!\mathrm{1000}\mathbin{+}\mathrm{19.9})\mathbin{/}(\Varid{exp}\;((\Varid{v}\!\cdot\!\mathrm{1000}\mathbin{+}\mathrm{19.9})\mathbin{/}\mathrm{10})\mathbin{-}\mathrm{1})}$
+\end{tabbing}
+The time-varying state of the activation gate is given by a
+differential equation. We use the notation \ensuremath{\Conid{D}\;\Varid{x}\mathrel{=}\{\!:\!\;\Varid{f}\;(\Varid{x},\langle:\Varid{seconds}:\rangle)\;\!:\!\}} to denote the ordinary differential equation
+that is conventionally written $\frac{dx}{dt} = f(x,t) $ with starting
+conditions explicitly assigned to the variable $x_0$. Here the
+differential equation for the activation variable $a$ is
+\begin{tabbing}
+\qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
+${\Conid{D}\;\Varid{a}\mathrel{=}\{\!:\!\;\alpha_a\langle:\Varid{vm}:\rangle\!\cdot\!(\mathrm{1}\mathbin{-}\langle:\Varid{a}:\rangle)\mathbin{-}}$\\
+${\phantom{\Conid{D}\;\Varid{a}\mathrel{=}\{\!:\!\;\mbox{}}\beta_a\langle:\Varid{vm}:\rangle\!\cdot\!\langle:\Varid{a}:\rangle\!:\!\}}$\\
+${a_0\mathrel{=}\mathrm{0}}$
+\end{tabbing}with the inactivation state signal \ensuremath{\Varid{b}} defined similarly.
+
+The current signal from this channel is calculated from Ohm's law:
+\begin{tabbing}
+\qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
+${i_{A}\mathrel{=}\{\!:\!\;g_{A}\!\cdot\!\langle:\Varid{a}:\rangle\!\cdot\!\langle:\Varid{b}:\rangle\!\cdot\!(\langle:\Varid{v}:\rangle\mathbin{-}\Conid{E})\;\!:\!\}}$
+\end{tabbing}which is added to the signal \ensuremath{\Varid{i}} defined above that drives the current
+command, completing the definition of this experiment. 
+
+Figure 3A and 3B shows the voltage response to a unitary synaptic
+conductance and a train of synaptic inputs, respectively, with
+\ensuremath{g_{A}} ranging from 0 to 100 nS. A large A-type membrane conductance
+decreases the amplitude of the EPSP, as expected, and decreases the
+number of spikes in response to the injection of an identical synaptic
+conductance waveform.
+
+By varying the value of \ensuremath{\Varid{rate}}, we can examine the input-output
+relationship of the neuron by measuring the frequency of postsynaptic
+spikes. First, spikes were detected from the first derivative of the
+\ensuremath{\Varid{v}} signal with
+\begin{tabbing}
+\qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
+${\Varid{spike}\mathrel{=}\Varid{tag}\;()\;((\lambda \Varid{v'}\to \Varid{v'}\mathbin{>}\Varid{vth'})\,??\,\Conid{D}\;\Varid{v})}$
+\end{tabbing}and the spike frequency calculated with the \ensuremath{\Varid{frequncyDuring}} function.
+This relationship between the postsynaptic spike frequency and the
+simulated synaptic input \ensuremath{\Varid{rate}} is plotted in Figure 3C for four
+different values of \ensuremath{g_{A}}. Large A-type conductances suppress spikes
+resulting from endogenous synaptic activity (which was not
+pharmacologically blocked in this experiment) and increases the
+threshold at which imposed simulated synaptic activity causes postsynaptic
+spiking.
+
+\section*{Discussion}
+
+We present an entirely new approach to performing and communicating
+experimental science, here demonstrated for physiology. We propose
+that three \emph{types} (signals, events and durations), when
+parametrised by any other type, are sufficient to represent most or
+all evidence for this field. We show how observations and calculations
+of these types can be described in a mathematical framework based on
+the lambda calculus. We use two experiments from neurophysiology to
+demonstrate that this approach works in practice: the \emph{in vivo}
+spike train response to a visual looming stimulus in locusts; and an
+analysis of synaptic integration with dynamic clamp in zebrafish. Our use
+of typed, functional and reactive programming overcomes at least three
+long-standing issues in bioinformatics: the need for a flexible
+ontology to share heterogeneous data from physiological experiments
+\cite{Amari2002}, a language for describing experiments unambiguously
+\cite{Murray-Rust2002}, and an equational formulation of data
+provenance \cite{Pool2002}. In addition, the tradition of
+\emph{formal verification} attached to the lambda calculus
+\cite{Harrison2009,DeBruijn1968,Bird1996,Hindley2008}
+suggests the possibility that algorithmic procedures can complement
+peer-review in validating scientific inference.
+
+\subsection*{An ontology for physiology}
+
+There are clear advantages to sharing primary data from scientific
+experiments \cite{Insel2003} which include: preventing needless replication,
+facilitating meta-analysis, giving theoretical neuroscientists access
+to a greater variety of observations, and enhancing transparency. These
+benefits are likely to be greater if data are structured and stored in
+standard formats. Despite these advantages, and many attempted
+databases, few data from electrophysiological experiments are
+shared in practise. This is likely due to both technical and social
+barriers \cite{Amari2002}. We suggest that modifying the approach to
+experimentation may help overcome social barriers by completely
+integrating the experiment and analysis specification with structured
+data storage that requires little annotation.
+
+The types we have presented form a linguistic framework and an
+ontology for physiology that address the technical barriers to data
+sharing. Thanks to the flexibility of parametric polymorphism, our
+ontology can form the basis for the interchange of physiological data
+without imposing unnecessary constraints on what can be shared. The
+ontology is non-hierarchical and would be difficult to formulate in the
+various existing semantic web ontology frameworks (Web Ontology
+Language or Resource Description Framework), which lack parametric
+polymorphism and functional abstraction. Nevertheless, in specifying
+the categories of mathematical objects that constitute evidence, it is
+an ontology in the classical sense of cataloguing the categories within
+a specific domain, and providing a vocabulary for that domain. We
+emphasise again that it is an ontology of \emph{evidence}, not of the
+biological entities that give rise to this evidence. It is unusual as
+an ontology for scientific knowledge in being embedded in a
+\emph{computational} framework, such that it can describe not only
+mathematical objects but also their transformations and observations.
+
+Existing software packages used for the acquisition and analysis of
+physiological data have signal-like (Igor Pro, Wavemetrics; Spike 2,
+Cambridge Electronic Design), and event-like (Spike 2) data structures
+at the core of their operations. Although these package have some
+flexibility in the information that can be carried by signals and
+events, they do not exploit full parametric polymorphism: the range of
+observations and stimuli that can be described with their more limited
+definitions is smaller than in our framework. This is the case even if
+``multi-dimensional'' signals are permitted; this allows a value to
+be \emph{indexed} by a vector, but the values themselves remain
+scalar. For instance, the signal of shapes that describes a visual
+stimulus in Example 1 \emph{cannot} be represented by a signal in
+these systems. The two- or three dimensional location of a moving
+animal must be represented either by two or three separate signals, or
+one must resort to \emph{ad-hoc} tricks, such as using the first
+dimension of a multidimensional signal to represent time, and the
+remaining dimensions to index the vector dimensions. But this only
+works for vector quantities, and forces one to think in terms of linear
+algebra. Full parametric polymorphism, on the other hand, gives the
+possibility of creating a small vocabulary of generic functions for
+data analysis that can transform any time-varying quantity. Therefore,
+our framework can be seen as a generalisation of existing methods of
+physiological signal processing.
+
+Previous work on scientific knowledge representation has suggested
+that ``meta-data'' can represent the context of an experiment
+\cite{Bower2009}. This raises at least two questions: what
+information must be communicated, and how should it be represented?
+Minimal standards for reporting information from scientific studies
+have been suggested for different fields
+\cite{Taylor2007,Gibson2008}, but remain informal. We suggest
+distinguishing the experimental context into those aspects that can
+practically be executed by a machine, and those that must be carried
+out by a human experimenter. Machine-executable aspects of the
+experiment can be described unambiguously, but it is difficult to prove
+that human-executable aspects can be similarly described. Even if a
+description works well in practice, there may be unstated shared assumptions
+between the communicating experimenters. Informal but evolving reporting
+standards are therefore likely to be the only way to delimit this information.
+
+In terms of representing experimental contexts, here we need make no
+distinction between data and meta-data. All relevant information which
+can be represented by values in some type can exist as a collection of
+signals, events and durations and be stored in the same location as
+the primary observations. There are important reasons to believe that
+there cannot exist a strict distinction between data and
+meta-data. Information that seems incidental and contextual to the
+primary experimenter may after dissemination become important in
+subsequent studies. As an example, we point to the measurements of
+glutamate spillover in the hippocampus, where the temperature at which
+early experiments \cite{Kullmann1996} were conducted, when manipulated
+in a later study \cite{Asztely1997}, influenced key
+findings.  In our framework, we do not impose any such distinction on
+information. The different values are all indexed by time and thus
+linked by overlap on a common time scale.
+
+\subsection*{Experiment descriptions}
+
+Using the calculus of physiological evidence, both stimuli and
+observations are defined concisely and unambiguously by mathematical
+\emph{equations}. This makes it possible to repeat, manipulate and
+reason about experiments in a formal framework. Our mathematical
+definitions are less ambiguous than definitions written in plain
+English, and are more powerful than those specified by graphical user
+interfaces or in formal languages that lack a facility for defining
+abstractions. Our approach also makes the conditions of the recording
+very explicit, and can serve as an unambiguous medium for automating
+and communicating experiments. 
+
+Our framework is not only a theoretical formalism, but also a very
+practical tool. It is a collection of computer programs for executing
+experiments and analyses, and carrying out data
+management. Controlling experimentation and analysis with programs
+that share data formats can be highly efficient and eliminates
+many sources of human error. Our experiment definitions have the
+further advantage that they \emph{compose}; that is, more complex
+experiments can be formulated by joining together elementary building
+blocks. 
+
+The use of a formal language for formulating experiments does not preclude the
+use of a graphical user interface for helping to construct these formulations.
+On the contrary, user-friendly interfaces can be built to generate
+code in language such as CoPE. This allows designers of innovative user
+interfaces for experimentation and analysis to focus on that aspect, while
+benefiting from an expressive, formally defined foundation for
+realising new functionality, facilitating interoperability, 
+% HN 2010-11-10: This sentence just didn't parse.
+% not having to worry about
+and interacting with hardware in a timely manner.
+%  as this is already taken care of.
+Graphical user interfaces can also be an efficient way of
+entering specific values based on the observed data. For instance, we have
+used a simple interface to enter the thresholds for spike detection in Example
+1. We plan to facilitate the description of such \emph{ad-hoc} interfaces and
+to build more elaborate interfaces as front-ends to explore observations.
+
+\subsection*{Generalising Signals}
+\label{sec-gensig}
+
+% HN 2010-10-17: Used to be:
+% \subsection*{Limitations and extensions}
+
+The framework for physiological observations and experiments presented
+in the previous sections does not include the ability to record or
+manipulate spatial data from e.g. calcium imaging or animal behaviour studies,
+or frequency domain representations of periodically repeating
+observations. We have focused on electrophysiology because it has a
+more limited scope and because FRP exclusively deals with temporal and
+not spatial contexts. Nevertheless, generalising CoPE to include
+spatial and frequency-domain data is in principle straightforward;
+we outline this extension here. This more general theory potentially extends
+our framework for observations, experiments and analyses to many areas outside
+physiology.
+
+Signals are generalised in the index type such that values can
+be indexed by \emph{any} data type; for example, time for time-varying
+quantities, frequency for spectra or periodograms, or vectors of
+integers or real numbers for images:
+\begin{tabbing}
+\qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
+$\Conid{Signal}\;\alpha\;\beta\mathrel{=}\alpha \to \beta$
+\end{tabbing}
+We merely require functions that define how values (of any type but of
+known size) can be organised in memory for the given index type.
+% HN 2010-11-10: I think the following is a little too much detail,
+% I'm not sure that what it seems to suggests is central, and it
+% is a bit inconsistent in that the actual transforms mentioned
+% only concernt time-frequency. I've added a brief note on transfoms later
+% instead.
+%
+% We define an operation from an index type to its \emph{dual}. For
+% instance, frequency is the dual of time, and spatial frequency the
+% dual of spatial length. We then finally define operations to
+% calculate signals indexed by a type from signals indexed by the
+% dual type, to represent transforms between temporal and frequency
+% domains.
+Events are also generalised to lists of pairs of index and value types: 
+\begin{tabbing}
+\qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
+${\Conid{Event}\;\alpha\;\beta\mathrel{=}[\mskip1.5mu \alpha\;\!\!\times\!\!\;\beta\mskip1.5mu]}$
+\end{tabbing}
+This allows nesting of spatial and temporal contexts such that movies
+(time-signals of images of, e.g., colour) or time-varying quantities
+recorded at a particular location (e.g., spot calcium
+measurements as space-events of time-signals of
+concentration\cite{DiGregorio1999}) could be represented without
+introducing new concepts. Moreover, where needed, standard transforms
+can be introduced to mediate between different kinds of signals; for example,
+Fourier transforms to mediate between time and frequency domain signals.
+
+These spatial types and their transformations could also define visual
+stimuli, providing a way to replace the arbitrary and limited
+geometric primitives demonstrated in Example 1. This extension of CoPE
+will require a more powerful type system than the one we have described.
+previously. We have already implemented the central features in the purely
+functional language Haskell using extensions that enable type-level
+programming \cite{Kiselyov2010}, but this has not yet been integrated
+into CoPE.
+
+\subsection*{Statistics}
+
+We have used the word ``evidence'' to mean direct observations and
+calculated values from experiments. Evidence thus carries information
+that is relevant for statistical models of the systems under study,
+but we have not yet extended our approach to include statistical
+analyses. How could values with signal, event or duration types be
+incorporated into statistical models? A conservative approach would be to
+take measurements on signals and events -- for instance the amplitudes
+of signal deflections, or the frequencies of event -- and store these in
+durations. The tags of durations representing measurements could then
+be used in classical null-hypothesis significance
+tests such as the General Linear Model. 
+
+A more intriguing possibility is to build statistical models for the
+directly observed data \cite{Daniell1991}, and to use nested
+durations to describe a hierarchical organisation \cite{Rouder2003}
+of conditional dependencies amongst model parameters. In the context
+of physiology, this could be achieved by augmenting a BUGS-like
+\cite{Gilks1994} language with constructors and distributions for
+signals, events and durations.
+
+
+\subsection*{Towards verified scientific inference}
+
+If we consider that science is based on logic \cite{Jaynes2003}, it
+must be possible in principle to mechanically verify scientific
+inference, just as mathematical proofs can be verified by a proof
+checker \cite{Harrison2009}. It is of course not possible to verify
+particular hypotheses about the physical world, or an organism. What
+might be verifiable are statements about experiments --- for instance,
+that: particular variables were randomly controlled and not observed;
+outcomes have not gained correlation due to the analysis procedure;
+missing data are accounted for by the statistical model
+\cite{Gelman2003}; errors are propagated correctly \cite{Taylor1997};
+units of measurement are used consistently \cite{Kennedy1997}; there
+is no ``double dipping'' \cite{Kriegeskorte2009}; and, ultimately,
+that the observed data support the conclusions drawn. Statistical
+analyses address some of these issues in relating observations to
+parameter estimation and hypothesis testing. However, without knowing
+where observations come from, it is difficult to ascertain whether
+they provide evidence for a given scientific hypothesis
+\cite{Pool2002}. Experiment description languages, and the
+representation of experimental observations into values of concrete
+types (which may not always be real numbers), could play an important
+role in such inference. The statistical framework within which such
+inferences take place has an impact on the amount of information that
+must be analysed. For instance, if we accept the likelihood principle
+\cite{Jaynes2003}, we can safely ignore the intention of the
+experimenter, because all the relevant information is in the
+likelihood of the observed data.
+
+There has been substantial progress in \emph{automation} in the
+experimental sciences \cite{King2004}. In contrast, there has been
+almost no work in algorithmic \emph{verification} \cite{Kropf1999,
+  Sadot}, which is a separate but overlapping application of
+computers to science. Nevertheless, if such verification is
+feasible it may lead to a radical change in the way scientific
+research is conducted and communicated. It is likely that at least
+some aspects of validation in physiology can be achieved with conservative
+extensions of
+% the calculus of physiological evidence 
+CoPE integrated with statistical inference.
+
+\section*{Methods}
+
+\subsection*{Language implementation} 
+
+We have used two different implementation strategies for reasons of
+rapid development and execution efficiency. For purposes of
+experimentation and simulation, we have implemented a prototype
+compiler that can execute some programs that contain signals and
+events defined by mutual recursion, as is necessary for many of the
+simulations and experiments in this paper. The program is transformed
+by the compiler into a normal form that is translated to an imperative
+program which iteratively updates variables corresponding to signal
+values, with a time step that is set explicitly. The program is
+divided into a series of stages, where each stage consists of the
+signals and events defined by mutual recursion, subject to the
+constraints of input/output sources and sinks. This ensures that
+signal expressions can reference values of other signals at arbitrary
+time points (possibly in the future) as long as referenced signals are
+computed in an earlier stage.
+
+To calculate a new value from existing observations after data
+acquisition, we have implemented the calculus of physiological
+evidence as a domain-specific language embedded in the purely functional
+programming language Haskell. 
+
+For hard real-time dynamic-clamp experiments, we have built a compiler
+back-end targeting the LXRT (user-space) interface to the RTAI (Real-time
+application interface; http://rtai.org) extensions of the Linux
+kernel, and the Comedi (http://comedi.org) interface to data
+acquisition hardware. Geometric shapes were rendered using OpenGL
+(http://opengl.org).
+
+All code is available at http://github.com/glutamate/bugpan and
+released under the GPL.
+
+\subsection*{Locust experiments}
+
+Recordings from locust DCMD neurons were performed as previously
+described \cite{Matheson2004}. Briefly, locusts were fixed in
+plasticine with the ventral side upwards. The head was fixed with wax
+% at a $90^{\circ}$ angle 
+and the connectives were exposed through an
+incision in the soft tissue of the neck. A pair of silver wire hook
+electrodes were placed underneath the connectives and the electrodes
+and connectives enclosed in petroleum jelly. The electrode signal was
+amplified 1000x and bandpass filtered 50--5000 Hz, before
+analog-to-digital conversion at 18 bits and 20 kHz with a National
+Instruments PCI-6281 board. The locust was placed in front of a 22''
+CRT monitor running with a vertical refresh rate of 160 Hz. All
+aspects of the visual stimulus displayed on this monitor and of
+the analog-to-digital conversion performed by the National Instruments
+board were controlled by programs written in 
+% the calculus of physiological evidence
+CoPE running on a single computer.
+
+\subsection*{Zebrafish experiments}
+
+Intracellular patch-clamp recordings from motor neurons in the spinal
+cord from a 2-day old zebrafish embryo were performed as previously
+described \cite{McDearmid2006}. We used a National Instruments PCI-6281
+board to
+record the output from a BioLogic patch-clamp amplifier in
+current-clamp mode, filtered at 3kHz and digitised at 10 kHz, with the
+output current calculated at the same rate by programs written in
+% the calculus of physiological evidence 
+CoPE targeted to the RTAI backend (see
+above). The measured jitter for updating the output voltage was 6
+$\mu$s and was similar to that measured with the RTAI latency test
+tool for the experiment control computer.
+
+\section*{Acknowledgements} 
+
+We would like to thank Jonathan McDearmid for help with the Zebrafish
+recordings and Angus Silver, Guy Billings, Antonia Hamilton, Nick
+Hartell and Rodrigo Quian Quiroga for critical comments on the
+manuscript. This work was funded by the Human Frontier Science Project
+fellowship to TAN, a Biotechnology and Biological Sciences Research
+Council grant to TM and TAN, and Engineering and Physical Sciences Research
+Council grants to HN.
+
+\section*{Author Contributions}  
+T.N. designed and implemented CoPE, carried out the experiments and
+data analyses, and wrote the draft of the paper. H.N. contributed to
+the language design, helped clarify the semantics, and wrote several
+sections of the manuscript. T.M. contributed to the design of the
+experiments and the data analysis, and made extensive comments on
+drafts of the manuscript. All authors obtained grant funding to
+support this project as described in the acknowledgements.
+
+
+
+\bibliographystyle{nature}
+\bibliography{paper}
+
+\pagebreak
+
+\section*{Figure Legends}
+
+\textbf{Figure 1}. Diagram of an experiment to record the looming
+response from a locust DCMD neuron, showing the first five recorded
+trials from one animal. Experiment design: \emph{blue lines},
+simulated object size-to-approach speed ratio ($\frac{l}{|v|}$) for
+given approach trial, \emph{red lines}, simulated object distance,
+\emph{red triangles}, apparent collision time. Observed signal:
+\emph{black lines}, recorded extracellular voltage. By convention,
+absolute amplitude values are not shown for extracellular recordings
+because they differ markedly from experiment to experiment depending
+on recording conditions. The largest amplitude deflections are DCMD
+spikes. Analysis: \emph{green dots}, DCMD spikes, with randomly
+jittered vertical placement for display, \emph{thin black line}, spike
+rate histogram with 50 ms bin size. The inter-trial interval of four
+minutes is not shown.
+
+\flushleft \textbf{Figure 2}. A, Spike rate histograms for approaches with
+$\frac{l}{|v|}$ of 0.01, 0.02 and 0.04 s, with 50 ms bin size, with
+collision time indicated by a black triangle. B, Scatter plot of
+number of counted spikes against approach $\frac{l}{|v|}$ for
+individual trials. C, Scatter plot of the maximum rate of spiking
+against $\frac{l}{|v|}$ for individual trials. N=1 animal, 272
+approaches.
+
+\flushleft \textbf{Figure 3}. A, recorded intracellular voltage following
+conductance injections of a unitary simulated synaptic conductance, in
+the presence of A-type potassium conductances of increasing magnitude
+(values given are for the maximal conductance $g_A$). B, as A, but
+with a simulated presynaptic spike train with inter-spike intervals
+drawn from a Poisson distribution (here a mean of $120 s^{-1}$; the spike
+trains used to test the different levels of A-type conductance are
+identical). C, the postsynaptic spike rate plotted against the rate of
+simulated presynaptic inputs, with $g_A$ as in A.
+
+
+\includepdf[pages=-]{Figure1.pdf}
+\includepdf[pages=-]{Figure2.pdf}
+\includepdf[pages=-]{FigureDyn.pdf}
+%\includepdf[pages=-]{Figure4.pdf}
+
+%\begin{comment}
+\pagebreak
+
+\begin{tabular}{l  l}
+\hline
+  Quantity & Type \\ 
+\hline
+  Voltage across the cell membrane & \ensuremath{\Conid{Signal}\;\mathbb{R}} \\
+  Ion concentration & \ensuremath{\Conid{Signal}\;\mathbb{R}} \\
+  Animal location in 2D & \ensuremath{\Conid{Signal}\;(\mathbb{R}\;\!\!\times\!\!\;\mathbb{R})} \\
+  Action potential & \ensuremath{\Conid{Event}\;()} \\
+  Action potential waveforms & \ensuremath{\Conid{Event}\;(\Conid{Signal}\;\mathbb{R})} \\
+  Spike detection threshold & \ensuremath{\Conid{Duration}\;\mathbb{R}} \\
+  Spike interval & \ensuremath{\Conid{Duration}\;()} \\
+  Synaptic potential amplitude & \ensuremath{\Conid{Event}\;\mathbb{R}} \\
+  Drug present & \ensuremath{\Conid{Duration}\;()} \\
+  Trial with parameter \ensuremath{\alpha} & \ensuremath{\Conid{Duration}\;\alpha} \\
+  Visual stimulus & \ensuremath{\Conid{Signal}\;\Conid{Shape}} \\
+  Lab notebook & \ensuremath{\Conid{Event}\;\Conid{String}} \\
+\hline
+\end{tabular}
+\vskip1ex 
+
+Table 1. Some common operations for generic manipulation of signals, events and durations.
+
+\end{document}
+ 
