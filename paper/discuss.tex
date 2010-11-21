@@ -1,13 +1,14 @@
 \section*{Discussion}
 
 We present an entirely new approach to performing and communicating
-experimental science, here demonstrated for physiology.  Our use
-of typed, functional and reactive programming overcomes at least three
-long-standing issues in bioinformatics: the need for a flexible
-ontology to share heterogeneous data from physiological experiments
-\cite{Amari2002}, a language for describing experiments unambiguously
+experimental science, here demonstrated for physiology: using
+exclusively unambiguous equations.  Our use of typed, functional and
+reactive programming overcomes at least three long-standing issues in
+bioinformatics: the need for a flexible ontology to share
+heterogeneous data from physiological experiments \cite{Amari2002}, a
+language for describing experiments unambiguously
 \cite{Murray-Rust2002}, and an equational formulation of data
-provenance \cite{Pool2002}. 
+provenance \cite{Pool2002}.
 
 The types we have presented form a linguistic framework and an
 ontology for physiology. Thanks to the flexibility of parametric polymorphism, our
@@ -63,12 +64,7 @@ they provide evidence for a given scientific hypothesis
 \cite{Pool2002}. Experiment description languages, and the
 representation of experimental observations into values of concrete
 types (which may not always be real numbers), could play an important
-role in such inference. The statistical framework within which such
-inferences take place has an impact on the amount of information that
-must be analysed. For instance, if we accept the likelihood principle
-\cite{Jaynes2003}, we can safely ignore the intention of the
-experimenter, because all the relevant information is in the
-likelihood of the observed data. It is likely that at least some
+role in such inference. It is likely that at least some
 aspects of validation in physiology can be achieved with conservative
 extensions of
 % the calculus of physiological evidence 
@@ -111,17 +107,22 @@ released under the GPL.
 
 \subsubsection*{Sources and Sinks}
 
-What happens if the same source is observed more than once in a description of
-an experiment? If the source refers to a single, physical
-input port such as a channel of an analog-to-digital converter, the result
-will necessarily be the same, because the same entity is being observed within a
-single run of the experiment. Such sources are called \emph{idempotent}.
-Idempotency ensures that separate experiments referring to a common external
-variable can be composed easily with a predictable outcome. However, there are
-other kinds of sources, notably random sources as discussed below, where
-idempotency is \emph{not} desirable. Each occurrence of a non-idempotent
-source is thus a separate, independent source, even if the name of the
-source and the parameters happen to be the same.
+Sources and sinks are annotations to a program that link the
+functional equations with the physical world. We stree that they are
+not expressions, do not evaluate to values (unlike all other
+constructs) and can only be used at the top level. What happens if the
+same source is observed more than once in a description of an
+experiment?  If the source refers to a single, physical input port
+such as a channel of an analog-to-digital converter, the result will
+necessarily be the same, because the same entity is being observed
+within a single run of the experiment. Such sources are called
+\emph{idempotent}.  Idempotency ensures that separate experiments
+referring to a common external variable can be composed easily with a
+predictable outcome. However, there are other kinds of sources,
+notably random sources as discussed below, where idempotency is
+\emph{not} desirable. Each occurrence of a non-idempotent source is
+thus a separate, independent source, even if the name of the source
+and the parameters happen to be the same.
 
 What happens if the same \emph{sink} is defined more than once? One could
 imagine combining the defining signals in various ways. For example, in the

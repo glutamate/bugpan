@@ -71,8 +71,10 @@ one element of |alpha| and one of |beta|; |[alpha]| is a list of
 |alpha|s; and |alpha -> beta| is the type of functions that calculate
 a value in the type |beta| from a value in |alpha|. The ability to
 write flexible type schemata and generic functions containing type
-variables (which can later be substituted with any concrete type) is called
-``parametric polymorphism''\cite{Pierce2002}.
+variables ($\alpha, \beta, \ldots$), which can later be substituted
+with any concrete type, is called ``parametric
+polymorphism''\cite{Pierce2002} and is essential to the simplicity and
+flexibility of CoPE.
 
 We distinguish three type schemata in which physiological evidence can
 be values. These differ in the manner in which measurements appear in
@@ -92,8 +94,8 @@ For instance, the output of a differential
 voltage amplifier might be captured in a |Signal Real|.
 
 To model occurrences pertaining to specific instances in time,
-FRP defines events as a list of pairs of time points and a value in a
-type |alpha|, called the ``tag'':
+FRP defines events as a list of pairs of time points and values in a
+type |alpha|, called the ``tags'':
 \begin{code}
 Event alpha = [Time times alpha]
 \end{code}
@@ -197,7 +199,7 @@ The differential operator |D| differentiates a real-valued signal with
 respect to time, such that |D s| denotes its first derivative and |D D
 s| the second derivative of the signal |s|. When the differential
 operator appears on the left-hand side of a definition, it
-introduces a differential equation (see example 2 below).
+introduces a differential equation (see Example 2 below).
 
 Events and durations can be manipulated as \emph{lists}. Thus, a large
 number of transformations can be defined with simple recursive
