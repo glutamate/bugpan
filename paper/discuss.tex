@@ -1,7 +1,7 @@
 \section*{Discussion}
 
 We present an entirely new approach to performing and communicating
-experimental science, here demonstrated for physiology: using
+experimental science, here demonstrated for physiology, using
 exclusively unambiguous equations.  Our use of typed, functional and
 reactive programming overcomes at least three long-standing issues in
 bioinformatics: the need for a flexible ontology to share
@@ -28,8 +28,16 @@ being embedded in a \emph{computational} framework, such that it can
 describe not only mathematical objects but also their transformations
 and observations.
 
-Our mathematical definitions are less ambiguous than definitions
-written in plain English, and are more powerful than those specified
+% HN 2010-11-24: Instead of
+%
+% Our mathematical definitions are less ambiguous than definitions
+% written in plain English, 
+% 
+% to make it consistent with "unambiguous" above, I propose
+%
+Our mathematical definitions are unambiguous and concise, unlike
+typical definitions written in plain English,
+and are more powerful than those specified
 by graphical user interfaces or in formal languages that lack a
 facility for defining abstractions. Our framework is not only a
 theoretical formalism, but also a very practical tool. It is a
@@ -107,8 +115,16 @@ released under the GPL.
 
 \subsubsection*{Sources and Sinks}
 
-Sources and sinks are annotations to a program that link the
-functional equations with the physical world. We stree that they are
+Sources and sinks 
+% HN 2010-11-24: Yes, I can see they can be considered as "annotations"
+% in that they are somewhat peripheral to an experiment definition. However,
+% they are certainly not void of sematic content relevant to the experiment
+% as such! Cf the discussion of idempotency for example. I suggest simply
+% not saying anything about the "nature" of sourecs and sinks here.
+%
+% are annotations to a program that 
+%
+link the functional equations with the physical world. We stress that they are
 not expressions, do not evaluate to values (unlike all other
 constructs) and can only be used at the top level. What happens if the
 same source is observed more than once in a description of an
@@ -189,9 +205,9 @@ We would like to thank Jonathan McDearmid for help with the Zebrafish
 recordings and Angus Silver, Guy Billings, Antonia Hamilton, Nick
 Hartell and Rodrigo Quian Quiroga for critical comments on the
 manuscript. This work was funded by the Human Frontier Science Project
-fellowship to TAN, a Biotechnology and Biological Sciences Research
-Council grant to TM and TAN, and Engineering and Physical Sciences Research
-Council grants to HN.
+fellowship to T.N., a Biotechnology and Biological Sciences Research
+Council grant to T.M. and T.N., and Engineering and Physical Sciences Research
+Council grants to H.N.
 
 \section*{Author Contributions}  
 T.N. designed and implemented CoPE, carried out the experiments and
