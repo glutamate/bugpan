@@ -127,7 +127,7 @@ Since signals, events and durations can be instantiated for any type,
 they form a simple but flexible framework for representing many
 physiological quantities. We show a list of such examples primarily
 drawn from neurophysiology in Table 1. A framework in any type
-system that did not support parametric polymorphism would have to
+system that does not support parametric polymorphism would have to
 represent these quantities fundamentally differently, thus removing
 the possibility of re-using common analysis procedures. Although
 parametric polymorphism is conceptually simple and the distinctions we
@@ -147,15 +147,17 @@ another term with identical meaning.
 % HN 2010-09-30: Always "substitute for"
 This property (referential transparency\cite{Whitehead1927})
 % HN 2010-11-10: "enables" is a bit too strong. For example, it is certainly
-% *possible* to reason formally about imperative code.
-% enables facilitates algebraic manipulation and reasoning about the
+% *possible* to reason formally about imperative code. 
+facilitates algebraic manipulation of and reasoning about
 programs \cite{Bird1996}. The lambda calculus allows functions to be
 used as first class entities: that is, they can be referenced by
 variables and passed as arguments to other functions. On the other
 hand, the lambda calculus disallows changing the value of variables or
 global states. These properties together mean that the lambda calculus
 combines verifiable correctness with a high level of abstraction,
-leading to programs that are in practise more concise
+leading to programs that are in 
+% HN 2010-11-24: Note: practice is the noun, practise the verb 
+practice more concise
 \cite{Hughes1989} than those written in conventional programming
 languages. The lambda calculus or variants thereof has been used as a
 foundation for mathematics \cite{Martin-Lof1985}, classical
@@ -173,10 +175,22 @@ function body.
 
 We now present the concrete syntax of CoPE, which extends the lambda
 calculus with constructs to define and manipulate signals and
-events. This calculus borrows some concepts from earlier versions of
-FRP, but it emphasises signals and events as mathematical objects in
-themselves, rather than as control structures for creating reactive
-systems \cite{Elliott1997, Nilsson2002}. 
+events. 
+% HN 2010-11-24: Old:
+% 
+% This calculus borrows some concepts from earlier versions of
+% FRP, but it emphasises signals and events as mathematical objects in
+% themselves, rather than as control structures for creating reactive
+% systems \cite{Elliott1997, Nilsson2002}. 
+% 
+% I think it's important to make it very clear that CoPE is not FRP:
+%
+This calculus borrows some concepts from earlier versions of FRP, but focuses
+exclusively on signals and events as mathematical objects and their relations,
+without any additional control structures for describing sequences of system
+configurations (of the type ``first X, then Y'') \cite{Elliott1997,
+  Nilsson2002}. As a result, CoPE is quite different from conventional FRP,
+which is also reflected in its implementation.
 
 Let the construct |sopen e sclose| denote a signal with the value of
 the expression |e| at every time point, and let the construct |<: s
@@ -191,7 +205,7 @@ defined as
 \begin{code}
 smap = \f -> \s -> sopen f <: s :> sclose
 \end{code}
-transforms, for any two types |alpha| and |beta|, a signal of |alpha|
+transforms, for any two types |alpha| and |beta|, the signal |s| of |alpha|
 into a signal of |beta| by applying the function |f| of type |alpha
 -> beta| to the value of the signal at every time point.
 
@@ -207,17 +221,17 @@ equations including filters, folds and scans familiar from functional
 programming languages \cite{Hughes1989}. In addition, we have added a
 special construct to detect events from existing signals. For
 instance, a threshold detector generates an occurrence of an event
-whenever the value of a signal crosses from below to above a specific
-value level.  Here, we generalise the threshold detector by taking a
-predicate (i.e., a function of type |alpha->Bool|) on the
-instantaneous values of the signal and generating an event whenever
-the predicate becomes true using the |??| operator. For instance,
+whenever the value of a signal crosses a specific level from below.
+Here, we generalise the threshold detector to an operator |??| that takes
+a predicate (i.e., a function of type |alpha->Bool|), applies it to the
+instantaneous value of a signal, and generates an event whenever
+the predicate \emph{becomes} true. For instance,
 \begin{code}
 (\x->x>5) ?? s
 \end{code}
 denotes the event that occurs whenever the value of the signal |s|
-satisfies the predicate |\x->x>5|, i.e. is greater than 5, after
-having been smaller than 5 for a time step. The expression |(\x->x>5)
+starts to satisfy the predicate |\x->x>5|; i.e., whenever it becomes greater
+than 5 after having been smaller. The expression |(\x->x>5)
 ?? s| thus defines a threshold detector restricted to threshold
 crossings with a positive slope.
  
@@ -238,9 +252,9 @@ purely mathematical equations and the physical world.
 A source is an input port through which the value of some external
 quantity can be observed during the course of an experiment by binding
 it to a variable. If the quantity is time-varying, the bound variable
-will denote a signal; but sources could also observe basic types. For
-instance, binding a variable to source denoting a typical
-analog-to-digital converter yields a signal of real numbers.
+will denote a signal. For instance, binding a variable to source
+denoting a typical analog-to-digital converter yields a signal of real
+numbers. However, a source may also refer to a time-invariant quantity.
 
 The construct
 \begin{code}
@@ -263,8 +277,8 @@ involve a perturbation of the experimental preparation. For example,
 the manipulation could control the amount of electric current injected
 into a cell. Alternatively, non-numeric signals are used below to
 generate visual stimuli on a computer screen. Such manipulations
-require the opposite of a source, an output port --- a
-\emph{sink} -- connected to a physical device capable of effecting the
+require the opposite of a source, a \emph{sink}: an output port connected
+to a physical device capable of effecting the
 desired perturbation. The value at the output at any point in time
 during an experiment is defined by connecting the corresponding sink
 to a signal.  This is done through the the following construct,
@@ -393,10 +407,11 @@ with the |distance'| and |voltage| signals for the first five trials
 of one experiment on a common time scale.
 
 The simplest method for detecting spikes from a raw voltage trace is
-to search for threshold crossings, which works well in practise for
-calculating DCMD activity from recordings of the locust connectives
-\cite{Gabbiani2001}. If the threshold voltage for spike detection is
-|vth|, the event |spike| can be calculated with
+to search for threshold crossings, which works well in
+% HN 2010-11-24: Note: practice is the noun, practise the verb 
+practice for calculating DCMD activity from recordings of the locust
+connectives \cite{Gabbiani2001}. If the threshold voltage for spike
+detection is |vth|, the event |spike| can be calculated with
 \begin{code}
 spike = tag () ((\v->v>vth) ?? voltage)
 \end{code}
@@ -444,8 +459,17 @@ possibilities to investigate the effect of an A-type potassium
 conductance \cite{Connor1971} on the response of a zebrafish spinal
 motor neuron to synaptic excitation.
 
-Many dynamic clamp-experiments follow a common template: the current
-command |i| is calculated at each time-step from the simulated conductance |g|
+Many dynamic clamp-experiments follow a common template: the output current
+%
+% HN 2010-11-24: I agree that one might call the syntactic category
+% that encompass both equations and source/sink bindings "command" for
+% want of a better term, but I think that talking about "commands"
+% here is a bit confusing and might give the wrong impressions (imperative
+% connotations). In any case, the notion of "command" has not been discussed
+% before.
+%
+% command
+|i| is calculated at each time-step from the simulated conductance |g|
 and the measured membrane voltage |v|:
 \begin{code}
 v <* ADC 0
@@ -515,14 +539,18 @@ D a = sopen  alphaa <: vm :> * (1- <:a:> ) -
              betaa <: vm :> * <: a :> sclose
 a_0 = 0
 \end{code}
-with the inactivation state signal |b| defined similarly.
+The inactivation state signal |b| is defined similarly.
 
 The current signal from this channel is calculated from Ohm's law:
 \begin{code}
 ika = sopen gmaxk * <:a:> * <:b:> * (<:v:> - E) sclose
 \end{code}
-which is added to the signal |i| defined above that drives the current
-command, completing the definition of this experiment. 
+This is added to the signal |i| defined above to give the output current
+% command, 
+thus completing the definition of this experiment:
+\begin{code}
+i + ika *> DAC 0
+\end{code}
 
 Figure 3A and 3B shows the voltage response to a unitary synaptic
 conductance and a train of synaptic inputs, respectively, with |gmaxk|

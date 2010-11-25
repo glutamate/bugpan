@@ -37,7 +37,7 @@ at all, and in only 2 of those, without discrepancies
 code used in analyses correctly implements an intended mathematical
 algorithm, yet errors can undermine a large body of work
 \cite{Chang2006}.  In addition, primary data sharing is standard in
-high-throughout biology, but not in fields that produce heterogeneous
+high-throughput biology, but not in fields that produce heterogeneous
 data \cite{Gardner2005}, further undermining independent validation.
 The combination of bias, human error, and unverified software, has led
 to the suggestion that many --- perhaps most --- published research
@@ -61,8 +61,8 @@ mathematical objects because they produce heterogeneous data
 world. In creating a mathematical framework for experiments, we take
 advantage of progress in embedding side effects \cite{PeytonJones2002,
   Roy2004, Wadler1995}, such as input and output, into programming
-languages that can only evaluate mathematical functions
-\cite{Church1941}.
+languages where the only mechanism of computation is evaluation of
+mathematical expressions \cite{Church1941}.
 
 Here, we define a formal framework for physiology
 that satisfies the above criteria. We show that there
@@ -72,7 +72,7 @@ and Functional Reactive Programming (FRP\cite{Elliott1997,
 time-dependent reactive computer programs. Consequently, physiological
 experiments can be concisely defined in the vocabulary of
 \emph{signals} and \emph{events} introduced by FRP. Such a language
-does not describe the physical components of biological organisms. It
+does not describe the physical components of biological organisms; it
 has no concept of networks, cells or proteins. Instead it describes
 the observation and calculation of the mathematical objects that
 constitute physiological evidence (``observations'').
@@ -99,7 +99,7 @@ post-acquisition processing and censure.
 
 (iii) A new approach to validating scientific inference
 \cite{Editors2003, Editors2010}. First, a concise language with a
-clear mathematical denotation can be verified manually. Second, by
+clear mathematical denotation \emph{can} be verified manually. Second, by
 inspecting an experiment definition, \emph{automated} decision procedures
 could verify certain statements about experiments that indicate sound
 scientific practice, such as consistent units of measurement
