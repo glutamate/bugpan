@@ -126,13 +126,13 @@ entire experiment --- for instance, the presence or absence of a drug.
 Since signals, events and durations can be instantiated for any type,
 they form a simple but flexible framework for representing many
 physiological quantities. We show a list of such examples primarily
-drawn from neurophysiology in Table 1. A framework in any type
-system that does not support parametric polymorphism would have to
-represent these quantities fundamentally differently, thus removing
-the possibility of re-using common analysis procedures. Although
+drawn from neurophysiology in Table 1. A framework in any type system
+that does not support parametric polymorphism would have to represent
+these quantities fundamentally differently, thus removing the
+possibility of re-using common analysis procedures. Although
 parametric polymorphism is conceptually simple and the distinctions we
-are introducing are intuitive, common biomedical ontologies
-\emph{cannot} accommodate these definitions. 
+are introducing are intuitive, common biomedical
+ontologies\cite{owlref} \emph{cannot} accommodate these definitions.
 
 \subsubsection*{Calculating with signals and events}
 
@@ -157,13 +157,14 @@ global states. These properties together mean that the lambda calculus
 combines verifiable correctness with a high level of abstraction,
 leading to programs that are in 
 % HN 2010-11-24: Note: practice is the noun, practise the verb 
-practice more concise
-\cite{Hughes1989} than those written in conventional programming
-languages. The lambda calculus or variants thereof has been used as a
-foundation for mathematics \cite{Martin-Lof1985}, classical
-\cite{Sussman2001} and quantum \cite{Karczmarczuk2003} mechanics,
-evolutionary biochemistry \cite{Fontana1994} and functional
-programming languages \cite{McCarthy1960}.
+practice more concise \cite{Hughes1989} than those written in
+conventional programming languages. The lambda calculus or variants
+thereof has been used as a foundation for mathematics
+\cite{Martin-Lof1985}, classical \cite{Sussman2001} and quantum
+\cite{Karczmarczuk2003} mechanics, evolutionary biochemistry
+\cite{Fontana1994}, mechanized theorem provers \cite{DeBruijn1968,
+  Harrison2009} and functional programming languages
+\cite{McCarthy1960}.
 
 In the lambda calculus, calculations are performed by function
 abstraction and application. |\x->e| denotes the function with
@@ -235,9 +236,9 @@ than 5 after having been smaller. The expression |(\x->x>5)
 ?? s| thus defines a threshold detector restricted to threshold
 crossings with a positive slope.
  
-Table S1 in the supplementary information details the types and names
-of some of functions we have defined using these definitions; Table S2
-has an informal overview of the syntax of CoPE.
+Table S1 has an informal overview of the syntax of CoPE; Table S2 in
+the supplementary information details the types and names of some of
+functions we have defined using these definitions.
 
 % \subsubsection*{Observing signals and events}
 \subsubsection*{Interacting with the physical world}
@@ -481,12 +482,13 @@ The experiment is thus characterised by the conductance signal $g$
 gains).
 
 In the simplest case, $g$ is independent of $v$; for instance, when
-considering linear synaptic conductances \cite{Mitchell2003}. Here,
-we first consider the addition of a simulated fast excitatory synaptic
+considering linear synaptic conductances \cite{Mitchell2003}. Here, we
+first consider the addition of a simulated fast excitatory synaptic
 conductance to a real neuron. Simple models of synapses approximate
-the conductance waveform with an alpha function \cite{Carnevale2006}.
+the conductance waveform with an alpha function
+|alpha_f|\cite{Carnevale2006}.
 \begin{code}
-alpha = \tau -> sopen tau **2 * <: seconds :> *exp (- <: seconds :> *tau) sclose
+alpha_f = \amp -> \tau -> sopen tau **2 * <: seconds :> *exp (- <: seconds :> *tau) sclose
 \end{code}
 
 To simulate a barrage of synaptic input to a cell, this waveform is
@@ -500,17 +502,18 @@ such that the impulse response is multiplied by the tag before
 convolution.
 \begin{code}
 preSpike <* poissonTrain rate
-gsyn =  convolveSE (alpha amp tau) (tag 1 preSpike)
+gsyn =  convolveSE (alpha_f amp tau) (tag 1 preSpike)
 \end{code}
 The signal |gsyn| could be used directly in a dynamic clamp experiment
-using the above template. Here, we will examine other conductances
+using the above template (i.e. |g=gsyn|). Here, we will examine other conductances
 that modulate the response of the cell to synaptic excitation.
 
-Both the subthreshold properties of a cell and its spiking rate can be
-regulated by active ionic conductances, which can also be examined
-with the dynamic clamp. In the Hodgkin-Huxley formalism for ion
-channels, the conductance depends on one or more state variables, for
-which the forward and backward rate constants depend on the membrane
+Here, we will examine additional conductances. Both the subthreshold
+properties of a cell and its spiking rate can be regulated by active
+ionic conductances, which can also be examined with the dynamic
+clamp. In the Hodgkin-Huxley formalism for ion channels, the
+conductance depends on one or more state variables, for which the
+forward and backward rate constants depend on the membrane
 voltage. Here we show the equations for the activation gate of an
 A-type potassium current \cite{Connor1971}, following \cite{Traub1991}
 (we use SI units and absolute voltages). The equations for

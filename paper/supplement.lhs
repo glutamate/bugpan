@@ -11,6 +11,56 @@
 
 \begin{document}
 \doublespacing 
+\begin{tabular}{l p{10cm}}
+\hline
+  Expression & Denotes\\ 
+\hline
+  |\x->e| & The function that takes argument |x| and returns |e|\\
+
+  |f x| & \parbox{9cm}{\begin{singlespace}Apply the function (or function-value expression) |f| to the value |x|\end{singlespace}} \\
+
+  |x| & The value of the variable |x|\\
+
+  |e::t| & Annotation: the expression |e| has type |t|\\
+
+  |let x = e in y| & Define |x| as the value of |e| in the expression |y|\\
+
+  |if p then e_1 else e_2| & If |p| is |True| then yield |e_1|; if |p| is |False| yield |e_2|\\
+
+  |(x,y)| & The pair (Cartesian product) of x and y \\
+
+  |sopen e sclose| & The signal whose value is given by expression |e|\\
+
+  |<: s :>| & \parbox{9cm}{\begin{singlespace}The value of the signal, in the temporal context of the surrounding |sopen ... sclose| brackets\end{singlespace}}\\
+
+  |D s| & \parbox{9cm}{\begin{singlespace}The derivative of signal |s|. When used on the left-hand side of a definition, it introduces a differential equation\end{singlespace}}\\
+
+  |s_0| & \parbox{9cm}{\begin{singlespace}The initial value of the signal |s| (can also be used on the left-hand side of a definition)\end{singlespace}}\\
+
+  |delay s| & The signal |s|, dealyed by a short time period\\
+
+  |p ?? s| &  \parbox{9cm}{\begin{singlespace}Events that occur when the value of |s| satisfies the predicate |p| \end{singlespace}}\\
+
+  |x <* src| & \parbox{9cm}{\begin{singlespace}(Top-level only) Bind the value x to the observation of the source |src|\end{singlespace}}\\
+
+  |e *> snk| & \parbox{9cm}{\begin{singlespace}(Top-level only) Send the value |e| to the sink |snk|\end{singlespace}}\\
+
+
+ & \\
+
+
+
+
+
+\end{tabular}
+
+\vskip1ex 
+
+%\end{comment}
+
+Table S1. Syntax of CoPE
+
+\pagebreak
 \begin{tabular}{l  l  p{8cm}}
 \hline
   Function & Type & Description\\ 
@@ -18,7 +68,7 @@
 
   |adjustDur| &
 \parbox{4cm}{\begin{singlespace}
-|Time times Time| \\ | -> Time times Time | \\ |-> Duration alpha | \\|-> Duration alpha|
+(|Time times Time| \\ | -> Time times Time|) \\ |-> Duration alpha | \\|-> Duration alpha|
 \end{singlespace}} 
 & \parbox{8cm}{\begin{singlespace}Apply a function to adjust the beginning and end of each duration occurrence\end{singlespace}}\\
 
@@ -32,7 +82,7 @@
 & Align signal around event occurrences\\
 
   |baseline| & 
-\parbox{4cm}{\begin{singlespace}|Real -> Real | \\ |-> Signal Real -> Signal Real|
+\parbox{4cm}{\begin{singlespace}|Real -> Real -> Signal Real | \\ |-> Signal Real|
 \end{singlespace}}
 & \parbox{8cm}{\begin{singlespace}Subtract from a signal its mean value between two time points\end{singlespace}}\\
 
@@ -83,7 +133,7 @@
 \end{singlespace}}
 & \parbox{8cm}{\begin{singlespace}Smooth a signal with the binomial filter\end{singlespace}}\\
 
-  |tag| & |alpha -> f beta -> f beta|
+  |tag| & |alpha -> f beta -> f alpha|
 & \parbox{8cm}{\begin{singlespace}Change all tags of events or durations (|f|) to a fixed value\end{singlespace}}\\
 
   |//| &
@@ -103,60 +153,10 @@
 
 %\end{comment}
 
-Table S1. Examples of common operations in CoPE for generic manipulation of signals, events and durations.
+\noindent Table S2. Examples of common operations in CoPE for generic manipulation of signals, events and durations.
 
 \pagebreak
 
-\begin{tabular}{l p{10cm}}
-\hline
-  Expression & Denotes\\ 
-\hline
-  |\x->e| & The function that takes argument |x| and returns |e|\\
-
-  |f x| & \parbox{9cm}{\begin{singlespace}Apply the function (or function-value expression) |f| to the value |x|\end{singlespace}} \\
-
-  |x| & The value of the variable |x|\\
-
-  |e::t| & Annotation: the expression |e| has type |t|\\
-
-  |let x = e in y| & Define |x| as the value of |e| in the expression |y|\\
-
-  |if p then e_1 else e_2| & If |p| is |True| then yield |e_1|; if |p| is |False| yield |e_2|\\
-
-  |(x,y)| & The pair (Cartesian product) of x and y \\
-
-  |sopen e sclose| & The signal whose value is given by expression |e|\\
-
-  |<: s :>| & \parbox{9cm}{\begin{singlespace}The value of the signal, in the temporal context of the surrounding |sopen ... sclose| brackets\end{singlespace}}\\
-
-  |D s| & \parbox{9cm}{\begin{singlespace}The derivative of signal |s|. When used on the left-hand side of a definition, it introduces a differential equation\end{singlespace}}\\
-
-  |s_0| & \parbox{9cm}{\begin{singlespace}The initial value of the signal |s| (can also be used on the left-hand side of a definition)\end{singlespace}}\\
-
-  |delay s| & The signal |s|, dealyed by a short time period\\
-
-  |p ?? s| &  \parbox{9cm}{\begin{singlespace}Events that occur when the value of |s| satisfies the predicate |p| \end{singlespace}}\\
-
-  |x <* src| & \parbox{9cm}{\begin{singlespace}(Top-level only) Bind the value x to the observation of the source |src|\end{singlespace}}\\
-
-  |e *> snk| & \parbox{9cm}{\begin{singlespace}(Top-level only) Send the value |e| to the sink |snk|\end{singlespace}}\\
-
-
- & \\
-
-
-
-
-
-\end{tabular}
-
-\vskip1ex 
-
-%\end{comment}
-
-Table S2. Syntax of CoPE
-
-\pagebreak
 \begin{verbatim}
 
 module Looming where
