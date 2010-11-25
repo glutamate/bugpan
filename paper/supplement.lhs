@@ -15,13 +15,15 @@
 \hline
   Function & Type & Description\\ 
 \hline
-  |peak| & |Signal alpha -> Event alpha| & Peak value of each signal segment\\
 
-  |freqDuring| & 
+  |adjustDur| &
 \parbox{4cm}{\begin{singlespace}
-|Duration alpha -> Event beta| \\|-> Duration Real|
+|Time times Time| \\ | -> Time times Time | \\ |-> Duration alpha | \\|-> Duration alpha|
 \end{singlespace}} 
-& Count events in each occurrence\\
+& \parbox{8cm}{\begin{singlespace}Apply a function to adjust the beginning and end of each duration occurrence\end{singlespace}}\\
+
+  |area| & |Signal Real -> Event Real|
+& \parbox{8cm}{\begin{singlespace}Calculate the centre of mass (time of the event) and area (tag of the event) of a signal\end{singlespace}}\\
 
   |around| &
 \parbox{4cm}{\begin{singlespace}
@@ -29,11 +31,16 @@
 \end{singlespace}} 
 & Align signal around event occurrences\\
 
-  |inout| &
+  |baseline| & 
+\parbox{4cm}{\begin{singlespace}|Real -> Real | \\ |-> Signal Real -> Signal Real|
+\end{singlespace}}
+& \parbox{8cm}{\begin{singlespace}Subtract from a signal its mean value between two time points\end{singlespace}}\\
+
+  |burst| &
 \parbox{4cm}{\begin{singlespace}
-|Event alpha -> Event beta| \\|-> Duration alpha times beta|
+|Real -> Event alpha | \\|-> Duration ()|
 \end{singlespace}} 
-& Create a duration from start and stop events\\
+& \parbox{8cm}{\begin{singlespace}Durations when successive inter-event occurrence intervals are smaller than a set minimum\end{singlespace}}\\
 
   |convolveSE| &
 \parbox{4cm}{\begin{singlespace}
@@ -47,17 +54,21 @@
 \end{singlespace}} 
 & \parbox{8cm}{\begin{singlespace}Events/Durations/Signals (|f|) that lie within occurrences in a duration\end{singlespace}}\\
 
-  |burst| &
+  |freqDuring| & 
 \parbox{4cm}{\begin{singlespace}
-|Real -> Event alpha | \\|-> Duration ()|
+|Duration alpha -> Event beta| \\|-> Duration Real|
 \end{singlespace}} 
-& \parbox{8cm}{\begin{singlespace}Durations when successive inter-event occurrence intervals are smaller than a set minimum\end{singlespace}}\\
+& Count events in each occurrence\\
 
-  |adjustDur| &
+  |inout| &
 \parbox{4cm}{\begin{singlespace}
-|Time times Time| \\ | -> Time times Time | \\ |-> Duration alpha | \\|-> Duration alpha|
+|Event alpha -> Event beta| \\|-> Duration alpha times beta|
 \end{singlespace}} 
-& \parbox{8cm}{\begin{singlespace}Apply a function to adjust the beginning and end of each duration occurrence\end{singlespace}}\\
+& Create a duration from start and stop events\\
+
+  |intervals| & |Event alpha -> Event Real|
+& \parbox{8cm}{\begin{singlespace}Replace the tag of each occurrence with the time period to the next occurrence\end{singlespace}}\\
+
 
   |later| &
 \parbox{4cm}{\begin{singlespace}
@@ -65,31 +76,21 @@
 \end{singlespace}} 
 & \parbox{8cm}{\begin{singlespace}Delay each event occurrence by a fixed amount of time\end{singlespace}}\\
 
-  |//| &
-\parbox{4cm}{\begin{singlespace}
-|(alpha -> Bool) -> f alpha | \\ | -> f alpha|
-\end{singlespace}} 
-& \parbox{8cm}{\begin{singlespace}Exclude events or durations (|f|) where the tag does not satisfy a predicate\end{singlespace}}\\
-
-  |area| & |Signal Real -> Event Real|
-& \parbox{8cm}{\begin{singlespace}Calculate the centre of mass (time of the event) and area (tag of the event) of a signal\end{singlespace}}\\
-
-  |tag| & |alpha -> f beta -> f beta|
-& \parbox{8cm}{\begin{singlespace}Change all tags of events or durations (|f|) to a fixed value\end{singlespace}}\\
-
-  |baseline| & 
-\parbox{4cm}{\begin{singlespace}|Real -> Real | \\ |-> Signal Real -> Signal Real|
-\end{singlespace}}
-& \parbox{8cm}{\begin{singlespace}Subtract from a signal its mean value between two time points\end{singlespace}}\\
-
-  |intervals| & |Event alpha -> Event Real|
-& \parbox{8cm}{\begin{singlespace}Replace the tag of each occurrence with the time period to the next occurrence\end{singlespace}}\\
+  |peak| & |Signal alpha -> Event alpha| & Peak value of each signal segment\\
 
   |smoothN| & 
 \parbox{4cm}{\begin{singlespace}|Int -> Signal Real | \\ |-> Signal Real|
 \end{singlespace}}
 & \parbox{8cm}{\begin{singlespace}Smooth a signal with the binomial filter\end{singlespace}}\\
 
+  |tag| & |alpha -> f beta -> f beta|
+& \parbox{8cm}{\begin{singlespace}Change all tags of events or durations (|f|) to a fixed value\end{singlespace}}\\
+
+  |//| &
+\parbox{4cm}{\begin{singlespace}
+|(alpha -> Bool) -> f alpha | \\ | -> f alpha|
+\end{singlespace}} 
+& \parbox{8cm}{\begin{singlespace}Exclude events or durations (|f|) where the tag does not satisfy a predicate\end{singlespace}}\\
 
  & & \\
 
