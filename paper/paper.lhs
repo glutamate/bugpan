@@ -45,11 +45,11 @@ $^*$ To whom correspondence should be sent (tm75@@le.ac.uk)
 
 \section*{Results}
 
-To introduce the calculus of physiological evidence (CoPE), we must first
+To introduce the calculus of physiological evidence (CoPE), we first
 define some terminology and basic concepts. We assume that \emph{time}
 is global and is represented by a real number, as in classical
 physics. An \emph{experiment} is an interaction between an observer
-and a specific number of organisms during a defined time period. An
+and a number of organisms during a defined time period. An
 experiment consists of one or more \emph{trials}: non-overlapping time
 periods during which the observer is running a \emph{program} ---
 instructions for manipulating the environment and for constructing
@@ -104,9 +104,9 @@ that represents the time of the largest amplitude
 value of of the signal, with that amplitude in the tag. Events that do not have
 a value of interest to associate with the time point at which it
 occurred, can be tagged with the unit type |()| which has only one
-element (that is, no information). Events can therefore represent both
+element (that is, no information). Events can therefore represent 
 measurements where the principal information is \emph{when} something
-happened, or where it concerns \emph{what} happened.
+happened, or measurements that concern \emph{what} happened.
 
 A third kind of information describes the properties of whole time
 periods. We define a duration of type |alpha| as a set of triples, of
@@ -236,8 +236,8 @@ than 5 after having been smaller. The expression |(\x->x>5)
 ?? s| thus defines a threshold detector restricted to threshold
 crossings with a positive slope.
  
-Table S1 has an informal overview of the syntax of CoPE; Table S2 in
-the supplementary information details the types and names of some of
+Table S1 in the supplementary information presents an informal overview of
+the syntax of CoPE; Table S2 details the types and names of some of
 functions we have defined using these definitions.
 
 % \subsubsection*{Observing signals and events}
@@ -283,7 +283,7 @@ to a physical device capable of effecting the
 desired perturbation. The value at the output at any point in time
 during an experiment is defined by connecting the corresponding sink
 to a signal.  This is done through the the following construct,
-mirroring the source construct discussed above:
+mirroring the source construct introduced above:
 \begin{code}
 signal *> sink
 \end{code}
@@ -305,7 +305,7 @@ We then write
 sineWave *> DAC 0
 \end{code}{}
 to send the |sineWave| signal to channel channel 0 of a
-digital-to-analog converter, completing the example. Below we show how
+digital-to-analog converter. Below we show how
 these primitives can be used to define two detailed experiments in
 neurophysiology.
 % Sinks and sources are thus used to
@@ -326,7 +326,7 @@ neurophysiology.
 \subsubsection*{Example 1}
 
 In locusts, the Descending Contralateral Movement Detector (DCMD)
-signals the appearance of looming objects to a distributed
+neuron signals the approach of looming objects to a distributed
 nervous system \cite{Rind1992}. We have constructed several
 experiments in CoPE to record the response of DCMD to visual stimuli
 that simulate objects approaching with different velocities. To
@@ -392,9 +392,9 @@ three-dimensional shapes onto a two-dimensional surface.
 loomingSquare' *> screen 
 \end{code}
 
-In our experiments, the extracellular voltage from the locust
-connectives, in which the DCMD forms the largest amplitude spike, were
-amplified, filtered (see methods) and digitised:
+In our experiments, the extracellular voltage from the locust nerves
+(connectives), in which the DCMD forms the largest amplitude spike,
+was amplified, filtered (see methods) and digitised:
 
 \begin{code}
 voltage <* ADC 0
@@ -450,17 +450,17 @@ show that it can be used to implement dynamic clamp in an \emph{in
 
 \subsubsection*{Example 2}
 
-A dynamic clamp experiment \cite{Robinson1993, Sharp1993} calculates
-the current to inject into a cell at every timepoint from the recorded
-membrane potential. The dynamic clamp thus permits recording the
-response of a real neuron to added simulated ionic conductances, for
-instance, a synaptic conductance or an additional Hodgkin-Huxley style
-voltage-sensitive membrane conductance. Here, we combine these
-possibilities to investigate the effect of an A-type potassium
-conductance \cite{Connor1971} on the response of a zebrafish spinal
-motor neuron to synaptic excitation.
+Dynamic clamp experiments\cite{Robinson1993, Sharp1993} permit the
+observation of real neuronal responses to added simulated ionic
+conductances; for instance, a synaptic conductance or an additional
+Hodgkin-Huxley type voltage-sensitive membrane conductance. A dynamic
+clamp experiment requires that the current injected into a cell is
+calculated at every timepoint based on the recorded membrane
+potential. Here, we use CoPE to investigate the effect of an A-type
+potassium conductance \cite{Connor1971} on the response of a zebrafish
+spinal motor neuron to synaptic excitation.
 
-Many dynamic clamp-experiments follow a common template: the output current
+The output current
 %
 % HN 2010-11-24: I agree that one might call the syntactic category
 % that encompass both equations and source/sink bindings "command" for
@@ -482,7 +482,7 @@ The experiment is thus characterised by the conductance signal $g$
 gains).
 
 In the simplest case, $g$ is independent of $v$; for instance, when
-considering linear synaptic conductances \cite{Mitchell2003}. Here, we
+considering linear synaptic conductances \cite{Mitchell2003}. We
 first consider the addition of a simulated fast excitatory synaptic
 conductance to a real neuron. Simple models of synapses approximate
 the conductance waveform with an alpha function
@@ -514,10 +514,10 @@ ionic conductances, which can also be examined with the dynamic
 clamp. In the Hodgkin-Huxley formalism for ion channels, the
 conductance depends on one or more state variables, for which the
 forward and backward rate constants depend on the membrane
-voltage. Here we show the equations for the activation gate of an
+voltage. We show the equations for the activation gate of an
 A-type potassium current \cite{Connor1971}, following \cite{Traub1991}
 (we use SI units and absolute voltages). The equations for
-inactivation are analogous.
+inactivation are analogous (see Listing 2 in supplementary information).
 
 We write the forward and backward rates as functions of the membrane voltage
 \begin{tabbing}
@@ -535,7 +535,7 @@ The time-varying state of the activation gate is given by a
 differential equation. We use the notation |D x = sopen f
 (x,<:seconds:>) sclose | to denote the ordinary differential equation
 that is conventionally written $\frac{dx}{dt} = f(x,t) $ with starting
-conditions explicitly assigned to the variable $x_0$. Here the
+conditions explicitly assigned to the variable $x_0$. The
 differential equation for the activation variable $a$ is
 \begin{code}
 D a = sopen  alphaa <: vm :> * (1- <:a:> ) -

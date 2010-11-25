@@ -16,7 +16,7 @@ and meta-data without imposing unnecessary constraints on what can be
 shared. The ontology is non-hierarchical and would be difficult to
 formulate in the various existing semantic web ontology frameworks
 (Web Ontology Language or Resource Description Framework), which lack
-parametric polymorphism and functional abstraction. Nevertheless, in
+parametric polymorphism and functional abstraction. Nevertheless, by
 specifying the categories of mathematical objects that constitute
 evidence, it is an ontology in the classical sense of cataloguing the
 categories within a specific domain, and providing a vocabulary for
@@ -35,7 +35,7 @@ and observations.
 % to make it consistent with "unambiguous" above, I propose
 %
 Our mathematical definitions are unambiguous and concise, unlike
-typical definitions written in plain English,
+typical definitions written in natural language,
 and are more powerful than those specified
 by graphical user interfaces or in formal languages that lack a
 facility for defining abstractions. Our framework is not only a
@@ -43,7 +43,7 @@ theoretical formalism, but also a very practical tool. It is a
 collection of computer programs for executing experiments and
 analyses, and carrying out data management. Controlling
 experimentation and analysis with programs that share data formats can
-be highly efficient and eliminates many sources of human error. Our
+be highly efficient, and eliminates many sources of human error. Our
 experiment definitions have the further advantage that they
 \emph{compose}; that is, more complex experiments can be formulated by
 joining together elementary building blocks. Such definitions may also
@@ -55,9 +55,9 @@ A corollary of our work is that it may be possible in principle to
 mechanically verify scientific inference, just as mathematical proofs
 can be verified by a proof checker \cite{DeBruijn1968,
   Harrison2009}. It is of course not possible to verify particular
-hypotheses about the physical world, or an organism. What might be
-verifiable are statements about experiments --- for instance, that:
-particular variables were randomly controlled and not observed;
+hypotheses about the physical world, or an organism in this way. What
+might be verifiable are statements about experiments --- for instance,
+that: particular variables were randomly controlled and not observed;
 outcomes have not gained correlation due to the analysis procedure;
 missing data are accounted for by the statistical model
 \cite{Gelman2003}; errors are propagated correctly \cite{Taylor1997};
@@ -65,15 +65,15 @@ units of measurement are used consistently \cite{Kennedy1997}; there
 is no ``double dipping'' \cite{Kriegeskorte2009}; and, ultimately,
 that the observed data support the conclusions drawn. Statistical
 analyses address some of these issues in relating observations to
-parameter estimation and hypothesis testing. However, without knowing
-where observations come from, it is difficult to ascertain whether
+parameter estimation and hypothesis testing. Without knowing
+where observations come from, however, it is difficult to ascertain whether
 they provide evidence for a given scientific hypothesis
 \cite{Pool2002}. Experiment description languages, and the
 representation of experimental observations into values of concrete
 types (which may not always be real numbers), could play an important
-role in such inference. It is likely that at least some
-aspects of validation in physiology can be achieved with conservative
-extensions of
+role in such inference. It is likely that at least some aspects of
+validation in physiology can be achieved with conservative extensions
+of
 % the calculus of physiological evidence 
 CoPE integrated with statistical inference.
 
@@ -157,8 +157,8 @@ parametrised probability distributions, such that experiments can sample
 values from the distributions and use these values in computations or
 connect them to sinks. However, these sources are \emph{not} idempotent as it
 is important that there are no accidental correlations. Sharing of a single random
-signal, when needed, can also be described easily: just bind that signal to a
-variable as discussed above and the variable is used to refer to the signal
+signal, when needed, can  be described by binding that signal to a
+variable as discussed above and using the variable to refer to the signal
 instead of repeating the reference to the random source. In this more general
 view, sources and sinks bridge referentially transparent and non-transparent
 computations.
@@ -203,7 +203,7 @@ tool for the experiment control computer.
 We would like to thank Jonathan McDearmid for help with the Zebrafish
 recordings and Angus Silver, Guy Billings, Antonia Hamilton, Nick
 Hartell and Rodrigo Quian Quiroga for critical comments on the
-manuscript. This work was funded by the Human Frontier Science Project
+manuscript. This work was funded by a Human Frontier Science Project
 fellowship to T.N., a Biotechnology and Biological Sciences Research
 Council grant to T.M. and T.N., and Engineering and Physical Sciences Research
 Council grants to H.N.
