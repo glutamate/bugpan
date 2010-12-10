@@ -196,6 +196,9 @@ instance PlotWithGnuplot Brenda where
 instance (ChopByDur a, ChopByDur b) =>  ChopByDur (a :+: b) where
     chopByDur durs (x :+: y) = zipWith (:+:) (chopByDur durs x) (chopByDur durs y)
 
+instance ChopByDur a =>  ChopByDur (YRange a) where
+    chopByDur durs (YRange lo hi y) = map (YRange lo hi) (chopByDur durs y)
+
 instance ChopByDur a =>  ChopByDur (String,a) where
     chopByDur durs (nm, x) = map ((,) nm) (chopByDur durs x) 
 

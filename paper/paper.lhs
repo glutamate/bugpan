@@ -641,5 +641,7 @@ simulated presynaptic inputs, with $g_A$ as in A.
 
 Table 1. Some common operations for generic manipulation of signals, events and durations.
 
+\includepdf[pages=-]{supplement.pdf}
+
 \end{document}
  

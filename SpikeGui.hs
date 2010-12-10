@@ -9,7 +9,7 @@ module Main where
 --import Eval
 --import Expr
 --import Stages
-import Query
+import Query hiding ((:=))
 import QueryTypes
 import Control.Monad.Trans
 --import Control.Monad.State.Lazy
@@ -37,17 +37,19 @@ import Data.Maybe
 import Data.IORef
 import Database
 import NewSignal
-import Graphics.UI.Gtk hiding (Signal)
+import Graphics.UI.Gtk hiding (Signal, eventKeyName)
 import SpikeDetect
 import Graphics.UI.Gtk.Gdk.Events
 
-main = spikeDetectIO
+main = spikeDetectIO 
 
 autoSpikes sigNm = do
   sigs <- signalsDirect sigNm 
   running <- durations "running" ()
   let nsigs = length sigs
 
+  let (lo,hi) = snd $ head $ sigStat (both minF maxF) $ sigs
+  let rng' = max (abs lo) (abs hi)
   Session bdir _ <- getSession
   let sessNm = last $ splitBy '/' bdir
   window <- io $ windowNew
@@ -68,6 +70,7 @@ autoSpikes sigNm = do
   currentStart <- io $ newIORef 0
   currentNumberPerView <- io $ newIORef 8
   currentSigs <- io $ newIORef []
+  currentRange <- io $ newIORef rng'
 
   let updateProg = do st <- readIORef currentStart
                       num <- readIORef currentNumberPerView
@@ -99,9 +102,10 @@ autoSpikes sigNm = do
                      num <- io $ readIORef currentNumberPerView
                      --let cursigs = take num $ drop start sigs
                      tv <- io $ readIORef currentThreshold
+                     rng <- io $ readIORef currentRange
                      
                      cursigs <- io $ readIORef currentSigs
-                     pics <- askPics $ plotManyBy (map sigDur cursigs) $ cursigs :+: tv `tag` map sigDur cursigs
+                     pics <- askPics $ plotManyBy (map sigDur cursigs) $ YRange (-rng) rng $ cursigs :+: tv `tag` map sigDur cursigs
                      --pics <- askPics $ plotManyBy (map sigDur cursigs) $ DownTo 500 cursigs :+: tv `tag` map sigDur cursigs
                      forM_ (zip [0..(num-1)] cursigs) $ \(i,sig)-> do
                        --io $ print (i, num, length cursigs)
@@ -137,9 +141,15 @@ autoSpikes sigNm = do
                                 
         return ()
 
-  let dispatchKey "j" = do io $ modifyIORef currentThreshold (\x->x-1)
+  let dispatchKey "j" = do rng <- io $ readIORef currentRange
+                           io $ modifyIORef currentThreshold (\x->x+(rng/25))
                            displayData
-      dispatchKey "k" = do io $ modifyIORef currentThreshold (\x->x+1)
+      dispatchKey "k" = do rng <- io $ readIORef currentRange
+                           io $ modifyIORef currentThreshold (\x->x-(rng/25))
+                           displayData
+      dispatchKey "m" = do io $ modifyIORef currentRange (*1.20)
+                           displayData
+      dispatchKey "l" = do io $ modifyIORef currentRange (*(1/1.20))
                            displayData
       dispatchKey "n" = do io $ modifyIORef currentThreshold (negate)
                            displayData
@@ -258,7 +268,7 @@ spikeDetectIO = do
                   --initUserInput
                   --plotSize 490 329
                   --overDur <- unitDurations overDurNm
-                  autoSpikes "normV"
+                  autoSpikes "ec"
                   return ()
                   --normV <- signalsDirect "normV"
                   --spikeDetect [overDur] normV []
