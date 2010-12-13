@@ -86,6 +86,12 @@ Table S1. Syntax of CoPE
 \end{singlespace}}
 & \parbox{8cm}{\begin{singlespace}Subtract from a signal its mean value between two time points\end{singlespace}}\\
 
+  |before| &
+\parbox{4cm}{\begin{singlespace}
+|f alpha|\\|-> g beta -> g beta|
+\end{singlespace}} 
+& \parbox{8cm}{\begin{singlespace}All Events/Durations/Signals (|g|) occurring before the first occurrence of an Event/Duration/Signal (|f|), with an analogous |after|\end{singlespace} \\
+
   |burst| &
 \parbox{4cm}{\begin{singlespace}
 |Real -> Event alpha | \\|-> Duration ()|

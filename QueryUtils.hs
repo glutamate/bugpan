@@ -77,7 +77,7 @@ infixl 3 &
 (//) :: Tagged t => (a->Bool) -> [t a] -> [t a]
 (//) = filterTag
 
-(&) :: (Tagged t1, Tagged t2) => [t1 a] -> [t2 b] -> [t2 b]
+(&) :: [a] -> [b] -> [b]
 [] & _ = []
 _ & ys = ys
 
@@ -601,6 +601,14 @@ minInterval t es@(e:[]) = es
 minInterval t (ts1:res@(ts2:es)) | dist (gettStart ts1) (gettStart ts2) < t = minInterval t (ts1:es)
                                  | otherwise = ts1 : minInterval t res
 
+beforeE :: (HasTStart t, HasTStart f) => [f a] -> [t b] -> [t b]
+beforeE [] xs = xs
+beforeE (e1:_) xs = let t1 = gettStart e1 in filter ((<t1) . gettStart) xs
+
+afterE :: (HasTStart t, HasTStart f) => [f a] -> [t b] -> [t b]
+afterE [] xs = xs
+afterE (e1:_) xs = let t1 = gettStart e1 in filter ((>t1) . gettStart) xs
+
 
 eq4 x y = abs(x-y)<1e-4
 
@@ -609,3 +617,12 @@ evInDur t = shift t . durStart
 reTimeSigsBy [] _ = []
 reTimeSigsBy _ [] = []
 reTimeSigsBy (((t1, t2),_):durs) (Signal ts1 ts2 dt arr eq:sigs) = (Signal t1 t2 dt arr eq):reTimeSigsBy durs sigs
+
+evens, odds :: [a] -> [a]
+evens [] = []
+evens [x] = [x]
+evens (x1:_:rest) = x1 : evens rest
+
+odds [] = []
+odds [x] = []
+odds (_:x1:rest) = x1 : odds rest
