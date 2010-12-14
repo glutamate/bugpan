@@ -5,9 +5,9 @@ experimental science, here demonstrated for physiology.  Our use of
 typed, functional and reactive programming overcomes at least three
 long-standing issues in bioinformatics: the need for a flexible
 ontology to share heterogeneous data from physiological experiments
-\cite{Amari2002}, a language for describing experiments unambiguously
-\cite{Murray-Rust2002}, and an equational formulation of data
-provenance \cite{Pool2002}.
+\citep{Amari2002}, a language for describing experiments unambiguously
+\citep{Murray-Rust2002}, and an equational formulation of data
+provenance \citep{Pool2002}. 
 
 The types we have presented form a linguistic framework and an
 ontology for physiology. Thanks to the flexibility of parametric polymorphism,
@@ -15,7 +15,7 @@ our ontology can form the basis for the interchange of physiological data
 and meta-data without imposing unnecessary constraints on what can be
 shared. The ontology is non-hierarchical and would be difficult to
 formulate in the various existing semantic web ontology frameworks
-(Web Ontology Language\cite{owlref} or Resource Description Framework), which lack
+(Web Ontology Language, \citealt{owlref}, or Resource Description Framework), which lack
 parametric polymorphism and functional abstraction. Nevertheless, by
 specifying the categories of mathematical objects that constitute
 evidence, it is an ontology in the classical sense of cataloguing the
@@ -46,29 +46,40 @@ experimentation and analysis with programs that share data formats can
 be highly efficient, and eliminates many sources of human error. Our
 experiment definitions have the further advantage that they
 \emph{compose}; that is, more complex experiments can be formulated by
-joining together elementary building blocks. Such definitions may also
-be of interest to designers of innovative graphical user interfaces
-for experimentation and analysis, as they can use CoPE as a back-end
-for executing experiments.
+joining together elementary building blocks. 
+
+We are not suggesting that all physiologists will henceforth define
+and execute their experiments using machine-executable
+equations. Individual aspects of our work can make distinct
+contributions to scientifc methodology --- for instance, our ontology
+for physiological evidence can be used within more conventional
+programming languages or with different user interfaces. Our full
+approach is relevant to the execution of very complex and multi-modal
+experiments, which may need to to be dynamically reconfigured based on
+previous observations, or to disambiguate difficult judgements about
+evidence \citep{Kriegeskorte2009}. It may also be of interest to
+designers of innovative graphical user interfaces for experimentation
+and analysis, as they can use CoPE as a back-end for executing
+experiments.
 
 A corollary of our work is that it may be possible in principle to
 mechanically verify scientific inference, just as mathematical proofs
-can be verified by a proof checker \cite{DeBruijn1968,
+can be verified by a proof checker \citep{DeBruijn1968,
   Harrison2009}. It is of course not possible to verify particular
 hypotheses about the physical world, or an organism in this way. What
 might be verifiable are statements about experiments --- for instance,
 that: particular variables were randomly controlled and not observed;
 outcomes have not gained correlation due to the analysis procedure;
 missing data are accounted for by the statistical model
-\cite{Gelman2003}; errors are propagated correctly \cite{Taylor1997};
-units of measurement are used consistently \cite{Kennedy1997}; there
-is no ``double dipping'' \cite{Kriegeskorte2009}; and, ultimately,
+\citep{Gelman2003}; errors are propagated correctly \citep{Taylor1997};
+units of measurement are used consistently \citep{Kennedy1997}; there
+is no ``double dipping'' \citep{Kriegeskorte2009}; and, ultimately,
 that the observed data support the conclusions drawn. Statistical
 analyses address some of these issues in relating observations to
 parameter estimation and hypothesis testing. Without knowing
 where observations come from, however, it is difficult to ascertain whether
 they provide evidence for a given scientific hypothesis
-\cite{Pool2002}. Experiment description languages, and the
+\citep{Pool2002}. Experiment description languages, and the
 representation of experimental observations into values of concrete
 types (which may not always be real numbers), could play an important
 role in such inference. It is likely that at least some aspects of

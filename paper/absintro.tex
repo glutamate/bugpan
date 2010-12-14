@@ -23,25 +23,24 @@ dynamic clamp of vertebrate neurons.
 
 \section*{Introduction}
 
-Reproducibility is a cornerstone of the scientific method. As
-scientific experiments and analysis become increasingly complex,
-reliant on computer code and produce larger volumes of data, the
-feasibility of independent verification and replication has -- in
-practice -- been undermined. Full disclosure of raw data and code for
-experiments and analysis does not guarantee reproducibility.  For
-instance, in only 8 out of 16 studies subject to this requirement and
-published in \emph{Nature Genetics} could the findings be replicated
-at all, and in only 2 of those, without discrepancies
-\cite{Ioannidis2008} (see also \cite{Baggerly2009,
-  McCullough2007}). It is often not realistic to verify that computer
-code used in analyses correctly implements an intended mathematical
-algorithm, yet errors can undermine a large body of work
-\cite{Chang2006}.  In addition, primary data sharing is standard in
-high-throughput biology, but not in fields that produce heterogeneous
-data \cite{Gardner2005}, further undermining independent validation.
-The combination of bias, human error, and unverified software, has led
-to the suggestion that many --- perhaps most --- published research
-findings are flawed \cite{Ioannidis2005, Merali2010}.
+Reproducibility and transparency are cornerstones of the scientific
+method. As scientific experiments and analysis become increasingly
+complex, reliant on computer code and produce larger volumes of data,
+the feasibility of independent verification and replication has -- in
+practice -- been undermined. Primary data sharing is now standard in
+applications of high-throughput biology, but not in the many fields
+that produce heterogeneous observations \citep{Gardner2005,
+  Tukey1962}. Full disclosure of raw data and code for experiments and
+analysis does not guarantee reproducibility.  Careful analyses have
+shown that only in a minority of studies subject to this requirement
+can the findings be reproduced without discrepancies
+\citep{Ioannidis2008,Baggerly2009, McCullough2007}. It is often not
+realistic to verify that computer code used in analyses correctly
+implements an intended mathematical algorithm, yet errors can
+undermine a large body of work \citep{Chang2006}. The combination of
+bias, human error, and unverified software, has led to the suggestion
+that many --- perhaps most --- published research findings are flawed
+\citep{Ioannidis2005, Merali2010}.
 
 These problems suggest that it is worth investigating a
 unified and transparent formalism for communication, validation, and
@@ -57,18 +56,18 @@ correspond to mathematical entities, enabling, algebraic reasoning
 about procedures, which is much more difficult in conventional
 programming languages.  Experiments are difficult to formalise in
 terms of relations between mathematical objects because they produce
-heterogeneous data \cite{Tukey1962}, and because they interact with
+heterogeneous data \citep{Tukey1962}, and because they interact with
 the physical world. In creating a mathematical framework for
 experiments, we take advantage of progress in embedding side effects
-\cite{PeytonJones2002, Roy2004, Wadler1995}, such as input and output,
+\citep{PeytonJones2002, Roy2004, Wadler1995}, such as input and output,
 into programming languages where the only mechanism of computation is
-evaluation of mathematical expressions \cite{Church1941}.
+evaluation of mathematical expressions \citep{Church1941}.
 
 Here, we define a formal framework for physiology
 that satisfies the above criteria. We show that there
 is a large conceptual overlap between physiological experimentation
-and Functional Reactive Programming (FRP\cite{Elliott1997,
-  Nilsson2002}), a concise and purely functional formulation of
+and Functional Reactive Programming \citep[FRP; ][]{Elliott1997,
+  Nilsson2002}, a concise and purely functional formulation of
 time-dependent reactive computer programs. Consequently, physiological
 experiments can be concisely defined in the vocabulary of
 \emph{signals} and \emph{events} introduced by FRP. Such a language
@@ -81,29 +80,29 @@ Our framework provides:
 
 (i) An explicitly defined ontology of physiological
 observations. Physiological databases have not been widely
-adopted\cite{Herz2008, Amari2002}, unlike in bioinformatics or
-anatomy, despite many candidates \cite{Jessop2010, Teeters2008,
+adopted\citep{Herz2008, Amari2002}, unlike in bioinformatics or
+anatomy, despite many candidates \citep{Jessop2010, Teeters2008,
   Frishkoff2009, Katz2010}.  We suggest that a flexible, concise and
 simple structure for physiological quantities can remedy some of the
-shortcomings\cite{Gardner2005, Amari2002} of existing databases and
-thus facilitate the sharing of data and meta-data \cite{Insel2003}.
+shortcomings\citep{Gardner2005, Amari2002} of existing databases and
+thus facilitate the sharing of data and meta-data \citep{Insel2003}.
 
 (ii) A concise language for describing complex experiments and
 analysis procedures in physiology using only mathematical
 equations. Experimental protocols can be communicated unambiguously,
 highlighting differences between studies and facilitating replication
 and meta-analysis.  By construction, the provenance
-\cite{Pool2002,MacKenzie-Graham2008, VanHorn2009} of \emph{any}
+\citep{Pool2002,MacKenzie-Graham2008, VanHorn2009} of \emph{any}
 observation can be defined in a single equation that must include
 post-acquisition processing and censoring.
 
 (iii) A new approach to validating scientific inference
-\cite{Editors2003, Editors2010}. First, a concise language with a
+\citep{Editors2003, Editors2010}. First, a concise language with a
 clear mathematical denotation \emph{can} be verified manually. Second, by
 inspecting an experiment definition, \emph{automated} decision procedures
 could verify certain statements about experiments that indicate sound
 scientific practice, such as consistent units of measurement
-\cite{Kennedy1997} and correct error propagation \cite{Taylor1997}.
+\citep{Kennedy1997} and correct error propagation \citep{Taylor1997}.
 
 (iv) A practical tool that is powerful and generalises to complex and
 multi-modal experiments. We have implemented our framework as a new

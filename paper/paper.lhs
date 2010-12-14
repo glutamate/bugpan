@@ -6,7 +6,7 @@
 \usepackage{setspace} 
 \usepackage{verbatim} 
 \usepackage[final]{pdfpages}
-\usepackage[super, comma]{natbib}
+\usepackage{natbib}
 %\usepackage{citesupernumber}
 
 \usepackage{graphicx}
@@ -61,7 +61,7 @@ construct other mathematical objects pertaining to the experiment.
 
 What kinds of mathematical objects can be used as physiological
 evidence? We answer this question within simple type theory
-\cite{Pierce2002, Hindley2008}, which assigns to every object a
+\citep{Pierce2002, Hindley2008}, which assigns to every object a
 \emph{type}. These types include base types, such as integers
 |Integer|, real numbers |Real|, text strings |String| and the Boolean
 type |Bool| with the two values |True| and |False|. In addition, types
@@ -73,7 +73,7 @@ a value in the type |beta| from a value in |alpha|. The ability to
 write flexible type schemata and generic functions containing type
 variables ($\alpha, \beta, \ldots$), which can later be substituted
 with any concrete type, is called ``parametric
-polymorphism''\cite{Pierce2002} and is essential to the simplicity and
+polymorphism''\citep{Pierce2002} and is essential to the simplicity and
 flexibility of CoPE.
 
 We distinguish three type schemata in which physiological evidence can
@@ -132,24 +132,24 @@ these quantities fundamentally differently, thus removing the
 possibility of re-using common analysis procedures. Although
 parametric polymorphism is conceptually simple and the distinctions we
 are introducing are intuitive, common biomedical
-ontologies\cite{owlref} \emph{cannot} accommodate these definitions.
+ontologies\citep{owlref} \emph{cannot} accommodate these definitions.
 
 \subsubsection*{Calculating with signals and events}
 
 From direct observations, one often needs to process events and
 signals, create new events from signals, filter data and calculate
 statistics. Here, we formulate these transformations in terms of the
-lambda calculus \cite{Church1941}, a family of formal languages for
+lambda calculus \citep{Church1941}, a family of formal languages for
 computation based solely on evaluating functions.  These languages,
 unlike conventional programming languages, retain an important
 characteristic of mathematics: a term can freely be replaced by
 another term with identical meaning.
 % HN 2010-09-30: Always "substitute for"
-This property (referential transparency\cite{Whitehead1927})
+This property \citep[referential transparency][]{Whitehead1927}
 % HN 2010-11-10: "enables" is a bit too strong. For example, it is certainly
 % *possible* to reason formally about imperative code. 
 facilitates algebraic manipulation of and reasoning about
-programs \cite{Bird1996}. The lambda calculus allows functions to be
+programs \citep{Bird1996}. The lambda calculus allows functions to be
 used as first class entities: that is, they can be referenced by
 variables and passed as arguments to other functions. On the other
 hand, the lambda calculus disallows changing the value of variables or
@@ -157,14 +157,14 @@ global states. These properties together mean that the lambda calculus
 combines verifiable correctness with a high level of abstraction,
 leading to programs that are in 
 % HN 2010-11-24: Note: practice is the noun, practise the verb 
-practice more concise \cite{Hughes1989} than those written in
+practice more concise \citep{Hughes1989} than those written in
 conventional programming languages. The lambda calculus or variants
 thereof has been used as a foundation for mathematics
-\cite{Martin-Lof1985}, classical \cite{Sussman2001} and quantum
-\cite{Karczmarczuk2003} mechanics, evolutionary biochemistry
-\cite{Fontana1994}, mechanized theorem provers \cite{DeBruijn1968,
+\citep{Martin-Lof1985}, classical \citep{Sussman2001} and quantum
+\citep{Karczmarczuk2003} mechanics, evolutionary biochemistry
+\citep{Fontana1994}, mechanized theorem provers \citep{DeBruijn1968,
   Harrison2009} and functional programming languages
-\cite{McCarthy1960}.
+\citep{McCarthy1960}.
 
 In the lambda calculus, calculations are performed by function
 abstraction and application. |\x->e| denotes the function with
@@ -189,7 +189,7 @@ events.
 This calculus borrows some concepts from earlier versions of FRP, but focuses
 exclusively on signals and events as mathematical objects and their relations,
 without any additional control structures for describing sequences of system
-configurations (of the type ``first X, then Y'') \cite{Elliott1997,
+configurations \citep[of the type ``first X, then Y''][]{Elliott1997,
   Nilsson2002}. As a result, CoPE is quite different from conventional FRP,
 which is also reflected in its implementation.
 
@@ -219,7 +219,7 @@ introduces a differential equation (see Example 2 below).
 Events and durations can be manipulated as \emph{lists}. Thus, a large
 number of transformations can be defined with simple recursive
 equations including filters, folds and scans familiar from functional
-programming languages \cite{Hughes1989}. In addition, we have added a
+programming languages \citep{Hughes1989}. In addition, we have added a
 special construct to detect events from existing signals. For
 instance, a threshold detector generates an occurrence of an event
 whenever the value of a signal crosses a specific level from below.
@@ -327,7 +327,7 @@ neurophysiology.
 
 In locusts, the Descending Contralateral Movement Detector (DCMD)
 neuron signals the approach of looming objects to a distributed
-nervous system \cite{Rind1992}. We have constructed several
+nervous system \citep{Rind1992}. We have constructed several
 experiments in CoPE to record the response of DCMD to visual stimuli
 that simulate objects approaching with different velocities. To
 generate these stimuli, we augmented CoPE with primitive
@@ -368,13 +368,13 @@ loomingSquare =
 \end{code}
 
 |loomingSquare| differs from conventional protocols
-\cite{Gabbiani2001} for stimulating DCMD in that it describes an
+\citep{Gabbiani2001} for stimulating DCMD in that it describes an
 object that passes through the physical screen and the observer, and
 when displayed would thus disappear from the screen just before
 collision. In order not to evoke a large OFF response
-\cite{O'shea1976} immediately after simulated collision, the object
+\citep{O'shea1976} immediately after simulated collision, the object
 is frozen in space as it reaches the plane of the surface onto which
-the animation is projected \cite{Hatsopoulos1995}. To achieve this
+the animation is projected \citep{Hatsopoulos1995}. To achieve this
 effect, we define a new signal that has a lower bound of the distance
 from the eye to the visual display screen |zscreen|
 \begin{code}
@@ -411,7 +411,7 @@ The simplest method for detecting spikes from a raw voltage trace is
 to search for threshold crossings, which works well in
 % HN 2010-11-24: Note: practice is the noun, practise the verb 
 practice for calculating DCMD activity from recordings of the locust
-connectives \cite{Gabbiani2001}. If the threshold voltage for spike
+connectives \citep{Gabbiani2001}. If the threshold voltage for spike
 detection is |vth|, the event |spike| can be calculated with
 \begin{code}
 spike = tag () ((\v->v>vth) ?? voltage)
@@ -438,7 +438,7 @@ $\frac{l}{||v||}$. The average of |hspike| for three different values
 of $\frac{l}{||v||}$ are shown in Figure 2A; 2B and 2C show the total
 number of spikes (|length spike|) and largest value of |hspike|, for
 each approach, plotted against the value of $\frac{l}{||v||}$
-\cite{Hatsopoulos1995}.
+\citep{Hatsopoulos1995}.
 
 This experiment demonstrates that the calculus of physiological
 evidence can adequately and concisely describe visual stimuli, spike
@@ -450,14 +450,14 @@ show that it can be used to implement dynamic clamp in an \emph{in
 
 \subsubsection*{Example 2}
 
-Dynamic clamp experiments\cite{Robinson1993, Sharp1993} permit the
+Dynamic clamp experiments\citep{Robinson1993, Sharp1993} permit the
 observation of real neuronal responses to added simulated ionic
 conductances; for instance, a synaptic conductance or an additional
 Hodgkin-Huxley type voltage-sensitive membrane conductance. A dynamic
 clamp experiment requires that the current injected into a cell is
 calculated at every timepoint based on the recorded membrane
 potential. Here, we use CoPE to investigate the effect of an A-type
-potassium conductance \cite{Connor1971} on the response of a zebrafish
+potassium conductance \citep{Connor1971} on the response of a zebrafish
 spinal motor neuron to synaptic excitation.
 
 The output current
@@ -482,11 +482,11 @@ The experiment is thus characterised by the conductance signal $g$
 gains).
 
 In the simplest case, $g$ is independent of $v$; for instance, when
-considering linear synaptic conductances \cite{Mitchell2003}. We
+considering linear synaptic conductances \citep{Mitchell2003}. We
 first consider the addition of a simulated fast excitatory synaptic
 conductance to a real neuron. Simple models of synapses approximate
 the conductance waveform with an alpha function
-|alpha_f|\cite{Carnevale2006}.
+|alpha_f|\citep{Carnevale2006}.
 \begin{code}
 alpha_f = \amp -> \tau -> sopen tau **2 * <: seconds :> *exp (- <: seconds :> *tau) sclose
 \end{code}
@@ -515,8 +515,8 @@ clamp. In the Hodgkin-Huxley formalism for ion channels, the
 conductance depends on one or more state variables, for which the
 forward and backward rate constants depend on the membrane
 voltage. We show the equations for the activation gate of an
-A-type potassium current \cite{Connor1971}, following \cite{Traub1991}
-(we use SI units and absolute voltages). The equations for
+A-type potassium current (\citealt{Connor1971}; following \citealt{Traub1991}, but
+using SI units and absolute voltages). The equations for
 inactivation are analogous (see Listing 2 in supplementary information).
 
 We write the forward and backward rates as functions of the membrane voltage
@@ -570,7 +570,7 @@ simulated synaptic input |rate| is plotted in Figure 3C for four
 different values of |gmaxk|. 
 \input{discuss}
 
-\bibliographystyle{nature}
+\bibliographystyle{apalike}
 \bibliography{paper}
 
 \pagebreak
