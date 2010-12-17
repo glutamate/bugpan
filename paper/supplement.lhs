@@ -11,6 +11,17 @@
 
 \begin{document}
 \doublespacing 
+\section*{Supplementary Text}
+\subsubsection*{Inventory}
+\begin{flushleft}
+\begin{enumerate}
+\item Table S1. Syntax of CoPE
+\item Table S2. Common analysis operations defined in CoPE
+\item Listing 1. Code for Figure 1 and 2
+\item Listing 2. Code for Figure 3
+\end{enumerate}
+\end{flushleft}
+\pagebreak
 \begin{tabular}{l p{10cm}}
 \hline
   Expression & Denotes\\ 
@@ -47,7 +58,7 @@
 
 
  & \\
-
+\hline
 
 
 
@@ -58,7 +69,7 @@
 
 %\end{comment}
 
-Table S1. Syntax of CoPE
+\noindent Table S1. Syntax of CoPE
 
 \pagebreak
 \begin{tabular}{l  l  p{8cm}}
@@ -90,7 +101,7 @@ Table S1. Syntax of CoPE
 \parbox{4cm}{\begin{singlespace}
 |f alpha|\\|-> g beta -> g beta|
 \end{singlespace}} 
-& \parbox{8cm}{\begin{singlespace}All Events/Durations/Signals (|g|) occurring before the first occurrence of an Event/Duration/Signal (|f|), with an analogous |after|\end{singlespace} \\
+& \parbox{8cm}{\begin{singlespace}All Events/Durations/Signals (|g|) occurring before the first occurrence of an Event/Duration/Signal (|f|), with an analogous |after|\end{singlespace}} \\
 
   |burst| &
 \parbox{4cm}{\begin{singlespace}
@@ -184,7 +195,7 @@ ecVoltage *> store ""
 \end{verbatim}
 
 \flushleft Listing 1. Entire unformatted code for the experiment in
-Example 1.
+Example 1, related to Figure 1 and 2.
 
 \pagebreak
 \singlespacing 
@@ -237,7 +248,7 @@ outv *> DAC 0
 vm *> store ""
 \end{verbatim}
 
-\flushleft Listing 2. Entire code for the experiment in Example 2. 
+\flushleft Listing 2. Entire code for the experiment in Example 2, related to Figure 3.
 
 
 \end{document}

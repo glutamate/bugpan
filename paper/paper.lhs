@@ -16,7 +16,8 @@
   physiological observations, experiments and analyses} 
 
 \author{Thomas A. Nielsen, Henrik Nilsson and Tom Matheson}
-
+\pagestyle{myheadings}
+\markboth{A formal framework for experiments in physiology}{A formal framework for experiments in physiology}
 \begin{document}
 \begin{titlepage}
 
@@ -28,7 +29,14 @@
 
 \begin{center}{\large Thomas A. Nielsen$^{1}$, Henrik Nilsson$^2$ and Tom Matheson$^{1*}$}
 \end{center}
-\vspace{50 mm}
+\vspace{27 mm}
+
+\begin{flushleft}
+RUNNING TITLE: A formal framework for experiments in physiology
+\end{flushleft}
+
+\vspace{27 mm}
+
 
 \begin{flushleft}
 1. Department of Biology, University of Leicester, University Road, Leicester LE1 7RH
@@ -94,12 +102,13 @@ Signal alpha = Time -> alpha
 For instance, the output of a differential
 voltage amplifier might be captured in a |Signal Real|.
 
-To model occurrences pertaining to specific instances in time,
+\begin{samepage}To model occurrences pertaining to specific instances in time,
 FRP defines events as a list of pairs of time points and values in a
 type |alpha|, called the ``tags'':
 \begin{code}
 Event alpha = [Time times alpha]
 \end{code}
+\end{samepage}
 For example, an event can be constructed from a number-valued signal
 that represents the time of the largest amplitude
 value of of the signal, with that amplitude in the tag. Events that do not have
@@ -196,7 +205,7 @@ expression depends on the occurrence of events \citep{Elliott1997,
 simulation. As a result, CoPE is quite different from conventional
 FRP, which is also reflected in its implementation.
 
-Let the construct |sopen e sclose| denote a signal with the value of
+\begin{samepage}Let the construct |sopen e sclose| denote a signal with the value of
 the expression |e| at every time point, and let the construct |<: s
 :>| denote the current value of the signal |s| in the temporal context
 created by the surrounding |sopen| \ldots |sclose| braces. For
@@ -212,6 +221,7 @@ smap = \f -> \s -> sopen f <: s :> sclose
 transforms, for any two types |alpha| and |beta|, the signal |s| of |alpha|
 into a signal of |beta| by applying the function |f| of type |alpha
 -> beta| to the value of the signal at every time point.
+\end{samepage}
 
 The differential operator |D| differentiates a real-valued signal with
 respect to time, such that |D s| denotes its first derivative and |D D
@@ -644,7 +654,7 @@ simulated presynaptic inputs, with $g_A$ as in A.
 
 Table 1. Some common operations for generic manipulation of signals, events and durations.
 
-\includepdf[pages=-]{supplement.pdf}
+%\includepdf[pages=-]{supplement.pdf}
 
 \end{document}
  
