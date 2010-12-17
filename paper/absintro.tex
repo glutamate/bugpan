@@ -14,10 +14,12 @@ experiments themselves can be composed from time-dependent quantities,
 and be expressed as purely mathematical equations that can be
 manipulated algebraically. Our framework is concise, allowing entire
 experiments to be defined unambiguously in a few equations. To
-demonstrate the practicality and versatility of our approach, we show
-the full equations for two non-trivial implemented and analysed
+demonstrate that our approach can be implemented and used, we show the
+full equations we have used to run and analyse two non-trivial
 experiments describing visually stimulated neuronal responses and
-dynamic clamp of vertebrate neurons. 
+dynamic clamp of vertebrate neurons. Our ideas could provide a
+theoretical basis for the development of new standards of data
+acquisition, analysis and communication in physiological sciences.
 
 \pagebreak
 
@@ -30,17 +32,16 @@ the feasibility of independent verification and replication has -- in
 practice -- been undermined. Primary data sharing is now standard in
 applications of high-throughput biology, but not in the many fields
 that produce heterogeneous observations \citep{Gardner2005,
-  Tukey1962}. Full disclosure of raw data and code for experiments and
-analysis does not guarantee reproducibility.  Careful analyses have
-shown that only in a minority of studies subject to this requirement
-can the findings be reproduced without discrepancies
-\citep{Ioannidis2008,Baggerly2009, McCullough2007}. It is often not
-realistic to verify that computer code used in analyses correctly
-implements an intended mathematical algorithm, yet errors can
-undermine a large body of work \citep{Chang2006}. The combination of
-bias, human error, and unverified software, has led to the suggestion
-that many --- perhaps most --- published research findings are flawed
-\citep{Ioannidis2005, Merali2010}.
+  Tukey1962}. Even when raw data and code used for experiments and
+analysis are fully disclosed, only a minority of findings can be
+reproduced without discrepancies \citep{Ioannidis2008,Baggerly2009,
+  McCullough2007}. It is often not realistic to verify that computer
+code used in analyses correctly implements an intended mathematical
+algorithm, yet errors can undermine a large body of work
+\citep{Chang2006}. The combination of bias, human error, and
+unverified software, has led to the suggestion that many --- perhaps
+most --- published research findings are flawed \citep{Ioannidis2005,
+  Merali2010}.
 
 These problems suggest that it is worth investigating a
 unified and transparent formalism for communication, validation, and
@@ -91,9 +92,9 @@ thus facilitate the sharing of data and meta-data \citep{Insel2003}.
 analysis procedures in physiology using only mathematical
 equations. Experimental protocols can be communicated unambiguously,
 highlighting differences between studies and facilitating replication
-and meta-analysis.  By construction, the provenance
+and meta-analysis. The provenance
 \citep{Pool2002,MacKenzie-Graham2008, VanHorn2009} of \emph{any}
-observation can be defined in a single equation that must include
+observation can be extracted as a single equation that includes
 post-acquisition processing and censoring.
 
 (iii) A new approach to validating scientific inference
@@ -107,6 +108,6 @@ scientific practice, such as consistent units of measurement
 (iv) A practical tool that is powerful and generalises to complex and
 multi-modal experiments. We have implemented our framework as a new
 programming language and used it for non-trivial neurophysiological
-experiments and data analyses. This language can concisely express and
-run experiment with stimuli defined by, for instance, differential
-equations or animations.
+experiments and data analyses. A strength of our approach is that its
+individual elements could, alternatively, be adopted separately or in
+different ways to suit the diverse demands of physiologists.

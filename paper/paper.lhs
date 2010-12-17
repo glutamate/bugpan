@@ -61,20 +61,21 @@ construct other mathematical objects pertaining to the experiment.
 
 What kinds of mathematical objects can be used as physiological
 evidence? We answer this question within simple type theory
-\citep{Pierce2002, Hindley2008}, which assigns to every object a
-\emph{type}. These types include base types, such as integers
-|Integer|, real numbers |Real|, text strings |String| and the Boolean
-type |Bool| with the two values |True| and |False|. In addition, types
-can be arbitrarily combined in several ways, such that if |alpha| and
-|beta| are types, the type |alpha times beta| is the pair formed by
-one element of |alpha| and one of |beta|; |[alpha]| is a list of
-|alpha|s; and |alpha -> beta| is the type of functions that calculate
-a value in the type |beta| from a value in |alpha|. The ability to
-write flexible type schemata and generic functions containing type
-variables ($\alpha, \beta, \ldots$), which can later be substituted
-with any concrete type, is called ``parametric
-polymorphism''\citep{Pierce2002} and is essential to the simplicity and
-flexibility of CoPE.
+\citep{Pierce2002, Hindley2008}, which introduces an intuitive
+classification of mathematical objects by assigning to every object
+exactly one \emph{type}. These types include base types, such as
+integers |Integer|, real numbers |Real|, text strings |String| and the
+Boolean type |Bool| with the two values |True| and |False|. In
+addition, types can be arbitrarily combined in several ways, such that
+if |alpha| and |beta| are types, the type |alpha times beta| is the
+pair formed by one element of |alpha| and one of |beta|; |[alpha]| is
+a list of |alpha|s; and |alpha -> beta| is the type of functions that
+calculate a value in the type |beta| from a value in |alpha|. The
+ability to write flexible type schemata and generic functions
+containing type variables ($\alpha, \beta, \ldots$), which can later
+be substituted with any concrete type, is called ``parametric
+polymorphism''\citep{Pierce2002} and is essential to the simplicity
+and flexibility of CoPE.
 
 We distinguish three type schemata in which physiological evidence can
 be values. These differ in the manner in which measurements appear in
@@ -186,12 +187,14 @@ events.
 % 
 % I think it's important to make it very clear that CoPE is not FRP:
 %
-This calculus borrows some concepts from earlier versions of FRP, but focuses
-exclusively on signals and events as mathematical objects and their relations,
-without any additional control structures for describing sequences of system
-configurations \citep[of the type ``first X, then Y''][]{Elliott1997,
-  Nilsson2002}. As a result, CoPE is quite different from conventional FRP,
-which is also reflected in its implementation.
+This calculus borrows some concepts from earlier versions of FRP, but
+focuses exclusively on signals and events as mathematical objects and
+their relations.  It does noy have any control structures for
+describing sequences of system configurations, where a signal
+expression depends on the occurrence of events \citep{Elliott1997,
+  Nilsson2002}, although such constructs may be useful for cell
+simulation. As a result, CoPE is quite different from conventional
+FRP, which is also reflected in its implementation.
 
 Let the construct |sopen e sclose| denote a signal with the value of
 the expression |e| at every time point, and let the construct |<: s
