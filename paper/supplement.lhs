@@ -12,16 +12,6 @@
 \begin{document}
 \doublespacing 
 \section*{Supplementary Text}
-\subsubsection*{Inventory}
-\begin{flushleft}
-\begin{enumerate}
-\item Table S1. Syntax of CoPE
-\item Table S2. Common analysis operations defined in CoPE
-\item Listing 1. Code for Figure 1 and 2
-\item Listing 2. Code for Figure 3
-\end{enumerate}
-\end{flushleft}
-\pagebreak
 \begin{tabular}{l p{10cm}}
 \hline
   Expression & Denotes\\ 
@@ -249,6 +239,61 @@ vm *> store ""
 \end{verbatim}
 
 \flushleft Listing 2. Entire code for the experiment in Example 2, related to Figure 3.
+
+\pagebreak
+
+
+\subsubsection{Sources and Sinks}
+
+Sources and sinks 
+% HN 2010-11-24: Yes, I can see they can be considered as "annotations"
+% in that they are somewhat peripheral to an experiment definition. However,
+% they are certainly not void of sematic content relevant to the experiment
+% as such! Cf the discussion of idempotency for example. I suggest simply
+% not saying anything about the "nature" of sourecs and sinks here.
+%
+% are annotations to a program that 
+%
+link the functional equations with the physical world. We stress that they are
+not expressions, do not evaluate to values (unlike all other
+constructs), and can only be used at the top level. What happens if the
+same source is observed more than once in a description of an
+experiment?  If the source refers to a single, physical input port
+such as a channel of an analog-to-digital converter, the result will
+necessarily be the same, because the same entity is being observed
+within a single run of the experiment. Such sources are called
+\emph{idempotent}.  Idempotency ensures that separate experiments
+referring to a common external variable can be composed easily with a
+predictable outcome. However, there are other kinds of sources,
+notably random sources as discussed below, where idempotency is
+\emph{not} desirable. Each occurrence of a non-idempotent source is
+thus a separate, independent source, even if the name of the source
+and the parameters happen to be the same.
+
+What happens if the same \emph{sink} is defined more than once? One could
+imagine combining the defining signals in various ways. For example, in the
+case of a simple numerical signal, they could simply be added, mirroring
+superposition of waves in the physical world. However, as our signals are more
+general, it is not always clear what the appropriate notion of ``addition''
+should be. For example, if we have signals carrying images, and we wish to
+output these to a single graphical display, it is likely that we also need to
+describe aspects such as which one should be ``on top''. Thus, for flexibility
+and clarity, combination of output signals has to be described explicitly, and
+it is an error to define a sink more than once in an experimental description.
+
+There are also operations in experiments that are not related to real-world
+observation or to purely functional computation. One example is sampling from
+probability distributions. We have implemented sources corresponding to common
+parametrised probability distributions, such that experiments can sample
+values from the distributions and use these values in computations or
+connect them to sinks. However, these sources are \emph{not} idempotent as it
+is important that there are no accidental correlations. Sharing of a single random
+signal, when needed, can  be described by binding that signal to a
+variable as discussed above and using the variable to refer to the signal
+instead of repeating the reference to the random source. In this more general
+view, sources and sinks bridge referentially transparent and non-transparent
+computations.
+
 
 
 \end{document}

@@ -559,9 +559,15 @@ data ArrowAt a = ArrowAt (Double, Double) (Double, Double) a
 
 data TextAt a = TextAt (Double, Double) String a
               | TextAtLeft (Double, Double) String a
+              | TextAtRot (Double,Double) String a
 instance PlotWithGnuplot a => PlotWithGnuplot (TextAt a) where
     multiPlot r (TextAt (x0,y0) s x) = do
       let mklab = TopLevelGnuplotCmd ("set label "++show s++" at first "++show x0++","++show y0++" center front") 
+                                     "unset label"
+      px <- multiPlot r x
+      return $ map (\(r', pls) -> (r', mklab:pls)) px
+    multiPlot r (TextAtRot (x0,y0) s x) = do
+      let mklab = TopLevelGnuplotCmd ("set label "++show s++" at first "++show x0++","++show y0++" center front rotate") 
                                      "unset label"
       px <- multiPlot r x
       return $ map (\(r', pls) -> (r', mklab:pls)) px
