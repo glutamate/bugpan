@@ -11,60 +11,80 @@ rate = 200
 cm = 2.81e-10
 gl = 3.0e-8
 el = -0.0706
+vr = -0.0706
 vt = -0.0504
 slopefac = 0.002
 tauw = 0.144
 a = 4.0e-9
 b = 8.05e-11
-gsynmul = 1.0e-12
+gsynmul = 1.5e-11
 
-
-
-
-_dt = 4.0e-5
-_tmax= 10
+_dt = 1.5e-5
+_tmax= 1
 
 alpha tau t = if t<0.0 then 0.0 else tau*tau*t*(exp (-t*tau)) 
 
 rndSpike :: [(Real, ())]
 rndSpike <* poisson rate
 
-gsyn = {: gsynmul * (alpha 1485 <: seconds:>) #0.02:}
+gsyn = {: gsynmul * (alpha 1485 <: seconds:>) :}
 
 stage gsyn -1
 
 gexc :: Signal Real
 gexc = (convolve gsyn) (forget 0.02 rndSpike )
 
+{-
+--cellOde :: Real -> Signal Real
+--cellOde = \v->\w-> {: (gl*slopefac*exp((v -vt)/slopefac) - gl*(v-el)- <: gexc :>*(v-0))/cm :} 
 
-cellOde :: Real -> Signal Real
-cellOde = \v-> {: (gl*slopefac*exp((v -vt)/slopefac) - gl*(v-el)- <: gexc :>*(v-0) - <: w :> )/cm :} 
+cellOdes :: Real -> Signal (Real,Real)
+cellOdes = \ws ->      	    
+   let D vm = {: (gl*slopefac*exp((<:v:> -vt)/slopefac) - gl*(<:vm:>-el)- <: gexc :>*(<:vm:>-0) - <:w:> )/cm :} 
+       D w = {: a * (<: vm :> - el) - <: w :> :}
+       vm_0 = vr
+       w_0 = ws
+   in {: (<: vm :> , <: w :>) :}
 
-vm :: Signal Real
+
+vms :: Signal (Real,Real)
+vms = switch 
+            cellOdes 0
+	    spike ~> \_->\ws-> cellOdes ws
+
+-}
+
+vmOde :: Real -> Signal Real
+vmOde = \v'-> {: (((gl*slopefac)*exp((v' -vt)/slopefac)) - gl*(v'-el)- <: gexc :>*(v'-0) - <: w :>  )/cm :} 
+
 vm = switch 
-	    S cellOde el -- cellOde v in v
-	    spike ~> \tsp->\_-> solveOdeFrom (tsp+dt) cellOde el
-
-wOde w' = {: a*(<: vm :> - el) - w'  :}
+	    let D vms = vr fby (vmOde <: vms:>) in vms
+	    spike ~> \tsp->\_-> solveOdeFrom (tsp+dt) vmOde vr
 
 w :: Signal Real
 w = switch 
-	    solveOde wOde 0
-	    spike ~> \tsp->\_-> solveOdeFrom (tsp+dt) wOde (wlast+b) -- let D ws = (ws+b) fby wOde in  ws 
+	    let D ws = 0 fby ({: a*(<: vm :> - el) - <:ws:> :}) in  ws
+	    spike ~> \tsp->\wl-> ( let D ws = (wl+b) fby ({: (a*(<: vm :> - el) - <:ws:>)/tauw :}) in  ws )
 
-wlast ::  Signal Real
-wlast = delay w 0
+--solveOdeFrom (tsp+dt) wOde (wl+b) 
 
-spike :: [(Real, ())]
-spike = crosses 0.02 vm 
+--
 
-spikeP1 = later dt spike
+
+spike :: [(Real, Real)]
+spike = -- (\(v,w)->v>0.02) ? ({: (<:vm:>,<:w:>) :} )
+
+         [: if (<: vm :> >= 0.02)
+               then [ (<: seconds :>, <:w:> ) ] 
+               else [] :]
+
+--spikeP1 = later dt spike
 
 --inputRate *> store ""
 
 --secs = {: <: seconds :> :}
 
---gsyn *> store ""
+gexc *> store ""
 --gcell *> store ""
 --vm *> print ()
 vm *> store ""
@@ -74,6 +94,6 @@ w *> store ""
 --incrsig *> store ""
 spike *> store ""
 --refrac_end *> store ""
---spike *> print ()
+--spike *> store ""
 --rndSpike *> store ""
 

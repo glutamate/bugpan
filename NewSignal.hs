@@ -59,6 +59,14 @@ timePointsFromT1T2Dt t1 t2 dt = let n = round $ (t2-t1)/dt
 sigVTimePoints (SigV t1 t2 dt _) = let n = (t2-t1)/dt
                                    in map ((+t1) . (*dt)) [0..n-1]
 
+saturate :: Double -> Signal Double -> Signal Double
+saturate mx (Signal t1 t2 dt arr Eq) = Signal t1 t2 dt narr Eq where
+      narr = SV.map f arr
+      f x | x>mx = mx
+          | x<(negate mx) = negate mx
+          | (isNaN x) || (isInfinite x) = mx
+          | otherwise = x
+
 
 sigToList :: Signal a -> [a]
 sigToList sig@(Signal t1 t2 dt arr Eq) = SV.unpack arr 

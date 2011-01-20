@@ -306,7 +306,7 @@ changeRead (SigAt t s) = (App (App (Var "readSig") (s)) t)
 changeRead e = e
 
 --this stuff should really be a transform.
-tweakEslamP nm n ds = tweakEslamP' nm . tweakExprP n ds
+tweakEslamP nm n ds = deepUnSig . tweakEslamP' nm . tweakExprP n ds
 
 tweakEslamP' nm (Lam t tt (Lam v vt e)) = (Lam t tt (Lam v vt (tweakEslamP' nm e)))
 tweakEslamP' nm (Sig se) = tweakEslamP' nm se
@@ -337,6 +337,9 @@ inPar s = "("++s++")"
 tweakEslam' (Lam t tt (Lam v vt (Sig s))) = (Lam t tt (Lam v vt s))
 tweakEslam' (Lam t tt (Lam v vt (Var nm))) = (Lam t tt (Lam v vt (Var $ nm++"Val")))
 tweakEslam' e = e -}
+
+deepUnSig = mapE unSig
+   
 
 unSig (Sig s) = s
 unSig e = e

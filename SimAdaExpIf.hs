@@ -29,6 +29,8 @@ main = do
 
     --determineS intfireStep [("stepAmp", return 6.05e-10)]
 
-    times 200 $ do 
-      determineS intfire 
-                 [("rate", uniform 0 400)]
+--    times 5 $ do 
+{-    determineS intfire 
+                 [("rate", return 0)] -}
+    determineS intfire 
+                 [("rate", return 400)]
