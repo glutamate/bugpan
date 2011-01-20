@@ -1,20 +1,20 @@
 \begin{abstract}
-Experiments can be complex and produce large volumes of heterogeneous
-data, which makes their execution, analysis, independent replication
-and meta-analysis difficult. We propose a mathematical model for
-experimentation and analysis in physiology that addresses these
-problems. Our structure for representing physiological observations
-can carry information of any type, therefore providing a precise
-ontology for a wide range of observations. We show that experiments
-can be composed from time-dependent quantities, and be expressed as
-purely mathematical equations. Our framework is concise, allowing
-entire experiments to be defined unambiguously in a few equations. To
-demonstrate that our approach can be implemented, we show the full
-equations we have used to run and analyse two non-trivial experiments
-describing visually stimulated neuronal responses and dynamic clamp of
-vertebrate neurons. Our ideas could provide a theoretical basis for
-developing new standards of data acquisition, analysis and
-communication in neurophysiology.
+  Experiments can be complex and produce large volumes of
+  heterogeneous data, which makes their execution, analysis,
+  independent replication and meta-analysis difficult. We propose a
+  mathematical model for experimentation and analysis in physiology
+  that addresses these problems. We show that experiments can be
+  composed from time-dependent quantities, and be expressed as purely
+  mathematical equations. Our structure for representing physiological
+  observations can carry information of any type, therefore providing
+  a precise ontology for a wide range of observations. Our framework
+  is concise, allowing entire experiments to be defined unambiguously
+  in a few equations. To demonstrate that our approach can be
+  implemented, we show the full equations we have used to run and
+  analyse two non-trivial experiments describing visually stimulated
+  neuronal responses and dynamic clamp of vertebrate neurons. Our
+  ideas could provide a theoretical basis for developing new standards
+  of data acquisition, analysis and communication in neurophysiology.
 \end{abstract}
 
 \keywords{neuroinformatics | functional programming | dynamic clamp | neurophysiology}
@@ -34,31 +34,26 @@ reproduced without discrepancies \cite{Ioannidis2008,Baggerly2009,
   McCullough2007}. It is often not realistic to verify that computer
 code used in analyses correctly implements an intended mathematical
 algorithm, yet errors can undermine a large body of work
-\cite{Chang2006}. The combination of bias, human error, and
-unverified software, has led to the suggestion that many --- perhaps
-most --- published research findings are flawed \cite{Ioannidis2005,
-  Merali2010}.
+\cite{Chang2006}. The combination of bias, human error, and unverified
+software, has led to the suggestion that many published research
+findings are flawed \cite{Ioannidis2005, Merali2010}.
 
-These problems suggest that it is worth investigating a
-unified and transparent formalism for communication, validation, and
-automation of experiments and analyses. We argue that
-some of the above problems can be mitigated by a formalism that
-% \emph{at once}: 
-\emph{simultaneously}: (i) introduces a system of categorisation
+Some of these problems may be mitigated by developing explicit models
+of experimentation, evidence representation and analysis. A good model
+should simultaneously: (i) introduce a system of categorisation
 directly relevant to the scientific field, such that scientists can
 define experiments and reason about observations in familiar terms,
-(ii) is machine executable, therefore unambiguous and practically
-useful, and (iii) is composed exclusively of terms that directly
-correspond to mathematical entities, enabling, algebraic reasoning
-about procedures, which is much more difficult in conventional
-programming languages.  Experiments are difficult to formalise in
-terms of relations between mathematical objects because they produce
-heterogeneous data \cite{Tukey1962}, and because they interact with
-the physical world. In creating a mathematical framework for
-experiments, we take advantage of progress in embedding side effects
-\cite{PeytonJones2002, Roy2004, Wadler1995}, such as input and output,
-into programming languages where the only mechanism of computation is
-evaluation of mathematical expressions \cite{Church1941}.
+(ii) be machine executable, therefore unambiguous and practically
+useful, and (iii) consist exclusively of terms that directly
+correspond to mathematical entities, enabling algebraic reasoning
+about and manipulation of procedures.  Experiments are difficult to
+formalise in terms of relations between mathematical objects because
+they produce heterogeneous data \cite{Tukey1962}, and because they
+interact with the physical world. In creating a mathematical framework
+for experiments, we take advantage of progress in embedding input and
+output \cite{PeytonJones2002, Wadler1995} into programming languages
+where the only mechanism of computation is the evaluation of
+mathematical functions \cite{Church1941}.
 
 Here, we define a formal framework for physiology
 that satisfies the above criteria. We show that there
@@ -88,22 +83,17 @@ thus facilitate the sharing of data and meta-data \cite{Insel2003}.
 analysis procedures in physiology using only mathematical
 equations. Experimental protocols can be communicated unambiguously,
 highlighting differences between studies and facilitating replication
-and meta-analysis. The provenance
-\cite{Pool2002,MacKenzie-Graham2008, VanHorn2009} of \emph{any}
-observation can be extracted as a single equation that includes
-post-acquisition processing and censoring.
+and meta-analysis. The provenance \cite{Pool2002,MacKenzie-Graham2008,
+  VanHorn2009} of \emph{any} observation can be extracted as a single
+equation that includes post-acquisition processing and censoring. In
+addition, analysis procedures in languages with a clear mathematical
+denotation are verifiable since their implementation closely
+follows their specification\cite{Bird1996}.
 
-(iii) A new approach to validating scientific inference
-\cite{Editors2003, Editors2010}. First, a concise language with a
-clear mathematical denotation \emph{can} be verified manually. Second, by
-inspecting an experiment definition, \emph{automated} decision procedures
-could verify certain statements about experiments that indicate sound
-scientific practice, such as consistent units of measurement
-\cite{Kennedy1997} and correct error propagation \cite{Taylor1997}.
-
-(iv) A practical tool that is powerful and generalises to complex and
-multi-modal experiments. We have implemented our framework as a new
-programming language and used it for non-trivial neurophysiological
-experiments and data analyses. A strength of our approach is that its
-individual elements could, alternatively, be adopted separately or in
-different ways to suit the diverse demands of physiologists.
+(iii) The theoretical basis for new tools that are practical, powerful
+and generalise to complex and multi-modal experiments. To demonstrate
+this, we have implemented our framework as a new programming language
+and used it for non-trivial neurophysiological experiments and data
+analyses. A strength of our approach is that its individual elements
+could, alternatively, be adopted separately or in different ways to
+suit the different demands.

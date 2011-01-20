@@ -1,7 +1,7 @@
 \section{Discussion}
 
 We present an entirely new approach to performing and communicating
-experimental science, here demonstrated for physiology.  Our use of
+experimental science.  Our use of
 typed, functional and reactive programming overcomes at least three
 long-standing issues in bioinformatics: the need for a flexible
 ontology to share heterogeneous data from physiological experiments
@@ -10,22 +10,22 @@ ontology to share heterogeneous data from physiological experiments
 provenance \cite{Pool2002}. 
 
 The types we have presented form a linguistic framework and an
-ontology for physiology. Thanks to the flexibility of parametric polymorphism,
-our ontology can form the basis for the interchange of physiological data
-and meta-data without imposing unnecessary constraints on what can be
-shared. The ontology is non-hierarchical and would be difficult to
-formulate in the various existing semantic web ontology frameworks
-(Web Ontology Language, \cite{owlref}, or Resource Description Framework), which lack
-parametric polymorphism and functional abstraction. Nevertheless, by
-specifying the categories of mathematical objects that constitute
-evidence, it is an ontology in the classical sense of cataloguing the
-categories within a specific domain, and providing a vocabulary for
-that domain. We emphasise again that it is an ontology of
-\emph{evidence}, not of the biological entities that give rise to this
-evidence. It is unusual as an ontology for scientific knowledge in
-being embedded in a \emph{computational} framework, such that it can
-describe not only mathematical objects but also their transformations
-and observations.
+ontology for physiology. Thanks to the flexibility of parametric
+polymorphism, our ontology can form the basis for the interchange of
+physiological data and meta-data without imposing unnecessary
+constraints on what can be shared. The ontology is non-hierarchical
+and would be difficult to formulate in the various existing semantic
+web ontology frameworks (Web Ontology Language \cite{owlref}, or
+Resource Description Framework), which lack parametric polymorphism
+and functional abstraction. Nevertheless, by specifying the categories
+of mathematical objects that constitute evidence, it is an ontology in
+the classical sense of cataloguing the categories within a specific
+domain, and providing a vocabulary for that domain. We emphasise again
+that it is an ontology of \emph{evidence}, not of the biological
+entities that give rise to this evidence. It is unusual as an ontology
+for scientific knowledge in being embedded in a \emph{computational}
+framework, such that it can describe not only mathematical objects but
+also their transformations and observations.
 
 % HN 2010-11-24: Instead of
 %
@@ -35,18 +35,18 @@ and observations.
 % to make it consistent with "unambiguous" above, I propose
 %
 Our mathematical definitions are unambiguous and concise, unlike
-typical definitions written in natural language,
-and are more powerful than those specified
-by graphical user interfaces or in formal languages that lack a
-facility for defining abstractions. Our framework is not only a
-theoretical formalism, but also a very practical tool. It is a
-collection of computer programs for executing experiments and
-analyses, and carrying out data management. Controlling
-experimentation and analysis with programs that share data formats can
-be highly efficient, and eliminates many sources of human error. Our
-experiment definitions have the further advantage that they
-\emph{compose}; that is, more complex experiments can be formulated by
-joining together elementary building blocks. 
+typical definitions written in natural language, and are more powerful
+than those specified by graphical user interfaces or in formal
+languages that lack a facility for defining abstractions. Our
+framework is not only a theoretical formalism, but we also demonstrate
+that it can be implemented as a very practical tool. This tool
+consists of a collection of computer programs for executing
+experiments and analyses, and carrying out data
+management. Controlling experimentation and analysis with programs
+that share data formats can be highly efficient, and eliminates many
+sources of human error. Our experiment definitions have the further
+advantage that they \emph{compose}; that is, more complex experiments
+can be formulated by joining together elementary building blocks.
 
 Our full approach is particularly relevant to the execution of very
 complex and multi-modal experiments, which may need to be dynamically
@@ -87,68 +87,21 @@ of
 CoPE integrated with statistical inference.
 
 \begin{materials}
+  We have implemented CoPE as a stand-alone programming language with
+  a compiler targeting the RTAI real-time extension to the Linux
+  kernel, the Comedi data acquisition library and OpenGL-accelerated
+  graphics cards. Extracellular recordings from locust DCMD neurons
+  were performed with silver hook electrodes wrapping exposed
+  connectives in the neck as previously described \cite{Matheson2004}
+  and visual stimuli were displayed on a 22'' CRT monitor at 160
+  Hz. Intracellular patch-clamp recordings from spinal motor neurons
+  in immobilised 2-day old zebrafish embryos were performed as
+  previously described \cite{McDearmid2006}. Further information is
+  given in the supplementary materials and methods. All code used to
+  execute the experiments defined in CoPE and to produce Figures 1 and
+  2 is available at http://github.com/glutamate/bugpan and is released
+  under the GNU Public License.
 
-\subsubsection{Language implementation} 
-
-We have used two different implementation strategies for reasons of
-rapid development and execution efficiency. For purposes of
-experimentation and simulation, we have implemented a prototype
-compiler that can execute some programs that contain signals and
-events defined by mutual recursion, as is necessary for many of the
-simulations and experiments in this paper. The program is transformed
-by the compiler into a normal form that is translated to an imperative
-program which iteratively updates variables corresponding to signal
-values, with a time step that is set explicitly. The program is
-divided into a series of stages, where each stage consists of the
-signals and events defined by mutual recursion, subject to the
-constraints of input/output sources and sinks. This ensures that
-signal expressions can reference values of other signals at arbitrary
-time points (possibly in the future) as long as referenced signals are
-computed in an earlier stage. To calculate a new value from existing observations after data
-acquisition, we have implemented the calculus of physiological
-evidence as a domain-specific language embedded in the purely functional
-programming language Haskell. For hard real-time dynamic-clamp experiments, we have built a compiler
-back-end targeting the LXRT (user-space) interface to the RTAI (Real-time
-application interface; http://rtai.org) extensions of the Linux
-kernel, and the Comedi (http://comedi.org) interface to data
-acquisition hardware. Geometric shapes were rendered using OpenGL
-(http://opengl.org). All code is available at http://github.com/glutamate/bugpan and
-released under the GPL.
-
-\subsubsection{Locust experiments}
-
-Recordings from locust DCMD neurons were performed as previously
-described \cite{Matheson2004}. Briefly, locusts were fixed in
-plasticine with the ventral side upwards. The head was fixed with wax
-% at a $90^{\circ}$ angle 
-and the connectives were exposed through an
-incision in the soft tissue of the neck. A pair of silver wire hook
-electrodes were placed underneath the connectives and the electrodes
-and connectives enclosed in petroleum jelly. The electrode signal was
-amplified 1000x and bandpass filtered 50--5000 Hz, before
-analog-to-digital conversion at 18 bits and 20 kHz with a National
-Instruments PCI-6281 board. The locust was placed in front of a 22''
-CRT monitor running with a vertical refresh rate of 160 Hz. All
-aspects of the visual stimulus displayed on this monitor and of
-the analog-to-digital conversion performed by the National Instruments
-board were controlled by programs written in 
-% the calculus of physiological evidence
-CoPE running on a single computer.
-
-\subsubsection{Zebrafish experiments}
-
-Intracellular patch-clamp recordings from motor neurons in the spinal
-cord from a 2-day old zebrafish embryo were performed as previously
-described \cite{McDearmid2006}. We used a National Instruments PCI-6281
-board to
-record the output from a BioLogic patch-clamp amplifier in
-current-clamp mode, filtered at 3kHz and digitised at 10 kHz, with the
-output current calculated at the same rate by programs written in
-% the calculus of physiological evidence 
-CoPE targeted to the RTAI backend (see
-above). The measured jitter for updating the output voltage was 6
-$\mu$s and was similar to that measured with the RTAI latency test
-tool for the experiment control computer.
 \begin{comment}
 \subsubsection{Author Contributions}  
 T.N. designed and implemented CoPE, carried out the experiments and

@@ -5,13 +5,97 @@
 \usepackage{amsmath, amsthm, amssymb}
 \usepackage{setspace} 
 \usepackage{verbatim} 
-\usepackage[final]{pdfpages}
-\usepackage[super]{natbib}
-\usepackage{graphicx}
+%\usepackage[final]{pdfpages}
+%\usepackage[super]{natbib}
+%\usepackage{graphicx}
 
 \begin{document}
 \doublespacing 
-\section*{Supplementary Text}
+\section*{Supplementary Material and Methods}
+\subsubsection*{Language implementation} 
+
+We have used two different implementation strategies for reasons of
+rapid development and execution efficiency. For purposes of
+experimentation and simulation, we have implemented a prototype
+compiler that can execute some programs that contain signals and
+events defined by mutual recursion, as is necessary for many of the
+simulations and experiments in this paper. The program is transformed
+by the compiler into a normal form that is translated to an imperative
+program which iteratively updates variables corresponding to signal
+values, with a time step that is set explicitly. The program is
+divided into a series of stages, where each stage consists of the
+signals and events defined by mutual recursion, subject to the
+constraints of input/output sources and sinks. This ensures that
+signal expressions can reference values of other signals at arbitrary
+time points (possibly in the future) as long as referenced signals are
+computed in an earlier stage. To calculate a new value from existing observations after data
+acquisition, we have implemented the calculus of physiological
+evidence as a domain-specific language embedded in the purely functional
+programming language Haskell. For hard real-time dynamic-clamp experiments, we have built a compiler
+back-end targeting the LXRT (user-space) interface to the RTAI (Real-time
+application interface; http://rtai.org) extensions of the Linux
+kernel, and the Comedi (http://comedi.org) interface to data
+acquisition hardware. Geometric shapes were rendered using OpenGL
+(http://opengl.org). All code is available at http://github.com/glutamate/bugpan and
+released under the GNU Public License.
+
+\subsubsection*{Locust experiments}
+
+Recordings from locust DCMD neurons were performed as previously
+described \cite{Matheson2004}. Briefly, locusts were fixed in
+plasticine with the ventral side upwards. The head was fixed with wax
+% at a $90^{\circ}$ angle 
+and the connectives were exposed through an incision in the soft
+tissue of the neck. A pair of silver wire hook electrodes were placed
+underneath the connectives and the electrodes and connectives enclosed
+in petroleum jelly. The electrode signal was amplified 1000x and
+bandpass filtered 50--5000 Hz, before analog-to-digital conversion at
+18 bits and 20 kHz with a National Instruments PCI-6281 board. By
+convention, absolute amplitude values are not shown for extracellular
+recordings because they differ markedly from experiment to experiment
+depending on recording conditions. The locust was placed in front of a
+22'' CRT monitor running with a vertical refresh rate of 160 Hz. All
+aspects of the visual stimulus displayed on this monitor and of the
+analog-to-digital conversion performed by the National Instruments
+board were controlled by programs written in
+% the calculus of physiological evidence
+CoPE running on a single computer.
+
+\subsubsection*{Zebrafish experiments}
+
+Intracellular patch-clamp recordings from motor neurons in the spinal
+cord from a 2-day old zebrafish embryo were performed as previously
+described \cite{McDearmid2006}. We used a National Instruments PCI-6281
+board to
+record the output from a BioLogic patch-clamp amplifier in
+current-clamp mode, filtered at 3kHz and digitised at 10 kHz, with the
+output current calculated at the same rate by programs written in
+% the calculus of physiological evidence 
+CoPE targeted to the RTAI backend (see
+above). The measured jitter for updating the output voltage was 6
+$\mu$s and was similar to that measured with the RTAI latency test
+tool for the experiment control computer.
+
+\begin{thebibliography}{2}
+\bibitem{Matheson2004}
+Thomas Matheson, Stephen~M Rogers, and Holger~G Krapp.
+\newblock {Plasticity in the visual system is correlated with a change in
+  lifestyle of solitarious and gregarious locusts.}
+\newblock {\em Journal of Neurophysiology}, 91(1):1--12, January 2004.
+
+\bibitem{McDearmid2006}
+Jonathan~R McDearmid, Meijiang Liao, and Pierre Drapeau.
+\newblock {Glycine receptors regulate interneuron differentiation during spinal
+  network development.}
+\newblock {\em Proceedings of the National Academy of Sciences of the United
+  States of America}, 103(25):9679--9684, June 2006.
+
+
+\end{thebibliography}
+
+\pagebreak
+
+\section*{Supplementary Information}
 \begin{tabular}{l p{10cm}}
 \hline
   Expression & Denotes\\ 
@@ -243,7 +327,7 @@ vm *> store ""
 \pagebreak
 
 
-\subsubsection{Sources and Sinks}
+\subsubsection*{Sources and Sinks}
 
 Sources and sinks 
 % HN 2010-11-24: Yes, I can see they can be considered as "annotations"

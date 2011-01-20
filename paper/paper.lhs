@@ -56,7 +56,7 @@ experiment consists of one or more \emph{trials}: non-overlapping time
 periods during which the observer is running a \emph{program} ---
 instructions for manipulating the environment and for constructing
 mathematical objects, the \emph{observations}. The \emph{analyses} are
-further programs to be run after or during the experiment that
+further programs to be run during or after the experiment that
 construct other mathematical objects pertaining to the experiment.
 
 \subsubsection{Type theory for physiological evidence}
@@ -392,19 +392,15 @@ use of |distance'|.
 Finally, |loomingSquare'| is connected to a screen signal sink that
 represents a visual display unit capable of projecting
 three-dimensional shapes onto a two-dimensional surface.
-
 \begin{code}
 loomingSquare' *> screen 
 \end{code}
-
 In our experiments, the extracellular voltage from the locust nerves
 (connectives), in which the DCMD forms the largest amplitude spike,
 was amplified, filtered (see methods) and digitised:
-
 \begin{code}
 voltage <* ADC 0
 \end{code}
-
 |loomingSquare'| and |voltage| thus define a single object approach
 and the recording of the elicited response. This approach was repeated
 every 4 minutes, with different values of $\frac{l}{||v||}$. Figure 1
@@ -426,7 +422,8 @@ that spike has type |Event ()|. This event is displayed on the common
 time scale in Figure 1. The top row displays the spike rate histogram
 \begin{code}
 hspike  =
-        sopen length (filter  (between <: delay seconds:> <: seconds:> . fst)
+        sopen length (filter  (between  <: delay seconds:> 
+                                        <: seconds:> . fst)
                               spikes) sclose
 \end{code}
 for each trial. This definition exploits the list semantics of events
@@ -437,13 +434,6 @@ elements in |xs| for which the predicate holds. Here the predicate is
 time) composed (|.|) with the function |between = \x -> \y -> \z ->
 z>x && z<=y|, which tests whether the last of three numbers lies
 between the first two.
-
-We examined how the DCMD spike response varied with changes in
-$\frac{l}{||v||}$. The average of |hspike| for three different values
-of $\frac{l}{||v||}$ are shown in Figure 2A; 2B and 2C show the total
-number of spikes (|length spike|) and largest value of |hspike|, for
-each approach, plotted against the value of $\frac{l}{||v||}$
-\cite{Hatsopoulos1995}.
 
 This experiment demonstrates that the calculus of physiological
 evidence can adequately and concisely describe visual stimuli, spike
@@ -491,7 +481,7 @@ considering linear synaptic conductances \cite{Mitchell2003}. We
 first consider the addition of a simulated fast excitatory synaptic
 conductance to a real neuron. Simple models of synapses approximate
 the conductance waveform with an alpha function
-|alpha_f|\cite{Carnevale2006}.
+\cite{Carnevale2006}:
 \begin{code}
 alpha_f = \amp -> \tau -> sopen  tau **2 * <: seconds :> 
                                  * exp (- <: seconds :> *tau) sclose
@@ -526,11 +516,14 @@ using SI units and absolute voltages). The equations for
 inactivation are analogous (see Listing 2 in supplementary information).
 
 We write the forward and backward rates as functions of the membrane voltage
+
 \begin{tabbing}
 \qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
 ${\alpha_a\mathrel{=}\lambda \Varid{v}\to \frac{\mathrm{20}\!\cdot\!(\mathbin{-}\mathrm{46.9}\mathbin{-}\Varid{v}\!\cdot\!\mathrm{1000})}{\Varid{exp}\;\frac{\mathbin{-}\mathrm{46.9}\mathbin{-}\Varid{v}\!\cdot\!\mathrm{1000}}{\mathrm{10}}\mathbin{-}\mathrm{1}}}$\\
+\\
 ${\beta_a\mathrel{=}\lambda \Varid{v}\to \frac{\mathrm{17.5}\!\cdot\!(\Varid{v}\!\cdot\!\mathrm{1000}\mathbin{+}\mathrm{19.9})}{\Varid{exp}\;\frac{\Varid{v}\!\cdot\!\mathrm{1000}\mathbin{+}\mathrm{19.9}}{\mathrm{10}}\mathbin{-}\mathrm{1}}}$
 \end{tabbing}
+
 %
 %\begin{code}
 %alphaa = \v->  20*(-46.9-v*1000)/(exp ((-46.9-v*1000)/10) -1)
@@ -561,7 +554,7 @@ thus completing the definition of this experiment:
 i + ika *> DAC 0
 \end{code}
 
-Figure 3A and 3B shows the voltage response to a unitary synaptic
+Figure 2A and 2B shows the voltage response to a unitary synaptic
 conductance and a train of synaptic inputs, respectively, with |gmaxk|
 ranging from 0 to 100 nS. By varying the value of |rate|, we can
 examine the input-output relationship of the neuron by measuring the
@@ -572,7 +565,7 @@ spike = tag () ((\v'->v'>vth') ?? D v)
 \end{code}
 and the spike frequency calculated with the |frequencyDuring| function.
 This relationship between the postsynaptic spike frequency and the
-simulated synaptic input |rate| is plotted in Figure 3C for four
+simulated synaptic input |rate| is plotted in Figure 2C for four
 different values of |gmaxk|. 
 \input{discuss}
 
@@ -592,10 +585,7 @@ John~W. Tukey.
 \newblock {\em Annals of Mathematical Statistics}, 33(1):1--67, March 1962.
 
 \bibitem{Ioannidis2008}
-John P~A Ioannidis, David~B Allison, Catherine~A Ball, Issa Coulibaly, Xiangqin
-  Cui, Aed\'{\i}n~C Culhane, Mario Falchi, Cesare Furlanello, Laurence Game,
-  Giuseppe Jurman, Jon Mangion, Tapan Mehta, Michael Nitzberg, Grier~P Page,
-  Enrico Petretto, and Vera van Noort.
+John P~A Ioannidis, et al.
 \newblock {Repeatability of published microarray gene expression analyses}.
 \newblock {\em Nature Genetics}, 41(2):149--155, January 2008.
 
@@ -612,8 +602,7 @@ B.D. McCullough.
 \newblock {\em Econ Journal Watch}, 4(3):326--337, 2007.
 
 \bibitem{Chang2006}
-Geoffrey Chang, Christopher~B Roth, Christopher~L Reyes, Owen Pornillos, Yen-Ju
-  Chen, and Andy~P Chen.
+Geoffrey Chang, et al.
 \newblock {Retraction.}
 \newblock {\em Science}, 314(5807):1875, December 2006.
 
@@ -633,18 +622,13 @@ Simon {Peyton Jones}.
   exceptions, and foreign-language calls in Haskell}.
 \newblock pages 47--96. IOS Press, Amsterdam, 2002.
 
-\bibitem{Roy2004}
-PV~Van Roy.
-\newblock {\em {Concepts, Techniques, and Models of Computer Programming}}.
-\newblock MIT Press, Cambridge, MA, 2004.
-
 \bibitem{Wadler1995}
 Philip Wadler.
 \newblock {Monads for Functional Programming}.
 \newblock {\em Lecture Notes In Computer Science}, 925:24--52, 1995.
 
 \bibitem{Church1941}
-Alonzo. Church.
+Alonzo Church.
 \newblock {\em {The Calculi of Lambda-Conversion}}.
 \newblock Princeton University Press, Princeton, NJ, 1941.
 
@@ -694,9 +678,7 @@ Gwen Frishkoff, Paea LePendu, Robert Frank, Haishan Liu, and Dejing Dou.
 \newblock {\em Nature Precedings}, (hdl:10.1038/npre.2009.3458.1), July 2009.
 
 \bibitem{Katz2010}
-Paul~S Katz, Robert Calin-Jageman, Akshaye Dhawan, Chad Frederick, Shuman Guo,
-  Rasanjalee Dissanayaka, Naveen Hiremath, Wenjun Ma, Xiuyn Shen, Hsui~C Wang,
-  Hong Yang, Sushil Prasad, Rajshekhar Sunderraman, and Ying Zhu.
+Paul~S Katz, et al.
 \newblock {NeuronBank: a tool for cataloging neuronal circuitry.}
 \newblock {\em Frontiers in Systems Neuroscience}, 4:9, January 2010.
 
@@ -756,8 +738,7 @@ J.~Roger Hindley.
 \newblock Cambridge University Press, Cambridge, 2008.
 
 \bibitem{owlref}
-Sean Bechhofer, Frank van Harmelen, Jim Hendler, Ian Horrocks, Deborah~L.
-  Mcguinness, Peter~F. Patel-Schneider, and Lynn~A. Stein.
+Sean Bechhofer, et al
 \newblock {OWL Web Ontology Language Reference}.
 \newblock Technical report, W3C, 2007.
 
@@ -916,50 +897,7 @@ Jonathan~R McDearmid, Meijiang Liao, and Pierre Drapeau.
 \end{article}
 
 \pagebreak
-
-\section{Figure Legends}
-
-\textbf{Figure 1}. Diagram of an experiment to record the looming
-response from a locust DCMD neuron, showing the first five recorded
-trials from one animal. Experiment design: \emph{blue lines},
-simulated object size-to-approach speed ratio ($\frac{l}{||v||}$) for
-given approach trial, \emph{red lines}, simulated object distance,
-\emph{red triangles}, apparent collision time. Observed signal:
-\emph{black lines}, recorded extracellular voltage. By convention,
-absolute amplitude values are not shown for extracellular recordings
-because they differ markedly from experiment to experiment depending
-on recording conditions. The largest amplitude deflections are DCMD
-spikes. Analysis: \emph{green dots}, DCMD spikes, with randomly
-jittered vertical placement for display, \emph{thin black line}, spike
-rate histogram with 50 ms bin size. The inter-trial interval of four
-minutes is not shown.
-
-\flushleft \textbf{Figure 2}. A, Spike rate histograms for approaches with
-$\frac{l}{||v||}$ of 0.01, 0.02 and 0.04 s, with 50 ms bin size, with
-collision time indicated by a black triangle. B, Scatter plot of
-number of counted spikes against approach $\frac{l}{||v||}$ for
-individual trials. C, Scatter plot of the maximum rate of spiking
-against $\frac{l}{||v||}$ for individual trials. N=1 animal, 272
-approaches.
-
-\flushleft \textbf{Figure 3}. A, recorded intracellular voltage following
-conductance injections of a unitary simulated synaptic conductance, in
-the presence of A-type potassium conductances of increasing magnitude
-(values given are for the maximal conductance $g_A$). B, as A, but
-with a simulated presynaptic spike train with inter-spike intervals
-drawn from a Poisson distribution (here a mean of $120 s^{-1}$; the spike
-trains used to test the different levels of A-type conductance are
-identical). C, the postsynaptic spike rate plotted against the rate of
-simulated presynaptic inputs, with $g_A$ as in A.
-
-
-\includepdf[pages=-]{Figure1.pdf}
-\includepdf[pages=-]{Figure2.pdf}
-\includepdf[pages=-]{FigureDyn.pdf}
-%\includepdf[pages=-]{Figure4.pdf}
-
-%\begin{comment}
-\pagebreak
+\section{Table 1}
 
 \begin{tabular}{l  l}
 \hline
@@ -979,9 +917,44 @@ simulated presynaptic inputs, with $g_A$ as in A.
   Lab notebook & |Event String| \\
 \hline
 \end{tabular}
-\vskip1ex 
 
-Table 1. Some common operations for generic manipulation of signals, events and durations.
+\pagebreak
+
+\section{Figure and Table Legends}
+
+\textbf{Figure 1}. Diagram of an experiment to record the looming
+response from a locust DCMD neuron, showing the first five recorded
+trials from one animal. Experiment design: \emph{blue lines},
+simulated object size-to-approach speed ratio ($\frac{l}{||v||}$) for
+given approach trial, \emph{red lines}, simulated object distance,
+\emph{red triangles}, apparent collision time. Observed signal:
+\emph{black lines}, recorded extracellular voltage. The largest
+amplitude deflections are DCMD spikes. Analysis: \emph{green dots},
+DCMD spikes, with randomly jittered vertical placement for display,
+\emph{thin black line}, spike rate histogram with 50 ms bin size. The
+inter-trial interval of four minutes is not shown.
+
+\flushleft \textbf{Figure 2}. A, recorded intracellular voltage following
+conductance injections of a unitary simulated synaptic conductance, in
+the presence of A-type potassium conductances of increasing magnitude
+(values given are for the maximal conductance $g_A$). B, as A, but
+with a simulated presynaptic spike train with inter-spike intervals
+drawn from a Poisson distribution (here a mean of $120 s^{-1}$; the spike
+trains used to test the different levels of A-type conductance are
+identical). C, the postsynaptic spike rate plotted against the rate of
+simulated presynaptic inputs, with $g_A$ as in A.
+
+
+%\includepdf[pages=-]{Figure1.pdf}
+%\includepdf[pages=-]{FigureDyn.pdf}
+%\includepdf[pages=-]{Figure4.pdf}
+
+%\begin{comment}
+%\pagebreak
+%\vskip1ex 
+
+\flushleft \textbf{Table 1}. Representation of physiological
+observations and quantities in CoPE
 
 %\includepdf[pages=-]{supplement.pdf}
 
