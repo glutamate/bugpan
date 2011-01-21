@@ -232,7 +232,7 @@ compStageP ds' tmax n imps exps evExps = ("goStage"++show n++" "++inTuple imps++
           
           nmOrd = nmOrderinDS ds
 
-          lets (Let (PatVar nm _) (Sig e)) =  [(nm++"NxtV", pp . (tweakExprP (nmOrd nm) ds) $ e)]
+          lets (Let (PatVar nm _) (Sig e)) =  [(nm++"NxtV", pp . deepUnSig . (tweakExprP (nmOrd nm) ds) $ e)]
           lets (Let (PatVar nm t) (SigFby _ e)) = lets (Let (PatVar nm t) e)   
           lets (Let (PatVar nm _) (SigDelay (Var snm) _)) =  [(nm++"NxtV",snm++"NxtV" )]
           lets (Let (PatVar nm _) (Event e)) = 
