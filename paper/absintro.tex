@@ -1,4 +1,4 @@
-\begin{abstract}
+\section*{Abstract}
   Experiments can be complex and produce large volumes of
   heterogeneous data, which makes their execution, analysis,
   independent replication and meta-analysis difficult. We propose a
@@ -6,7 +6,7 @@
   that addresses these problems. We show that experiments can be
   composed from time-dependent quantities, and be expressed as purely
   mathematical equations. Our structure for representing physiological
-  observations can carry information of any type, therefore providing
+  observations can carry information of any type and therefore provides
   a precise ontology for a wide range of observations. Our framework
   is concise, allowing entire experiments to be defined unambiguously
   in a few equations. To demonstrate that our approach can be
@@ -15,11 +15,10 @@
   neuronal responses and dynamic clamp of vertebrate neurons. Our
   ideas could provide a theoretical basis for developing new standards
   of data acquisition, analysis and communication in neurophysiology.
-\end{abstract}
 
-\keywords{neuroinformatics | functional programming | dynamic clamp | neurophysiology}
+\pagebreak
 
-\section{Introduction}
+\section*{Introduction}
 
 Reproducibility and transparency are cornerstones of the scientific
 method. As scientific experiments and analysis become increasingly
@@ -27,16 +26,16 @@ complex, reliant on computer code and produce larger volumes of data,
 the feasibility of independent verification and replication has -- in
 practice -- been undermined. Primary data sharing is now standard in
 applications of high-throughput biology, but not in the many fields
-that produce heterogeneous observations \cite{Gardner2005,
+that produce heterogeneous observations \citep{Gardner2005,
   Tukey1962}. Even when raw data and code used for experiments and
 analysis are fully disclosed, only a minority of findings can be
-reproduced without discrepancies \cite{Ioannidis2008,Baggerly2009,
+reproduced without discrepancies \citep{Ioannidis2008,Baggerly2009,
   McCullough2007}. It is often not realistic to verify that computer
 code used in analyses correctly implements an intended mathematical
 algorithm, yet errors can undermine a large body of work
-\cite{Chang2006}. The combination of bias, human error, and unverified
+\citep{Chang2006}. The combination of bias, human error, and unverified
 software, has led to the suggestion that many published research
-findings are flawed \cite{Ioannidis2005, Merali2010}.
+findings are flawed \citep{Ioannidis2005, Merali2010}.
 
 Some of these problems may be mitigated by developing explicit models
 of experimentation, evidence representation and analysis. A good model
@@ -48,17 +47,17 @@ useful, and (iii) consist exclusively of terms that directly
 correspond to mathematical entities, enabling algebraic reasoning
 about and manipulation of procedures.  Experiments are difficult to
 formalise in terms of relations between mathematical objects because
-they produce heterogeneous data \cite{Tukey1962}, and because they
+they produce heterogeneous data \citep{Tukey1962}, and because they
 interact with the physical world. In creating a mathematical framework
 for experiments, we take advantage of progress in embedding input and
-output \cite{PeytonJones2002, Wadler1995} into programming languages
+output \citep{PeytonJones2002, Wadler1995} into programming languages
 where the only mechanism of computation is the evaluation of
-mathematical functions \cite{Church1941}.
+mathematical functions \citep{Church1941}.
 
 Here, we define a formal framework for physiology
 that satisfies the above criteria. We show that there
 is a large conceptual overlap between physiological experimentation
-and Functional Reactive Programming (FRP; \cite{Elliott1997,
+and Functional Reactive Programming (FRP; \citep{Elliott1997,
   Nilsson2002}), a concise and purely functional formulation of
 time-dependent reactive computer programs. Consequently, physiological
 experiments can be concisely defined in the vocabulary of
@@ -72,23 +71,23 @@ Our framework provides:
 
 (i) An explicitly defined ontology of physiological
 observations. Physiological databases have not been widely
-adopted\cite{Herz2008, Amari2002}, unlike in bioinformatics or
-anatomy, despite many candidates \cite{Jessop2010, Teeters2008,
+adopted\citep{Herz2008, Amari2002}, unlike in bioinformatics or
+anatomy, despite many candidates \citep{Jessop2010, Teeters2008,
   Frishkoff2009, Katz2010}.  We suggest that a flexible, concise and
 simple structure for physiological quantities can remedy some of the
-shortcomings \cite{Gardner2005, Amari2002} of existing databases and
-thus facilitate the sharing of data and meta-data \cite{Insel2003}.
+shortcomings \citep{Gardner2005, Amari2002} of existing databases and
+thus facilitate the sharing of data and meta-data \citep{Insel2003}.
 
 (ii) A concise language for describing complex experiments and
 analysis procedures in physiology using only mathematical
 equations. Experimental protocols can be communicated unambiguously,
 highlighting differences between studies and facilitating replication
-and meta-analysis. The provenance \cite{Pool2002,MacKenzie-Graham2008,
+and meta-analysis. The provenance \citep{Pool2002,MacKenzie-Graham2008,
   VanHorn2009} of \emph{any} observation can be extracted as a single
 equation that includes post-acquisition processing and censoring. In
 addition, analysis procedures in languages with a clear mathematical
 denotation are verifiable since their implementation closely
-follows their specification\cite{Bird1996}.
+follows their specification\citep{Bird1996}.
 
 (iii) The theoretical basis for new tools that are practical, powerful
 and generalise to complex and multi-modal experiments. To demonstrate

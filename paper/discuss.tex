@@ -1,13 +1,13 @@
-\section{Discussion}
+\section*{Discussion}
 
 We present an entirely new approach to performing and communicating
 experimental science.  Our use of
 typed, functional and reactive programming overcomes at least three
 long-standing issues in bioinformatics: the need for a flexible
 ontology to share heterogeneous data from physiological experiments
-\cite{Amari2002}, a language for describing experiments unambiguously
-\cite{Murray-Rust2002}, and an equational formulation of data
-provenance \cite{Pool2002}. 
+\citep{Amari2002}, a language for describing experiments unambiguously
+\citep{Murray-Rust2002}, and an equational formulation of data
+provenance \citep{Pool2002}. 
 
 The types we have presented form a linguistic framework and an
 ontology for physiology. Thanks to the flexibility of parametric
@@ -15,7 +15,7 @@ polymorphism, our ontology can form the basis for the interchange of
 physiological data and meta-data without imposing unnecessary
 constraints on what can be shared. The ontology is non-hierarchical
 and would be difficult to formulate in the various existing semantic
-web ontology frameworks (Web Ontology Language \cite{owlref}, or
+web ontology frameworks (Web Ontology Language \citealt{owlref}, or
 Resource Description Framework), which lack parametric polymorphism
 and functional abstraction. Nevertheless, by specifying the categories
 of mathematical objects that constitute evidence, it is an ontology in
@@ -51,7 +51,7 @@ can be formulated by joining together elementary building blocks.
 Our full approach is particularly relevant to the execution of very
 complex and multi-modal experiments, which may need to be dynamically
 reconfigured based on previous observations, or to disambiguate
-difficult judgements about evidence \cite{Kriegeskorte2009}. Even
+difficult judgements about evidence \citep{Kriegeskorte2009}. Even
 if used separately, however, individual aspects of CoPE can make
 distinct contributions to scientific methodology — for instance, our
 ontology for physiological evidence can be used within more
@@ -62,22 +62,22 @@ graphical user interfaces.
 
 A corollary of our work is that it may be possible in principle to
 mechanically verify scientific inference, just as mathematical proofs
-can be verified by a proof checker \cite{DeBruijn1968,
+can be verified by a proof checker \citep{DeBruijn1968,
   Harrison2009}. It is of course not possible to verify particular
 hypotheses about the physical world, or an organism in this way. What
 might be verifiable are statements about experiments --- for instance,
 that: particular variables were randomly controlled and not observed;
 outcomes have not gained correlation due to the analysis procedure;
 missing data are accounted for by the statistical model
-\cite{Gelman2003}; errors are propagated correctly \cite{Taylor1997};
-units of measurement are used consistently \cite{Kennedy1997}; there
-is no ``double dipping'' \cite{Kriegeskorte2009}; and, ultimately,
+\citep{Gelman2003}; errors are propagated correctly \citep{Taylor1997};
+units of measurement are used consistently \citep{Kennedy1997}; there
+is no ``double dipping'' \citep{Kriegeskorte2009}; and, ultimately,
 that the observed data support the conclusions drawn. Statistical
 analyses address some of these issues in relating observations to
 parameter estimation and hypothesis testing. Without knowing
 where observations come from, however, it is difficult to ascertain whether
 they provide evidence for a given scientific hypothesis
-\cite{Pool2002}. Experiment description languages, and the
+\citep{Pool2002}. Experiment description languages, and the
 representation of experimental observations into values of concrete
 types (which may not always be real numbers), could play an important
 role in such inference. It is likely that at least some aspects of
@@ -86,24 +86,78 @@ of
 % the calculus of physiological evidence 
 CoPE integrated with statistical inference.
 
-\begin{materials}
-  We have implemented CoPE as a stand-alone programming language with
-  a compiler targeting the RTAI real-time extension to the Linux
-  kernel, the Comedi data acquisition library and OpenGL-accelerated
-  graphics cards. Extracellular recordings from locust DCMD neurons
-  were performed with silver hook electrodes wrapping exposed
-  connectives in the neck as previously described \cite{Matheson2004}
-  and visual stimuli were displayed on a 22'' CRT monitor at 160
-  Hz. Intracellular patch-clamp recordings from spinal motor neurons
-  in immobilised 2-day old zebrafish embryos were performed as
-  previously described \cite{McDearmid2006}. Further information is
-  given in the supplementary materials and methods. All code used to
-  execute the experiments defined in CoPE and to produce Figures 1 and
-  2 is available at http://github.com/glutamate/bugpan and is released
-  under the GNU Public License.
+\section*{Experimental Procedures}
 
-\begin{comment}
-\subsubsection{Author Contributions}  
+\subsubsection*{Language implementation}
+
+We have used two different implementation strategies for reasons of
+rapid development and execution efficiency. For purposes of
+experimentation and simulation, we have implemented a prototype
+compiler that can execute some programs that contain signals and
+events defined by mutual recursion, as is necessary for many of the
+simulations and experiments in this paper. The program is transformed
+by the compiler into a normal form that is translated to an imperative
+program which iteratively updates variables corresponding to signal
+values, with a time step that is set explicitly. The program is
+divided into a series of stages, where each stage consists of the
+signals and events defined by mutual recursion, subject to the
+constraints of input/output sources and sinks. This ensures that
+signal expressions can reference values of other signals at arbitrary
+time points (possibly in the future) as long as referenced signals are
+computed in an earlier stage.
+
+To calculate a new value from existing observations after data
+acquisition, we have implemented the calculus of physiological
+evidence as a domain-specific language embedded in the purely functional
+programming language Haskell.
+
+For hard real-time dynamic-clamp experiments, we have built a compiler
+back-end targeting the LXRT (user-space) interface to the RTAI (Real-time
+application interface; http://rtai.org) extensions of the Linux
+kernel, and the Comedi (http://comedi.org) interface to data
+acquisition hardware. Geometric shapes were rendered using OpenGL
+(http://opengl.org).
+
+All code is available at http://github.com/glutamate/bugpan and
+released under the GPL.
+
+\subsubsection*{Locust experiments}
+
+Recordings from locust DCMD neurons were performed as previously
+described \citep{Matheson2004}. Briefly, locusts were fixed in
+plasticine with the ventral side upwards. The head was fixed with wax
+% at a $90^{\circ}$ angle
+and the connectives were exposed through an
+incision in the soft tissue of the neck. A pair of silver wire hook
+electrodes were placed underneath the connectives and the electrodes
+and connectives enclosed in petroleum jelly. The electrode signal was
+amplified 1000x and bandpass filtered 50--5000 Hz, before
+analog-to-digital conversion at 18 bits and 20 kHz with a National
+Instruments PCI-6281 board. The locust was placed in front of a 22''
+CRT monitor running with a vertical refresh rate of 160 Hz. All
+aspects of the visual stimulus displayed on this monitor and of
+the analog-to-digital conversion performed by the National Instruments
+board were controlled by programs written in
+% the calculus of physiological evidence
+CoPE running on a single computer.
+
+\subsubsection*{Zebrafish experiments}
+
+Intracellular patch-clamp recordings from motor neurons in the spinal
+cord from a 2-day old zebrafish embryo were performed as previously
+described \citep{McDearmid2006}. We used a National Instruments PCI-6281
+board to
+record the output from a BioLogic patch-clamp amplifier in
+current-clamp mode, filtered at 3kHz and digitised at 10 kHz, with the
+output current calculated at the same rate by programs written in
+% the calculus of physiological evidence
+CoPE targeted to the RTAI backend (see
+above). The measured jitter for updating the output voltage was 6
+$\mu$s and was similar to that measured with the RTAI latency test
+tool for the experiment control computer.
+
+\subsubsection*{Author Contributions}  
+
 T.N. designed and implemented CoPE, carried out the experiments and
 data analyses, and wrote the draft of the paper. H.N. contributed to
 the language design, helped clarify the semantics, and wrote several
@@ -111,10 +165,8 @@ sections of the manuscript. T.M. contributed to the design of the
 experiments and the data analysis, and made extensive comments on
 drafts of the manuscript. All authors obtained grant funding to
 support this project as described in the acknowledgements.
-\end{comment}
-\end{materials}
 
-\begin{acknowledgments} 
+\subsubsection*{Acknowledgements}  
 
 We would like to thank Jonathan McDearmid for help with the Zebrafish
 recordings and Angus Silver, Guy Billings, Antonia Hamilton, Nick
@@ -123,6 +175,6 @@ manuscript. This work was funded by a Human Frontier Science Project
 fellowship to T.N., a Biotechnology and Biological Sciences Research
 Council grant to T.M. and T.N., and Engineering and Physical Sciences Research
 Council grants to H.N.
-\end{acknowledgments}
+
 
 
