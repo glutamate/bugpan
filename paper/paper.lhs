@@ -57,13 +57,16 @@ To introduce the calculus of physiological evidence (CoPE), we first
 define some terminology and basic concepts. We assume that \emph{time}
 is global and is represented by a real number, as in classical
 physics. An \emph{experiment} is an interaction between an observer
-and a number of organisms during a defined time period. An
-experiment consists of one or more \emph{trials}: non-overlapping time
-periods during which the observer is running a \emph{program} ---
-instructions for manipulating the environment and for constructing
-mathematical objects, the \emph{observations}. The \emph{analyses} are
-further programs to be run during or after the experiment that
-construct other mathematical objects pertaining to the experiment.
+and a number of organisms during a defined time period. An experiment
+consists of one or more \emph{trials}: non-overlapping time periods
+during which the observer is running a \emph{program} --- instructions
+for manipulating the environment and for constructing mathematical
+objects, the \emph{observations}. The \emph{analyses} are further
+programs to be run during or after the experiment that construct other
+mathematical objects pertaining to the experiment. In the sections
+that follow, we give precise definitions to these concepts in terms
+borrowed from programming language theory and type theory. We provide
+a gentle introduction to those concepts for a general audience.
 
 \subsubsection*{Type theory for physiological evidence}
 
@@ -73,11 +76,13 @@ evidence? We answer this question within simple type theory
 classification of mathematical objects by assigning to every object
 exactly one \emph{type}. These types include base types, such as
 integers |Integer|, real numbers |Real|, text strings |String| and the
-Boolean type |Bool| with the two values |True| and |False|. In
-addition, types can be arbitrarily combined in several ways, such that
-if |alpha| and |beta| are types, the type |alpha times beta| is the
-pair formed by one element of |alpha| and one of |beta|; |[alpha]| is
-a list of |alpha|s; and |alpha -> beta| is the type of functions that
+Boolean type |Bool| with the two values |True| and |False|. These base
+types are familiar to users of most programming languages. In
+addition, modern type systems, including simple type theory, allow
+types to be arbitrarily combined in several ways. For instance, if
+|alpha| and |beta| are types, the type |alpha times beta| is the pair
+formed by one element of |alpha| and one of |beta|; |[alpha]| is a
+list of |alpha|s; and |alpha -> beta| is the type of functions that
 calculate a value in the type |beta| from a value in |alpha|. The
 ability to write flexible type schemata and generic functions
 containing type variables ($\alpha, \beta, \ldots$), which can later
@@ -109,11 +114,11 @@ type |alpha|, called the ``tags'':
 Event alpha = [Time times alpha]
 \end{code}
 For example, an event can be constructed from a number-valued signal
-that represents the time of the largest amplitude
-value of of the signal, with that amplitude in the tag. Events that do not have
-a value of interest to associate with the time point at which it
+that represents the time of the largest amplitude value of of the
+signal, with that amplitude in the tag. Events that do not have a
+value of interest to associate with the time point at which it
 occurred, can be tagged with the unit type |()| which has only one
-element (that is, no information). Events can therefore represent 
+element (that is, no information). Events can therefore represent
 measurements where the principal information is \emph{when} something
 happened, or measurements that concern \emph{what} happened.
 
