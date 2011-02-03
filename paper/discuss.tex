@@ -1,6 +1,6 @@
 \section*{Discussion}
 
-We present an entirely new approach to performing and communicating
+We present a new approach to performing and communicating
 experimental science.  Our use of
 typed, functional and reactive programming overcomes at least three
 long-standing issues in bioinformatics: the need for a flexible
@@ -65,7 +65,7 @@ complex and multi-modal experiments, which may need to be dynamically
 reconfigured based on previous observations, or to disambiguate
 difficult judgements about evidence \citep{Kriegeskorte2009}. Even
 if used separately, however, individual aspects of CoPE can make
-distinct contributions to scientific methodology — for instance, our
+distinct contributions to scientific methodology. For instance, our
 ontology for physiological evidence can be used within more
 conventional programming languages or web applications that facilitate
 data sharing. In a similar way, the capabilities of CoPE for executing
@@ -106,17 +106,17 @@ We have used two different implementation strategies for reasons of
 rapid development and execution efficiency. For purposes of
 experimentation and simulation, we have implemented a prototype
 compiler that can execute some programs that contain signals and
-events defined by mutual recursion, as is necessary for many of the
-simulations and experiments in this paper. The program is transformed
-by the compiler into a normal form that is translated to an imperative
-program which iteratively updates variables corresponding to signal
-values, with a time step that is set explicitly. The program is
-divided into a series of stages, where each stage consists of the
-signals and events defined by mutual recursion, subject to the
-constraints of input/output sources and sinks. This ensures that
-signal expressions can reference values of other signals at arbitrary
-time points (possibly in the future) as long as referenced signals are
-computed in an earlier stage.
+events defined by mutual recursion, as is necessary for the
+experiments in this paper. The program is transformed by the compiler
+into a normal form that is translated to an imperative program which
+iteratively updates variables corresponding to signal values, with a
+time step that is set explicitly. The program is divided into a series
+of stages, where each stage consists of the signals and events defined
+by mutual recursion, subject to the constraints of input/output
+sources and sinks. This ensures that signal expressions can reference
+values of other signals at arbitrary time points (possibly in the
+future) as long as referenced signals are computed in an earlier
+stage.
 
 To calculate a new value from existing observations after data
 acquisition, we have implemented the calculus of physiological
@@ -141,8 +141,8 @@ plasticine with the ventral side upwards. The head was fixed with wax
 % at a $90^{\circ}$ angle
 and the connectives were exposed through an
 incision in the soft tissue of the neck. A pair of silver wire hook
-electrodes were placed underneath the connectives and the electrodes
-and connectives enclosed in petroleum jelly. The electrode signal was
+electrodes were placed underneath a connective and the electrodes
+and connective enclosed in petroleum jelly. The electrode signal was
 amplified 1000x and bandpass filtered 50--5000 Hz, before
 analog-to-digital conversion at 18 bits and 20 kHz with a National
 Instruments PCI-6281 board. The locust was placed in front of a 22''
@@ -156,7 +156,7 @@ CoPE running on a single computer.
 \subsubsection*{Zebrafish experiments}
 
 Intracellular patch-clamp recordings from motor neurons in the spinal
-cord from a 2-day old zebrafish embryo were performed as previously
+cord of a 2-day old zebrafish embryo were performed as previously
 described \citep{McDearmid2006}. We used a National Instruments PCI-6281
 board to
 record the output from a BioLogic patch-clamp amplifier in

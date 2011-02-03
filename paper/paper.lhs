@@ -108,7 +108,7 @@ For instance, the output of a differential
 voltage amplifier might be captured in a |Signal Real|.
 
 To model occurrences pertaining to specific instances in time,
-FRP defines events as a list of pairs of time points and values in a
+FRP defines \emph{events} as a list of pairs of time points and values in a
 type |alpha|, called the ``tags'':
 \begin{code}
 Event alpha = [Time times alpha]
@@ -123,7 +123,7 @@ measurements where the principal information is \emph{when} something
 happened, or measurements that concern \emph{what} happened.
 
 A third kind of information describes the properties of whole time
-periods. We define a duration of type |alpha| as a list of pairs, of
+periods. We define a \emph{duration} of type |alpha| as a list of pairs, of
 which the first component is a pair denoting a start time and an end
 time. The last component is again a value of any type |alpha|:
 \begin{code}
@@ -146,7 +146,7 @@ these quantities fundamentally differently, thus removing the
 possibility of re-using common analysis procedures. Although
 parametric polymorphism is conceptually simple and the distinctions we
 are introducing are intuitive, common biomedical
-ontologies\citep{owlref} \emph{cannot} accommodate these definitions.
+ontologies \citep{owlref} \emph{cannot} accommodate these definitions.
 
 \subsubsection*{Calculating with signals and events}
 
@@ -188,7 +188,7 @@ instance, the function |add2 = \x -> x+2| adds two to its argument;
 hence |add2 3 = (\x->x+2) 3 = 3+2| by substituting arguments in the
 function body.
 
-We now present the concrete syntax of CoPE, which extends the lambda
+We now present the concrete syntax of CoPE, in which we the lambda
 calculus with constructs to define and manipulate signals and
 events. 
 % HN 2010-11-24: Old:
@@ -234,7 +234,7 @@ introduces a differential equation (see Example 2 below).
 
 Events and durations can be manipulated as \emph{lists}. Thus, a large
 number of transformations can be defined with simple recursive
-equations including filters, folds and scans familiar from functional
+equations including filters, folds and scans that are pivotal in functional
 programming languages \citep{Hughes1989}. In addition, we have added a
 special construct to detect events from existing signals. For
 instance, a threshold detector generates an occurrence of an event
@@ -254,7 +254,7 @@ crossings with a positive slope.
  
 Table S1 in the supplementary information presents an informal overview of
 the syntax of CoPE; Table S2 details the types and names of some of
-functions we have defined using these definitions.
+the functions we have defined using these definitions.
 
 % \subsubsection{Observing signals and events}
 \subsubsection*{Interacting with the physical world}
@@ -286,8 +286,8 @@ v <* ADC 0
 \end{code}
 This describes the observation of the voltage signal on channel 0 of
 an analog-to-digital converter, binding the whole signal to the
-variable |v|. We have also used sources to sample value from
-probability distributions (see Methods).
+variable |v|. We have also used sources to sample values from
+probability distributions (see Supplementary Information).
 
 In addition to making appropriate observations, an experiment may also
 involve a perturbation of the experimental preparation. For example,
@@ -363,7 +363,7 @@ colour (r,g,b) s
 the shape identical to |s| except with the colour intensity red |r|,
 green |g| and blue |b|. Additional constructors can be introduced for
 more complex stimuli, but these are sufficient for the experiments
-reported here. Since signals are polymorphic, they can carry not just
+reported here. Since signals in CoPE are polymorphic, they can carry not just
 numeric values but also shapes, so we represent visual stimuli as
 values in |Signal Shape|. The looming stimulus consists of a cube of
 side length l approaching a locust with constant velocity v. The
@@ -388,7 +388,7 @@ loomingSquare =
 object that passes through the physical screen and the observer, and
 when displayed would thus disappear from the screen just before
 collision. In order not to evoke a large OFF response
-\citep{O'shea1976} immediately after simulated collision, the object
+\citep{O'shea1976} at this point, the object
 is frozen in space as it reaches the plane of the surface onto which
 the animation is projected \citep{Hatsopoulos1995}. To achieve this
 effect, we define a new signal that has a lower bound of the distance
@@ -406,8 +406,8 @@ three-dimensional shapes onto a two-dimensional surface.
 \begin{code}
 loomingSquare' *> screen 
 \end{code}
-In our experiments, the extracellular voltage from the locust nerves
-(connectives), in which the DCMD forms the largest amplitude spike,
+In our experiments, the extracellular voltage from the locust nerve
+(connective), in which the DCMD forms the largest amplitude spike,
 was amplified, filtered (see methods) and digitised:
 \begin{code}
 voltage <* ADC 0
@@ -463,7 +463,7 @@ show that it can be used to implement dynamic clamp in an \emph{in
 
 \subsubsection*{Example 2}
 
-Dynamic clamp experiments\citep{Robinson1993, Sharp1993} permit the
+Dynamic clamp experiments \citep{Robinson1993, Sharp1993} permit the
 observation of real neuronal responses to added simulated ionic
 conductances; for instance, a synaptic conductance or an additional
 Hodgkin-Huxley type voltage-sensitive membrane conductance. A dynamic
@@ -521,16 +521,16 @@ The signal |gsyn| could be used directly in a dynamic clamp experiment
 using the above template (i.e. |g=gsyn|). Here, we will examine other conductances
 that modulate the response of the cell to synaptic excitation.
 
-Here, we will examine additional conductances. Both the subthreshold
-properties of a cell and its spiking rate can be regulated by active
-ionic conductances, which can also be examined with the dynamic
-clamp. In the Hodgkin-Huxley formalism for ion channels, the
-conductance depends on one or more state variables, for which the
-forward and backward rate constants depend on the membrane
-voltage. We show the equations for the activation gate of an
-A-type potassium current (\citep{Connor1971}; following \citep{Traub1991}, but
-using SI units and absolute voltages). The equations for
-inactivation are analogous (see Listing 2 in supplementary information).
+Both the subthreshold properties of a cell and its spiking rate can be
+regulated by active ionic conductances, which can also be examined
+with the dynamic clamp. In the Hodgkin-Huxley formalism for ion
+channels, the conductance depends on one or more state variables, for
+which the forward and backward rate constants depend on the membrane
+voltage. We show the equations for the activation gate of an A-type
+potassium current (\citep{Connor1971}; following \citep{Traub1991},
+but using SI units and absolute voltages). The equations for
+inactivation are analogous (see Listing 2 in supplementary
+information).
 
 We write the forward and backward rates as functions of the membrane voltage
 
@@ -571,7 +571,7 @@ thus completing the definition of this experiment:
 i + ika *> DAC 0
 \end{code}
 
-Figure 3A and 3B shows the voltage response to a unitary synaptic
+Figure 3A and 3B show the voltage response to a unitary synaptic
 conductance and a train of synaptic inputs, respectively, with |gmaxk|
 ranging from 0 to 100 nS. By varying the value of |rate|, we can
 examine the input-output relationship of the neuron by measuring the
