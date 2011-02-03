@@ -15,7 +15,7 @@ polymorphism, our ontology can form the basis for the interchange of
 physiological data and meta-data without imposing unnecessary
 constraints on what can be shared. The ontology is non-hierarchical
 and would be difficult to formulate in the various existing semantic
-web ontology frameworks (Web Ontology Language, \citealt{owlref}, or
+web ontology frameworks (Web Ontology Language, \citep{owlref}, or
 Resource Description Framework), which lack parametric polymorphism
 and functional abstraction. Nevertheless, by specifying the categories
 of mathematical objects that constitute evidence, it is an ontology in
@@ -25,7 +25,7 @@ that it is an ontology of \emph{evidence}, not of the biological
 entities that give rise to this evidence. It is unusual as an ontology
 for scientific knowledge in being embedded in a \emph{computational}
 framework, such that it can describe not only mathematical objects but
-also their transformations and observations. We make no distinction in
+also their transformations and observations. We make no distinction between
 the representation of data and meta-data \citep{Bower2009,
   Gibson2008}. All relevant information about an experiment is stored
 as signals, events or durations, which are all indexed by time and
@@ -48,12 +48,17 @@ consists of a collection of computer programs for executing
 experiments and analyses, and carrying out data
 management. Controlling experimentation and analysis with programs
 that share data formats can be highly efficient, and eliminates many
-sources of human error. Our experiment definitions have the further
-advantage that they \emph{compose}; that is, more complex experiments
-can be formulated by joining together elementary building blocks. Our
-approach can be seen the generalisation and formalisation of several
-existing tools, including MRCI \citep{Raikov2004} and XPP
-\citep{Ermentrout1987}.
+sources of human error. Existing tools use differential equations to
+define dynamic clamp experiments \citep[Model Reference Current
+Injection (MRCI);][]{Raikov2004} or simulations \citep[X-Windows Phase
+Plane (XPP);][]{Ermentrout1987}. Here, we show that a general
+(polymorphic) defintion of signal and events, embedded in the lambda
+calculus, can define a much large range of experiments, and the
+evidence that they produce. Our experiment definitions have the
+further advantage that they \emph{compose}; that is, more complex
+experiments can be formulated by joining together elementary building
+blocks.
+
 
 Our full approach is particularly relevant to the execution of very
 complex and multi-modal experiments, which may need to be dynamically

@@ -2,7 +2,7 @@
 
 >> openSession 302
 
->> plotSize 35x50
+>> plotSize 32x50
 
 >> dur35 = [((4,5.1),())]
 >> thefit = \lov -> during dur35 $ fitS fitf1 fitinit $ shist lov

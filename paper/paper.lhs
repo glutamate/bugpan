@@ -6,7 +6,7 @@
 \usepackage{setspace}
 \usepackage{verbatim}
 \usepackage[final]{pdfpages}
-\usepackage{natbib}
+\usepackage[square, comma, numbers]{natbib}
 %\usepackage{citesupernumber}
 
 \usepackage{graphicx}
@@ -17,7 +17,7 @@
 
 \author{Thomas A. Nielsen, Henrik Nilsson and Tom Matheson}
 \pagestyle{myheadings}
-\markboth{A formal framework for experiments in physiology}{A formal framework for experiments in physiology}
+\markboth{Framework for experiments in physiology}{Framework for experiments in physiology}
 \begin{document}
 \begin{titlepage}
 
@@ -32,7 +32,7 @@
 \vspace{27 mm}
 
 \begin{flushleft}
-RUNNING TITLE: A formal framework for experiments in physiology
+RUNNING TITLE: Framework for experiments in physiology
 \end{flushleft}
 
 \vspace{27 mm}
@@ -64,9 +64,9 @@ for manipulating the environment and for constructing mathematical
 objects, the \emph{observations}. The \emph{analyses} are further
 programs to be run during or after the experiment that construct other
 mathematical objects pertaining to the experiment. In the sections
-that follow, we give precise definitions to these concepts in terms
-borrowed from programming language theory and type theory. We provide
-a gentle introduction to those concepts for a general audience.
+that follow, we give precise definitions of these concepts using terms
+from programming language theory and type theory, while providing
+an introduction to the terms for a general audience.
 
 \subsubsection*{Type theory for physiological evidence}
 
@@ -123,8 +123,8 @@ measurements where the principal information is \emph{when} something
 happened, or measurements that concern \emph{what} happened.
 
 A third kind of information describes the properties of whole time
-periods. We define a duration of type |alpha| as a set of triples, of
-which the first two components denote a start time and an end
+periods. We define a duration of type |alpha| as a list of pairs, of
+which the first component is a pair denoting a start time and an end
 time. The last component is again a value of any type |alpha|:
 \begin{code}
 Duration alpha = [Time times Time times alpha]
@@ -159,7 +159,7 @@ unlike conventional programming languages, retain an important
 characteristic of mathematics: a term can freely be replaced by
 another term with identical meaning.
 % HN 2010-09-30: Always "substitute for"
-This property \citep[referential transparency][]{Whitehead1927}
+This property (referential transparency; \citep{Whitehead1927})
 % HN 2010-11-10: "enables" is a bit too strong. For example, it is certainly
 % *possible* to reason formally about imperative code. 
 facilitates algebraic manipulation of and reasoning about
@@ -205,8 +205,8 @@ focuses exclusively on signals and events as mathematical objects and
 their relations.  It does noy have any control structures for
 describing sequences of system configurations, where a signal
 expression depends on the occurrence of events \citep{Elliott1997,
-  Nilsson2002}, although such constructs may be useful for cell
-simulation. As a result, CoPE is quite different from conventional
+  Nilsson2002}, although such constructs may be useful for
+simulations. As a result, CoPE is quite different from conventional
 FRP, which is also reflected in its implementation.
 
 Let the construct |sopen e sclose| denote a signal with the value of
@@ -351,7 +351,7 @@ three-dimensional geometric shapes. Let the expression
 \begin{code}
 cube l
 \end{code}
-denote a cube located at the origin, with side length |l|,
+denote a cube centred on the origin, with side length |l|,
 \begin{code}
 translate (x,y,z) s
 \end{code}
@@ -528,7 +528,7 @@ clamp. In the Hodgkin-Huxley formalism for ion channels, the
 conductance depends on one or more state variables, for which the
 forward and backward rate constants depend on the membrane
 voltage. We show the equations for the activation gate of an
-A-type potassium current (\citealt{Connor1971}; following \citealt{Traub1991}, but
+A-type potassium current (\citep{Connor1971}; following \citep{Traub1991}, but
 using SI units and absolute voltages). The equations for
 inactivation are analogous (see Listing 2 in supplementary information).
 
@@ -586,31 +586,8 @@ simulated synaptic input |rate| is plotted in Figure 3C for four
 different values of |gmaxk|. 
 \input{discuss}
 
-\bibliographystyle{apalike}
+\bibliographystyle{unsrt}
 \bibliography{paper}
-
-\pagebreak
-
-\section*{Table 1}
-
-\begin{tabular}{l  l}
-\hline
-  Quantity & Type \\ 
-\hline
-  Voltage across the cell membrane & |Signal Real| \\
-  Ion concentration & |Signal Real| \\
-  Animal location in 2D & |Signal (Real times Real)| \\
-  Action potential & |Event ()| \\
-  Action potential waveforms & |Event (Signal Real)| \\
-  Spike detection threshold & |Duration Real| \\
-  Spike interval & |Duration ()| \\
-  Synaptic potential amplitude & |Event Real| \\
-  Drug present & |Duration ()| \\
-  Trial with parameter |alpha| & |Duration alpha| \\
-  Visual stimulus & |Signal Shape| \\
-  Lab notebook & |Event String| \\
-\hline
-\end{tabular}
 
 \pagebreak
 
@@ -658,7 +635,30 @@ simulated presynaptic inputs, with $g_A$ as in A.
 \flushleft \textbf{Table 1}. Representation of physiological
 observations and quantities in CoPE
 
+\pagebreak
 %\includepdf[pages=-]{supplement.pdf}
+\section*{Table 1}
+
+\begin{tabular}{l  l}
+\hline
+  Quantity & Type \\ 
+\hline
+  Voltage across the cell membrane & |Signal Real| \\
+  Ion concentration & |Signal Real| \\
+  Animal location in 2D & |Signal (Real times Real)| \\
+  Action potential & |Event ()| \\
+  Action potential waveforms & |Event (Signal Real)| \\
+  Spike detection threshold & |Duration Real| \\
+  Spike interval & |Duration ()| \\
+  Synaptic potential amplitude & |Event Real| \\
+  Drug present & |Duration ()| \\
+  Trial with parameter |alpha| & |Duration alpha| \\
+  Visual stimulus & |Signal Shape| \\
+  Lab notebook & |Event String| \\
+\hline
+\end{tabular}
+
+
 
 \end{document}
  

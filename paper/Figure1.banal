@@ -4,7 +4,7 @@
 %> inSessionsWhere zStopDist  & spikes & notDisplaced
 
 >> everywhere lovDur = (extendDur 1 approachLoV)
->> everywhere chopx = ChopxAxis 1 (take 3 $ drop 6 running)
+>> everywhere chopx = ChopxAxis 1 (take 5 $ drop 6 running)
 >> everywhere distFun lov t = let v = 0.149/lov in min (v*(t-5)) (-0.17)
 >> everywhere collision = evInDur 3 running
 >> everywhere rescale m a x = ((+a) . (*m)) <$$> x
@@ -34,7 +34,7 @@
 %>>        pts "red" 11 1 (chopx (tag 0.1 collision)) :+:
 %>>        lns "black" 1 (chopx (rescale 0.0015 1.35 shistMany))
 
->> plotSize 40x60
+>> plotSize 75x55
 
 >> txtx = 1749.3
 >> axx = 1753.0
@@ -42,7 +42,7 @@
 >> lovAx = CustAxis (axx, 0.1-0.33) (0.02*5) True 0.2 0.4 [(0,"0.02"), (0.02*5, "0.04")]
 >> distAx = CustAxis (axx, 0.175-(20*0.0035)) (20*0.0035) True 0.2 0.4 [(0,"20"), (20*0.0035, "0")]
 
->> plot $ PadX 0.05 0.05 $ Noaxis $ XRange 1749 1775 $ XScaleBar (1770, 0.0) (2, "2 s") (0.03) $
+>> plot $ Noaxis $ XRange 1749 1792 $ XScaleBar (1770, 0.0) (2, "2 s") (0.03) $
 >>        (TextAtRot (txtx, 0.142) "Distance (m)" $ WithAxis distAx $ lns "dark-red" 1 (chopx (rescale 0.0035 0.175 distSig))) :+: 
 >>        (TextAtRot (txtx, 0.52) "Voltage" $ lns "black" 1 (chopx (rescale 4 0.63 ecVoltage))) :+: 
 >>        (TextAtRot (txtx, -0.18) "l/|v| (s})" $ WithAxis lovAx $ lns "blue" 4 (chopx (rescale 5 (-0.33) lovDur))) :+:

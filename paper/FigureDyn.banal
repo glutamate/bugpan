@@ -2,7 +2,7 @@
 
 >> openSession ff6
 
->> plotSize 35x50
+>> plotSize 33x50
 
 
 >> eq = \x y -> abs (x-y) < 1e-10
