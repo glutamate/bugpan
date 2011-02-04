@@ -49,15 +49,14 @@ experiments and analyses, and carrying out data
 management. Controlling experimentation and analysis with programs
 that share data formats can be highly efficient, and eliminates many
 sources of human error. Existing tools use differential equations to
-define dynamic clamp experiments \citep[Model Reference Current
-Injection (MRCI);][]{Raikov2004} or simulations \citep[X-Windows Phase
-Plane (XPP);][]{Ermentrout1987}. Here, we show that a general
-(polymorphic) defintion of signal and events, embedded in the lambda
-calculus, can define a much large range of experiments, and the
-evidence that they produce. Our experiment definitions have the
-further advantage that they \emph{compose}; that is, more complex
-experiments can be formulated by joining together elementary building
-blocks.
+define dynamic clamp experiments (Model Reference Current Injection
+(MRCI); \citep{Raikov2004}) or simulations (X-Windows Phase Plane
+(XPP); \citep{Ermentrout1987}). Here, we show that a general (polymorphic)
+defintion of signal and events, embedded in the lambda calculus, can
+define a much larger range of experiments, and the evidence that they
+produce. Our experiment definitions have the further advantage that
+they \emph{compose}; that is, more complex experiments can be
+formulated by joining together elementary building blocks.
 
 
 Our full approach is particularly relevant to the execution of very
@@ -125,13 +124,14 @@ programming language Haskell.
 
 For hard real-time dynamic-clamp experiments, we have built a compiler
 back-end targeting the LXRT (user-space) interface to the RTAI (Real-time
-application interface; http://rtai.org) extensions of the Linux
-kernel, and the Comedi (http://comedi.org) interface to data
+application interface; \url{http://rtai.org}) extensions of the Linux
+kernel, and the Comedi (\url{http://comedi.org}) interface to data
 acquisition hardware. Geometric shapes were rendered using OpenGL
-(http://opengl.org).
+(\url{http://opengl.org}).
 
-All code is available at http://github.com/glutamate/bugpan and
-released under the GPL.
+All code used for experiments, data analysis and generating figures is
+available at \url{http://github.com/glutamate/bugpan} under the GNU General
+Public License (GPL).
 
 \subsubsection*{Locust experiments}
 
