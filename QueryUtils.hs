@@ -243,6 +243,21 @@ baseline tb1 tb2 = map f where
      in fmap (subtract bval) s
   f s = s
 
+measureBl :: (Double, Double) -> (Double, Double) ->  [Signal Double] -> [Event a] -> [Duration Double]
+measureBl (tbl1,tbl2) (tp1, tp2) sigs = concatMap f where
+   f (t,_) = map (g t) $ during [((t+tbl1,t+tp2),())] sigs -- only for whole signals
+   g t sig = let pk = snd $ sigStat' meanF $ head $ during [((t+tp1, t+tp2),())] [sig]
+                 bl = snd $ sigStat' meanF $ head $ during [((t+tbl1, t+tbl2),())] [sig]
+             in ((t+tp1, t+tp2), pk-bl)
+
+measure :: (Double, Double) ->  [Signal Double] -> [Event a] -> [Duration Double]
+measure (tp1, tp2) sigs = concatMap f where
+   f (t,_) = map (g t) $ during [((t+tp1,t+tp2),())] sigs -- only for whole signals
+   g t sig = let pk = snd $ sigStat' meanF $ head $ during [((t+tp1, t+tp2),())] [sig]
+
+             in ((t+tp1, t+tp2), pk)
+
+
 noConst = concatMap noConst' where
     noConst' (ConstSig _) = []
     noConst' (s) = [s]
@@ -585,7 +600,10 @@ between x1 x2 x = x<max x1 x2 && x> min x1 x2
 
 --contains arbitrary dt for histogram
 
-
+surrounding :: [Event a] -> [Signal b] -> [Signal b]
+surrounding evs = filter f where
+   f s = any (between (sigT1 s) (sigT2 s). fst) evs
+ 
 
 contains :: (ChopByDur [a]) => [a] -> [Duration b] -> [Duration b]
 contains evs durs = filter p durs

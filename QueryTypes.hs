@@ -118,10 +118,13 @@ during durs evs = concat $ chopByDur durs evs
 
 
 section :: [Signal a] -> [Duration b] -> [Signal a]
-section _ [] = []
-section sigs (durs) = map (snd. snd) $ sectionGen sigs durs {-case find (sigOverlapsDur dur) sigs of
-                            Just sig -> section1 sig dur : section sigs durs
-                            Nothing -> section sigs durs-}
+section sigs = concatMap f where
+  f ((t1,t2),_) = catMaybes $ map (limitSig' t1 t2) sigs
+
+
+--(durs) = map (snd. snd) $ sectionGen sigs durs {-case find (sigOverlapsDur dur) sigs of
+--                            Just sig -> section1 sig dur : section sigs durs
+--                            Nothing -> section sigs durs-}
 
 sectionGen :: [Signal a] -> [Duration b] -> [Duration (b,Signal a)]
 sectionGen _ [] = []
