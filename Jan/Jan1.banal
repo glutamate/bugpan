@@ -1,49 +1,195 @@
 >> openSession 090401
 
+\section*{Statistical methods}
+
+We constructed a hierarchical probabilistic model for the time-varying
+joint Fe-Ti angle response to FETi (?) stimulation. The movement on an
+individual trial was described by a waveform described by a summation
+of three alpha functions with different time constants and amplitudes,
+and with independent and identical Gaussian observation noise at every
+timepoint. The waveform parameters were drawn from Gaussian
+distributions, of which the means were parameters for at the level of
+individual animals. Finally, a set of population-level hyperparameters
+determined the distributions from which animal-level parameters were drawn.
+
+This model is capable of simulating movement data in the case where
+the population-level parameters are known. In fact, we are interested
+in the opposite problem: we have observed the movement data from
+living locusts but the model parameters are unknown. Applying Bayes'
+Theorem inverts the problem such that the parameters can be estimated
+from the data.
+
+We calculated the posterior distribution of the population-level
+hyperparameters using Markov Chain Monte Carlo computation performed
+with an adaptive Metropolis-within-Gibbs algorithm using
+custom-written software. An improper uniform prior was used for all
+parameters.
+
 >> lns = \c w -> Lines [LineType 1, LineWidth w, LineColor c]
 >> pts = \c ty sz -> Points [PointType ty, PointSize sz, LineColor c]  
 
+\section*{Model Definition}
 
->> chains ../jan5thin 0 0 0 500 30
+\begin{code}
+alpha(tau,t) = (t/tau) * exp(1 - t/tau)
 
->> predsigs = sampleN 100 $ janParSampler jan5thin
+amp1m, amp2m, amp3m  ~  1
+tau1m, tau2m, tau3m  ~  1
+tausd, ampsd, amptrsd  ~ 1
+startm, startsd, starttrsd ~ 1
+for animal 
+   amp1sm ~ N amp1m ampsd
+   amp2sm ~ N amp2m ampsd
+   amp3sm ~ N amp3m ampsd
+   tau1sm ~ N tau1m tausd
+   tau2sm ~ N tau2m tausd
+   tau3sm ~ N tau3m tausd
+   startsm ~ N startm startsd
+   offsm ~ N offm offsd
+   for trial
+      tau1 ~ N tau1sm tautrsd
+      amp1 ~ N amp1sm amptrsd
+      tau2 ~ N tau2sm tautrsd
+      amp2 ~ N amp2sm amptrsd
+      tau3 ~ N tau3sm tautrsd
+      amp3 ~ N amp3sm amptrsd
+      start ~ N startsm starttrsd
+      off ~ N offsm offtrsd
+      t0 ~ uniform 0.1 0.12
+      waveform(t) = start - amp1 * alpha(tau1, t-t0)  
+                          - amp2 * alpha(tau2, t-t0) 
+                          - amp3 * alpha(tau3, t-t0) 
+                          + off  * (exp (t0-t)/0.2 -1)
+      angle(t) ~ N waveform(t) noise
+\end{code}
+
+> break
+
+>> chains jan3 0 0 0 2000 1000
+
+>> predsigs = sampleN 100 $ janParSampler jan3
+
+\section*{Timecourse plots}
+
+These plots show the actual data, mostly in boxes, together with the
+probable infered parametric timecourse in multiple colours. The
+different plots are for different timescales. I don't think we want to
+use one of these for the poster -- maybe if anything the very fine
+time scale (the first one). For the longer timescales, it makes sense
+only to have a single, most likely, plot with the data.
 
 > plot $ (during [((0,0.2),())] predsigs) :+: pts "black" 4 2 (during [((0,0.2),())] [head angle])
 
-> plot $ (during [((0,2),())] predsigs) :+: pts "black" 4 2 (during [((0,2),())] [head angle])
+%> plot $ (during [((0,2),())] predsigs) :+: pts "black" 4 2 (during [((0,2),())] [head angle])
 
-> plot $ (during [((0,6),())] predsigs) :+: lns "black" 2 (during [((0,6),())] [head angle])
+%> plot $ (during [((0,6),())] predsigs) :+: lns "black" 2 (during [((0,6),())] [head angle])
 
-%> plot $ FunSeg 0 2 $ expStep 0.2 20
+%%> plot $ FunSeg 0 2 $ expStep 0.2 20
 
-%> plot $ FunSeg 0 2 $ wf [88.6,24.4,0.06,3.3,0.2, 0.114, 1]
+%%> plot $ FunSeg 0 2 $ wf [88.6,24.4,0.06,3.3,0.2, 0.114, 1]
 
-> plot $ [head angle]
+%> plot $ [head angle]
+
+>> a1 = samMean amp1s0tr0
+>> a2 = samMean amp2s0tr0
+>> a3 = samMean amp3s0tr0
+>> t1 = samMean tau1s0tr0
+>> t2 = samMean tau2s0tr0
+>> t3 = samMean tau3s0tr0
+>> strt = samMean starts0tr0
+>> t01 = samMean t0s0tr0
+>> off1 = samMean offs0tr0
+>> mywf = fillSig 0 6 0.001 (wf [strt,a1,t1,a2,t2,a3,t3,t01,off1])
+>> mywf1 = fillSig 0 6 0.001 (wf [strt,a1,t1,0,t2,0,t3,t01,0])
+>> mywf2 = fillSig 0 6 0.001 (wf [strt,0,t1,a2,t2,0,t3,t01,0])
+>> mywf3 = fillSig 0 6 0.001 (wf [strt,0,t1,0,t2,a3,t3,t01,0])
+>> mywf4 = fillSig 0 6 0.001 (wf [strt,0,t1,0,t2,0,t3,t01,off1])
+>> c = during [((0.0,1),())] 
+%>> c1 = lns "black" 2 . during [((0.0,1),())] 
+>> cl = during [((0.0,5),())] 
+
+>break 
+
+These plots may be more suitable for the poster. The model
+components are not "draws" from the posteriors, but the waveform
+created from the mean of the posterior of each parameter (close to
+the "most likely" value).
+
+ The three amplitude
+components, the offset and the observed data
+
+>> plot $ KeyLowRight True $ ("Component 1", lns "blue" 3 $ c [mywf1]) :+: ("Component 2", lns "green" 3 $ c [mywf2]) :+: ("Component 3", lns "red" 3 $ c [mywf3]) :+: ("Offset", lns "orange" 3 $ c [mywf4]) :+: ("Observed",  pts "black" 4 2 $ c [head angle])
+
+The sum of the amplitude components and the offset and the observed data
+
+>> plot $ KeyLowRight True $ ("Model", lns "red" 3 $ cl [mywf]) :+: ("Observed", pts "black" 4 2 $ cl [head angle])
+
+>break
 
 
-> p1 = pdf (RandomSignalFast id 0.1) $ fillSig 0 2 0.01 id
+\section*{Posterior distributions}
 
-> p2= pdf (RandomSignalFast id 0.1) $ fillSig 0 2 0.01 $ (+0.05) . id
+These histograms show the probability distributions for the
+parameters, given the observed data. These are in units of
+degrees. 
+
+%>> mywf = fillSig 0 10 0.002 (wf [0,1,0.15,0,0.1,0,0.1,1,0])
+%> plot [mywf]
+
+Population amplitude standard deviation
+> plot $ XLabel "ampsd" ampsd
+
+Trial-to-trial amplitude standard deviation
+> plot $ XLabel "amptrsd" amptrsd
+
+The three amplitude components
+> plot $ XLabel "amp1m" amp1m
+> plot $ XLabel "amp2m" amp2m
+> plot $ XLabel "amp3m" amp3m
+
+>break
+
+>> ampsum = samOp2 (+) amp1m $ samOp2 (+) amp2m amp3m
+
+A sum of the three amplitudes, reflecting the overall amplitude. 
+> plot $ XLabel "amplitude sum" $ ampsum
+
+The ratio of between to within animal variability
+> plot $ XLabel "animal / trial sd" $ samOp2 (/) ampsd amptrsd
+
+>break
+
+The ratio of within animal variability to amplitude
+> plot $ XLabel "trial sd / amp sum " $ samOp2 (/) amptrsd ampsum
+
+The ratio of between animal variability to amplitude
+> plot $ XLabel "animal sd / amp sum " $ samOp2 (/) ampsd ampsum
 
 
-> p3= altPdfRSF1 (RandomSignalFast id 0.1) $ fillSig 0 2 0.01 id
 
-> p4= altPdfRSF1 (RandomSignalFast id 0.1) $ fillSig 0 2 0.01 $ (+0.05) . id
+%> p1 = pdf (RandomSignalFast id 0.1) $ fillSig 0 2 0.01 id
 
-
-> show $ p2/p1
-
-> show $ p4/p3
+%> p2= pdf (RandomSignalFast id 0.1) $ fillSig 0 2 0.01 $ (+0.05) . id
 
 
-> show p1
+%> p3= altPdfRSF1 (RandomSignalFast id 0.1) $ fillSig 0 2 0.01 id
 
-> show p3
-
-> show testm
+%> p4= altPdfRSF1 (RandomSignalFast id 0.1) $ fillSig 0 2 0.01 $ (+0.05) . id
 
 
-%> plot GnuplotTest
+%> show $ p2/p1
+
+%> show $ p4/p3
+
+
+%> show p1
+
+%> show p3
+
+%> show testm
+
+
+%%> plot GnuplotTest
 
 >> waveform = \t -> negate $ alpha 0.06 (t-0.1)
 

@@ -442,6 +442,7 @@ data Noaxis a = Noaxis a
 
 data Key a = KeyTopLeft Bool a 
            | KeyTopRight Bool a 
+           | KeyLowRight  Bool a 
 
 setMargin (Margin b t l r _) = unlines ["set bmargin "++show b,
                                         "set lmargin "++show l,
@@ -480,6 +481,11 @@ instance PlotWithGnuplot a => PlotWithGnuplot (Key a) where
       px <- multiPlot r x
       let boxs = if box then "box" else ""
       let setit = "set key top left "++boxs++"\n"
+      return $ map (\(r', pls) -> (r', (TopLevelGnuplotCmd setit "set key default"):pls)) px
+    multiPlot r m@(KeyLowRight box x) = do
+      px <- multiPlot r x
+      let boxs = if box then "box" else ""
+      let setit = "set key bottom right "++boxs++"\n"
       return $ map (\(r', pls) -> (r', (TopLevelGnuplotCmd setit "set key default"):pls)) px
 
 instance PlotWithGnuplot a => PlotWithGnuplot (Noaxis a) where

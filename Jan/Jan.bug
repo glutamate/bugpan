@@ -6,10 +6,12 @@ expStep etau t =  if t<0.0 then 0.0 else ((exp((0-t)/etau)) -1)
 
 tau1m ~ unknown 0.06
 tau2m ~ unknown 0.2
+tau3m ~ unknown 0.05
 tausd ~ unknown 0.01
 
 amp1m ~ unknown 25
 amp2m ~ unknown 5
+amp3m ~ unknown 1
 ampsd ~ unknown 0.5
 
 startm ~ unknown 95
@@ -30,9 +32,11 @@ _tmax = 2
 inevery t <- session 7 where
   amp1sm ~ N amp1m ampsd
   amp2sm ~ N amp2m ampsd
+  amp3sm ~ N amp3m ampsd
 
   tau1sm ~ N tau1m tausd
   tau2sm ~ N tau2m tausd
+  tau3sm ~ N tau3m tausd
 
   startsm ~ N startm startsd
   offsm ~ N offm offsd
@@ -44,6 +48,9 @@ inevery t <- session 7 where
      tau2 ~ N tau2sm tautrsd
      amp2 ~ N amp2sm amptrsd
 
+     tau3 ~ N tau3sm tautrsd
+     amp3 ~ N amp3sm amptrsd
+
      start ~ N startsm starttrsd
      off ~ N offsm offtrsd
 
@@ -51,13 +58,14 @@ inevery t <- session 7 where
 
      waveform = {: start - amp1 * alpha tau1 (<:seconds:>-t0)  
      	                 - amp2 * alpha tau2 (<:seconds:>-t0) 
+     	                 - amp3 * alpha tau3 (<:seconds:>-t0) 
 			 + off* (expStep 0.2 (<:seconds:>-t0)) :} 
      angle! ~ RandomSignal waveform noise
 
 
---^^ thin 100
---^^ chunkSize 2000
---^^ monitorSession 1
---^^ monitorSession 3
---^^ monitorTrial (0,0)
---^^ monitorTrial (2,1)
+^^ thin 100
+^^ chunkSize 20000
+^^ monitorSession 1
+^^ monitorSession 3
+^^ monitorTrial (0,0)
+^^ monitorTrial (2,1)

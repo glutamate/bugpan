@@ -48,7 +48,7 @@ instance PlotWithGnuplot Histo where
             writeHist fnm n $ map snd vls
             return [PL (concat ["\"", fnm, "\" using 1:2"]) 
                        "" 
-                       "boxes" 
+                       "boxes fs solid" 
                        (removeFile fnm)]
         where writeHist fp n vls = do
                    let (counts, lo, hi, binSize) = histList n vls

@@ -18,7 +18,7 @@ import Math.Probably.MCMC
 import qualified Math.Probably.PDF as P
 import QueryTypes
 import Math.Probably.FoldingStats
---import PlotGnuplot
+import PlotGnuplot
 import QueryPlots
 import QueryUtils hiding (groupBy)
 import Database
@@ -38,6 +38,7 @@ import Text.Regex.Posix
 import Data.Maybe
 import Control.Monad.Trans
 import ValueIO
+import Control.Applicative
 --import qualified Data.Map as Map
 
 
@@ -101,9 +102,15 @@ pickSamples = mapM $ \(s,xs)-> fmap (((,) s) . head) $ runSamplerIO $ oneOf xs
 instance Functor Samples where
     fmap f = Samples . map f . unSamples
 
+instance Applicative Samples where
+    pure x = Samples $ repeat x
+    (Samples fs) <*> (Samples xs) = Samples $ zipWith ($) fs xs
+
 samOp2 op (Samples xs) (Samples ys) = Samples $ zipWith op xs ys
 
 thinSamples n = Samples . thin n . unSamples
+
+samMean (Samples xs) = runStat meanF xs
 
 samplesGaussian (Samples xs)= 
                 let (mu,sd) = runStat meanSDF xs
@@ -129,9 +136,8 @@ onlyKeys ks = filter ((`elem` ks) . fst)
 mapScat :: [String] -> [Samples Double] -> CatScat
 mapScat nms sams = CatScat $ zip nms $ map unSamples sams
 
-
-
-
+instance PlotWithGnuplot (Samples Double) where
+   getGnuplotCmd (Samples xs) = getGnuplotCmd $ Histo 50 $ zip (repeat ()) xs
 
 mapSingly2 :: Eq k => k -> (v->v->a) -> k -> [(k,[v])] -> [a]
 mapSingly2 k1 op k2 mp = 
@@ -222,6 +228,12 @@ manyLikeOver :: (ChopByDur obs,Shiftable obs) => [Duration a] -> (theta -> P.PDF
 manyLikeOver durs lh1 = \obs-> \theta-> sum $ map (lh1 theta) $ chopAndReset durs obs 
 
 
+
+{-instance (MutateGaussian a, UA a )=> MutateGaussian (UArr a) where
+    mutGauss cv xs = toU `fmap` mutGaussMany cv (fromU xs)
+    mutGaussAbs x0 cv xs = toU `fmap` mutGaussAbs (fromU x0) cv (fromU xs)
+    nearlyEq tol xs ys = lengthU xs == lengthU ys && (allU (uncurryS $ nearlyEq tol) $ zipU xs ys ) -}
+
 class MutateGaussian a where
     mutGauss :: Double -> a -> Sampler a
     mutGauss cv x = mutGaussAbs x cv x
@@ -256,22 +268,6 @@ instance MutateGaussian a => MutateGaussian [a] where
     mutGaussAbs xs0 cv xs =  mapM (\(x0,x)-> mutGaussAbs x0 cv x) $ zip xs0 xs
     nearlyEq tol xs ys = length xs == length ys && (all (uncurry $ nearlyEq tol) $ zip xs ys )
 
-{-instance (MutateGaussian a, UA a )=> MutateGaussian (UArr a) where
-    mutGauss cv xs = toU `fmap` mutGaussMany cv (fromU xs)
-    mutGaussAbs x0 cv xs = toU `fmap` mutGaussAbs (fromU x0) cv (fromU xs)
-    nearlyEq tol xs ys = lengthU xs == lengthU ys && (allU (uncurryS $ nearlyEq tol) $ zipU xs ys ) -}
-
-instance (MutateGaussian a, U.Unbox a )=> MutateGaussian (U.Vector a) where
-    mutGauss cv xs = U.fromList `fmap` mutGaussMany cv (U.toList xs)
-    mutGaussAbs x0 cv xs = U.fromList `fmap` mutGaussAbs (U.toList x0) cv (U.toList xs)
-    nearlyEq tol xs ys = U.length xs == U.length ys && (U.all (uncurry $ nearlyEq tol) $ U.zip xs ys )
-
-
-instance (MutateGaussian a, Storable a )=> MutateGaussian (SV.Vector a) where
-    mutGauss cv xs = SV.pack `fmap` mutGaussMany cv (SV.unpack xs)
-    mutGaussAbs x0 cv xs = SV.pack `fmap` mutGaussAbs (SV.unpack x0) cv (SV.unpack xs)
-    nearlyEq tol xs ys = SV.length xs == SV.length ys && (all (uncurry $ nearlyEq tol) $ SV.zip xs ys )
-
 instance (MutateGaussian a, MutateGaussian b) => MutateGaussian (a,b) where
     mutGauss cv (x,y) = liftM2 (,) (mutGauss cv x) (mutGauss cv y)
     mutGaussAbs (x0, y0) cv (x,y) = liftM2 (,) (mutGaussAbs x0 cv x) (mutGaussAbs y0 cv y)
@@ -288,6 +284,19 @@ instance (MutateGaussian a, MutateGaussian b, MutateGaussian c, MutateGaussian d
     mutGaussAbs (x0, y0, z0, w0) cv (x,y,z,w) = 
         liftM4 (,,,) (mutGaussAbs x0 cv x) (mutGaussAbs y0 cv y) (mutGaussAbs z0 cv z) (mutGaussAbs w0 cv w)
     nearlyEq t (x,y, z, w) (x1,y1, z1, w1) = nearlyEq t x x1 && nearlyEq t y y1 && nearlyEq t z z1 && nearlyEq t w w1
+
+
+instance (MutateGaussian a, U.Unbox a )=> MutateGaussian (U.Vector a) where
+    mutGauss cv xs = U.fromList `fmap` mutGaussMany cv (U.toList xs)
+    mutGaussAbs x0 cv xs = U.fromList `fmap` mutGaussAbs (U.toList x0) cv (U.toList xs)
+    nearlyEq tol xs ys = U.length xs == U.length ys && (U.all (uncurry $ nearlyEq tol) $ U.zip xs ys )
+
+
+instance (MutateGaussian a, Storable a )=> MutateGaussian (SV.Vector a) where
+    mutGauss cv xs = SV.pack `fmap` mutGaussMany cv (SV.unpack xs)
+    mutGaussAbs x0 cv xs = SV.pack `fmap` mutGaussAbs (SV.unpack x0) cv (SV.unpack xs)
+    nearlyEq tol xs ys = SV.length xs == SV.length ys && (all (uncurry $ nearlyEq tol) $ SV.zip xs ys )
+
 
 {-instance ChopByDur (UArr Double) where
     chopByDur durs arr = map (\((t1,t2),_)->filterU (\t->t>t1 && t<t2 ) arr) durs-}

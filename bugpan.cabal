@@ -31,7 +31,7 @@ Library
    if flag(nodaq)
      ghc-options:        -DNODAQ
    other-modules:    Eval,  BNFC.LexBugpan, BNFC.ParBugpan, BNFC.SkelBugpan,BNFC.PrintBugpan,BNFC.LayoutBugpan ,BNFC.ErrM,UnitTesting, BNFC.AbsBugpan,BuiltIn, TypeCheck, CompiledSrcsSinks, GenC.Backend, GenC.Syntax
-   Build-depends:    tnutils, probably, process, directory, regex-posix, random, base, bytestring, binary, old-time, storablevector>0.2.4, mtl, data-binary-ieee754, mersenne-random, storable-tuple, hmatrix, vector, syb, array, haskell98, utility-ht
+   Build-depends:    tnutils, probably<0.2, process, directory, regex-posix, random, base, bytestring, binary, old-time, storablevector>0.2.4, mtl, data-binary-ieee754, mersenne-random, storable-tuple, hmatrix, vector, syb, array, haskell98, utility-ht
 
 
 --if !flag(onlylib)
@@ -42,13 +42,13 @@ Executable bugsess
    if flag(nodaq)
      ghc-options:    -DNODAQ
    other-modules:    EvalM, Parse, Types,Database,Eval,Expr, Traverse, Transform, HaskSyntaxUntyped, ValueIO, PrettyPrint, BNFC.LexBugpan, BNFC.ParBugpan, BNFC.SkelBugpan,BNFC.PrintBugpan,BNFC.LayoutBugpan ,BNFC.ErrM,UnitTesting, BNFC.AbsBugpan,BuiltIn, TypeCheck
-   Build-depends:    array, tnutils, probably, haskell98, process, directory, regex-posix, random, base>4.0, bytestring, binary, old-time, storablevector>0.2.4, mtl, data-binary-ieee754, SHA, mersenne-random, storable-tuple, syb, utility-ht
+   Build-depends:    array, tnutils, probably<0.2, haskell98, process, directory, regex-posix, random, base>4.0, bytestring, binary, old-time, storablevector>0.2.4, mtl, data-binary-ieee754, SHA, mersenne-random, storable-tuple, syb, utility-ht
 
 Executable buganal   
 --   Hs-source-dirs:   prog
    Main-Is:          BugAnal.hs
    other-modules:    EvalM, Parse, Types,Database,Eval,Expr, Traverse, Transform, HaskSyntaxUntyped, ValueIO, PrettyPrint, BNFC.LexBugpan, BNFC.ParBugpan, BNFC.SkelBugpan,BNFC.PrintBugpan,BNFC.LayoutBugpan ,BNFC.ErrM,UnitTesting, BNFC.AbsBugpan,BuiltIn, TypeCheck
-   Build-depends:    array, tnutils, probably, haskell98, process, directory, regex-posix, random, base>4, bytestring, binary, old-time, storablevector>0.2.4, mtl, data-binary-ieee754, SHA, mersenne-random, storable-tuple, syb, utility-ht
+   Build-depends:    array, tnutils, probably<0.2, haskell98, process, directory, regex-posix, random, base>4, bytestring, binary, old-time, storablevector>0.2.4, mtl, data-binary-ieee754, SHA, mersenne-random, storable-tuple, syb, utility-ht
 
 Executable bugdriver   
 --   Hs-source-dirs:   prog
@@ -64,11 +64,11 @@ Executable bugdriver
 --   extra-lib-dirs:     /usr/lib
    if flag(nogl)
        GHC-Options:       -DNOGL
-       Build-depends:     array, tnutils, probably, haskell98, process, directory, regex-posix, 
+       Build-depends:     array, tnutils, probably<0.2, haskell98, process, directory, regex-posix, 
                           utility-ht, random, base>4, bytestring, binary, old-time, storablevector>0.2.4, 
                           mtl, data-binary-ieee754, stm, storable-tuple, syb, mersenne-random
    else
-       Build-depends:     array, tnutils, probably, haskell98, process, directory, regex-posix, 
+       Build-depends:     array, tnutils, probably<0.2, haskell98, process, directory, regex-posix, 
                           utility-ht, random, base>4, bytestring, binary, old-time, storablevector>0.2.4, 
                           mtl, data-binary-ieee754, GLFW>0.3, stm, OpenGL>=2.4, storable-tuple, syb, mersenne-random
 
@@ -88,11 +88,11 @@ Executable runbugpan
 --   ghc-options:      -O2 -threaded -lcomedi Comedi/comedi_hs_helper.o
    if flag(nogl)
        GHC-Options:       -DNOGL
-       Build-depends:     array, tnutils, probably, haskell98, process, directory, regex-posix, 
+       Build-depends:     array, tnutils, probably<0.2, haskell98, process, directory, regex-posix, 
                           utility-ht, random, base>4, bytestring, binary, old-time, storablevector>0.2.4, 
                           mtl, data-binary-ieee754,  stm, storable-tuple, syb, mersenne-random
    else
-       Build-depends:     array, tnutils, probably, haskell98, process, directory, regex-posix, 
+       Build-depends:     array, tnutils, probably<0.2, haskell98, process, directory, regex-posix, 
                           utility-ht, random, base>4, bytestring, binary, old-time, storablevector>0.2.4, 
                           mtl, data-binary-ieee754, GLFW>0.3, stm, OpenGL>=2.4, storable-tuple, syb, mersenne-random
 
