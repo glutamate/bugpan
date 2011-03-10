@@ -178,6 +178,18 @@ janParSampler sams = do
   let wfsig= fillSig 0 10 0.002 $ wf wfpars 
 
   return $ wfsig
+
+janParSamplerPop :: [(String, [Double])] -> String -> Sampler (Signal Double)
+janParSamplerPop sams s = do
+  let vsMatrix = transpose $ map snd sams
+  let nms = map fst sams
+  vs <- zip nms `fmap` oneOf vsMatrix
+  let wfpars = map (vs!!!) $ words s --"starts0tr0 amp1s0tr0 tau1s0tr0 amp2s0tr0 tau2s0tr0 amp3s0tr0 tau3s0tr0 t0s0tr0 offs0tr0"
+--  let wfpars = map (vs!!!) $ words "startm amp1m tau1m amp2m tau2m amp3m tau3m t0s0tr0 offm"
+--  let wfpars = [start, amp1, tau1, amp2, tau2, amp3, tau3, 0.1,off]
+  let wfsig= fillSig 0.09 0.2 0.00002 $ wf wfpars 
+
+  return $ wfsig
   
   
 --first is (locally) 090319

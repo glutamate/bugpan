@@ -333,8 +333,8 @@ crossesDown th sigs = crossesUp (negate <$$> th) (negate <$$> sigs)
 crossesUpOrDown :: (Num a, Ord a) => [Duration a] -> [Signal a] -> [Event ()]
 crossesUpOrDown thresDurs sigs = concatMap f $ sectionGen sigs thresDurs
     where f (_,(thresh,s@(Signal t1 t2 dt _ _))) = if thresh >0 
-                                                      then (>thresh) ?? s
-                                                      else (<thresh) ?? s
+                                                      then (>thresh) ?? [s]
+                                                      else (<thresh) ?? [s]
 {-              let npts = sigPnts s
                   --pts = [0..npts-1]                
                   go n last hits | n <npts -1 = let this = readSigPt s n

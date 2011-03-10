@@ -2,28 +2,52 @@
 
 \section*{Statistical methods}
 
-We constructed a hierarchical probabilistic model for the time-varying
-joint Fe-Ti angle response to FETi (?) stimulation. The movement on an
-individual trial was described by a waveform described by a summation
-of three alpha functions with different time constants and amplitudes,
-and with independent and identical Gaussian observation noise at every
-timepoint. The waveform parameters were drawn from Gaussian
-distributions, of which the means were parameters for at the level of
-individual animals. Finally, a set of population-level hyperparameters
-determined the distributions from which animal-level parameters were drawn.
+%We constructed a hierarchical probabilistic model for the time-varying
+%joint Fe-Ti angle response to FETi (?) stimulation. The movement on an
+%individual trial was described by a waveform described by a summation
+%of three alpha functions with different time constants and amplitudes,
+%and with independent and identical Gaussian observation noise at every
+%timepoint. The waveform parameters were drawn from Gaussian
+%distributions, of which the means were parameters for at the level of
+%individual animals. Finally, a set of population-level hyperparameters
+%determined the distributions from which animal-level parameters were drawn.
 
-This model is capable of simulating movement data in the case where
-the population-level parameters are known. In fact, we are interested
-in the opposite problem: we have observed the movement data from
-living locusts but the model parameters are unknown. Applying Bayes'
-Theorem inverts the problem such that the parameters can be estimated
-from the data.
+%This model is capable of simulating movement data in the case where
+%the population-level parameters are known. In fact, we are interested
+%in the opposite problem: we have observed the movement data from
+%living locusts but the model parameters are unknown. Applying Bayes'
+%Theorem inverts the problem such that the parameters can be estimated
+%from the data.
 
-We calculated the posterior distribution of the population-level
-hyperparameters using Markov Chain Monte Carlo computation performed
-with an adaptive Metropolis-within-Gibbs algorithm using
-custom-written software. An improper uniform prior was used for all
-parameters.
+%We calculated the posterior distribution of the population-level
+%hyperparameters using Markov Chain Monte Carlo computation performed
+%with an adaptive Metropolis-within-Gibbs algorithm using
+%custom-written software. An improper uniform prior was used for all
+%parameters.
+
+%After Tom:
+
+The estimation of movement velocities from discretely sampled
+positional data is prone to large errors, particularly when sampling
+rates are low. In particular, if the rapid onset of a movement occurs
+randomly with respect to the sampling points then there will always be
+an underestimate of the velocity [figure].
+
+To address this problem, and to make statistically robust estimates of
+movement parameters, we constructed a hierarchical probabilistic model
+for the time-varying femur-tibia joint angle response (twitch) to FETi
+stimulation. Each observed movement is modelled by a waveform composed
+from three independent alpha functions [figure]. The parameters of the
+functions are drawn from Gaussian distributions at the level of
+individual animals. A set of population-level hyperparameters in turn
+specifies the shape of these animal-level distributions. This
+heirarchical model can describe very well the observed movements
+[figure].
+
+We used Bayesian inference to determind model parameters from real
+movements observed in multiple trials across several animals. We then
+simulated the evoked movements that were not biased by the video
+sampling rate.
 
 >> lns = \c w -> Lines [LineType 1, LineWidth w, LineColor c]
 >> pts = \c ty sz -> Points [PointType ty, PointSize sz, LineColor c]  
@@ -147,6 +171,13 @@ The three amplitude components
 > plot $ XLabel "amp2m" amp2m
 > plot $ XLabel "amp3m" amp3m
 
+> break
+
+The three time constants
+> plot $ XLabel "tau1m" tau1m
+> plot $ XLabel "tau2m" tau2m
+> plot $ XLabel "tau3m" tau3m
+
 >break
 
 >> ampsum = samOp2 (+) amp1m $ samOp2 (+) amp2m amp3m
@@ -165,6 +196,41 @@ The ratio of within animal variability to amplitude
 The ratio of between animal variability to amplitude
 > plot $ XLabel "animal sd / amp sum " $ samOp2 (/) ampsd ampsum
 
+> break
+
+The population mean offset 
+> plot $ XLabel "offm" offm
+
+The between-animal offset variability
+> plot $ XLabel "offsd" offsd
+
+> break
+The within-animal offset variability
+> plot $ XLabel "offtrsd" offtrsd
+
+> break 
+
+>> filtSigs = filter ((<200) . foldSig max 0 )
+
+>> predPopsigs = filtSigs $ sampleN 100 $ janParSamplerPop jan3 "starts0tr0 amp1s0tr0 tau1s0tr0 amp2s0tr0 tau2s0tr0 amp3s0tr0 tau3s0tr0 t0s0tr0 offs0tr0"
+\section*{Velocity measurements}
+Here is an attempt to estimate the velocity for a single (previously
+plotted) trial. The peak of the velocity trace is probably quite model
+dependent, but you could compare your measurements with the velocity
+when half-way through the stroke -- at ca. 0.125 secconds -- where we
+find a velocity of about 1000 deg/s. More precisely,
+
+>> derivs = map deriv predPopsigs
+> halfway = runStat meanF $ map (\(_,(lo,hi)) -> (lo+hi)/2) $ sigStat (minF `both` maxF) predPopsigs
+> halfwayTime = runStat meanF $ map fst $ (<halfway) ?? predPopsigs
+%> show (halfway, halfwayTime)
+> show $ runStat meanSDF $ map (`readSig` halfwayTime) derivs
+
+That is (mean, standard deviation).
+
+>> plot $ YLabel "angle" $ during [((0.09, 0.18),())] predPopsigs
+
+>> plot $ YLabel "velcoity (deg/s)" $ during [((0.09, 0.18),())] $ map (sigCutLast 0.001 . deriv) predPopsigs
 
 
 %> p1 = pdf (RandomSignalFast id 0.1) $ fillSig 0 2 0.01 id
