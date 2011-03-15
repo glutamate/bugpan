@@ -52,40 +52,35 @@ sampling rate.
 >> lns = \c w -> Lines [LineType 1, LineWidth w, LineColor c]
 >> pts = \c ty sz -> Points [PointType ty, PointSize sz, LineColor c]  
 
+%format forall = "\forall"
+%format t0 = "t_0"
+%format UnifD = "\,\,\mathcal{U}(0.1, 0.12)"
+%format NormD = "\,\,\mathcal{N}"
+
+
 \section*{Model Definition}
 
 \begin{code}
 alpha(tau,t) = (t/tau) * exp(1 - t/tau)
 
-amp1m, amp2m, amp3m  ~  1
-tau1m, tau2m, tau3m  ~  1
-tausd, ampsd, amptrsd  ~ 1
-startm, startsd, starttrsd ~ 1
-for animal 
-   amp1sm ~ N amp1m ampsd
-   amp2sm ~ N amp2m ampsd
-   amp3sm ~ N amp3m ampsd
-   tau1sm ~ N tau1m tausd
-   tau2sm ~ N tau2m tausd
-   tau3sm ~ N tau3m tausd
-   startsm ~ N startm startsd
-   offsm ~ N offm offsd
-   for trial
-      tau1 ~ N tau1sm tautrsd
-      amp1 ~ N amp1sm amptrsd
-      tau2 ~ N tau2sm tautrsd
-      amp2 ~ N amp2sm amptrsd
-      tau3 ~ N tau3sm tautrsd
-      amp3 ~ N amp3sm amptrsd
-      start ~ N startsm starttrsd
-      off ~ N offsm offtrsd
-      t0 ~ uniform 0.1 0.12
-      waveform(t) = start - amp1 * alpha(tau1, t-t0)  
-                          - amp2 * alpha(tau2, t-t0) 
-                          - amp3 * alpha(tau3, t-t0) 
-                          + off  * (exp (t0-t)/0.2 -1)
-      angle(t) ~ N waveform(t) noise
+per animal 
+   amp1sm  ~ NormD(amp1m,ampsd)
+   tau1sm  ~ NormD(tau1m,tausd)
+   ...
+   per trial
+      amp1  ~ NormD(amp1sm,amptrsd)
+      tau1  ~ NormD(tau1sm,tautrsd)
+      ...
+      t0    ~ UnifD
+      waveform(t) = 
+          start  
+          - amp1  * alpha(tau1, t-t0)  
+          - amp2  * alpha(tau2, t-t0) 
+          - amp3  * alpha(tau3, t-t0) 
+          + off   * (exp (t0-t)/0.2 -1)
+      angle(t) ~ NormD(waveform(t),noise)
 \end{code}
+
 
 > break
 
@@ -132,7 +127,12 @@ only to have a single, most likely, plot with the data.
 %>> c1 = lns "black" 2 . during [((0.0,1),())] 
 >> cl = during [((0.0,5),())] 
 
->break 
+>break
+
+> justoff = fillSig 0 6 0.001 (wf [90,0,t1,0,t2,0,t3,t01,1.0])
+> plot $ YRange 88 91 $ [justoff]
+
+> break 
 
 These plots may be more suitable for the poster. The model
 components are not "draws" from the posteriors, but the waveform

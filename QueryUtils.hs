@@ -55,6 +55,7 @@ durf <**> durx = concatMap apply $ zip durf $ chopByDur durf durx
 later :: RealNum -> [Event a] -> [Event a]
 later t  = map (\(te, v) ->(t+te, v))
 
+
 fadeOut :: RealNum -> [Event a] -> [Duration a]
 fadeOut t = map (\(tev,v)-> ((tev, tev+t), v))
 
@@ -245,7 +246,11 @@ baseline tb1 tb2 = map f where
 
 measureBl :: (Double, Double) -> (Double, Double) ->  [Signal Double] -> [Event a] -> [Duration Double]
 measureBl (tbl1,tbl2) (tp1, tp2) sigs = concatMap f where
-   f (t,_) = map (g t) $ during [((t+tbl1,t+tp2),())] sigs -- only for whole signals
+   f (t,_) = let t1 = t+tbl1
+                 t1' =t+tbl2
+                 t2 = t+tp1
+                 t2' = t+tp2
+             in map (g t) $ during [((min t1 t2,max t1' t2'),())] sigs -- only for whole signals
    g t sig = let pk = snd $ sigStat' meanF $ head $ during [((t+tp1, t+tp2),())] [sig]
                  bl = snd $ sigStat' meanF $ head $ during [((t+tbl1, t+tbl2),())] [sig]
              in ((t+tp1, t+tp2), pk-bl)
