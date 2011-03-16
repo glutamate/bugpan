@@ -49,6 +49,10 @@
 >> measDur =  measureBl (-0.002, 0.002) (tpeak-0.001,tpeak+0.001) vm spike
 >> noiseDur =  measureBl (-0.002, 0.002) (negate $ tpeak+0.001,negate $ tpeak-0.001) vm spike
 
+>> snm = take 4 $ sessionIdentifier
+
+>> SaveArray (snm++"_epsps.dat") $ map (\((t1,_), v) -> (t1,v)) $ sortBy ( comparing fst) measDur
+
 %> show $ length $ measDur
 %> show $ length $ map snd noiseDur
 > show $ runStat varF (map snd noiseDur) 

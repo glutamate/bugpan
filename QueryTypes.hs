@@ -295,6 +295,7 @@ askForLiterateIO qx = do
 noTypeLine s = unlines $ ntl $ lines s
     where ntl ls@(ln:lns) | "type = " `isPrefixOf` ln = lns
                           | otherwise = ls
+          ntl [] = []
 
 askForLiterateTable :: (QueryResult a, MonadIO m) => a -> StateT QState m ()
 askForLiterateTable qx = do
@@ -330,8 +331,30 @@ class QueryResult a where
     qResThroughSession :: MonadIO m => a -> StateT QState m a
     qResThroughSession = return 
     qFilterSuccess :: a -> Bool
+    qFilterSuccess = const True
 
 qs1 s = s -- [QString s]
+
+class Saveable a where
+    showLine :: a -> String
+
+data SaveArray a = SaveArray String [a]
+
+instance Saveable Double where
+   showLine = show
+
+instance (Saveable a, Saveable b) => Saveable (a,b) where
+   showLine (x,y) = showLine x ++ "\t" ++ showLine y
+
+instance Saveable a => Saveable [a] where
+   showLine xs = intercalate"\t" $ map showLine xs
+
+instance Saveable a => QueryResult (SaveArray a) where
+     qReply (SaveArray nm xs) _ = do
+         withFile nm WriteMode $ \h -> do
+            forM_ xs $ hPutStrLn h . showLine
+         return ""
+      
 
 instance QueryResult [Char] where
     qReply s _ = return $ qs1 s

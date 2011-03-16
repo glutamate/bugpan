@@ -369,6 +369,7 @@ writer s = do
   modimport "QueryPlots"
   modimport "PlotGnuplot"
   modimport "Data.List"
+  modimport "Data.Ord"
   modimport "TNUtils"
   modimport "NewSignal"
   modimport "Control.Monad"
@@ -407,7 +408,7 @@ main = do
   writeFile hsFile code
   ghcres <- if ("-p" `elem` opts)
                then system $ "ghc -O2 -prof -auto-all --make "++hsFile
-               else system $ "ghc -O2 --make "++hsFile
+               else system $ "ghc -O2 -package probably-0.1.1 --make "++hsFile
   let profOpts =  if ("-p" `elem` opts)
                     then " +RTS -p"
                     else ""
