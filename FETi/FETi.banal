@@ -40,14 +40,18 @@
 
 %>> av1 = \sigs -> take 1 $ averageSigs sigs
 
->> plot $ XRange (-0.02) 0.04 $ (sessionIdentifier, averageSigs $ aroundSpike)
+>> winHalfSize = 0.001
+>> blHalfSize = 0.002
+>> showMeasDur = map (\ts-> (ts,0.1)) $ [(negate $ tpeak+winHalfSize,negate $ tpeak-winHalfSize),(-blHalfSize, blHalfSize),(tpeak-winHalfSize,tpeak+winHalfSize)]
+
+>> plot $ XRange (-0.02) 0.04 $ (sessionIdentifier, averageSigs $ aroundSpike) :+: showMeasDur
 
 %> note
 
->> peakDur = inout (later (tpeak-0.001) spike) (later (tpeak+0.001) spike)
+>> peakDur = inout (later (tpeak-winHalfSize) spike) (later (tpeak+winHalfSize) spike)
 >> peakMeas = sigStat meanF $ during peakDur vm
->> measDur =  measureBl (-0.002, 0.002) (tpeak-0.001,tpeak+0.001) vm spike
->> noiseDur =  measureBl (-0.002, 0.002) (negate $ tpeak+0.001,negate $ tpeak-0.001) vm spike
+>> measDur =  measureBl (-blHalfSize, blHalfSize) (tpeak-winHalfSize,tpeak+winHalfSize) vm spike
+>> noiseDur =  measureBl (-blHalfSize, blHalfSize) (negate $ tpeak+winHalfSize,negate $ tpeak-winHalfSize) vm spike
 
 >> snm = take 4 $ sessionIdentifier
 
@@ -55,8 +59,14 @@
 
 %> show $ length $ measDur
 %> show $ length $ map snd noiseDur
-> show $ runStat varF (map snd noiseDur) 
-> show $ runStat varF (map snd measDur) 
+> bgVar = runStat varF (map snd noiseDur) 
+%> show $ runStat varF (map snd measDur) 
+
+> meanVars = map (runStat (meanF `both` varF)) $ inGroupsOf 20 $ map snd measDur
+
+%> subBg = map $ \(mn,var) -> (mn, varbgVar))
+
+> plot meanVars
 
 >> pts = \c ty sz -> Points [PointType ty, PointSize sz, LineColor c]  
 

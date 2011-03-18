@@ -512,6 +512,10 @@ dropSecs :: Double -> [Signal a] -> [Signal a]
 dropSecs s = map f
     where f (Signal t1 t2 dt sf eq) = Signal (t1+s) t2 dt (SV.drop (round $ s/dt) sf) eq -- $ \p-> sf (p+(round $ s/dt))
 
+inGroupsOf :: Int -> [a] -> [[a]]
+inGroupsOf n [] = []
+inGroupsOf n xs = take n xs : inGroupsOf n (drop n xs)
+
 labelMagically :: Double -> Int -> [Duration a] -> [Duration Int]
 labelMagically ivl n durs | length durs < n = []  
                           | otherwise = 
