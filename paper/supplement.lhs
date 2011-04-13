@@ -180,7 +180,7 @@ loomObj *> screen ""
 _tmax=6
 _dt = 5.0e-5
 
-ecVoltage <* ADC 0 
+ecVoltage <* ADC 0 20000
 ecVoltage *> store ""
 
 \end{verbatim}
@@ -208,7 +208,7 @@ rawv, celli, vm, a, b, ika :: Signal Real
 rndSpike :: [(Real, ())]
 rndSpike <* poisson rate
 
-rawv <* ADC 0
+rawv <* ADC 0 20000
 vm = {: <: rawv:>  *0.10 :}
 
 gcellsyn = {: convolution gsyn (forget 0.1 rndSpike ) <:seconds:> :}
@@ -234,7 +234,7 @@ ika_0 = 0
 
 celli = {: (0-<:vm:>) * <:gcellsyn:>  - <: ika:> :}
 outv = {: <:celli:> * 1.0e9 :} 
-outv *> DAC 0
+outv *> DAC 0 20000
 
 vm *> store ""
 \end{verbatim}

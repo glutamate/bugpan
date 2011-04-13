@@ -184,9 +184,9 @@ In the lambda calculus, calculations are performed by function
 abstraction and application. |\x->e| denotes the function with
 argument |x| and body |e|, and |f e| the application of the function
 |f| to the expression |e| (more conventionally written $f(e)$). For
-instance, the function |add2 = \x -> x+2| adds two to its argument;
-hence |add2 3 = (\x->x+2) 3 = 3+2| by substituting arguments in the
-function body.
+instance, the function |add2 = \x -> x+2|, which we can write more
+conveniently as |add2 x = x+2|, adds two to its argument; hence |add2
+3 = (\x->x+2) 3 = 3+2| by substituting arguments in the function body.
 
 We now present the concrete syntax of CoPE, in which we the lambda
 calculus with constructs to define and manipulate signals and
@@ -220,7 +220,7 @@ sopen 1 sclose
 denotes the signal that always has the value 1; and the function |smap|
 defined as
 \begin{code}
-smap = \f -> \s -> sopen f <: s :> sclose
+smap f s = sopen f <: s :> sclose
 \end{code}
 transforms, for any two types |alpha| and |beta|, the signal |s| of |alpha|
 into a signal of |beta| by applying the function |f| of type |alpha
@@ -282,11 +282,11 @@ binds the value or signal resulting from the observation of the
 \emph{identifier}. For a concrete example, the following code defines
 a simple experiment:
 \begin{code}
-v <* ADC 0
+v <* ADC 0 20000
 \end{code}
 This describes the observation of the voltage signal on channel 0 of
-an analog-to-digital converter, binding the whole signal to the
-variable |v|. We have also used sources to sample values from
+an analog-to-digital converter at 20 kHz, binding the whole signal to
+the variable |v|. We have also used sources to sample values from
 probability distributions (see Supplementary Information).
 
 In addition to making appropriate observations, an experiment may also
@@ -318,11 +318,11 @@ sineWave = smap sin seconds
 \end{code}
 We then write
 \begin{code}
-sineWave *> DAC 0
+sineWave *> DAC 0 20000
 \end{code}{}
 to send the |sineWave| signal to channel channel 0 of a
-digital-to-analog converter. Below we show how
-these primitives can be used to define two detailed experiments in
+digital-to-analog converter at 20 kHz. Below we show how these
+primitives can be used to define two detailed experiments in
 neurophysiology.
 % Sinks and sources are thus used to
 % link values, which have been or will be used in purely mathematical
@@ -410,7 +410,7 @@ In our experiments, the extracellular voltage from the locust nerve
 (connective), in which the DCMD forms the largest amplitude spike,
 was amplified, filtered (see methods) and digitised:
 \begin{code}
-voltage <* ADC 0
+voltage <* ADC 0 20000
 \end{code}
 |loomingSquare'| and |voltage| thus define a single object approach
 and the recording of the elicited response. This approach was repeated
@@ -486,9 +486,9 @@ The output current
 |i| is calculated at each time-step from the simulated conductance |g|
 and the measured membrane voltage |v|:
 \begin{code}
-v <* ADC 0
+v <* ADC 0 20000
 i = sopen (<: v :> - E)* <: g :> sclose
-i *> DAC 0
+i *> DAC 0 20000
 \end{code}
 The experiment is thus characterised by the conductance signal $g$
 (for clarity, here we omit the amplifier-dependent input and output
@@ -501,7 +501,7 @@ conductance to a real neuron. Simple models of synapses approximate
 the conductance waveform with an alpha function
 \citep{Carnevale2006}:
 \begin{code}
-alpha_f = \amp -> \tau -> sopen tau **2 * <: seconds :> *exp (- <: seconds :> *tau) sclose
+alpha_f amp tau = sopen tau **2 * <: seconds :> *exp (- <: seconds :> *tau) sclose
 \end{code}
 
 To simulate a barrage of synaptic input to a cell, this waveform is
@@ -536,15 +536,15 @@ We write the forward and backward rates as functions of the membrane voltage
 
 \begin{tabbing}
 \qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
-${\alpha_a\mathrel{=}\lambda \Varid{v}\to \frac{\mathrm{20}\!\cdot\!(\mathbin{-}\mathrm{46.9}\mathbin{-}\Varid{v}\!\cdot\!\mathrm{1000})}{\Varid{exp}\;\frac{\mathbin{-}\mathrm{46.9}\mathbin{-}\Varid{v}\!\cdot\!\mathrm{1000}}{\mathrm{10}}\mathbin{-}\mathrm{1}}}$\\
+${\alpha_a\;\Varid{v}\mathrel{=}\frac{\mathrm{20}\!\cdot\!(\mathbin{-}\mathrm{46.9}\mathbin{-}\Varid{v}\!\cdot\!\mathrm{1000})}{\Varid{exp}\;\frac{\mathbin{-}\mathrm{46.9}\mathbin{-}\Varid{v}\!\cdot\!\mathrm{1000}}{\mathrm{10}}\mathbin{-}\mathrm{1}}}$\\
 \\
-${\beta_a\mathrel{=}\lambda \Varid{v}\to \frac{\mathrm{17.5}\!\cdot\!(\Varid{v}\!\cdot\!\mathrm{1000}\mathbin{+}\mathrm{19.9})}{\Varid{exp}\;\frac{\Varid{v}\!\cdot\!\mathrm{1000}\mathbin{+}\mathrm{19.9}}{\mathrm{10}}\mathbin{-}\mathrm{1}}}$
+${\beta_a\;\Varid{v}\mathrel{=}\frac{\mathrm{17.5}\!\cdot\!(\Varid{v}\!\cdot\!\mathrm{1000}\mathbin{+}\mathrm{19.9})}{\Varid{exp}\;\frac{\Varid{v}\!\cdot\!\mathrm{1000}\mathbin{+}\mathrm{19.9}}{\mathrm{10}}\mathbin{-}\mathrm{1}}}$
 \end{tabbing}
 
 %
 %\begin{code}
-%alphaa = \v->  20*(-46.9-v*1000)/(exp ((-46.9-v*1000)/10) -1)
-%betaa = \v->   17.5*(v*1000+19.9)/(exp ((v*1000+19.9)/10) -1)
+%alphaa v = 20*(-46.9-v*1000)/(exp ((-46.9-v*1000)/10) -1)
+%betaa v = 17.5*(v*1000+19.9)/(exp ((v*1000+19.9)/10) -1)
 %\end{code}
 
 The time-varying state of the activation gate is given by a
@@ -568,7 +568,7 @@ This is added to the signal |i| defined above to give the output current
 % command, 
 thus completing the definition of this experiment:
 \begin{code}
-i + ika *> DAC 0
+i + ika *> DAC 0 20000
 \end{code}
 
 Figure 3A and 3B show the voltage response to a unitary synaptic

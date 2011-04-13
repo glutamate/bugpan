@@ -71,29 +71,43 @@ data sharing. In a similar way, the capabilities of CoPE for executing
 and analysing experiments could provide a robust core for innovative
 graphical user interfaces.
 
-A corollary of our work is that it may be possible in principle to
-mechanically verify scientific inference, just as mathematical proofs
-can be verified by a proof checker \citep{DeBruijn1968,
-  Harrison2009}. It is of course not possible to verify particular
-hypotheses about the physical world, or an organism in this way. What
-might be verifiable are statements about experiments --- for instance,
-that: particular variables were randomly controlled and not observed;
-outcomes have not gained correlation due to the analysis procedure;
-missing data are accounted for by the statistical model
-\citep{Gelman2003}; errors are propagated correctly \citep{Taylor1997};
-units of measurement are used consistently \citep{Kennedy1997}; there
-is no ``double dipping'' \citep{Kriegeskorte2009}; and, ultimately,
-that the observed data support the conclusions drawn. Statistical
-analyses address some of these issues in relating observations to
-parameter estimation and hypothesis testing. Without knowing
-where observations come from, however, it is difficult to ascertain whether
-they provide evidence for a given scientific hypothesis
-\citep{Pool2002}. Experiment description languages, and the
-representation of experimental observations into values of concrete
-types (which may not always be real numbers), could play an important
-role in such inference. It is likely that at least some aspects of
-validation in physiology can be achieved with conservative extensions
-of
+We have argued that observational data, experiments and analyses
+formulated in CoPE or similar frameworks are less ambiguous and more
+transparent than many contemporary research studies. The structure of
+CoPE presents additional opportunities for excluding some procedural
+errors in scientific inference. For instance, a simple extension to
+simple type theory ... and key features of dimensional
+analysis. Furthermore, the observed values we have .. are mathematical
+objects over which we can write probability distributions. 
+
+* enhanced verification beyond the increased transparency
+* example: simple extension: units of measure
+* probabilistic modeling: BUGS, autobayes, MlWin
+
+
+Previous: A corollary of our work is that it may be possible in
+principle to mechanically verify scientific inference, just as
+mathematical proofs can be verified by a proof checker
+\citep{DeBruijn1968, Harrison2009}. It is of course not possible to
+verify particular hypotheses about the physical world, or an organism
+in this way. What might be verifiable are statements about experiments
+--- for instance, that: particular variables were randomly controlled
+and not observed; outcomes have not gained correlation due to the
+analysis procedure; missing data are accounted for by the statistical
+model \citep{Gelman2003}; errors are propagated correctly
+\citep{Taylor1997}; units of measurement are used consistently
+\citep{Kennedy1997}; there is no ``double dipping''
+\citep{Kriegeskorte2009}; and, ultimately, that the observed data
+support the conclusions drawn. Statistical analyses address some of
+these issues in relating observations to parameter estimation and
+hypothesis testing. Without knowing where observations come from,
+however, it is difficult to ascertain whether they provide evidence
+for a given scientific hypothesis \citep{Pool2002}. Experiment
+description languages, and the representation of experimental
+observations into values of concrete types (which may not always be
+real numbers), could play an important role in such inference. It is
+likely that at least some aspects of validation in physiology can be
+achieved with conservative extensions of
 % the calculus of physiological evidence 
 CoPE integrated with statistical inference.
 

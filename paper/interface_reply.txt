@@ -1,0 +1,296 @@
+Here are my informal notes on the referees comments
+
+General remarks: these are all excellent remarks, and every review is
+positive but with caveats that we should and can address. 
+
+I'll handle two points generally: the "impact" concern that they all
+raise, and comments on the aspect of verification.
+
+impact: talking points here: (a) this can be the foundation of a
+database, end-user does not have to use it. In the end, I think we are
+on the same page as the reviewers: this may not be a final standard or
+a end-user-ready product, but it is a completely different (from the
+semantic web) way of thinking about sharing evidence and procedures
+and therefore worth publishing. We can't be expected to build Rome in
+one day! I am not quite sure the reviewers are asking anything
+specific here other than making general remarks.
+
+verification: i suggest we entirely rewrite the last section to remove
+general suggestions of "verifying science" and references to theorem
+proving and instead focus on (a) the low-hanging fruit of correctness
+such as dimensional unit checking, where we can talk a bit more about
+andrew kennedy's work, and (b) what would happen if we augment our
+approach with statistical inference (Bayesian or maximum
+likelihood). This would deal with the comments on AutoBayes and also
+the points made by reviewer 1 about our spike-detection algorithm
+being somewhat simple.
+
+> Referee: 1 Comments to the Author the framework is cleverly conceived,
+> carefully designed, easily extensible, and clearly capable of handling
+> the two prototype applications presented. It is the potential
+> importance of such an approach, and the early if limited success
+> demonstrated here, that makes this work meritorious and deserving of
+> publication.
+
+Thank you!
+
+> What is less clear is impact. Electrophysiologists are unlikely to see
+> the need for a parsable tool for describing their stimulation, data
+> acquisition, and processing analytically. The lambda-calculus-based
+> approach is pleasing to an old Lisp or Scheme programmer, but even
+> those of us who actually had Lisp machines in the lab didn’t analyze
+> our data, or stimulate our preparations, using them.
+
+See general remarks
+
+> Certainly, this formalism is a clearer-eyed and more quantitative
+> approach than the currently-promoted OWL/RDF descriptive ontologies,
+> which are marginal for many targeted users. For this the authors are
+> to be both commended and encouraged.
+> 
+> Caveats:
+> 
+> The major concern is the idea that this approach will make
+> experimental results more verifiable. I doubt it. Much data
+> manipulation is more complex than presented here, and much relies on
+> carefully verified numerical analysis packages. Coding algorithms in
+> the lambda form does not guarantee that the methods do the right
+> thing, or in the right way. I would recommend deleting the last
+> paragraph of the Discussion advancing this. One is reminded of the
+> ‘provably correct’ programming movement of a few decades ago.
+
+see general remarks
+
+> Data acquisition devices themselves now do a lot of data analysis, and
+> the data source is likely to depend upon a lot of switch settings or
+> on-screen parameters not at all under the control, or even the scope,
+> of CoPE.
+
+I'll try to think about some examples of what he/she might be refering
+to here and what can be done. Of course we can't describe everything
+and probably should say so.
+
+> The generation of data can easily transcend the examples and the
+> scope, for example if the visual stimulus presented were a natural
+> scene or movie clip rather than a simply-constructed geometric
+> figure. Even for that figure, CoPE requires, literally, that one
+> reinvent the cube.
+
+of course more complex stimuli are more complex to represent! We can
+talk about loading shapes or scenes from images or geomtric files for
+such stimuli.
+ 
+> Similarly, a lot of metadata are needed for describing the preparation
+> and ways in which it may have been manipulated (trained monkey?
+> Cre-lox? Human subject? Multi-electrode array?) that go way beyond the
+> sources and sinks that are the basis for much of CoPE. Even for the
+> examples given, the authors find it necessary to include regular text
+> paragraphs describing how they did the experiments, and these (and the
+> figure legends) are both necessary for anyone to understand what was
+> done and NOT suited to the lambda-based formalism advanced.
+
+Some of the text explains the equations. This is of course how it
+should be - no paper should be exclusively equations, you interleave
+the equations of an informal explanation. that doesn't mean that the
+equations are not in themselves a complete description. We may want to
+make an analogy to literate programming.
+
+But the reviewer is right: we can't represent everything. we can
+reintroduce the distinction we had in a previous version in
+machine-executable metadata and metadata that is
+non-machine-executable. (there is a grey area in metadata that might
+in principle be machine executable but is not in practice). 
+ 
+> The example given for spike sorting by simple thresholding, is readily
+> implemented in CoPE; it would have been more interesting to see
+> whether dynamic template generation and matching, or a similar complex
+> algorithm, would have been as easy.
+
+see general comments: we may want to say that our best hope here is
+probabilistic data analysis, especially as reviewer 3 is keen on
+this. We should be careful not to say "Bayesian" here as reviewer 1
+may not be keen on this - emphasise that one can also do maximum
+likelihood.
+
+BUT after thinking about this for a few days, in fact I think we can
+do *at least* template matching very easily, just a one-liner. Dynamic
+template generation is way more difficult, I can look at this
+but obviously more complicated analyses are more complicated. 
+
+> Referee: 2 Comments to the Author This paper describes an original
+> approach to the problem of reusing neuroscience data. Although a large
+> number of databases are available, without proper annotation most of
+> the data is useless. This is a pressing problem for all of
+> neuroscience, from neurophysiology to the analysis of fMRI data. The
+> paper is well written and very clear, even to non-experts.
+> 
+> The paper claims to deliver a flexible ontology to share heterogeneous
+> data from 'physiological experiments, a language for describing
+> experiments unambiguously, and an equational formulation of data
+> provenance.'
+> 
+> I have no background in the usage of functional programming. The
+> parametric polymorphism is reminiscent of functor objects in C++,
+> where template arguments can be used to describe the types on which
+> these objects operate (and which they return). The formalism goes
+> beyond functor objects in that lambda calculus provides a very nice
+> way of providing an ontology by allowing a very precise definition of
+> the types of experimental constructs. I believe it is an important
+> point to make, because a substantial part of the intended audience
+> will have no background in functional programming, even in computer
+> science departments this is not general knowledge. A substantial part
+> of the computational neuroscience community speaks C++, however.
+
+OK, we'll do that. (This reviewer may be Marc de Kamps, one of our
+suggested referees, by the way. He came to my poster and we talked
+about the relationship between C++ and functional programming)
+ 
+> I can see how the approach could be valid for other kinds of data
+> analysis: EEG and fMRI data come to mind. A major obstacle in
+> acceptance of the proposed methodology may be the relative
+> unfamiliarity of the community with functional programming. Another
+> problem is that the authors show that visual stimuli may be defined
+> using their formalism, but that no tools exist that generate stimuli
+> like this. An experimentalist would need a tool that would accept CoPE
+> descriptions to generate themi. Also, boxes can be described
+> concisely, natural shapes less so. I would welcome comments from the
+> authors on the applicability of their formalism in a wider context
+> than neurophysiology.
+
+Now this is one point I have a bit of trouble simply understanding
+what the referee means. Maybe he says: there is no graphical user
+interface with which most experimentalists can realistically generate
+the equations that describe these stimuli. That would be a natural
+concern (and difficult to address). But I don't think that is what he
+is saying. I think the reviewer has misunderstood the scope of our
+work and is evaluating it as a fictive, unimplemented proposal. This
+is also not entirely clear in the paper, I have to admit. I think, if
+you agree with this reading of the reviewers comments, we should
+"apologize for the ambiguity" and make it clear that we have actually
+implemented a CoPE compiler and have actually used it to record the
+data shown in the figures.
+
+> In summary, I think that the paper delivers a flexible ontology, as
+> well as a language for describing experiments. It seems that an
+> 'equational formulation of data provenance' follows from this and I do
+> not understand why this is added.
+
+Ok, if he just wants us to take that line out, i am not going to
+argue. it's a bit vague anyways.
+
+> On page 6 line 20 a verb seems to be missing. The references are not
+> formatted entirely consistently.
+
+Yes. note this is our page 6 (each page has two page number on it!)
+
+> Referee: 3 Comments to the Author This is an interesting paper where
+> the authors propose to use the lambda calculus as a way to describe
+> data acquisition and the data analysis pipeline in physiological
+> experiments.  It is a worthwhile endeavor that has the potential to
+> guide the community toward a standard that is sufficiently
+> encompassing and both human and machine readable.
+> 
+> As it stands, I have always found the lambda calculus notation to be
+> difficult to follow, and the implementation here is no exception.  I
+> doubt that this particular incarnation will be accepted as a standard.
+> However, I do feel that it is a good first step, and that it will be
+> something much like it that will ultimately be accepted.  For this
+> reason, this work is worth publishing.  The authors may want to
+> consider transforming this notation to a more human-readable form.
+ 
+> Questions and Comments -I really have a hard time following the
+> notation at times.  The example on p6 line 45 is an example where the
+> concept is simple, but the notation is tedious and difficult for me to
+> understand.  Is there a better way to do this?
+
+we'll introduce the standard trick of putting lambdas on the left
+hand side of the equation. so we go from
+
+smap = \f -> \s -> {: f <: s :> :}
+
+to 
+
+smap f s = {: f <: s :> :}
+
+I'm also thinking about whether one really needs signals to be
+different from functions. if they were not, one could write
+
+smap f s t = f (s(t))
+
+or indeed
+
+smap = (.)
+
+i.e. function composition. But i don't think we want to bring that up here.
+
+> - How does one specify frequency and phase in the example on p8 line
+>   39.  There should be some note indicating this since the example
+>   given is unrealistic.
+
+it's given by assigning a value to the dt (time step) variable. Maybe
+we should go back to 
+
+v <* ADC (0,20000) 
+
+where 20000 is the frequency. or at least say it comes from the dt variable.
+
+> - On p10 an example is given with durations represented with type R
+>   (real).  Unless symbolic representations are used, computers cannot
+>   store real numbers, nor are measurements ever made to arbitrary
+>   precision.  It may be more wise to specify real numbers based on the
+>   number of significant digits.
+
+i don't mind switching to Double or something like Real8 as in fortran. 
+
+> - On p12 the authors give an example with equations lines 32-39 where
+>   just numbers are inserted into the equations.  This is difficult to
+>   follow without explanation, and in most fields, equations are never
+>   written like this; instead variables are used.  For a paper that
+>   aims to develop techniques to enable interoperability and such, this
+>   example runs counter to their greater goal.
+
+I fully agree with the reviewer but unfortunately this is standard in
+hodgkin-huxley style modelling. I'd be happy to think about some other
+notation, or we try could stand our ground with references to the
+original HH papers and more recent modelling papers. If we do so we
+should express our sympathy with the reviewers concerns. Especially
+because these numbers come from fits to curves and therefore have some
+uncertainty that has been swept under the rug by picking a fixed value.
+
+> - On page 14, the authors discuss possibly verifying proofs in
+>   scientific inference.  They should consider (and reference) the work
+>   on AutoBayes which was developed at NASA Ames Research Center.  A
+>   description of how their calculus might interface with AutoBayes
+>   would add a great deal of credence to this section.
+
+see general remarks.
+
+> -Last, and perhaps most important, are the descriptions of the
+>  physiological experiments on pages 15 and 16.  The authors state
+>  elsewhere in the paper that they do not treat data differently than
+>  metadata.  However, here they do; since this is a traditional
+>  description of the metadata.  It would be instructive as well as an
+>  excellent demonstration of the capabilities of this calculus to
+>  include a description of the data acquisition using their version of
+>  the lambda calculus.
+
+(he/she is referring to the methods section) I think we just need to be
+a bit more explicit here and refer to supplementary info.
+
+> 
+> Typos - p6 line 5: put ref after "quantum mechanics" - p6 line26: noy
+
+OK
+
+> Color is only essential for Figure 3.
+
+I think it is more essential for fig 1
+
+> I do not know how this works in the UK, but the summary of the
+> animal research should contain some statements about how the authors
+> followed their institutional policies etc.  See Research ethics and
+> animal treatment in the Royal Society Publishing policy and ethics.
+
+Tom, can you deal with this one? the zebrafish were younger than day
+5, i.e. regulated under schedule 1. We could just copy and paste from
+Joe's last paper
