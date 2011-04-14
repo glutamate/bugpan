@@ -60,8 +60,6 @@ exec stmts dt tmax =
        forM_ outNms $ putStr . (++"\t")
        putStr "\n"
 
-       sequence_ $ map ($envHT) [ rp | RunPrepare rp <- prg ]
-
        (runMV, dispMV) <- cond [
                              (null prgScreen, return (Nothing,Nothing))
                            , (isJust dispPullMV && isJust runningMV, return (runningMV, dispPullMV))]
@@ -72,6 +70,7 @@ exec stmts dt tmax =
                                 waitSecs 0.5
                                 return (Just rMV, Just scrPl)
                              
+       sequence_ $ map ($envHT) [ rp | RunPrepare rp <- prg ]
                           
        maybeM dispMV $  \dpmv -> putMVar dpmv screenPull
 

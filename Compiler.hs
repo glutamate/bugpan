@@ -11,6 +11,7 @@ import Statement
 import BuiltIn
 import PrettyPrint
 import RandomSources
+import OpenGL (setTexture)
 
 compile :: [Declare] -> [Stmt]
 compile ds = let c = concatMap compileDec (filter noDtSeconds (bivDecls++ds)) in 
@@ -35,6 +36,10 @@ compileDec (Let (PatVar nm _) (Switch ses ser)) =
           unSig (Sig se) = se 
           unSig e = e
 compileDec rs@(ReadSource nm ("adc", _)) = compileAdcSrc rs
+compileDec (ReadSource nm ("loadTexture", (Const (StringV fnm)))) = 
+   [RunPrepare $ \env -> do setTexture fnm
+                            update env nm $ BoxV (p3 1 1 1) (p3 (-0.5) (-0.5) 0) (p3 1 1 1) 
+                            return () ]
 compileDec (ReadSource nm (srcNm, (Const arg))) = [ReadSrcAction nm $ genSrc srcNm arg]
 compileDec (Let (PatVar nm _) e) = [Env nm $ unVal e]
 compileDec (SinkConnect (Var nm) (snkNm,_)) = [SigSnkConn nm snkNm]
@@ -83,12 +88,9 @@ genSrc "bernoulli" rateS t dt =
 genSrc "uniform" (PairV lo hi) t dt = 
     do rnd <- randomRIO ( unsafeReify lo, unsafeReify hi)
        return . NumV . NReal  $ rnd
---nSrc "poisson" (rate) t dt = 
---    do evsT <- poisson  
-       return . NumV . NReal  $ rnd
-
-
 genSrc nms _ _ _ = error $ "unknown source: "++show nms
+
+p3 x y z = (PairV (PairV x y) z)
 
 {- note: Now, 
 

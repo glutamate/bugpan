@@ -18,7 +18,7 @@ import Data.List (partition)
 import Control.Monad.Trans
 import Control.Monad.State.Strict
 import EvalM 
-import SrcSinks
+--import SrcSinks
 import Numbers
 import System.Environment
 #ifndef NOGL
@@ -95,6 +95,11 @@ takeOutTV p tv = atomically $ do vls <- readTVar tv
                                  writeTVar tv (stay)
                                  return go
 
+setTexture fnm = do
+  putStrLn $ "loading texture from "++fnm
+  loadTexture2D fnm []
+  return ()
+
 initGlScreen full dispFunMVar runningMVar = do
   initialize
   args <- getArgs
@@ -122,6 +127,11 @@ initGlScreen full dispFunMVar runningMVar = do
     blendFunc $= (SrcAlphaSaturate, One)
   when ("-ms" `elem` args) $ do
     multisample $= Enabled
+  [textureName] <- genObjectNames  1
+  textureBinding Texture2D $= Just textureName
+  textureFilter Texture2D $= ((Nearest, Nothing), Nearest)
+  loadTexture2D "matheson.tga" []
+
   swapBuffers
   waitLoop dispFunMVar runningMVar
 
@@ -162,6 +172,7 @@ display dispPull = do
  frustum (-0.2)  0.2  (-0.15)  0.15  0.163  100.0
  matrixMode $= Modelview 0
  loadIdentity
+ --texture Texture2D $= Enabled
  ListV shps <- dispPull
  mapM_ drawShape shps 
  --threadDelay $ 300*1000
@@ -222,4 +233,5 @@ unitCube = do
 
 #else
 initGlScreen _ _ _ = return ()
+setTexture _ = return ()
 #endif
