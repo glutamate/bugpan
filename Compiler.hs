@@ -36,10 +36,12 @@ compileDec (Let (PatVar nm _) (Switch ses ser)) =
           unSig (Sig se) = se 
           unSig e = e
 compileDec rs@(ReadSource nm ("adc", _)) = compileAdcSrc rs
-compileDec (ReadSource nm ("loadTexture", (Const (StringV fnm)))) = 
-   [RunPrepare $ \env -> do setTexture fnm
-                            update env nm $ BoxV (p3 1 1 1) (p3 (-0.5) (-0.5) 0) (p3 1 1 1) 
-                            return () ]
+compileDec (ReadSource nm ("loadTexture", (Const fnm))) = 
+   [RunInGLThread $ \env -> do 
+          setTexture $ unsafeReify fnm
+          print "HELLLOOOO!!!!!!!!!!!!"
+          update env nm $ BoxV (p3 1 1 1) (p3 (-0.5) (-0.5) 0) (p3 1 1 1) 
+          return () ]
 compileDec (ReadSource nm (srcNm, (Const arg))) = [ReadSrcAction nm $ genSrc srcNm arg]
 compileDec (Let (PatVar nm _) e) = [Env nm $ unVal e]
 compileDec (SinkConnect (Var nm) (snkNm,_)) = [SigSnkConn nm snkNm]
@@ -57,6 +59,7 @@ inMainLoop (EventAddRule _ _) = True
 inMainLoop (SigSnkConn _ _) = True 
 inMainLoop (ReadSrcAction _ _) = True
 inMainLoop (RunPrepare _) = True
+inMainLoop (RunInGLThread _) = True
 inMainLoop (RunAfterDone _) = True
 inMainLoop (RunAfterGo _) = True
 inMainLoop (Trigger _) = True
@@ -72,6 +75,7 @@ ppStmt (EventAddRule n e) =  concat [n, " = [: ", pp e, " :]"]
 ppStmt (SigSnkConn vn sn) = concat [vn, " *> ", sn]
 ppStmt (ReadSrcAction nm _) = nm ++ " <- <signal source>"
 ppStmt (RunPrepare _) = "prepare something"
+ppStmt (RunInGLThread _) = "run something in GL throead"
 ppStmt (RunAfterDone _) = "run something after done"
 ppStmt (RunAfterGo _) = "run something after go"
 ppStmt (Trigger _) = "trigger somehow"

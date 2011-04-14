@@ -97,25 +97,32 @@ takeOutTV p tv = atomically $ do vls <- readTVar tv
 
 setTexture fnm = do
   putStrLn $ "loading texture from "++fnm
+  texture Texture2D $= Enabled
+  [textureName] <- genObjectNames  1
+  textureBinding Texture2D $= Just textureName
+  textureFilter Texture2D $= ((Nearest, Nothing), Nearest)
+--  loadTexture2D "matheson.tga" []  
   loadTexture2D fnm []
   return ()
 
-initGlScreen full dispFunMVar runningMVar = do
+initGlScreen full dispFunMVar runningMVar moreStuff = do
   initialize
   args <- getArgs
   when ("-aa" `elem` args) $ do
     openWindowHint $= (FSAASamples, 1)
   let scrMode = if ("-full" `elem` args || full) then FullScreen else Window
   openWindow (Size 640 480) [
-                  DisplayRGBBits 8 8 8,
-                  DisplayAlphaBits 8,
-                  DisplayDepthBits 24,
-                  DisplayStencilBits 0
+ --                 DisplayRGBBits 8 8 8,
+                  DisplayAlphaBits 8
+ --                 DisplayDepthBits 24,
+ --                 DisplayStencilBits 0
                  ] scrMode
   windowTitle $= "Bugpan screen"
   swapInterval $= 1
   clearColor $= Color4 0 0.23 0 0
   clear [ColorBuffer]
+  --ortho2D (-640) ( 640) (-480) ( 480)
+  --shadeModel $= Smooth
   when ("-aa" `elem` args) $ do
     lineSmooth $= Enabled
     polygonSmooth $= Enabled
@@ -127,11 +134,12 @@ initGlScreen full dispFunMVar runningMVar = do
     blendFunc $= (SrcAlphaSaturate, One)
   when ("-ms" `elem` args) $ do
     multisample $= Enabled
+{-  texture Texture2D $= Enabled
   [textureName] <- genObjectNames  1
   textureBinding Texture2D $= Just textureName
   textureFilter Texture2D $= ((Nearest, Nothing), Nearest)
-  loadTexture2D "matheson.tga" []
-
+  loadTexture2D "matheson.tga" []  -}
+  moreStuff
   swapBuffers
   waitLoop dispFunMVar runningMVar
 
@@ -186,52 +194,92 @@ fromPair3v (PairV (PairV x y) z) = (fromRational . toRational . unsafeVToDbl $ x
 drawShape :: V -> IO ()
 --drawShape (BoxV (x1, y1) (x2, y2) (S.C r g b))
 drawShape (BoxV shp loc col)
-    = preservingMatrix $ do
+    = {-preservingMatrix $ -} do
         let (r, g,b) = fromPair3v col
         let (x0, y0, z0) = fromPair3v loc
         let (x, y, z) = fromPair3v shp
         color $ Color3 (unRealNum r) (unRealNum g) (unRealNum b) 
         translate $ Vector3 (unRealNum x0) (unRealNum y0) (unRealNum z0)
         scale (unRealNum x) (unRealNum y) (unRealNum z)
+        rotate 90 $ Vector3 (0::GLfloat) 1 (0.0)
+
         renderPrimitive Quads $ unitCube
+        
           --return ()
 
 vertex3 :: GLfloat -> GLfloat -> GLfloat -> Vertex3 GLfloat
 vertex3 x y z = Vertex3 x y z
+texCoord3 :: GLfloat -> GLfloat -> GLfloat -> TexCoord3 GLfloat
+texCoord3 x y z = TexCoord3 x y z
 
+glTexCoord2f :: (GLfloat,GLfloat) -> IO ()
+glTexCoord2f(x,y) = texCoord $ TexCoord2 x y 
+
+glVertex3f ::(GLfloat,GLfloat, GLfloat) -> IO ()
+glVertex3f (x,y,z) = vertex $ Vertex3 x y z 
 --http://www.morrowland.com/apron/tutorials/gl/gl_rotating_cube.php
+--http://nehe.gamedev.net/data/lessons/lesson.asp?lesson=06
 unitCube = do
-    vertex $ vertex3  1.0  1.0 0.0	-- Top Right Of The Quad (Top)
-    vertex $ vertex3 0.0  1.0 0.0	-- Top Left Of The Quad (Top)
-    vertex $ vertex3 0.0  1.0  1.0	-- Bottom Left Of The Quad (Top)
-    vertex $ vertex3  1.0  1.0  1.0	-- Bottom Right Of The Quad (Top)
+{-    drawPt 1.0 1.0 0.0	-- Top Right Of The Quad (Top)
+    drawPt 0.0  1.0 0.0	-- Top Left Of The Quad (Top)
+    drawPt 0.0  1.0  1.0	-- Bottom Left Of The Quad (Top)
+    drawPt  1.0  1.0  1.0	-- Bottom Right Of The Quad (Top)
 
-    vertex $ vertex3  1.0 0.0  1.0	-- Top Right Of The Quad (Bottom)
-    vertex $ vertex3 0.0 0.0  1.0	-- Top Left Of The Quad (Bottom)
-    vertex $ vertex3 0.0 0.0 0.0	-- Bottom Left Of The Quad (Bottom)
-    vertex $ vertex3  1.0 0.0 0.0	-- Bottom Right Of The Quad (Bottom)
+    drawPt  1.0 0.0  1.0	-- Top Right Of The Quad (Bottom)
+    drawPt 0.0 0.0  1.0	-- Top Left Of The Quad (Bottom)
+    drawPt 0.0 0.0 0.0	-- Bottom Left Of The Quad (Bottom)
+    drawPt  1.0 0.0 0.0	-- Bottom Right Of The Quad (Bottom)
 
-    vertex $ vertex3  1.0  1.0  1.0	-- Top Right Of The Quad (Front)
-    vertex $ vertex3 0.0  1.0  1.0	-- Top Left Of The Quad (Front)
-    vertex $ vertex3 0.0 0.0  1.0	-- Bottom Left Of The Quad (Front)
-    vertex $ vertex3  1.0 0.0  1.0	-- Bottom Right Of The Quad (Front)
+    drawPt  1.0  1.0  1.0	-- Top Right Of The Quad (Front)
+    drawPt 0.0  1.0  1.0	-- Top Left Of The Quad (Front)
+    drawPt 0.0 0.0  1.0	-- Bottom Left Of The Quad (Front)
+    drawPt  1.0 0.0  1.0	-- Bottom Right Of The Quad (Front)
 
-    vertex $ vertex3  1.0 0.0 0.0	-- Top Right Of The Quad (Back)
-    vertex $ vertex3 0.0 0.0 0.0	-- Top Left Of The Quad (Back)
-    vertex $ vertex3 0.0  1.0 0.0	-- Bottom Left Of The Quad (Back)
-    vertex $ vertex3  1.0  1.0 0.0	-- Bottom Right Of The Quad (Back)
+    drawPt  1.0 0.0 0.0	-- Top Right Of The Quad (Back)
+    drawPt 0.0 0.0 0.0	-- Top Left Of The Quad (Back)
+    drawPt 0.0  1.0 0.0	-- Bottom Left Of The Quad (Back)
+    drawPt  1.0  1.0 0.0	-- Bottom Right Of The Quad (Back)
 
-    vertex $ vertex3 0.0  1.0  1.0	-- Top Right Of The Quad (Left)
-    vertex $ vertex3 0.0  1.0 0.0	-- Top Left Of The Quad (Left)
-    vertex $ vertex3 0.0 0.0 0.0	-- Bottom Left Of The Quad (Left)
-    vertex $ vertex3 0.0 0.0  1.0	-- Bottom Right Of The Quad (Left)
+    drawPt 0.0  1.0  1.0	-- Top Right Of The Quad (Left)
+    drawPt 0.0  1.0 0.0	-- Top Left Of The Quad (Left)
+    drawPt 0.0 0.0 0.0	-- Bottom Left Of The Quad (Left)
+    drawPt 0.0 0.0  1.0	-- Bottom Right Of The Quad (Left)
 
-    vertex $ vertex3  1.0  1.0 0.0	-- Top Right Of The Quad (Right)
-    vertex $ vertex3  1.0  1.0  1.0	-- Top Left Of The Quad (Right)
-    vertex $ vertex3  1.0 0.0  1.0	-- Bottom Left Of The Quad (Right)
-    vertex $ vertex3  1.0 0.0 0.0	-- Bottom Right Of The Quad (Right)
+    drawPt  1.0  1.0 0.0	-- Top Right Of The Quad (Right)
+    drawPt  1.0  1.0  1.0	-- Top Left Of The Quad (Right)
+    drawPt  1.0 0.0  1.0	-- Bottom Left Of The Quad (Right)
+    drawPt  1.0 0.0 0.0	-- Bottom Right Of The Quad (Right) -}
 
+    glTexCoord2f(0.0, 0.0); glVertex3f(-1.0, -1.0,  1.0);	-- Bottom Left Of The Texture and Quad
+    glTexCoord2f(1.0, 0.0); glVertex3f( 1.0, -1.0,  1.0);	-- Bottom Right Of The Texture and Quad
+    glTexCoord2f(1.0, 1.0); glVertex3f( 1.0,  1.0,  1.0);	-- Top Right Of The Texture and Quad
+    glTexCoord2f(0.0, 1.0); glVertex3f(-1.0,  1.0,  1.0);	-- Top Left Of The Texture and Quad
+    -- Back Face
+    glTexCoord2f(1.0, 0.0); glVertex3f(-1.0, -1.0, -1.0);	-- Bottom Right Of The Texture and Quad
+    glTexCoord2f(1.0, 1.0); glVertex3f(-1.0,  1.0, -1.0);	-- Top Right Of The Texture and Quad
+    glTexCoord2f(0.0, 1.0); glVertex3f( 1.0,  1.0, -1.0);	-- Top Left Of The Texture and Quad
+    glTexCoord2f(0.0, 0.0); glVertex3f( 1.0, -1.0, -1.0);	-- Bottom Left Of The Texture and Quad
+    -- Top Face
+    glTexCoord2f(0.0, 1.0); glVertex3f(-1.0,  1.0, -1.0);	-- Top Left Of The Texture and Quad
+    glTexCoord2f(0.0, 0.0); glVertex3f(-1.0,  1.0,  1.0);	-- Bottom Left Of The Texture and Quad
+    glTexCoord2f(1.0, 0.0); glVertex3f( 1.0,  1.0,  1.0);	-- Bottom Right Of The Texture and Quad
+    glTexCoord2f(1.0, 1.0); glVertex3f( 1.0,  1.0, -1.0);	-- Top Right Of The Texture and Quad
+    -- Bottom Face
+    glTexCoord2f(1.0, 1.0); glVertex3f(-1.0, -1.0, -1.0);	-- Top Right Of The Texture and Quad
+    glTexCoord2f(0.0, 1.0); glVertex3f( 1.0, -1.0, -1.0);	-- Top Left Of The Texture and Quad
+    glTexCoord2f(0.0, 0.0); glVertex3f( 1.0, -1.0,  1.0);	-- Bottom Left Of The Texture and Quad
+    glTexCoord2f(1.0, 0.0); glVertex3f(-1.0, -1.0,  1.0);	-- Bottom Right Of The Texture and Quad
+    -- Right face
+    glTexCoord2f(1.0, 0.0); glVertex3f( 1.0, -1.0, -1.0);	-- Bottom Right Of The Texture and Quad
+    glTexCoord2f(1.0, 1.0); glVertex3f( 1.0,  1.0, -1.0);	-- Top Right Of The Texture and Quad
+    glTexCoord2f(0.0, 1.0); glVertex3f( 1.0,  1.0,  1.0);	-- Top Left Of The Texture and Quad
+    glTexCoord2f(0.0, 0.0); glVertex3f( 1.0, -1.0,  1.0);	-- Bottom Left Of The Texture and Quad
+    -- Left Face
+    glTexCoord2f(0.0, 0.0); glVertex3f(-1.0, -1.0, -1.0);	-- Bottom Left Of The Texture and Quad
+    glTexCoord2f(1.0, 0.0); glVertex3f(-1.0, -1.0,  1.0);	-- Bottom Right Of The Texture and Quad
+    glTexCoord2f(1.0, 1.0); glVertex3f(-1.0,  1.0,  1.0);	-- Top Right Of The Texture and Quad
+    glTexCoord2f(0.0, 1.0); glVertex3f(-1.0,  1.0, -1.0);	
 #else
-initGlScreen _ _ _ = return ()
+initGlScreen _ _ _ _ = return ()
 setTexture _ = return ()
 #endif

@@ -39,11 +39,15 @@ exec stmts dt tmax =
         dispPullMV = safeHead [ dpmv | GLParams dpmv _ <- prg]
     in
     do envHT <- H.fromList H.hashString (initSigs++initEvts++fixEnv)
-       --mapM (putStrLn . ppStmt)  prg
+       print "############hello form impinterpret"
+--       mapM (putStrLn . ppStmt)  prg
+       mapM print prg
+       print "############hello form impinterpret"
        lastPull <- newIORef 5
        largestPullLatency <- newIORef 0
        t0' <- getClockTime
        print2 "buffer: " bufnms
+       
        let screenPull = 
              --running <- readIORef started
             
@@ -66,7 +70,8 @@ exec stmts dt tmax =
                            $ do
                                 rMV <- newEmptyMVar
                                 scrPl <- newEmptyMVar
-                                forkOS (initGlScreen False scrPl rMV) 
+                                forkOS $ initGlScreen False scrPl rMV 
+                                               (sequence_  [ rp envHT | RunInGLThread rp <- prg ])
                                 waitSecs 0.5
                                 return (Just rMV, Just scrPl)
                              

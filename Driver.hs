@@ -49,7 +49,7 @@ main = do
   whenM (doesFileExist $ cmdFile ds) $ removeFile (cmdFile ds)
 
 
-  forkOS (initGlScreen (not $ "-w" `elem` args) dispPullMv runningMv)
+  forkOS (initGlScreen (not $ "-w" `elem` args) dispPullMv runningMv (return ()))
   waitSecs 0.5
 
   catchForever $ (loop ds >> hFlush stdout)
