@@ -29,7 +29,7 @@ import System.Environment
 import Math.Probably.Sampler
 
 data Histo where -- GADT bec i don't know syntax for double existential (no longer needed)
-    Histo :: Int -> [(a,Double)] -> Histo 
+    Histo :: Int -> [Double] -> Histo 
     AsPdf :: String -> Histo -> Histo
 
 
@@ -45,7 +45,7 @@ instance PlotWithGnuplot Histo where
     getGnuplotCmd (Histo n vls) = do
             q<- getQueryIdentifier
             fnm <- (("/tmp/gnuplothist"++q)++) `fmap` uniqueIntStr
-            writeHist fnm n $ map snd vls
+            writeHist fnm n $ vls
             return [PL (concat ["\"", fnm, "\" using 1:2"]) 
                        "" 
                        "boxes fs solid" 
@@ -410,7 +410,7 @@ data SamHist = SamHist Int Int (Sampler Double)
 instance PlotWithGnuplot SamHist where
     getGnuplotCmd (SamHist nsam nbins sam) = do
       vls <- take nsam `fmap` runSamplerIO sam
-      getGnuplotCmd $ Histo nbins $ zip (repeat ()) vls
+      getGnuplotCmd $ Histo nbins vls
 
 
 

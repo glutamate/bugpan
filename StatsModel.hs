@@ -137,7 +137,7 @@ mapScat :: [String] -> [Samples Double] -> CatScat
 mapScat nms sams = CatScat $ zip nms $ map unSamples sams
 
 instance PlotWithGnuplot (Samples Double) where
-   getGnuplotCmd (Samples xs) = getGnuplotCmd $ Histo 50 $ zip (repeat ()) xs
+   getGnuplotCmd (Samples xs) = getGnuplotCmd $ Histo 50 $ xs
 
 mapSingly2 :: Eq k => k -> (v->v->a) -> k -> [(k,[v])] -> [a]
 mapSingly2 k1 op k2 mp = 

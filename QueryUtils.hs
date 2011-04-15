@@ -244,6 +244,12 @@ baseline tb1 tb2 = map f where
      in fmap (subtract bval) s
   f s = s
 
+baselineWhole :: [Signal Double] -> [Signal Double]
+baselineWhole = map f where
+  f s =  let bval = snd $ sigStat' meanF s
+         in fmap (subtract bval) s
+
+
 measureBl :: (Double, Double) -> (Double, Double) ->  [Signal Double] -> [Event a] -> [Duration Double]
 measureBl (tbl1,tbl2) (tp1, tp2) sigs = concatMap f where
    f (t,_) = let t1 = t+tbl1

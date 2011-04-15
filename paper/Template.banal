@@ -1,0 +1,42 @@
+>> importBanal FigurePrelude
+>> importHs Data.Ord
+
+>> everywhere lovDur = (extendDur 1 approachLoV)
+>> everywhere chopx = ChopxAxis 1 (take 5 $ drop 6 running)
+>> everywhere distFun lov t = let v = 0.149/lov in min (v*(t-5)) (-0.17)
+>> everywhere collision = evInDur 3 running
+>> everywhere rescale m a x = ((+a) . (*m)) <$$> x
+
+>> openSession 302
+
+>> dur1 = take 1 $ drop 6 running
+
+>> plot $ baselineWhole $ during dur1 ecVoltage
+>> spike1 = during dur1 spikes 
+
+> noiseSD = snd $ sigStat' stdDevF (head $ drop 6 ecVoltage)
+
+> putatives = crossesUpOrDown (dur (5*noiseSD)) $ baselineWhole ecVoltage
+
+> show (length spikes, length putatives)
+
+> spikeSigs = limitSigs' (-0.001) 0.001 $ around spikes ecVoltage
+
+> template = head $ averageSigs spikeSigs
+
+> plot [template]
+
+> break
+
+>> ev = \t->[(t,())]
+
+> rms= \(t,_)-> (t,foldSig (+) 0 ((^2) `fmap` (template - head (around (ev t) ecVoltage))))
+
+> rmsEvs =  map rms putatives
+
+%> plot $ Histo 100 $ filter (<0.01) $ map snd $ map rms putatives
+
+> break
+
+%> plot $ (averageSigs $ limitSigs' (-0.001) 0.001 $ around (filter ((<0.0025) . snd) rmsEvs) ecVoltage) :+:
+%>        (averageSigs $ limitSigs' (-0.001) 0.001 $ around (filter ((>0.0025) . snd) rmsEvs) ecVoltage)
