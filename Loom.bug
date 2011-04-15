@@ -6,10 +6,11 @@ lov = 4.0000e-2
 l = 0.2980
 v = l/(lov*2)
 
---pic <* loadTexture "matheson.tga"
+pic :: Shape
+pic <* loadTexture "matheson.tga"
 
 distance = {: (min (v*(<: seconds :>-5))) (-0.1800) :}
-loomObj = {: colour white (translate (0, 0, <: distance :>) (cube l)) :}
+loomObj = {: colour white (translate (0, 0, <: distance :>) pic) :}
 loomObj *> screen ""
 
 _tmax=6

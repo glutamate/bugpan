@@ -12,6 +12,7 @@ data Stmt = InitSig String E
           | EventAddRule String E
           | SigSnkConn String String
           | RunPrepare (H.HashTable String V -> IO ())
+          | RunInGLThread (H.HashTable String V -> IO ())
           | RunAfterDone (H.HashTable String V -> IO ())
           | RunAfterGo (H.HashTable String V -> IO ())
           | Trigger (H.HashTable String V -> IO ())
