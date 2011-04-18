@@ -11,16 +11,18 @@
 
 >> dur1 = take 1 $ drop 6 running
 
->> plot $ baselineWhole $ during dur1 ecVoltage
+>> plot $ baselineWhole $ take 1 $ drop 39 ecVoltage
+>> plot $ baselineWhole $ take 1 $ drop 79 ecVoltage
 >> spike1 = during dur1 spikes 
+>> blVolts = baselineWhole $ take 40 $ drop 40 ecVoltage
 
-> noiseSD = snd $ sigStat' stdDevF (head $ drop 6 ecVoltage)
+> noiseSD = snd $ sigStat' stdDevF (head $ drop 39 blVolts)
 
-> putatives = crossesUpOrDown (dur (5*noiseSD)) $ baselineWhole ecVoltage
+> putatives = crossesUpOrDown (dur (negate $ 3*noiseSD)) blVolts
 
-> show (length spikes, length putatives)
+> show (length spikes, length putatives, 3*noiseSD)
 
-> spikeSigs = limitSigs' (-0.001) 0.001 $ around spikes ecVoltage
+> spikeSigs = limitSigs' (-0.001) 0.001 $ around spikes blVolts
 
 > template = head $ averageSigs spikeSigs
 
@@ -30,13 +32,13 @@
 
 >> ev = \t->[(t,())]
 
-> rms= \(t,_)-> (t,foldSig (+) 0 ((^2) `fmap` (template - head (around (ev t) ecVoltage))))
+> rms= \(t,_)-> (t,foldSig (+) 0 ((^2) `fmap` (template - head (around (ev t) blVolts))))
 
 > rmsEvs =  map rms putatives
 
-%> plot $ Histo 100 $ filter (<0.01) $ map snd $ map rms putatives
+> plot $ Histo 100 $ filter (<0.01) $ map snd $ map rms putatives
 
 > break
 
-%> plot $ (averageSigs $ limitSigs' (-0.001) 0.001 $ around (filter ((<0.0025) . snd) rmsEvs) ecVoltage) :+:
-%>        (averageSigs $ limitSigs' (-0.001) 0.001 $ around (filter ((>0.0025) . snd) rmsEvs) ecVoltage)
+> plot $ (averageSigs $ limitSigs' (-0.001) 0.001 $ around (filter ((<0.0025) . snd) rmsEvs) blVolts) :+:
+>        (averageSigs $ limitSigs' (-0.001) 0.001 $ around (filter ((>0.004) . snd) rmsEvs) blVolts)
