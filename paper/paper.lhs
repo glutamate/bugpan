@@ -104,19 +104,19 @@ classification of mathematical objects by assigning to every object
 exactly one \emph{type}. These types include base types, such as
 integers |Integer|, text strings |String| and the Boolean type |Bool|
 with the two values |True| and |False|, as well as the real numbers
-|Real|, or when implemented as a programming language, the
-limited-precision |Float|. These base types are familiar to users of
-most programming languages. In addition, modern type systems,
-including simple type theory, allow types to be arbitrarily combined
-in several ways. For instance, if |alpha| and |beta| are types, the
-type |alpha times beta| is the pair formed by one element of |alpha|
-and one of |beta|; |[alpha]| is a list of |alpha|s; and |alpha ->
-beta| is the type of functions that calculate a value in the type
-|beta| from a value in |alpha|. The ability to write flexible type
-schemata and generic functions containing type variables ($\alpha,
-\beta, \ldots$), which can later be substituted with any concrete
-type, is called ``parametric polymorphism''\citep{Pierce2002} and is
-essential to the simplicity and flexibility of CoPE.
+|Real| (which can be approximated in a programming language with
+|Float|). These base types are familiar to users of most programming
+languages. In addition, modern type systems, including simple type
+theory, allow types to be arbitrarily combined in several ways. For
+instance, if |alpha| and |beta| are types, the type |alpha times beta|
+is the pair formed by one element of |alpha| and one of |beta|;
+|[alpha]| is a list of |alpha|s; and |alpha -> beta| is the type of
+functions that calculate a value in the type |beta| from a value in
+|alpha|. The ability to write flexible type schemata and generic
+functions containing type variables ($\alpha, \beta, \ldots$), which
+can later be substituted with any concrete type, is called
+``parametric polymorphism''\citep{Pierce2002} and is essential to the
+simplicity and flexibility of CoPE.
 
 We distinguish three type schemata in which physiological evidence can
 be values. These differ in the manner in which measurements appear in
@@ -203,22 +203,21 @@ practice more concise \citep{Hughes1989} than those written in
 conventional programming languages. The lambda calculus or variants
 thereof has been used as a foundation for mathematics
 \citep{Martin-Lof1985}, classical \citep{Sussman2001} and quantum
-\citep{Karczmarczuk2003} mechanics, evolutionary biochemistry
-\citep{Fontana1994}, mechanized theorem provers \citep{DeBruijn1968,
-  Harrison2009} and functional programming languages
-\citep{McCarthy1960}.
+mechanics \citep{Karczmarczuk2003}, evolutionary biochemistry \citep{Fontana1994}, mechanized
+theorem provers \citep{DeBruijn1968, Harrison2009} and functional
+programming languages \citep{McCarthy1960}.
 
 In the lambda calculus, calculations are performed by function
 abstraction and application. |\x->e| denotes the function with
 argument |x| and body |e|, and |f e| the application of the function
 |f| to the expression |e| (more conventionally written $f(e)$). For
-instance, the function |add2 = \x -> x+2|, which we can write more
+instance, the function |add2 = \x -> x+2|, which can written more
 conveniently as |add2 x = x+2|, adds two to its argument; hence |add2
 3 = (\x->x+2) 3 = 3+2| by substituting arguments in the function body.
 
-We now present the concrete syntax of CoPE, in which we the lambda
-calculus with constructs to define and manipulate signals and
-events. 
+We now present the concrete syntax of CoPE, in which we augment the
+lambda calculus with constructs to define and manipulate signals and
+events.
 % HN 2010-11-24: Old:
 % 
 % This calculus borrows some concepts from earlier versions of
@@ -230,7 +229,7 @@ events.
 %
 This calculus borrows some concepts from earlier versions of FRP, but
 focuses exclusively on signals and events as mathematical objects and
-their relations.  It does noy have any control structures for
+their relations.  It does not have any control structures for
 describing sequences of system configurations, where a signal
 expression depends on the occurrence of events \citep{Elliott1997,
   Nilsson2002}, although such constructs may be useful for
@@ -352,9 +351,8 @@ to send the |sineWave| signal to channel channel 0 of a
 digital-to-analog converter at 20 kHz. 
 
 We have implemented this calculus as a new programming language and
-used this software implementation to define and run two detailed
+used this software to define and run two detailed
 experiments in neurophysiology.
-
 
 \subsubsection*{Example 1}
 
@@ -379,18 +377,17 @@ colour (r,g,b) s
 \end{code}
 the shape identical to |s| except with the colour intensity red |r|,
 green |g| and blue |b|. These primitives are sufficient for the experiments
-reported here. 
-
-More complex stimuli can be defined more succinctly in external files;
-for instance, the source |texture| loads a texture, such that
+reported here. More complex stimuli can alternatively be defined in and loaded from
+external files; for instance, the source |texture| loads an image,
+such that
 \begin{code}
-tex <* texture "image.tga"
+tx <* texture "image.tga"
 \end{code}
-loads the binary image in \texttt{image.tga} and binds a new function
-|tex|, which when applied to a shape returns a similar but textured
+loads the binary image in \texttt{image.tga} and creates a new function
+|tx|, which when applied to a shape returns a similar but appropriately textured
 shape. Thus,
 \begin{code}
-tex (cube 1)
+tx (cube 1)
 \end{code}
 denotes a textured cube. Sources for loading complex polygons could be
 defined similarly.

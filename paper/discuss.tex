@@ -26,32 +26,33 @@ entities that give rise to this evidence. It is unusual as an ontology
 for scientific knowledge in being embedded in a \emph{computational}
 framework, such that it can describe not only mathematical objects but
 also their transformations and observations. Recent work on meta-data
-\citep{Bower2009} representation has focused on delineating the
+representation \citep{Bower2009} has focused on delineating the
 information needed to repeat an experiment \citep{Taylor2007,
-  Gibson2008}, but in practice it is not clear \emph{a priori} what
-aspects of an experiment could influence its outcome. Here, we aim to
-describe unambiguously only those aspects of the meta-data of an
-experiment that are machine-executable. Any other information must be
-added on an ad-hoc basis, but can still exploit the temporal contexts
-provided by CoPE, i.e. exist as signal, events or durations. Thus, we
-make no distinction between the representation of data and
+  Gibson2008}, but in practice it is often not clear \emph{a priori} what
+aspects of an experiment could influence its outcome. With CoPE, our main goal was to 
+describe unambiguously machine-executable aspects of the meta-data of an
+experiment. Other information can nevertheless be 
+added on an \emph{ad hoc} basis, and it can exploit the temporal contexts
+provided by CoPE, i.e. it can exist as signals, events or durations. Thus, we
+make no fundamental distinction between the representation of data and
 meta-data. All relevant information about an experiment is indexed by
 time and thus linked by overlap on a common time scale.
 
-Parametric polymorphism and first-class functions are associated with
-academic rather than mainstream programming languages. Where these
-features are missing, they can be emulated with tricks such as
-function pointers. Much of CoPE can probably be implemented in \C++,
+Parametric polymorphism and first-class functions are generally
+associated with academic such as Haskell and ML rather than mainstream
+programming languages such as \C++ or Java. Where these features are
+missing, they can be emulated with tricks such as function
+pointers. It is likely that much of CoPE could be implemented in \C++,
 where template metaprogramming implements a static form of parametric
 polymorphism and template functors can be used to represent
-functions. These must all be resolved at compile-time, so it is
-difficult to use dynamically calculated or arbitrarily complex
+functions. These must all be resolved at compile-time, however, so it
+is difficult to use dynamically calculated or arbitrarily complex
 functions. The importance of true first-class functions and parametric
-polymorphism is increasingly recognized and these features have been
-or are being implemented in the mainstream programming languages \C++, \Csharp\, and
-Java. We therefore expect that it will soon be possible to
-implement the formalism we are proposing in a wide range of
-programming languages.
+polymorphism is becoming increasingly well recognized, and these
+features are now being implemented in the mainstream
+programming languages \C++, \Csharp\, and Java. We therefore expect
+that it will soon be possible to implement the formalism we are
+proposing in a wide range of programming languages.
 
 % HN 2010-11-24: Instead of
 %
@@ -81,7 +82,6 @@ further advantage that they \emph{compose}; that is, more complex
 experiments can be formulated by joining together elementary building
 blocks.
 
-
 Our full approach is particularly relevant to the execution of very
 complex and multi-modal experiments, which may need to be dynamically
 reconfigured based on previous observations, or to disambiguate
@@ -94,51 +94,27 @@ data sharing. In a similar way, the capabilities of CoPE for executing
 and analysing experiments could provide a robust core for innovative
 graphical user interfaces.
 
-We have argued that observational data, experiments and analyses
-formulated in CoPE or similar frameworks are less ambiguous and more
-transparent than many contemporary research studies. The structure of
-CoPE presents additional opportunities for excluding some procedural
-errors in scientific inference. For instance, a simple extension to
-simple type theory adds not only a consistency check for dimensional
-units but also incorporates many aspects of dimensional analysis, such
-as Buckingham's $\pi$-theorem \citep{Kennedy1997}. Furthermore, in our
-formulation, the experimentally observed values exist as mathematical
-objects within a computational framework that can be used to define
-probability distributions. Hierarchical probabilistic notation
-\citep{Gelman2006} permits the construction of flexible statistical
-models for the directly observed data. The integration of our
-formalism for experiments and heterogeneous observations with
-statistical programming languages \citep{Gilks1994, AutoBayes,mlwin}
-that facilitates parameter estimation using Bayesian or maximum
-likelihood methods in such models could be used to obtain quantitative
-estimates of measurement uncertainties taking into account all
-available information.
-
-Previous: A corollary of our work is that it may be possible in
-principle to mechanically verify scientific inference, just as
-mathematical proofs can be verified by a proof checker
-\citep{DeBruijn1968, Harrison2009}. It is of course not possible to
-verify particular hypotheses about the physical world, or an organism
-in this way. What might be verifiable are statements about experiments
---- for instance, that: particular variables were randomly controlled
-and not observed; outcomes have not gained correlation due to the
-analysis procedure; missing data are accounted for by the statistical
-model \citep{Gelman2003}; errors are propagated correctly
-\citep{Taylor1997}; units of measurement are used consistently
-\citep{Kennedy1997}; there is no ``double dipping''
-\citep{Kriegeskorte2009}; and, ultimately, that the observed data
-support the conclusions drawn. Statistical analyses address some of
-these issues in relating observations to parameter estimation and
-hypothesis testing. Without knowing where observations come from,
-however, it is difficult to ascertain whether they provide evidence
-for a given scientific hypothesis \citep{Pool2002}. Experiment
-description languages, and the representation of experimental
-observations into values of concrete types (which may not always be
-real numbers), could play an important role in such inference. It is
-likely that at least some aspects of validation in physiology can be
-achieved with conservative extensions of
-% the calculus of physiological evidence 
-CoPE integrated with statistical inference.
+We have argued that observational data, experimental protocols and
+analyses formulated in CoPE (or similar frameworks) are less ambiguous
+and more transparent than those described using many contemporary
+formulations. The structure of CoPE also presents additional
+opportunities for mechanically excluding some types of procedural
+errors in drawing inferences from experiments. For instance, CoPE
+could incorporate an extension to simple type theory
+\citep{Kennedy1997} that adds not only a consistency check for
+dimensional units but also powerful aspects of dimensional analysis,
+such as Buckingham's $\pi$-theorem. Furthermore, in our formulation,
+experimentally observed values exist as mathematical objects within a
+computational framework that can be used to define probability
+distributions. Hierarchical probabilistic notation \citep{Gelman2006}
+permits the construction of flexible statistical models for the
+directly observed data. Integrating our formalism for experiments and
+heterogeneous observations with statistical programming languages,
+such as WinBUGS \citep{Gilks1994}, AutoBayes \citep{AutoBayes} or
+Mlwin \citep{mlwin}, that estimate model parameters using Bayesian or
+maximum likelihood methods could be used to quantify different aspects
+of uncertainty in the measurements taking into account all available
+information.
 
 \section*{Experimental Procedures}
 
@@ -179,8 +155,8 @@ Public License (GPL).
 \subsubsection*{Locust experiments}
 
 Locusts were maintained at 1,600 m$^{-3}$ in 50$\times$50$\times$50 cm cages under a
-standard light and temperature regime of 12h light at 36°C : 12h dark
-at 25°C. They were fed ad lib with fresh wheat seedlings and bran
+standard light and temperature regime of 12h light at 36$^{\circ}$C : 12h dark
+at 25$^{\circ}$C. They were fed ad lib with fresh wheat seedlings and bran
 flakes. Recordings from locust DCMD neurons were performed as
 previously described \citep{Matheson2004}. Briefly, locusts were fixed
 in plasticine with the ventral side upwards. The head was fixed with

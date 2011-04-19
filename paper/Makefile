@@ -19,4 +19,10 @@ suppl:
 diff:
 	~/tnutils/Tex2One paper >paper_cuts.tex
 	latexdiff paper_nocuts.tex paper_cuts.tex >paper_diff.tex
+	latex paper_diff
+	bibtex paper
+	latex paper_diff
 	pdflatex paper_diff.tex
+
+nocuts:	
+	~/tnutils/Tex2One paper >paper_nocuts.tex
