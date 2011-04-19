@@ -12,7 +12,7 @@
 >> dur1 = take 1 $ drop 6 running
 
 >> plot $ baselineWhole $ take 1 $ drop 39 ecVoltage
->> plot $ baselineWhole $ take 1 $ drop 79 ecVoltage
+>> plot $ baselineWhole $ take 1 $ drop 150 ecVoltage
 >> spike1 = during dur1 spikes 
 >> blVolts = baselineWhole $ take 40 $ drop 40 ecVoltage
 
@@ -20,7 +20,7 @@
 
 > putatives = crossesUpOrDown (dur (negate $ 3*noiseSD)) blVolts
 
-> show (length spikes, length putatives, 3*noiseSD)
+> show (length spikes, length putatives, 3*noiseSD, 250)
 
 > spikeSigs = limitSigs' (-0.001) 0.001 $ around spikes blVolts
 

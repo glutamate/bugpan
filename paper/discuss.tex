@@ -25,11 +25,33 @@ that it is an ontology of \emph{evidence}, not of the biological
 entities that give rise to this evidence. It is unusual as an ontology
 for scientific knowledge in being embedded in a \emph{computational}
 framework, such that it can describe not only mathematical objects but
-also their transformations and observations. We make no distinction between
-the representation of data and meta-data \citep{Bower2009,
-  Gibson2008}. All relevant information about an experiment is stored
-as signals, events or durations, which are all indexed by time and
-thus linked by overlap on a common time scale.
+also their transformations and observations. Recent work on meta-data
+\citep{Bower2009} representation has focused on delineating the
+information needed to repeat an experiment \citep{Taylor2007,
+  Gibson2008}, but in practice it is not clear \emph{a priori} what
+aspects of an experiment could influence its outcome. Here, we aim to
+describe unambiguously only those aspects of the meta-data of an
+experiment that are machine-executable. Any other information must be
+added on an ad-hoc basis, but can still exploit the temporal contexts
+provided by CoPE, i.e. exist as signal, events or durations. Thus, we
+make no distinction between the representation of data and
+meta-data. All relevant information about an experiment is indexed by
+time and thus linked by overlap on a common time scale.
+
+Parametric polymorphism and first-class functions are associated with
+academic rather than mainstream programming languages. Where these
+features are missing, they can be emulated with tricks such as
+function pointers. Much of CoPE can probably be implemented in \C++,
+where template metaprogramming implements a static form of parametric
+polymorphism and template functors can be used to represent
+functions. These must all be resolved at compile-time, so it is
+difficult to use dynamically calculated or arbitrarily complex
+functions. The importance of true first-class functions and parametric
+polymorphism is increasingly recognized and these features have been
+or are being implemented in the mainstream programming languages \C++, \Csharp\, and
+Java. We therefore expect that it will soon be possible to
+implement the formalism we are proposing in a wide range of
+programming languages.
 
 % HN 2010-11-24: Instead of
 %
@@ -51,12 +73,13 @@ that share data formats can be highly efficient, and eliminates many
 sources of human error. Existing tools use differential equations to
 define dynamic clamp experiments (Model Reference Current Injection
 (MRCI); \citep{Raikov2004}) or simulations (X-Windows Phase Plane
-(XPP); \citep{Ermentrout1987}). Here, we show that a general (polymorphic)
-defintion of signal and events, embedded in the lambda calculus, can
-define a much larger range of experiments, and the evidence that they
-produce. Our experiment definitions have the further advantage that
-they \emph{compose}; that is, more complex experiments can be
-formulated by joining together elementary building blocks.
+(XPP); \citep{Ermentrout1987}). Here, we show that a general
+(polymorphic) defintion of signal and events, embedded in the lambda
+calculus, can define a much larger range of experiments, and the
+evidence that they produce. Our experiment definitions have the
+further advantage that they \emph{compose}; that is, more complex
+experiments can be formulated by joining together elementary building
+blocks.
 
 
 Our full approach is particularly relevant to the execution of very
@@ -155,9 +178,13 @@ Public License (GPL).
 
 \subsubsection*{Locust experiments}
 
-Recordings from locust DCMD neurons were performed as previously
-described \citep{Matheson2004}. Briefly, locusts were fixed in
-plasticine with the ventral side upwards. The head was fixed with wax
+Locusts were maintained at 1,600 m$^{-3}$ in 50$\times$50$\times$50 cm cages under a
+standard light and temperature regime of 12h light at 36°C : 12h dark
+at 25°C. They were fed ad lib with fresh wheat seedlings and bran
+flakes. Recordings from locust DCMD neurons were performed as
+previously described \citep{Matheson2004}. Briefly, locusts were fixed
+in plasticine with the ventral side upwards. The head was fixed with
+wax
 % at a $90^{\circ}$ angle
 and the connectives were exposed through an
 incision in the soft tissue of the neck. A pair of silver wire hook
@@ -173,13 +200,19 @@ board were controlled by programs written in
 % the calculus of physiological evidence
 CoPE running on a single computer.
 
+The full code for the locust experiment is given in Listing 1
+(Supplementary Materials).
+
 \subsubsection*{Zebrafish experiments}
 
-Intracellular patch-clamp recordings from motor neurons in the spinal
-cord of a 2-day old zebrafish embryo were performed as previously
-described \citep{McDearmid2006}. We used a National Instruments PCI-6281
-board to
-record the output from a BioLogic patch-clamp amplifier in
+Zebrafish were maintained according to established procedures
+\citep{Westerfield1994} in approved tank facilities, in compliance
+with the Animals (Scientific Procedures) Act 1986 and according to
+University of Leicester guidelines. Intracellular patch-clamp
+recordings from motor neurons in the spinal cord of a 2-day old
+zebrafish embryo were performed as previously described
+\citep{McDearmid2006}. We used a National Instruments PCI-6281 board
+to record the output from a BioLogic patch-clamp amplifier in
 current-clamp mode, filtered at 3kHz and digitised at 10 kHz, with the
 output current calculated at the same rate by programs written in
 % the calculus of physiological evidence
@@ -187,6 +220,9 @@ CoPE targeted to the RTAI backend (see
 above). The measured jitter for updating the output voltage was 6
 $\mu$s and was similar to that measured with the RTAI latency test
 tool for the experiment control computer.
+
+The full code for the Zebrafish experiments is given in Listing 2
+(Supplementary Materials).
 
 \subsubsection*{Author Contributions}  
 

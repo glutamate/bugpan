@@ -74,7 +74,7 @@
 \end{singlespace}} 
 & \parbox{8cm}{\begin{singlespace}Apply a function to adjust the beginning and end of each duration occurrence\end{singlespace}}\\
 
-  |area| & |Signal Real -> Event Real|
+  |area| & |Signal Float -> Event Float|
 & \parbox{8cm}{\begin{singlespace}Calculate the centre of mass (time of the event) and area (tag of the event) of a signal\end{singlespace}}\\
 
   |around| &
@@ -84,7 +84,7 @@
 & Align signal around event occurrences\\
 
   |baseline| & 
-\parbox{4cm}{\begin{singlespace}|Real -> Real -> Signal Real | \\ |-> Signal Real|
+\parbox{4cm}{\begin{singlespace}|Float -> Float -> Signal Float | \\ |-> Signal Float|
 \end{singlespace}}
 & \parbox{8cm}{\begin{singlespace}Subtract from a signal its mean value between two time points\end{singlespace}}\\
 
@@ -96,13 +96,13 @@
 
   |burst| &
 \parbox{4cm}{\begin{singlespace}
-|Real -> Event alpha | \\|-> Duration ()|
+|Float -> Event alpha | \\|-> Duration ()|
 \end{singlespace}} 
 & \parbox{8cm}{\begin{singlespace}Durations when successive inter-event occurrence intervals are smaller than a set minimum\end{singlespace}}\\
 
   |convolveSE| &
 \parbox{4cm}{\begin{singlespace}
-|Signal Real -> Event Real| \\|-> Signal Real|
+|Signal Float -> Event Float| \\|-> Signal Float|
 \end{singlespace}} 
 & Convolve a signal with an event\\
 
@@ -114,7 +114,7 @@
 
   |freqDuring| & 
 \parbox{4cm}{\begin{singlespace}
-|Duration alpha -> Event beta| \\|-> Duration Real|
+|Duration alpha -> Event beta| \\|-> Duration Float|
 \end{singlespace}} 
 & Count events in each occurrence\\
 
@@ -124,20 +124,20 @@
 \end{singlespace}} 
 & Create a duration from start and stop events\\
 
-  |intervals| & |Event alpha -> Event Real|
+  |intervals| & |Event alpha -> Event Float|
 & \parbox{8cm}{\begin{singlespace}Replace the tag of each occurrence with the time period to the next occurrence\end{singlespace}}\\
 
 
   |later| &
 \parbox{4cm}{\begin{singlespace}
-|Real -> Event alpha| \\ |-> Event alpha|
+|Float -> Event alpha| \\ |-> Event alpha|
 \end{singlespace}} 
 & \parbox{8cm}{\begin{singlespace}Delay each event occurrence by a fixed amount of time\end{singlespace}}\\
 
   |peak| & |Signal alpha -> Event alpha| & Peak value of each signal segment\\
 
   |smoothN| & 
-\parbox{4cm}{\begin{singlespace}|Int -> Signal Real | \\ |-> Signal Real|
+\parbox{4cm}{\begin{singlespace}|Int -> Signal Float | \\ |-> Signal Float|
 \end{singlespace}}
 & \parbox{8cm}{\begin{singlespace}Smooth a signal with the binomial filter\end{singlespace}}\\
 
@@ -203,9 +203,9 @@ alpha tau t = if t<0.0 then 0.0 else (t/tau)*exp (1-t/tau)
 gsyn = {: gampa* (alpha 0.005 <: seconds:>) :}
 stage gsyn -1		
 
-rawv, celli, vm, a, b, ika :: Signal Real
+rawv, celli, vm, a, b, ika :: Signal Float
 
-rndSpike :: [(Real, ())]
+rndSpike :: [(Float, ())]
 rndSpike <* poisson rate
 
 rawv <* ADC 0 20000
@@ -221,7 +221,7 @@ D b = {: 1000*(((alphab ((<: vm:>*1000)+60)) * ( 1-<:b:>)) -
               ((betab ((<:vm:>*1000)+60)) * <: b :>)) :}
 b_0 = 0.9
 
-alphaa, betaa, alphab, betab :: Real -> Real
+alphaa, betaa, alphab, betab :: Float -> Float
 
 alphaa v = (0.02*(13.1-v))/((exp ((13.1 -v)/10)) -1)
 betaa v =  (0.0175*(v-40.1))/((exp ((v-40.1)/10))-1)

@@ -8,8 +8,35 @@
 \usepackage[final]{pdfpages}
 \usepackage[square, comma, numbers, compress]{natbib}
 %\usepackage{citesupernumber}
+\usepackage{relsize}
+\usepackage{lipsum}
 \usepackage{url}
 \usepackage{graphicx}
+
+% http://stackoverflow.com/questions/2724760/how-to-write-c-in-latex
+
+%c from texinfo.tex
+\def\ifmonospace{\ifdim\fontdimen3\font=0pt }
+
+%c C plus plus
+\def\C++{%
+\ifmonospace%
+    C++%
+\else%
+    C\kern-.1667em\raise.30ex\hbox{\smaller{++}}%
+\fi%
+\spacefactor1000 }
+
+%c C sharp
+\def\Csharp{%
+\ifmonospace%
+    C\#%
+\else%
+    C\kern-.1667em\raise.30ex\hbox{\smaller{\#}}%
+\fi%
+\spacefactor1000 }
+
+
 %\linenumbers
 %\usepackage{epsfig}
 \doublespacing \title{A formal mathematical framework for
@@ -75,20 +102,21 @@ evidence? We answer this question within simple type theory
 \citep{Pierce2002, Hindley2008}, which introduces an intuitive
 classification of mathematical objects by assigning to every object
 exactly one \emph{type}. These types include base types, such as
-integers |Integer|, real numbers |Real|, text strings |String| and the
-Boolean type |Bool| with the two values |True| and |False|. These base
-types are familiar to users of most programming languages. In
-addition, modern type systems, including simple type theory, allow
-types to be arbitrarily combined in several ways. For instance, if
-|alpha| and |beta| are types, the type |alpha times beta| is the pair
-formed by one element of |alpha| and one of |beta|; |[alpha]| is a
-list of |alpha|s; and |alpha -> beta| is the type of functions that
-calculate a value in the type |beta| from a value in |alpha|. The
-ability to write flexible type schemata and generic functions
-containing type variables ($\alpha, \beta, \ldots$), which can later
-be substituted with any concrete type, is called ``parametric
-polymorphism''\citep{Pierce2002} and is essential to the simplicity
-and flexibility of CoPE.
+integers |Integer|, text strings |String| and the Boolean type |Bool|
+with the two values |True| and |False|, as well as the real numbers
+|Real|, or when implemented as a programming language, the
+limited-precision |Float|. These base types are familiar to users of
+most programming languages. In addition, modern type systems,
+including simple type theory, allow types to be arbitrarily combined
+in several ways. For instance, if |alpha| and |beta| are types, the
+type |alpha times beta| is the pair formed by one element of |alpha|
+and one of |beta|; |[alpha]| is a list of |alpha|s; and |alpha ->
+beta| is the type of functions that calculate a value in the type
+|beta| from a value in |alpha|. The ability to write flexible type
+schemata and generic functions containing type variables ($\alpha,
+\beta, \ldots$), which can later be substituted with any concrete
+type, is called ``parametric polymorphism''\citep{Pierce2002} and is
+essential to the simplicity and flexibility of CoPE.
 
 We distinguish three type schemata in which physiological evidence can
 be values. These differ in the manner in which measurements appear in
@@ -105,7 +133,7 @@ of a body part. Here, we generalise this notion such that for
 Signal alpha = Time -> alpha
 \end{code}
 For instance, the output of a differential
-voltage amplifier might be captured in a |Signal Real|.
+voltage amplifier might be captured in a |Signal Float|.
 
 To model occurrences pertaining to specific instances in time,
 FRP defines \emph{events} as a list of pairs of time points and values in a
@@ -321,23 +349,12 @@ We then write
 sineWave *> DAC 0 20000
 \end{code}{}
 to send the |sineWave| signal to channel channel 0 of a
-digital-to-analog converter at 20 kHz. Below we show how these
-primitives can be used to define two detailed experiments in
-neurophysiology.
-% Sinks and sources are thus used to
-% link values, which have been or will be used in purely mathematical
-% expressions, to the real world. There are also operations in
-% experiments that are not related to real-world observation or to
-% purely functional computation --- for instance sampling from
-% probability distributions, which violates referentially transparancy
-% (if $rnd$ is a random number generator with an arbitratry distribution
-% parametrised by $\theta$, it is not in general the case that $ rnd
-% \theta + rnd \theta = 2*rnd \theta$). We have thus implemented sources
-% corresponding to common parametrised probability distributions, such
-% that experiments can sample values from these distributions and use
-% these values in computations or connect them to sinks. In this more
-% general view, sources and sinks bridge referentially transparent and
-% non-transparent computations.
+digital-to-analog converter at 20 kHz. 
+
+We have implemented this calculus as a new programming language and
+used this software implementation to define and run two detailed
+experiments in neurophysiology.
+
 
 \subsubsection*{Example 1}
 
@@ -361,9 +378,25 @@ vector |(x,y,z)| and
 colour (r,g,b) s
 \end{code}
 the shape identical to |s| except with the colour intensity red |r|,
-green |g| and blue |b|. Additional constructors can be introduced for
-more complex stimuli, but these are sufficient for the experiments
-reported here. Since signals in CoPE are polymorphic, they can carry not just
+green |g| and blue |b|. These primitives are sufficient for the experiments
+reported here. 
+
+More complex stimuli can be defined more succinctly in external files;
+for instance, the source |texture| loads a texture, such that
+\begin{code}
+tex <* texture "image.tga"
+\end{code}
+loads the binary image in \texttt{image.tga} and binds a new function
+|tex|, which when applied to a shape returns a similar but textured
+shape. Thus,
+\begin{code}
+tex (cube 1)
+\end{code}
+denotes a textured cube. Sources for loading complex polygons could be
+defined similarly.
+
+Since signals in CoPE are polymorphic, they can
+carry not just 
 numeric values but also shapes, so we represent visual stimuli as
 values in |Signal Shape|. The looming stimulus consists of a cube of
 side length l approaching a locust with constant velocity v. The
@@ -415,7 +448,7 @@ voltage <* ADC 0 20000
 |loomingSquare'| and |voltage| thus define a single object approach
 and the recording of the elicited response. This approach was repeated
 every 4 minutes, with different values of $\frac{l}{||v||}$. Figure 1
-shows $\frac{l}{||v||}$ as values with type |Duration Real|, together
+shows $\frac{l}{||v||}$ as values with type |Duration Float|, together
 with the |distance'| and |voltage| signals for the first five trials
 of one experiment on a common time scale.
 
@@ -643,14 +676,14 @@ observations and quantities in CoPE
 \hline
   Quantity & Type \\ 
 \hline
-  Voltage across the cell membrane & |Signal Real| \\
-  Ion concentration & |Signal Real| \\
-  Animal location in 2D & |Signal (Real times Real)| \\
+  Voltage across the cell membrane & |Signal Float| \\
+  Ion concentration & |Signal Float| \\
+  Animal location in 2D & |Signal (Float times Float)| \\
   Action potential & |Event ()| \\
-  Action potential waveforms & |Event (Signal Real)| \\
-  Spike detection threshold & |Duration Real| \\
+  Action potential waveforms & |Event (Signal Float)| \\
+  Spike detection threshold & |Duration Float| \\
   Spike interval & |Duration ()| \\
-  Synaptic potential amplitude & |Event Real| \\
+  Synaptic potential amplitude & |Event Float| \\
   Drug present & |Duration ()| \\
   Trial with parameter |alpha| & |Duration alpha| \\
   Visual stimulus & |Signal Shape| \\
