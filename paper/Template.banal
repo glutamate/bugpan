@@ -18,22 +18,20 @@
 >> ecVolts = upsample 10 $ baselineWhole $ take 40 $ drop 40 ecVoltage
 %> snd $ sigStat' stdDevF (head $ drop 39 ecVolts)
 
-Here, we present a slightly more sophisticated spike detection
-algorithm based on template matching. We first detect putative spikes
-as any deflection that falls outside three times the standard
-deviation of the band-pass filtered signal. 
+To demonstrate the versatility of CoPE, we present a slightly
+more sophisticated spike detection algorithm based on template
+matching. We first detect putative spikes as any deflection that falls
+outside three times the standard deviation of the band-pass filtered
+signal.
 
 > noiseSD = sigSD ecVolts 
 > putatives =(\v->v<(-3*noiseSD) || v>(3*noiseSD) ) ?? ecVolts
 >> manualSpikes = spikes
 
-Note the |$| is used to avoid excessive parentheses. |f $ y| is
-defined as |f y| but guarantees that |y| is treated as a seperate
-term. For instance, |f $ x+y = f (x+y)| but |f x+y = (f
-x)+y|. Secondly, we need a template to match against. We use the
-spikes found with a manual threshold |manualSpikes| as presented in
-the paper to construct a template from the extracellular waveform
-|ecVolts|. |manualSpikes| are not used again, so the template matching
+We use the spikes found with a manual threshold |manualSpikes| as
+presented in the main body of this paper to construct a template from
+the extracellular waveform |ecVolts| with which to compare putative
+spikes. |manualSpikes| are not used again, so the template matching
 algorithm presented here is a refinement on the manual threshold
 analysis.
 
@@ -43,7 +41,10 @@ analysis.
 
 > template = head $ averageSigs $ limitSigs (-0.001) 0.001 $ around manualSpikes ecVolts
 
-Here, |around| aligns the extracellular waveform |ecVolts| around
+Note the |$| is used to avoid excessive parentheses. |f $ y| is
+defined as |f y| but guarantees that |y| is treated as a seperate
+term. For instance, |f $ x+y = f (x+y)| but |f x+y = (f
+x)+y|. Here, |around| aligns the extracellular waveform |ecVolts| around
 |manualSpikes| events, returning one signal segment per event
 occurrence. |limitSigs t1 t2| cuts each signal segment such that only
 the signal between timepoints t1 and t2 remain. Finally, |averageSigs|
@@ -55,36 +56,46 @@ s.e.m. We only need the first element (|take 1|) of this list, shown in Figure S
 
 % > break
 
-We need a utility function that takes a timepoint and creates a list
-of event occurrences, each tagged with the unit type. 
+Our standard functions for data analysis operate on lists of event or
+duration occurrences. In order to use these with individual timepoints
+in the subsequent analysis, we write a simple utility function that
+takes a timepoint and creates such a list of event occurrences, each
+tagged with the unit type.
 
 > ev = \t->[(t,())]
 
-Finally, we write the function |rms| which calculates for each event
-occurrence the root mean square. We align the extracellular voltage
-|ecVolts| |around| the event occurence |ev t|, and subtract this
-signal from the template. This new signal is transformed (|smap|) with
-the square function |(^2)| before summation and taking the square
-root. The root mean square value is paired with the event time, such
-that the rms function can be used to create a new list of events (|rmsEvs|) with
-the appropriate temporal context and a real-values tag designating the
+Finally, implement simple template matching as a single function |rms|
+that transforms putative spikes into spikes tagged with the
+goodness-of-fit (here, the root mean square difference from the
+template). We align the extracellular voltage |ecVolts| |around| the
+event occurence |ev t|, and subtract this signal from the
+template. This new signal is transformed (|smap|) with the square
+function |(^2)| before summation and taking the square root. The root
+mean square value is paired with the event time, such that the rms
+function can be used to create a new list of events (|rmsEvs|, below) with
+the appropriate temporal context and a real-valued tag designating the
 extent of template match.
 
 >> sumSig = foldSig (+) 0
 
 > rms = \(t,_)-> (t,sqrt $ sumSig $ fmap (^2) $ template - head (around (ev t) ecVolts))
 
-Biphasic spikes 
+A single bi- or triphasic spikes may generate several putative spikes
+as positive and negative deflections exceed the threshold. We use the
+|onAdjacent| function to step through pairs of adjacent
+spikes. |onAdjacent| is parametrised by a function that decides which
+out of two successive spikes should be kept; here, |f| expresses that
+if two spikes occur within 2 ms, then only the one with the lowest
+r.m.s. value should be kept. 
 
 > f = \(t1, rms1) (t2, rms2) -> if abs(t2-t1) > 0.002 then [(t1, rms1),(t2, rms2)] else if rms1<rms2 then [(t1, rms1)] else [(t2, rms2)]
 
 > rmsEvs =  onAdjacent f $ map rms putatives
 
-A histogram of the rms values is shown is Figure S1B, where multiple
-components are clearly present. Figure S1C shows two average
-waveforms, those with and r.m.s. value below 0.1 (|around (filter
-((<0.05) . snd) rmsEvs) ecVolts|) and those those above 0.2 (|around
-(filter ((>0.07) . snd) rmsEvs) ecVolts|).
+A histogram of the r.m.s. values is shown in Figure S1B, and |rmsEvs|
+is shown with a short signal segment in Figure S1C. The histogram can
+be used to set cut-offs for different components; Figure S1D shows the
+average waveforms for putative spikes for two such groups. 
 
 %> plot $ Histo 100 $ filter (<0.12) $ map snd rmsEvs
 
@@ -92,14 +103,15 @@ waveforms, those with and r.m.s. value below 0.1 (|around (filter
 >> s1 =  minInterval 0.001 $ filter ((<0.1) . snd) rmsEvs
 >> s2 =  minInterval 0.001 $ filter ((>0.2) . snd) rmsEvs
 >> myDur = [((9912.0,9912.5),())]
->> plot $ 50%(A (XLabel "time (s)" $ YLabel "voltage" $ YTics [-0.03, 0.01, 0.02] $ YRange (-0.03) 0.02 $ XRange (-0.001) 0.001 $ XTics [ -0.001, 0.0005, 0.001] [template]) :||: B (XLabel "r.m.s. from template" $ YLabel "Frequency" $ YTics [0.01,0.01,0.05] $ Histo 100 $ filter (<0.4) $ map snd rmsEvs)) :--: 50%(C (XLabel "time (s)" $ YLabel "voltage" $ YTics [-0.03, 0.01, 0.02] $ YRange (-0.03) 0.02 $ XRange (-0.001) 0.001 $ XTics [ -0.001, 0.0005, 0.001] $ (averageSigs $ limitSigs' (-0.001) 0.001 $ around (s1) ecVolts) :+: (averageSigs $ limitSigs' (-0.001) 0.001 $ around (s2) ecVolts)) :||: D (50%(PadX 0.206 0 $ Noaxis $ baselineWhole $ during myDur ecVoltage) :--: 50%(XLabel "time (s)" $ YLabel "r.m.s." $ NoTRaxis $ YTics [0,0.1,0.2] $ XRange 9912 9912.5 $ XTics [ 9912, 0.25, 9912.5] $ during myDur rmsEvs)))
+>> plot $ 50%(A (XLabel "time (s)" $ YLabel "voltage" $ YTics [-0.03, 0.01, 0.02] $ YRange (-0.03) 0.02 $ XRange (-0.001) 0.001 $ XTics [ -0.001, 0.0005, 0.001] [template]) :||: B (XLabel "r.m.s. from template" $ YLabel "Frequency" $ YTics [0.005,0.005,0.05] $ Histo 100 $ filter (<0.4) $ map snd rmsEvs)) :--: 50%(C (50%(PadX 0.206 0 $ Noaxis $ baselineWhole $ during myDur ecVoltage) :--: 50%(XLabel "time (s)" $ YLabel "r.m.s." $ NoTRaxis $ YRange 0 0.3 $ YTics [0,0.1,0.3] $ XRange 9912 9912.5 $ XTics [ 9912, 0.25, 9912.5] $ during myDur rmsEvs)) :||: D (XLabel "time (s)" $ YLabel "voltage" $ YTics [-0.03, 0.01, 0.02] $ YRange (-0.03) 0.02 $ XRange (-0.001) 0.001 $ XTics [ -0.001, 0.0005, 0.001] $ (averageSigs $ limitSigs' (-0.001) 0.001 $ around (s1) ecVolts) :+: (averageSigs $ limitSigs' (-0.001) 0.001 $ around (s2) ecVolts)))
 
-Figure S1. A, template used to detect spikes. B, Histogram of root
-mean square value deflections from template for each putative
-spike. C, averages of low and high r.m.s. deflections in extracellular
-voltage, D, a segment of the extracellular voltage (top) with putative
-events, plotted with their r.m.s. deflection from the template.
+Figure S1. A, template used to identify spikes. B, Histogram of root
+mean square differences from template for each putative spike over 40
+stable strials. C, a segment of the extracellular voltage (top) with
+putative events, plotted with their r.m.s. diffences from the
+template.  D, averages of spikes with low (|around (filter ((<0.1)
+. snd) rmsEvs) ecVolts|) and high (|around (filter ((>0.2) . snd)
+rmsEvs) ecVolts|) r.m.s. difference from the template.
 
 %>> plot $ ((baselineWhole $ during myDur ecVoltage) :+: tag 0.025 (during myDur s1) :+: tag 0.03 (during myDur s2))
 
->> plot $ take 1 ecVolts
