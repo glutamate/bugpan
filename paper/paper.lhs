@@ -115,8 +115,9 @@ functions that calculate a value in the type |beta| from a value in
 |alpha|. The ability to write flexible type schemata and generic
 functions containing type variables ($\alpha, \beta, \ldots$), which
 can later be substituted with any concrete type, is called
-``parametric polymorphism''\citep{Pierce2002} and is essential to the
-simplicity and flexibility of CoPE.
+``parametric polymorphism''\citep{Pierce2002} (or "templates" and
+"generics" in the programming languages \C++ and Java, respectively) is
+essential to the simplicity and flexibility of CoPE.
 
 We distinguish three type schemata in which physiological evidence can
 be values. These differ in the manner in which measurements appear in
@@ -566,9 +567,9 @@ We write the forward and backward rates as functions of the membrane voltage
 
 \begin{tabbing}
 \qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
-${\alpha_a\;\Varid{v}\mathrel{=}\frac{\mathrm{20}\!\cdot\!(\mathbin{-}\mathrm{46.9}\mathbin{-}\Varid{v}\!\cdot\!\mathrm{1000})}{\Varid{exp}\;\frac{\mathbin{-}\mathrm{46.9}\mathbin{-}\Varid{v}\!\cdot\!\mathrm{1000}}{\mathrm{10}}\mathbin{-}\mathrm{1}}}$\\
+${\alpha_a\;\Varid{v}\mathrel{=}\frac{\mathrm{20}\!\cdot\!(\mathbin{-}\mathrm{46.9}\mathbin{-}\Varid{v})}{\Varid{exp}\;\frac{\mathbin{-}\mathrm{46.9}\mathbin{-}\Varid{v}}{\mathrm{10}}\mathbin{-}\mathrm{1}}}$\\
 \\
-${\beta_a\;\Varid{v}\mathrel{=}\frac{\mathrm{17.5}\!\cdot\!(\Varid{v}\!\cdot\!\mathrm{1000}\mathbin{+}\mathrm{19.9})}{\Varid{exp}\;\frac{\Varid{v}\!\cdot\!\mathrm{1000}\mathbin{+}\mathrm{19.9}}{\mathrm{10}}\mathbin{-}\mathrm{1}}}$
+${\beta_a\;\Varid{v}\mathrel{=}\frac{\mathrm{17.5}\!\cdot\!(\Varid{v}\mathbin{+}\mathrm{19.9})}{\Varid{exp}\;\frac{\Varid{v}\mathbin{+}\mathrm{19.9}}{\mathrm{10}}\mathbin{-}\mathrm{1}}}$
 \end{tabbing}
 
 %
@@ -577,6 +578,7 @@ ${\beta_a\;\Varid{v}\mathrel{=}\frac{\mathrm{17.5}\!\cdot\!(\Varid{v}\!\cdot\!\m
 %betaa v = 17.5*(v*1000+19.9)/(exp ((v*1000+19.9)/10) -1)
 %\end{code}
 
+with 
 The time-varying state of the activation gate is given by a
 differential equation. We use the notation |D x = sopen f
 (x,<:seconds:>) sclose | to denote the ordinary differential equation

@@ -497,6 +497,10 @@ instance PlotWithGnuplot a => PlotWithGnuplot (Noaxis a) where
       px <- multiPlot r x
       let cmd = TopLevelGnuplotCmd "set border 1; set tics" "set border; set tics"
       return $ map (\(r', pls) -> (r', cmd:pls)) px
+    multiPlot r m@(NoXaxis x) = do
+      px <- multiPlot r x
+      let cmd = TopLevelGnuplotCmd "set border 2; set tics" "set border; set tics"
+      return $ map (\(r', pls) -> (r', cmd:pls)) px
     multiPlot r m@(NoTRaxis x) = do
       px <- multiPlot r x
       let cmd = TopLevelGnuplotCmd "set border 3; set tics; set xtics nomirror; set ytics nomirror" "set border; set tics"

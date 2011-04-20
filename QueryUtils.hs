@@ -634,6 +634,13 @@ minInterval t es@(e:[]) = es
 minInterval t (ts1:res@(ts2:es)) | dist (gettStart ts1) (gettStart ts2) < t = minInterval t (ts1:es)
                                  | otherwise = ts1 : minInterval t res
 
+onAdjacent :: (a -> a -> [a]) -> [a] ->  [a] 
+onAdjacent f [] = []
+onAdjacent f es@(e:[]) = es
+onAdjacent f (e1:e2:es) = case f e1 e2 of
+                                [] -> onAdjacent f es
+                                morees -> init morees  ++ onAdjacent f (last morees : es )
+
 beforeE :: (HasTStart t, HasTStart f) => [f a] -> [t b] -> [t b]
 beforeE [] xs = xs
 beforeE (e1:_) xs = let t1 = gettStart e1 in filter ((<t1) . gettStart) xs

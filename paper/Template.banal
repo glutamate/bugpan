@@ -14,6 +14,7 @@
 %>> plot $ baselineWhole $ take 1 $ drop 39 ecVoltage
 %>> plot $ baselineWhole $ take 1 $ drop 150 ecVoltage
 >> spike1 = during dur1 spikes 
+%>> ecVolts = upsample 5 $ baselineWhole $ take 20 $ drop 40 ecVoltage
 >> ecVolts = upsample 10 $ baselineWhole $ take 40 $ drop 40 ecVoltage
 %> snd $ sigStat' stdDevF (head $ drop 39 ecVolts)
 
@@ -73,27 +74,32 @@ extent of template match.
 
 > rms = \(t,_)-> (t,sqrt $ sumSig $ fmap (^2) $ template - head (around (ev t) ecVolts))
 
-> rmsEvs =  map rms putatives
+Biphasic spikes 
+
+> f = \(t1, rms1) (t2, rms2) -> if abs(t2-t1) > 0.002 then [(t1, rms1),(t2, rms2)] else if rms1<rms2 then [(t1, rms1)] else [(t2, rms2)]
+
+> rmsEvs =  onAdjacent f $ map rms putatives
 
 A histogram of the rms values is shown is Figure S1B, where multiple
 components are clearly present. Figure S1C shows two average
 waveforms, those with and r.m.s. value below 0.1 (|around (filter
 ((<0.05) . snd) rmsEvs) ecVolts|) and those those above 0.2 (|around
-(filter ((>0.07) . snd) rmsEvs) ecVolts|) which includes some DCMD
-spikes detected on the upward spike deflection.
+(filter ((>0.07) . snd) rmsEvs) ecVolts|).
 
 %> plot $ Histo 100 $ filter (<0.12) $ map snd rmsEvs
 
 %> break
 >> s1 =  minInterval 0.001 $ filter ((<0.1) . snd) rmsEvs
 >> s2 =  minInterval 0.001 $ filter ((>0.2) . snd) rmsEvs
->> myDur = [((9912.0,9913.0),())]
->> plot $ 50%(A [template] :||: B (Histo 100 $ filter (<0.4) $ map snd rmsEvs)) :--: 50%(C ((averageSigs $ limitSigs' (-0.001) 0.001 $ around (s1) ecVolts) :+: (averageSigs $ limitSigs' (-0.001) 0.001 $ around (s2) ecVolts)) :||: D (50%(baselineWhole $ during myDur ecVoltage) :--: 50%during myDur rmsEvs))
+>> myDur = [((9912.0,9912.5),())]
+>> plot $ 50%(A (XLabel "time (s)" $ YLabel "voltage" $ YTics [-0.03, 0.01, 0.02] $ YRange (-0.03) 0.02 $ XRange (-0.001) 0.001 $ XTics [ -0.001, 0.0005, 0.001] [template]) :||: B (XLabel "r.m.s. from template" $ YLabel "Frequency" $ YTics [0.01,0.01,0.05] $ Histo 100 $ filter (<0.4) $ map snd rmsEvs)) :--: 50%(C (XLabel "time (s)" $ YLabel "voltage" $ YTics [-0.03, 0.01, 0.02] $ YRange (-0.03) 0.02 $ XRange (-0.001) 0.001 $ XTics [ -0.001, 0.0005, 0.001] $ (averageSigs $ limitSigs' (-0.001) 0.001 $ around (s1) ecVolts) :+: (averageSigs $ limitSigs' (-0.001) 0.001 $ around (s2) ecVolts)) :||: D (50%(PadX 0.206 0 $ Noaxis $ baselineWhole $ during myDur ecVoltage) :--: 50%(XLabel "time (s)" $ YLabel "r.m.s." $ NoTRaxis $ YTics [0,0.1,0.2] $ XRange 9912 9912.5 $ XTics [ 9912, 0.25, 9912.5] $ during myDur rmsEvs)))
 
 Figure S1. A, template used to detect spikes. B, Histogram of root
 mean square value deflections from template for each putative
 spike. C, averages of low and high r.m.s. deflections in extracellular
-voltage, D, a segment of the extracellular voltage with low (green)
-and high (blue) r.m.s. template matches.
+voltage, D, a segment of the extracellular voltage (top) with putative
+events, plotted with their r.m.s. deflection from the template.
 
 %>> plot $ ((baselineWhole $ during myDur ecVoltage) :+: tag 0.025 (during myDur s1) :+: tag 0.03 (during myDur s2))
+
+>> plot $ take 1 ecVolts
