@@ -1,12 +1,12 @@
 \section*{Discussion}
 
-We present a new approach to performing and communicating
-experimental science.  Our use of
-typed, functional and reactive programming overcomes at least two 
-long-standing issues in bioinformatics: the need for a flexible
-ontology to share heterogeneous data from physiological experiments
-\citep{Amari2002}, a language for describing experiments and data provenance unambiguously
-\citep{Pool2002, Murray-Rust2002}.
+We present a new approach to performing and communicating experimental
+science.  Our use of typed, functional and reactive programming
+overcomes at least two long-standing issues in bioinformatics: the
+need for a flexible ontology to share heterogeneous data from
+physiological experiments \citep{Amari2002}, a language for describing
+experiments and data provenance unambiguously \citep{Pool2002,
+  Murray-Rust2002}.
 
 The types we have presented form a linguistic framework and an
 ontology for physiology. Thanks to the flexibility of parametric
@@ -27,15 +27,16 @@ framework, such that it can describe not only mathematical objects but
 also their transformations and observations. Recent work on meta-data
 representation \citep{Bower2009} has focused on delineating the
 information needed to repeat an experiment \citep{Taylor2007,
-  Gibson2008}, but in practice it is often not clear \emph{a priori} what
-aspects of an experiment could influence its outcome. With CoPE, our main goal was to 
-describe unambiguously machine-executable aspects of the meta-data of an
-experiment. Other information can nevertheless be 
-added on an \emph{ad hoc} basis, and it can exploit the temporal contexts
-provided by CoPE, i.e. it can exist as signals, events or durations. Thus, we
-make no fundamental distinction between the representation of data and
-meta-data. All relevant information about an experiment is indexed by
-time and thus linked by overlap on a common time scale.
+  Gibson2008}, but in practice it is often not clear \emph{a priori}
+what aspects of an experiment could influence its outcome. With CoPE,
+our main goal was to describe unambiguously machine-executable aspects
+of the meta-data of an experiment. Other information can nevertheless
+be added on an \emph{ad hoc} basis, and it can exploit the temporal
+contexts provided by CoPE, i.e. it can exist as signals, events or
+durations. Thus, we make no fundamental distinction between the
+representation of data and meta-data. All relevant information about
+an experiment is indexed by time and thus linked by overlap on a
+common time scale.
 
 Parametric polymorphism and first-class functions are generally
 associated with research-oriented languages such as Haskell and ML
@@ -83,14 +84,23 @@ blocks.
 Our full approach is particularly relevant to the execution of very
 complex and multi-modal experiments, which may need to be dynamically
 reconfigured based on previous observations, or to disambiguate
-difficult judgements about evidence \citep{Kriegeskorte2009}. Even
-if used separately, however, individual aspects of CoPE can make
-distinct contributions to scientific methodology. For instance, our
-ontology for physiological evidence can be used within more
-conventional programming languages or web applications that facilitate
-data sharing. In a similar way, the capabilities of CoPE for executing
-and analysing experiments could provide a robust core for innovative
-graphical user interfaces.
+difficult judgements about evidence \citep{Kriegeskorte2009}. Even if
+used separately, however, individual aspects of CoPE can make distinct
+contributions to scientific methodology. For instance, our ontology
+for physiological evidence can be used within more conventional
+programming languages or web applications that facilitate data
+sharing. In a similar way, the capabilities of CoPE for executing and
+analysing experiments could provide a robust core for innovative
+graphical user interfaces. We expect the formalism presented here to
+be applicable outside neurophysiology. Purely temporal information
+from other fields could be represented using signals, events and
+durations, or other kinds of temporal context formalised in type
+theory. In addition, the concepts of signals, events and duration
+could be generalised to include spatial and spatiotemporal contexts to
+values. Such a generalisation is necessary for CoPE to accommodate
+data from the wider neuroscience community, including functional
+neuroanatomy and microscopy, and other scientific diciplines that
+observe and manipulate spatiotemporal data.
 
 We have argued that observational data, experimental protocols and
 analyses formulated in CoPE (or similar frameworks) are less ambiguous

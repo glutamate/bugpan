@@ -419,7 +419,7 @@ loomingSquare =
 object that passes through the physical screen and the observer, and
 when displayed would thus disappear from the screen just before
 collision. In order not to evoke a large OFF response
-\citep{O'shea1976} at this point, the object
+\citep{Oshea1976} at this point, the object
 is frozen in space as it reaches the plane of the surface onto which
 the animation is projected \citep{Hatsopoulos1995}. To achieve this
 effect, we define a new signal that has a lower bound of the distance
@@ -460,8 +460,14 @@ detection is |vth|, the event |spike| can be calculated with
 spike = tag () ((\v->v>vth) ?? voltage)
 \end{code}
 where |tag| replaces every tag in some event with a fixed value, so
-that spike has type |Event ()|. This event is displayed on the common
-time scale in Figure 1. The top row displays the spike rate histogram
+that spike has type |Event ()|. Although this spike detection
+algorithm is standard for extracellular DCMD recordings, it can be
+difficult to identify neurons based on amplitude alone in other
+neuronal proparations. We have also implemented in CoPE a spike
+identification algorithm based on template matching (see supplementary
+information). The spike event detected by threshold crossing is
+displayed on the common time scale in Figure 1. The top row displays
+the spike rate histogram
 \begin{code}
 hspike  =
         sopen length (filter  (between  <: delay seconds:> 
@@ -564,21 +570,18 @@ inactivation are analogous (see Listing 2 in supplementary
 information).
 
 We write the forward and backward rates as functions of the membrane voltage
-
 \begin{tabbing}
 \qquad\=\hspace{\lwidth}\=\hspace{\cwidth}\=\+\kill
-${\alpha_a\;\Varid{v}\mathrel{=}\frac{\mathrm{20}\!\cdot\!(\mathbin{-}\mathrm{46.9}\mathbin{-}\Varid{v})}{\Varid{exp}\;\frac{\mathbin{-}\mathrm{46.9}\mathbin{-}\Varid{v}}{\mathrm{10}}\mathbin{-}\mathrm{1}}}$\\
+${\alpha_a\;\Varid{v}\mathrel{=}\frac{k_{\alpha a1}(\Varid{v}\mathbin{+}k_{\alpha a2})}{\Varid{exp}\;\frac{\mathbin{-}k_{\alpha a2}\mathbin{-}\Varid{v}}{k_{\alpha a3}}\mathbin{-}\mathrm{1}}}$\\
 \\
-${\beta_a\;\Varid{v}\mathrel{=}\frac{\mathrm{17.5}\!\cdot\!(\Varid{v}\mathbin{+}\mathrm{19.9})}{\Varid{exp}\;\frac{\Varid{v}\mathbin{+}\mathrm{19.9}}{\mathrm{10}}\mathbin{-}\mathrm{1}}}$
+${\beta_a\;\Varid{v}\mathrel{=}\frac{k_{\beta a1}(\Varid{v}\mathbin{+}k_{\beta a2})}{\Varid{exp}\;\frac{\Varid{v}\mathbin{+}k_{\beta a2}}{k_{\beta a3}}\mathbin{-}\mathrm{1}}}$
 \end{tabbing}
-
 %
 %\begin{code}
 %alphaa v = 20*(-46.9-v*1000)/(exp ((-46.9-v*1000)/10) -1)
 %betaa v = 17.5*(v*1000+19.9)/(exp ((v*1000+19.9)/10) -1)
 %\end{code}
-
-with 
+with $k_{\alpha a1} = 20.5$.
 The time-varying state of the activation gate is given by a
 differential equation. We use the notation |D x = sopen f
 (x,<:seconds:>) sclose | to denote the ordinary differential equation
@@ -618,7 +621,7 @@ simulated synaptic input |rate| is plotted in Figure 3C for four
 different values of |gmaxk|. 
 \input{discuss}
 
-\bibliographystyle{unsrt}
+\bibliographystyle{rspublicnat}
 \bibliography{paper}
 
 \pagebreak
