@@ -5,7 +5,7 @@
 \usepackage{amsmath, amsthm, amssymb}
 \usepackage{setspace} 
 \usepackage{verbatim} 
-%\usepackage[final]{pdfpages}
+\usepackage[final]{pdfpages}
 %\usepackage[super]{natbib}
 %\usepackage{graphicx}
 
@@ -296,6 +296,6 @@ instead of repeating the reference to the random source. In this more general
 view, sources and sinks bridge referentially transparent and non-transparent
 computations.
 
-
+\includepdf[pages=-]{Template.pdf}
 
 \end{document}

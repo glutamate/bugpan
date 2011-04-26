@@ -116,7 +116,7 @@ functions that calculate a value in the type |beta| from a value in
 functions containing type variables ($\alpha, \beta, \ldots$), which
 can later be substituted with any concrete type, is called
 ``parametric polymorphism''\citep{Pierce2002} (or "templates" and
-"generics" in the programming languages \C++ and Java, respectively) is
+"generics" in the programming languages C++ and Java, respectively) is
 essential to the simplicity and flexibility of CoPE.
 
 We distinguish three type schemata in which physiological evidence can
@@ -581,13 +581,15 @@ ${\beta_a\;\Varid{v}\mathrel{=}\frac{k_{\beta a1}(\Varid{v}\mathbin{+}k_{\beta a
 %alphaa v = 20*(-46.9-v*1000)/(exp ((-46.9-v*1000)/10) -1)
 %betaa v = 17.5*(v*1000+19.9)/(exp ((v*1000+19.9)/10) -1)
 %\end{code}
-with $k_{\alpha a1} = 20.5$.
-The time-varying state of the activation gate is given by a
-differential equation. We use the notation |D x = sopen f
-(x,<:seconds:>) sclose | to denote the ordinary differential equation
-that is conventionally written $\frac{dx}{dt} = f(x,t) $ with starting
-conditions explicitly assigned to the variable $x_0$. The
-differential equation for the activation variable $a$ is
+with $k_{\alpha a1} = -2\times 10^5$, $k_{\alpha a2} = 0.0469$,
+$k_{\alpha a3} = k_{\beta a3} = 0.01$, $k_{\beta a1} = 1.75\times
+10^5$, $k_{\beta a2} = 0.0199$. The time-varying state of the
+activation gate is given by a differential equation. We use the
+notation |D x = sopen f (x,<:seconds:>) sclose | to denote the
+ordinary differential equation that is conventionally written
+$\frac{dx}{dt} = f(x,t) $ with starting conditions explicitly assigned
+to the variable $x_0$. The differential equation for the activation
+variable $a$ is
 \begin{code}
 D a = sopen  alphaa <: vm :> * (1- <:a:> ) -
              betaa <: vm :> * <: a :> sclose
@@ -621,7 +623,7 @@ simulated synaptic input |rate| is plotted in Figure 3C for four
 different values of |gmaxk|. 
 \input{discuss}
 
-\bibliographystyle{rspublicnat}
+\bibliographystyle{unsrt}
 \bibliography{paper}
 
 \pagebreak

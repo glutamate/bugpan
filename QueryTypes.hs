@@ -73,7 +73,7 @@ type QueryM = StateT QState IO
 
 sampleNQ :: MonadIO m => Int -> Sampler a -> StateT QState m [a]
 sampleNQ n sf = do
-  rans <- rnds `fmap` get
+  rans <- rnds `liftM` get
   modify $ \s-> s {rnds = []}
   let (vls, rans') = sam n rans sf []
   modify $ \s-> s {rnds = rans'}
@@ -84,13 +84,13 @@ sampleNQ n sf = do
 
 sampleQ :: MonadIO m => Sampler a -> StateT QState m a
 sampleQ (Sam sf) = do
-  rans <- rnds `fmap` get
+  rans <- rnds `liftM` get
   let (x, rans') = sf rans
   modify $ \s-> s {rnds = rans'}
   return $ x 
 
  
-getSession = qsSess `fmap` get
+getSession = qsSess `liftM` get
 getSessionName = do Session bdir _ <- getSession
                     return $ last $ splitBy '/' bdir
 
@@ -250,7 +250,7 @@ eachOf xs = ListT . return $ xs
 ask :: (QueryResult a, MonadIO m) => a -> StateT QState m String
 ask qx = do
   x <- qResThroughSession qx
-  args <- shArgs `fmap` get
+  args <- shArgs `liftM` get
   qos <- liftIO $ qReply x args
   --let str = unlines $ [s | QString s <- qos ]
   liftIO $ putStrLn $ qos
@@ -301,7 +301,7 @@ askForLiterateTable :: (QueryResult a, MonadIO m) => a -> StateT QState m ()
 askForLiterateTable qx = do
   modify (\s-> s { shArgs = "-litlatex" :"-g" : shArgs s })
   x <- qResThroughSession qx
-  args <- shArgs `fmap` get
+  args <- shArgs `liftM` get
   str <- liftIO $ qReply x args
   --let str = unlines $ [s | QString s <- qos ]
   --liftIO $ putStrLn $ qos

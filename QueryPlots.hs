@@ -326,7 +326,7 @@ instance (Show a, Reify a,AccuShow a) => QueryResult [Duration a] where
 askPics :: (QueryResult a, MonadIO m) => a -> StateT QState m [String]
 askPics qx = do
   x <- qResThroughSession qx
-  args <- shArgs `fmap` get
+  args <- shArgs `liftM` get
   qos <- liftIO $ qReply x args
   --liftIO $ putStrLn str
   --let str = concat [s | QString s <- qos ]

@@ -56,7 +56,7 @@ import System.IO.Unsafe
 double :: Double
 double = undefined
 
-
+ 
 bugpanRootDir = if os == "mingw32"
                    then "c:/bugdir/" 
                    else "/var/bugpan/" 
@@ -64,11 +64,11 @@ bugpanRootDir = if os == "mingw32"
 sessionsRootDir = bugpanRootDir./"sessions/"
 
 getTnow :: MonadIO m  => StateT QState m Double
-getTnow = ifM (realTime `fmap` get)
+getTnow = ifM (realTime `liftM` get)
               (do Session _ t0 <- getSession
                   tnow <- liftIO $ getClockTime
                   return $ diffInS tnow t0)
-              (lastTStop `fmap` get)
+              (lastTStop `liftM` get)
 
 data a := b = a := b
 
@@ -76,8 +76,8 @@ inLast :: (MonadIO m , Reify a) => (String := a) -> StateT QState m ()
 inLast (nm := val) = do 
   sess@(Session bdir _) <- getSession
   --running <- unitDurationsStrict "running"
-  t1 <- lastTStart `fmap` get
-  t2 <- lastTStop `fmap` get
+  t1 <- lastTStart `liftM` get
+  t2 <- lastTStop `liftM` get
   {-case safeLast $ sortBy (comparing (fst . fst)) running of 
     Nothing -> return ()
     Just ((t1,t2),()) -> -}
@@ -89,8 +89,8 @@ inLastSig :: MonadIO m => (String := Signal Double) -> StateT QState m ()
 inLastSig (nm := sig) = do 
   sess@(Session bdir _) <- getSession
   --running <- unitDurationsStrict "running"
-  t1 <- lastTStart `fmap` get
-  t2 <- lastTStop `fmap` get
+  t1 <- lastTStart `liftM` get
+  t2 <- lastTStop `liftM` get
   {-case safeLast $ sortBy (comparing (fst . fst)) running of 
     Nothing -> return ()
     Just ((t1,t2),()) -> -}
@@ -109,7 +109,7 @@ signals :: (MonadIO m, Reify (Signal a)) => String -> a-> StateT QState m [Signa
 signals nm _ = do
   Session bdir t0 <- getSession
   --liftIO . print $ bdir++"/signals/"++nm
-  tshift <- loadShift `fmap` get
+  tshift <- loadShift `liftM` get
   ifM (liftIO (doesDirectoryExist (bdir++"/signals/"++nm)))
       (do fnms <- getSortedDirContents $ bdir++"/signals/"++nm
           sigs <- forM fnms $ \fn-> liftIO $ loadVs $ bdir++"/signals/"++nm++"/"++fn 
@@ -119,7 +119,7 @@ signals nm _ = do
 signalsDirect :: MonadIO m => String -> StateT QState m [Signal Double]
 signalsDirect nm = do
   Session bdir t0 <- getSession
-  tshift <- loadShift `fmap` get
+  tshift <- loadShift `liftM` get
   --liftIO . print $ bdir++"/signals/"++nm
   ifM (liftIO (doesDirectoryExist (bdir++"/signals/"++nm)))
       (do fnms <- getSortedDirContents $ bdir++"/signals/"++nm
@@ -131,7 +131,7 @@ signalsDirect nm = do
 events :: (MonadIO m, Reify (Event a)) => String -> a-> StateT QState m [Event a]
 events nm _ = do
   Session bdir t0 <- getSession
-  tshift <- loadShift `fmap` get
+  tshift <- loadShift `liftM` get
   ifM (liftIO (doesDirectoryExist (bdir++"/events/"++nm)))
       (do fnms <- getSortedDirContents $ bdir++"/events/"++nm
           utevs <- forM fnms $ \fn-> liftIO $ loadVs $ bdir++"/events/"++nm++"/"++fn
@@ -142,7 +142,7 @@ eventsDirect :: (MonadIO m, LoadDirectly [(Double,a)]) => String -> a-> StateT Q
 eventsDirect nm _ = do
   Session bdir t0 <- getSession
   --liftIO . print $ bdir++"/signals/"++nm
-  tshift <- loadShift `fmap` get
+  tshift <- loadShift `liftM` get
   ifM (liftIO (doesDirectoryExist (bdir++"/events/"++nm)))
       (do fnms <- getSortedDirContents $ bdir++"/events/"++nm
           sigs <- forM fnms $ \fn-> liftIO $ loadDirectly $ bdir++"/events/"++nm++"/"++fn 
@@ -152,7 +152,7 @@ eventsDirect nm _ = do
 durations :: (MonadIO m, Reify (Duration a)) => String -> a-> StateT QState m [Duration a]
 durations nm _ = do
   Session bdir t0 <- getSession
-  tshift <- loadShift `fmap` get
+  tshift <- loadShift `liftM` get
   ifM (liftIO (doesDirectoryExist (bdir++"/durations/"++nm)))
       (do fnms <- getSortedDirContents $ bdir++"/durations/"++nm
           eps <- forM fnms $ \fn-> liftIO $ loadVs $ bdir++"/durations/"++nm++"/"++fn
@@ -162,7 +162,7 @@ durations nm _ = do
 unitDurations :: MonadIO m => String -> StateT QState m [Duration ()]
 unitDurations nm = do
   Session bdir t0 <- getSession
-  tshift <- loadShift `fmap` get
+  tshift <- loadShift `liftM` get
   ifM (liftIO (doesDirectoryExist (bdir++"/durations/"++nm)))
       (do fnms <- getSortedDirContents $ bdir++"/durations/"++nm
           eps <- forM fnms $ \fn-> liftIO $ loadVs $ bdir++"/durations/"++nm++"/"++fn
@@ -173,7 +173,7 @@ unitDurations nm = do
 unitDurationsStrict :: MonadIO m => String -> StateT QState m [Duration ()]
 unitDurationsStrict nm = do
   Session bdir t0 <- getSession
-  tshift <- loadShift `fmap` get
+  tshift <- loadShift `liftM` get
   ifM (liftIO (doesDirectoryExist (bdir++"/durations/"++nm)))
       (do fnms <- getSortedDirContents $ bdir++"/durations/"++nm
           eps <- forM fnms $ \fn-> liftIO $ loadBinaryStrict $ bdir++"/durations/"++nm++"/"++fn
@@ -186,7 +186,7 @@ durationsDirect :: (MonadIO m, LoadDirectly [(Double,a)]) => String -> a-> State
 durationsDirect nm _ = do
   Session bdir t0 <- getSession
   --liftIO . print $ bdir++"/signals/"++nm
-  tshift <- loadShift `fmap` get
+  tshift <- loadShift `liftM` get
   ifM (liftIO (doesDirectoryExist (bdir++"/durations/"++nm)))
       (do fnms <- getSortedDirContents $ bdir++"/durations/"++nm
           sigs <- forM fnms $ \fn-> liftIO $ loadDirectly $ bdir++"/durations/"++nm++"/"++fn 
@@ -207,7 +207,7 @@ storeAs' _ _ []  =return []
 storeAs' ovwrt nm vls = do 
   let vs = map pack vls
   let t = typeOfReified $ head vls
-  let uniqueIntStr = (show. hashUnique) `fmap` newUnique
+  let uniqueIntStr = (show. hashUnique) `liftM` newUnique
   suffix <- liftIO $ uniqueIntStr
   --liftIO $ print vs
   let subDir = case t of
@@ -223,7 +223,7 @@ storeAs' ovwrt nm vls = do
        createDirectory $ bdir ./ subDir ./ nm
        saveVs (oneTrailingSlash bdir++subDir++nm++"/stored"++suffix) vs
      NoOverWrite -> liftIO $ do
-       whenM (not `fmap` (doesDirectoryExist $ bdir ./ subDir ./ nm))
+       whenM (not `liftM` (doesDirectoryExist $ bdir ./ subDir ./ nm))
              (do createDirectory $ bdir ./ subDir ./ nm
                  saveVs (oneTrailingSlash bdir++subDir++nm++"/stored"++suffix) vs)
      Append -> liftIO $ do
@@ -241,7 +241,7 @@ deleteValue nm = do Session bdir t0 <- getSession
 
 exists :: MonadIO m =>String -> StateT QState m Bool
 exists  nm =   do   Session bdir t0 <- getSession
-                    or `fmap` sequence [liftIO $ doesDirectoryExist $ bdir ./ "signals" ./ nm,
+                    or `liftM` sequence [liftIO $ doesDirectoryExist $ bdir ./ "signals" ./ nm,
                                         liftIO $ doesDirectoryExist $ bdir ./ "events" ./ nm,
                                         liftIO $ doesDirectoryExist $ bdir ./ "durations" ./ nm]
                              
@@ -285,13 +285,13 @@ inLastSession :: (MonadIO m, Functor m) => StateT QState m a -> m a
 inLastSession sma = do
   s <- liftIO $ lastSession sessionsRootDir
   inSession s sma
-  --fst `fmap`  (runStateT sma $ QState s 0 0 True)
+  --fst `liftM`  (runStateT sma $ QState s 0 0 True)
 
 inSession :: (MonadIO m, Functor m) => Session -> StateT QState m a -> m a
 inSession s sma =  do args <- liftIO $ getArgs
                       gen <- liftIO $ getStdGen
                       rnds <- liftIO $ randoms gen
-                      fst `fmap`  (runStateT sma $ QState s 0 0 True args Nothing rnds False False 0)
+                      fst `liftM`  (runStateT sma $ QState s 0 0 True args Nothing rnds False False 0)
 
 changeToSession  :: (MonadIO m, Functor m) => Session -> StateT QState m ()
 changeToSession s = do
@@ -305,7 +305,7 @@ inSessionFromArgs sma = do allargs <- liftIO $ getArgs
                            sess <- liftIO $ loadApproxSession sessionsRootDir nm
                            gen <- liftIO $ getStdGen
                            rnds <- liftIO $ randoms gen
-                           fst `fmap`  (runStateT sma $ QState sess 0 0 True (opts++args) Nothing rnds False False 0)
+                           fst `liftM`  (runStateT sma $ QState sess 0 0 True (opts++args) Nothing rnds False False 0)
 
 
 inNewSession :: (MonadIO m, Functor m) => StateT QState m a -> m a
@@ -365,7 +365,7 @@ whenMaybe True  = liftM Just
 whenMaybe False =  const (return Nothing)
 
 manySessionData :: (MonadIO m, Functor m) => StateT QState m (Maybe a) -> m [a]
-manySessionData sma = do -- catMaybes `fmap` inEverySession (setup >> ma)
+manySessionData sma = do -- catMaybes `liftM` inEverySession (setup >> ma)
   sessNms <- liftIO $ getSessionInRootDir sessionsRootDir
   --sessns <- liftIO $ mapM (loadExactSession . (sessionsRootDir++)) sessNms
   ress <- loopM setup 0 sessNms -- no, here increment lastTStop
@@ -373,7 +373,7 @@ manySessionData sma = do -- catMaybes `fmap` inEverySession (setup >> ma)
     where setup (lastTStop, sNm) = inSessionNamed sNm $ do
             running <- durations "running" ()
             let t2s = foldr (max) minBound $ map (snd . fst) running
-            --lastLastTStop <- lastTStop `fmap` get
+            --lastLastTStop <- lastTStop `liftM` get
             modify (\s -> s {loadShift = lastTStop})
             --io $ print (sNm,lastTStop + 60) 
             res <- sma
@@ -384,7 +384,7 @@ manySessionData sma = do -- catMaybes `fmap` inEverySession (setup >> ma)
 sessionDur :: (MonadIO m, Functor m) => StateT QState m [Duration String]
 sessionDur = do
   snm <- getSessionName
-  fmap (map (\(ts,v) -> (ts, snm))) $ oneDur `fmap` durations "running" ()
+  fmap (map (\(ts,v) -> (ts, snm))) $ oneDur `liftM` durations "running" ()
   
 oneDur :: [Duration a] -> [Duration ()]
 oneDur durs = (runStat (before minF fst `both` before maxF snd) $ map fst durs, ()):[]
@@ -396,7 +396,7 @@ inEverySessionWhere mfilt sma = do
   sessns <- liftIO $ mapM (loadExactSession . (sessionsRootDir++)) sessNms
   res <- forM sessns $ \s -> inSession s $ do
                                   b<- mfilt 
-                                  if b then Just `fmap` sma else return Nothing
+                                  if b then Just `liftM` sma else return Nothing
   return $ catMaybes res
 
 --sessionTmax  ::  StateT QState IO RealNum
