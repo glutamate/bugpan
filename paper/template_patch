@@ -1,55 +1,47 @@
---- Template.lhs_old	2011-04-26 19:12:58.161890005 +0100
-+++ Template.lhs	2011-04-26 19:57:52.849890001 +0100
+--- Template.lhs	2011-04-28 11:58:16.250153001 +0100
++++ Template.lhs_new	2011-04-28 11:57:17.222153000 +0100
 @@ -3,6 +3,7 @@
  %include polycode.fmt
  \usepackage[a4paper, top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm]{geometry}
  \usepackage{graphicx}
-+\usepackage{setspace} 
++\usepackage{setspace}
  \begin{document}
  %>> everywhere zStopDist = []::[Duration Double]
  %>> everywhere monitorMoveTo = []::[Event Double]
-@@ -11,7 +12,9 @@
+@@ -11,6 +12,9 @@
  %>> plot $ baselineWhole $ take 1 $ drop 150 ecVoltage
  %>> ecVolts = upsample 5 $ baselineWhole $ take 20 $ drop 40 ecVoltage
  %> snd $ sigStat' stdDevF (head $ drop 39 ecVolts)
--
 +\setcounter{page}{6}
 +\doublespacing 
 +\subsubsection*{Spike template matching}
- To demonstrate the versatility of CoPE, we present a slightly
- more sophisticated spike detection algorithm based on template
- matching. We first detect putative spikes as any deflection that falls
-@@ -40,7 +43,7 @@
+ 
+ To demonstrate the versatility of CoPE, we present here an extended
+ spike detection algorithm that incorporates template matching. We
+@@ -40,7 +44,7 @@
  %> spikeSigs = limitSigs' (-0.001) 0.001 $ around spikes ecVolts
  \begin{code}
  
 -template = head $ averageSigs $ limitSigs (-0.001) 0.001 $ around manualSpikes ecVolts
-+template = take 1 $ averageSigs $ limitSigs (-0.001) 0.001 $ around manualSpikes ecVolts
++template = take1 $ averageSigs $ limitSigs (-0.001) 0.001 $ around manualSpikes ecVolts
  \end{code}
  
  
-@@ -66,7 +69,7 @@
+@@ -83,8 +87,7 @@
+ and a real-valued tag designating the extent of template match.
  
  \begin{code}
- 
--ev = \t->[(t,())]
-+ev t = [(t,())]
- \end{code}
- 
- 
-@@ -84,7 +87,7 @@
- 
- \begin{code}
- 
+-
 -rms = \(t,_)-> (t,sqrt $ sumSig $ fmap (^2) $ template - head (around (ev t) ecVolts))
 +rms (t,_) = (t,sqrt $ sumSig $ smap (^2) $ template - (around (ev t) ecVolts))
  \end{code}
  
  
-@@ -98,7 +101,9 @@
+@@ -97,8 +100,9 @@
+ r.m.s. value should be kept. 
  
  \begin{code}
- 
+-
 -f = \(t1, rms1) (t2, rms2) -> if abs(t2-t1) > 0.002 then [(t1, rms1),(t2, rms2)] else if rms1<rms2 then [(t1, rms1)] else [(t2, rms2)]
 +f (t1, rms1) (t2, rms2)  | t2-t1 > 0.002  =  [(t1, rms1),(t2, rms2)] 
 +                         | rms1 < rms2    =  [(t1, rms1)] 
@@ -57,13 +49,12 @@
  \end{code}
  
  \begin{code}
-@@ -114,6 +119,10 @@
+@@ -115,6 +119,9 @@
  
  %> plot $ Histo 100 $ filter (<0.12) $ map snd rmsEvs
  %> break
 +
 +\pagebreak
-+%\vspace{1cm}
 +
  \includegraphics{latpic2}
  

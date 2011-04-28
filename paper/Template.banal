@@ -18,19 +18,19 @@
 >> ecVolts = upsample 10 $ baselineWhole $ take 40 $ drop 40 ecVoltage
 %> snd $ sigStat' stdDevF (head $ drop 39 ecVolts)
 
-To demonstrate the versatility of CoPE, we present a slightly
-more sophisticated spike detection algorithm based on template
-matching. We first detect putative spikes as any deflection that falls
-outside three times the standard deviation of the band-pass filtered
-signal.
+To demonstrate the versatility of CoPE, we present here an extended
+spike detection algorithm that incorporates template matching. We
+first detect putative spikes as any deflection that falls outside
+three times the standard deviation of the band-pass filtered signal.
 
 > noiseSD = sigSD ecVolts 
 > putatives =(\v->v<(-3*noiseSD) || v>(3*noiseSD) ) ?? ecVolts
 >> manualSpikes = spikes
 
-We use the spikes found with a manual threshold |manualSpikes| as
-presented in the main body of this paper to construct a template from
-the extracellular waveform |ecVolts| with which to compare putative
+For the purposes of this demonstration, we use the spikes found with a
+manual threshold |manualSpikes| as presented in the main body of this
+paper to construct a template of the largest spikes from the
+extracellular waveform |ecVolts| with which to compare putative
 spikes. |manualSpikes| are not used again, so the template matching
 algorithm presented here is a refinement on the manual threshold
 analysis.
@@ -66,15 +66,15 @@ tagged with the unit type.
 
 Finally, implement simple template matching as a single function |rms|
 that transforms putative spikes into spikes tagged with the
-goodness-of-fit (here, the root mean square difference from the
-template). We align the extracellular voltage |ecVolts| |around| the
-event occurence |ev t|, and subtract this signal from the
-template. This new signal is transformed (|smap|) with the square
-function |(^2)| before summation and taking the square root. The root
-mean square value is paired with the event time, such that the rms
-function can be used to create a new list of events (|rmsEvs|, below) with
-the appropriate temporal context and a real-valued tag designating the
-extent of template match.
+goodness-of-fit (here, the root mean square difference between the
+signal and the template). We align the extracellular voltage |ecVolts|
+|around| the event occurence |ev t|, and subtract this signal from the
+template where this is defined (-1 to 1 ms). This new signal is
+transformed (|smap|) with the square function |(^2)| before summation
+and taking the square root. This root mean square value is paired with
+the event time, such that the rms function can be used to create a new
+list of events (|rmsEvs|, below) with the appropriate temporal context
+and a real-valued tag designating the extent of template match.
 
 >> sumSig = foldSig (+) 0
 
@@ -92,10 +92,11 @@ r.m.s. value should be kept.
 
 > rmsEvs =  onAdjacent f $ map rms putatives
 
-A histogram of the r.m.s. values is shown in Figure S1B, and |rmsEvs|
-is shown with a short signal segment in Figure S1C. The histogram can
-be used to set cut-offs for different components; Figure S1D shows the
-average waveforms for putative spikes for two such groups. 
+A histogram of the r.m.s. values for a stable recording period of 40
+approaches is shown in Figure S1B, and |rmsEvs| is shown with a short
+signal segment in Figure S1C. The histogram can be used to set
+cut-offs for different components; Figure S1D shows the average
+waveforms for putative spikes for two such groups.
 
 %> plot $ Histo 100 $ filter (<0.12) $ map snd rmsEvs
 
