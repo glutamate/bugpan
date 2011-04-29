@@ -427,7 +427,7 @@ data Margin a = Margin Double Double Double Double a
 data XRange a = XRange Double Double a
 data YRange a = YRange Double Double a
 
-data XTics a = XTics [Double] a
+data XTics a = XTics [Double] a | XTicLabel [(String, Double)] a
 data YTics a = YTics [Double] a
 
 data TicFormat a = TicFormat XY String a 
@@ -510,6 +510,11 @@ instance PlotWithGnuplot a => PlotWithGnuplot (XTics a) where
     multiPlot r m@(XTics tics x) = do
       px <- multiPlot r x
       let setit = "set xtics "++ (intercalate ", " $ map show tics) ++"\n"
+      return $ map (\(r', pls) -> (r', (TopLevelGnuplotCmd setit "set xtics autofreq"):pls)) px
+    multiPlot r m@(XTicLabel tics x) = do
+      px <- multiPlot r x
+      let showTic (lab, loc) = show lab++" "++show loc
+      let setit = "set xtics ("++ (intercalate ", " $ map showTic tics) ++")\n"
       return $ map (\(r', pls) -> (r', (TopLevelGnuplotCmd setit "set xtics autofreq"):pls)) px
 
 

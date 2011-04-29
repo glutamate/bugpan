@@ -212,7 +212,7 @@ In the lambda calculus, calculations are performed by function
 abstraction and application. |\x->e| denotes the function with
 argument |x| and body |e|, and |f e| the application of the function
 |f| to the expression |e| (more conventionally written $f(e)$). For
-instance, the function |add2 = \x -> x+2|, which can written more
+instance, the function |add2 = \x -> x+2|, which can be written more
 conveniently as |add2 x = x+2|, adds two to its argument; hence |add2
 3 = (\x->x+2) 3 = 3+2| by substituting arguments in the function body.
 
@@ -452,22 +452,19 @@ of one experiment on a common time scale.
 
 The simplest method for detecting spikes from a raw voltage trace is
 to search for threshold crossings, which works well in
-% HN 2010-11-24: Note: practice is the noun, practise the verb 
+% HN 2010-11-24: Note: practice is the noun, practise the verb
 practice for calculating DCMD activity from recordings of the locust
-connectives \citep{Gabbiani2001}. If the threshold voltage for spike
+connectives \citep{Gabbiani2001}. (We have also implemented in CoPE a
+spike identification algorithm based on template matching; see
+supplementary information). If the threshold voltage for spike
 detection is |vth|, the event |spike| can be calculated with
 \begin{code}
 spike = tag () ((\v->v>vth) ?? voltage)
 \end{code}
 where |tag| replaces every tag in some event with a fixed value, so
-that spike has type |Event ()|. Although this spike detection
-algorithm is standard for extracellular DCMD recordings, it can be
-difficult to identify neurons based on amplitude alone in other
-neuronal proparations. We have also implemented in CoPE a spike
-identification algorithm based on template matching (see supplementary
-information). The spike event detected by threshold crossing is
-displayed on the common time scale in Figure 1. The top row displays
-the spike rate histogram
+that spike has type |Event ()|. The spike event detected by threshold
+crossing is displayed on the common time scale in Figure 1. The top
+row displays the spike rate histogram
 \begin{code}
 hspike  =
         sopen length (filter  (between  <: delay seconds:> 

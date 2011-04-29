@@ -32,7 +32,7 @@ manual threshold |manualSpikes| as presented in the main body of this
 paper to construct a template of the largest spikes from the
 extracellular waveform |ecVolts| with which to compare putative
 spikes. |manualSpikes| are not used again, so the template matching
-algorithm presented here is a refinement on the manual threshold
+algorithm presented here is a refinement of the manual threshold
 analysis.
 
 %> show (length spikes, length putatives) --, noiseSD, 3*noiseSD, 250)
@@ -47,7 +47,7 @@ term. For instance, |f $ x+y = f (x+y)| but |f x+y = (f
 x)+y|. Here, |around| aligns the extracellular waveform |ecVolts| around
 |manualSpikes| events, returning one signal segment per event
 occurrence. |limitSigs t1 t2| cuts each signal segment such that only
-the signal between timepoints t1 and t2 remain. Finally, |averageSigs|
+the signal between timepoints t1 and t2 remains. Finally, |averageSigs|
 averages a list of signal segments and returns a list of three
 signals, the mean, the mean plus the s.e.m. and the mean minus the
 s.e.m. We only need the first element (|take 1|) of this list, shown in Figure S1A.
@@ -64,7 +64,7 @@ tagged with the unit type.
 
 > ev = \t->[(t,())]
 
-Finally, implement simple template matching as a single function |rms|
+Finally, we implement simple template matching as a single function |rms|
 that transforms putative spikes into spikes tagged with the
 goodness-of-fit (here, the root mean square difference between the
 signal and the template). We align the extracellular voltage |ecVolts|
