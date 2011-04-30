@@ -271,13 +271,19 @@ procCalc q tablines = do
 
 
 procQ writeQ s 
+    | s =~ "^\\s*everywhere\\s*(.+)" = 
+           let [[_, defn]] = s =~ "^\\s*everywhere\\s*(.+)"
+           in do --io $ print s
+                 modify $ \(i, ss) -> (i, defn:ss)
+                 --io $ putStrLn $ "remembering "++defn
+                 when writeQ $tellPrintCode $ "everywhere "++defn
     | s =~ "^\\s*(\\w+)\\s*@=\\s*(.+)" = 
            let [[all, lhs, rhs]] = (s =~ "^\\s*(\\w+)\\s*@=\\s*(.+)")::[[String]]     
            in do tell $ "let "++lhs ++" = "++rhs
                  tell $ "storeAsOvwrt "++show lhs ++" "++lhs
                  when writeQ $ tellPrintCode $ lhs ++ " = " ++ rhs
-    | s =~ "^\\s*(\\w+)\\s*=\\s*(.+)" = 
-           let [[all, lhs, rhs]] = (s =~ "^\\s*(\\w+)\\s*=\\s*(.+)")::[[String]]     
+    | s =~ "^\\s*([^=]+)\\s+=\\s+(.+)" = 
+           let [[all, lhs, rhs]] = (s =~ "^\\s*([^=]+)\\s*=\\s*(.+)")::[[String]]     
            in do tell $ "let "++lhs ++" = "++rhs
                  when writeQ $ tellPrintCode $ lhs ++ " = " ++ rhs
     | s =~ "^\\s*openSession\\s*$" = 
@@ -321,12 +327,6 @@ procQ writeQ s
                                  indentAbs $ 3
     | s =~ "^\\s*break\\s*" = tellPrint "\\pagebreak"
                                 
-    | s =~ "^\\s*everywhere\\s*(.+)" = 
-           let [[_, defn]] = s =~ "^\\s*everywhere\\s*(.+)"
-           in do --io $ print s
-                 modify $ \(i, ss) -> (i, defn:ss)
-                 --io $ putStrLn $ "remembering "++defn
-                 when writeQ $tellPrintCode $ "everywhere "++defn
     | chomp s == "" = return ()
     | otherwise = do when writeQ $ do
                        tellBeginCode

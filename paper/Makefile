@@ -43,3 +43,6 @@ template:
 template1:
 	lhs2TeX --poly -o Template.tex Template.lhs
 	pdflatex Template
+
+bug:
+	cd .. && sudo cabal install --global
