@@ -666,3 +666,12 @@ evens (x1:_:rest) = x1 : evens rest
 odds [] = []
 odds [x] = []
 odds (_:x1:rest) = x1 : odds rest
+
+minimumIx' lowest lowIx headIx (x:xs)  = if x<lowest then minimumIx' x headIx (headIx+1) xs else minimumIx' lowest lowIx (headIx+1) xs
+minimumIx' _ ix _ []  = ix
+minimumIx []  = -1
+minimumIx (x:xs)  = minimumIx' x 0 1 xs
+
+onIx (-1) xs f  = xs
+onIx 0 (x:xs) f  = f x : xs
+onIx n (x:xs) f  = x : onIx (n-1) xs f

@@ -32,14 +32,14 @@ instance Distribution RandomSignal where
       in \obsSig -> P.multiNormal mu sigma $ sigToVector $ forceSigEq obsSig -}
        SV.foldl1' (+) $ SV.zipWith (\muval obsVal -> P.logGaussD muval noise obsVal) muArr obsArr
 
-instance ProperDistribution RandomSignal where
+{-instance ProperDistribution RandomSignal where
     sampler (RandomSignal meansig@(Signal t1 t2 dt _ _) noise) = 
       let mu = sigToVector $ forceSigEq meansig
           k = dim mu
           sigma = (realToFrac noise) * ident k
       in do v <- S.multiNormal mu sigma
             return $ Signal t1 t2 dt (SV.pack $ toList v) Eq
-    estimator = undefined
+    estimator = undefined -}
 
 data RandomSignalFast = RandomSignalFast (Double->Double) Double
 
@@ -62,13 +62,13 @@ altPdfRSF (RandomSignalFast meansigf noise) (Signal t1 t2 dt obsArr Eq)=
         let facc  obsVal (sm, i) = (sm+P.logGaussD (meansigf . (*dt) . realToFrac $ i) noise obsVal, i+1)
         in fst $ SV.foldr facc (0,0) obsArr
 
-longPdfRSF :: RandomSignalFast -> Signal Double -> Double
+{-longPdfRSF :: RandomSignalFast -> Signal Double -> Double
 longPdfRSF  (RandomSignalFast meansigf noise) obsSig@(Signal t1 t2 dt obsArr Eq)= 
       let meansig = fillSig t1 t2 dt meansigf
           mu = sigToVector $ forceSigEq meansig
           k = dim mu
           sigma = (realToFrac noise) * ident k
-      in log $ P.multiNormal mu sigma $ sigToVector $ forceSigEq obsSig 
+      in log $ P.multiNormal mu sigma $ sigToVector $ forceSigEq obsSig -}
 
 
 testw = fillSig 0 2 0.001 id

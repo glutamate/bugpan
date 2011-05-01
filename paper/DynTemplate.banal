@@ -14,8 +14,8 @@
 %>> plot $ baselineWhole $ take 1 $ drop 39 ecVoltage
 %>> plot $ baselineWhole $ take 1 $ drop 150 ecVoltage
 >> spike1 = during dur1 spikes 
-%>> ecVolts = upsample 5 $ baselineWhole $ take 20 $ drop 40 ecVoltage
->> ecVolts = upsample 10 $ baselineWhole $ take 40 $ drop 40 ecVoltage
+>> ecVolts = upsample 5 $ baselineWhole $ take 5 $ drop 40 ecVoltage
+%>> ecVolts = upsample 10 $ baselineWhole $ take 40 $ drop 40 ecVoltage
 %> snd $ sigStat' stdDevF (head $ drop 39 ecVolts)
 
 To demonstrate the versatility of CoPE, we present here an extended
@@ -24,7 +24,7 @@ first detect putative spikes as any deflection that falls outside
 three times the standard deviation of the band-pass filtered signal.
 
 > noiseSD = sigSD ecVolts 
-> putatives = (\v->v<(-3*noiseSD) || v>(3*noiseSD) ) ?? ecVolts
+> putatives = (\v->v<(-4*noiseSD) || v>(4*noiseSD) ) ?? ecVolts
 >> manualSpikes = spikes
 
 For the purposes of this demonstration, we use the spikes found with a
@@ -78,33 +78,25 @@ and a real-valued tag designating the extent of template match.
 
 >> sumSig = foldSig (+) 0
 
+> splitThresh = 0.2
+
 > rms = \t (templ, _) -> sqrt $ sumSig $ fmap (^2) $ templ - head (around (ev t) ecVolts)
 
-> splitThresh = 0.1
+> aroundTime t = head $ limitSigs (-0.001) 0.001 $ around (ev t) ecVolts
 
->> minimumIx' lowest lowIx headIx (x:xs) = if x<lowest then minimumIx' x headIx (headIx+1) xs else minimumIx' lowest lowIx (headIx+1) xs
->> minimumIx' _ ix _ [] = ix
+>> minIdx xs = case xs of [] -> -1; xs -> if (xs!!minimumIx xs)> splitThresh then -1 else minimumIx xs
 
->> minimumIx [] = -1
->> minimumIx (x:xs) = minimumIx' x 0 1 xs
-
->> onIx (-1) xs f = xs
->> onIx 0 (x:xs) f = f x : xs
->> onIx n (x:xs) f = x : onIx (n-1) xs f
-
->> minIdx [] = -1
->> minIdx xs = if (xs!!minimumIx xs)> splitThresh then -1 else minimumIx xs
-
->> update t templatesAndCounts (-1) = ((around (ev t) ecVolts, 1):templatesAndCounts,())
->> update t templatesAndCounts ix = (onIx ix templatesAndCounts $ \(templ, count) -> (fmap (/(count+1)) $ fmap (*count) templ + head (around (ev t) ecVolts) , count+1), ())
-
-acc :: (Signal Double, Int) -> Double -> ((Signal Double, Int), ())
+>> update t templatesAndCounts ix = case ix of -1 -> ((aroundTime t, 1):templatesAndCounts,()); ix -> (onIx ix templatesAndCounts $ \(templ, count) -> (fmap (/(count+1)) $ fmap (*count) templ + aroundTime t , count+1), ())
 
 > acc = \templatesAndCounts t -> update t templatesAndCounts $ minIdx $ map (rms t) templatesAndCounts
 
 > templates = fst $ mapAccumL acc [] $ map fst putatives
 
-> show $ ((map snd templates)::Int)
+> plot $ Histo 20 $ map snd templates
+
+> plot $ tilePlots 2 $ map ((:[]) . fst) templates
+
+> show $ map snd templates
 
 A single bi- or triphasic spikes may generate several putative spikes
 as positive and negative deflections exceed the threshold. We use the

@@ -152,7 +152,7 @@ rFromPars :: [Double] -> Double -> Double
 rFromPars [amp, t0, tau1, tau2, amp2] = r amp t0 tau1 tau2 amp2 
 
 
-janSampler tau2mean = do 
+{-janSampler tau2mean = do 
   t0' <- uniform 0 0.02
   let noise = 0.05
   tau1 <- gaussD 0.06 0.002
@@ -162,7 +162,7 @@ janSampler tau2mean = do
   offset <- gaussD 95 0.3
   let waveform t = offset - amp1 * alpha tau1 (t-(0.1+t0')) - amp2 * alpha tau2 (t-(0.1+t0'))
   let sig = fillSig 0 2 0.02 waveform
-  sampler $ RandomSignal sig noise
+  sampler $ RandomSignal sig noise -}
 
 {-janFig = do 
   mp <- loadChainMap "jan" 0 (0,0) 200 200
