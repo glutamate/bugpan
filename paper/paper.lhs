@@ -115,8 +115,8 @@ functions that calculate a value in the type |beta| from a value in
 |alpha|. The ability to write flexible type schemata and generic
 functions containing type variables ($\alpha, \beta, \ldots$), which
 can later be substituted with any concrete type, is called
-``parametric polymorphism''\citep{Pierce2002} (or "templates" and
-"generics" in the programming languages C++ and Java, respectively) is
+``parametric polymorphism''\citep{Pierce2002} (or ``templates'' and
+``generics'' in the programming languages C++ and Java, respectively) is
 essential to the simplicity and flexibility of CoPE.
 
 We distinguish three type schemata in which physiological evidence can
@@ -578,7 +578,7 @@ ${\beta_a\;\Varid{v}\mathrel{=}\frac{k_{\beta a1}(\Varid{v}\mathbin{+}k_{\beta a
 %alphaa v = 20*(-46.9-v*1000)/(exp ((-46.9-v*1000)/10) -1)
 %betaa v = 17.5*(v*1000+19.9)/(exp ((v*1000+19.9)/10) -1)
 %\end{code}
-with $k_{\alpha a1} = -2\times 10^5$, $k_{\alpha a2} = 0.0469$,
+with $k_{\alpha a1} = -2.0\times 10^5$, $k_{\alpha a2} = 0.0469$,
 $k_{\alpha a3} = k_{\beta a3} = 0.01$, $k_{\beta a1} = 1.75\times
 10^5$, $k_{\beta a2} = 0.0199$. The time-varying state of the
 activation gate is given by a differential equation. We use the

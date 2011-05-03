@@ -86,11 +86,11 @@ and a real-valued tag designating the extent of template match.
 
 >> minIdx xs = case xs of [] -> -1; xs -> if (xs!!minimumIx xs)> splitThresh then -1 else minimumIx xs
 
->> update t templatesAndCounts ix = case ix of -1 -> ((aroundTime t, 1):templatesAndCounts,()); ix -> (onIx ix templatesAndCounts $ \(templ, count) -> (fmap (/(count+1)) $ fmap (*count) templ + aroundTime t , count+1), ())
+>> update t templatesAndCounts ix = case ix of -1 -> (aroundTime t, 1):templatesAndCounts; ix -> onIx ix templatesAndCounts $ \(templ, count) -> (fmap (/(count+1)) $ fmap (*count) templ + aroundTime t , count+1)
 
 > acc = \templatesAndCounts t -> update t templatesAndCounts $ minIdx $ map (rms t) templatesAndCounts
 
-> templates = fst $ mapAccumL acc [] $ map fst putatives
+> templates = foldl acc [] $ map fst putatives
 
 > plot $ Histo 20 $ map snd templates
 

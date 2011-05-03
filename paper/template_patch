@@ -1,61 +1,69 @@
---- Template.lhs	2011-04-28 11:58:16.250153001 +0100
-+++ Template.lhs_new	2011-04-28 11:57:17.222153000 +0100
-@@ -3,6 +3,7 @@
- %include polycode.fmt
- \usepackage[a4paper, top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm]{geometry}
- \usepackage{graphicx}
-+\usepackage{setspace}
- \begin{document}
- %>> everywhere zStopDist = []::[Duration Double]
- %>> everywhere monitorMoveTo = []::[Event Double]
-@@ -11,6 +12,9 @@
- %>> plot $ baselineWhole $ take 1 $ drop 150 ecVoltage
- %>> ecVolts = upsample 5 $ baselineWhole $ take 20 $ drop 40 ecVoltage
- %> snd $ sigStat' stdDevF (head $ drop 39 ecVolts)
-+\setcounter{page}{6}
-+\doublespacing 
-+\subsubsection*{Spike template matching}
+--- Template.lhs	2011-05-03 12:55:13.081703002 +0100
++++ Template.lhs_new	2011-05-03 12:54:59.009703003 +0100
+@@ -18,12 +18,10 @@
+ three times the standard deviation of the band-pass filtered signal.
  
- To demonstrate the versatility of CoPE, we present here an extended
- spike detection algorithm that incorporates template matching. We
-@@ -40,7 +44,7 @@
+ \begin{code}
+-
+ noiseSD  = sigSD ecVolts 
+ \end{code}
+ 
+ \begin{code}
+-
+ putatives  = (\v->v<(-3*noiseSD) || v>(3*noiseSD) ) ?? ecVolts
+ \end{code}
+ 
+@@ -39,8 +37,7 @@
+ %> show (length spikes, length putatives) --, noiseSD, 3*noiseSD, 250)
  %> spikeSigs = limitSigs' (-0.001) 0.001 $ around spikes ecVolts
  \begin{code}
- 
--template = head $ averageSigs $ limitSigs (-0.001) 0.001 $ around manualSpikes ecVolts
-+template = take1 $ averageSigs $ limitSigs (-0.001) 0.001 $ around manualSpikes ecVolts
+-
+-template  = head $ averageSigs $ limitSigs (-0.001) 0.001 $ around manualSpikes ecVolts
++template  = take 1 $ averageSigs $ limitSigs (-0.001) 0.001 $ around manualSpikes ecVolts
  \end{code}
  
  
-@@ -83,8 +87,7 @@
+@@ -65,7 +62,6 @@
+ tagged with the unit type.
+ 
+ \begin{code}
+-
+ ev t  = [(t,())]
+ \end{code}
+ 
+@@ -83,30 +79,28 @@
  and a real-valued tag designating the extent of template match.
  
  \begin{code}
 -
--rms = \(t,_)-> (t,sqrt $ sumSig $ fmap (^2) $ template - head (around (ev t) ecVolts))
+-rms  = \(t,_)-> (t,sqrt $ sumSig $ fmap (^2) $ template - head (around (ev t) ecVolts))
 +rms (t,_) = (t,sqrt $ sumSig $ smap (^2) $ template - (around (ev t) ecVolts))
  \end{code}
  
  
-@@ -97,8 +100,9 @@
+ A single bi- or triphasic spike may generate several putative spikes
+ as positive and negative deflections exceed the threshold. We use the
+ |onAdjacent| function to step through pairs of adjacent
+-spikes. |onAdjacent| is parameterised by a function that decides which
++spikes. |onAdjacent| is parametrised by a function that decides which
+ out of two successive spikes should be kept; here, |f| expresses that
+ if two spikes occur within 2 ms, then only the one with the lowest
  r.m.s. value should be kept. 
  
  \begin{code}
 -
--f = \(t1, rms1) (t2, rms2) -> if abs(t2-t1) > 0.002 then [(t1, rms1),(t2, rms2)] else if rms1<rms2 then [(t1, rms1)] else [(t2, rms2)]
+-f  = \(t1, rms1) (t2, rms2) -> if abs(t2-t1) > 0.002 then [(t1, rms1),(t2, rms2)] else if rms1<rms2 then [(t1, rms1)] else [(t2, rms2)]
 +f (t1, rms1) (t2, rms2)  | t2-t1 > 0.002  =  [(t1, rms1),(t2, rms2)] 
 +                         | rms1 < rms2    =  [(t1, rms1)] 
 +                         | otherwise      =  [(t2, rms2)]
  \end{code}
  
  \begin{code}
-@@ -115,6 +119,9 @@
+-
+ rmsEvs  = onAdjacent f $ map rms putatives
+ \end{code}
  
- %> plot $ Histo 100 $ filter (<0.12) $ map snd rmsEvs
- %> break
-+
-+\pagebreak
-+
- \includegraphics{latpic2}
- 
- 
+-
+ A histogram of the r.m.s. values for a stable recording period of 40
+ approaches is shown in Figure S1B, and |rmsEvs| is shown with a short
+ signal segment in Figure S1C. The histogram can be used to set

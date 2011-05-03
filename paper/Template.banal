@@ -14,8 +14,8 @@
 %>> plot $ baselineWhole $ take 1 $ drop 39 ecVoltage
 %>> plot $ baselineWhole $ take 1 $ drop 150 ecVoltage
 >> spike1 = during dur1 spikes 
->> ecVolts = upsample 5 $ baselineWhole $ take 20 $ drop 40 ecVoltage
-%>> ecVolts = upsample 10 $ baselineWhole $ take 40 $ drop 40 ecVoltage
+%>> ecVolts = upsample 5 $ baselineWhole $ take 20 $ drop 40 ecVoltage
+>> ecVolts = upsample 10 $ baselineWhole $ take 40 $ drop 40 ecVoltage
 %> snd $ sigStat' stdDevF (head $ drop 39 ecVolts)
 
 To demonstrate the versatility of CoPE, we present here an extended
@@ -80,10 +80,10 @@ and a real-valued tag designating the extent of template match.
 
 > rms = \(t,_)-> (t,sqrt $ sumSig $ fmap (^2) $ template - head (around (ev t) ecVolts))
 
-A single bi- or triphasic spikes may generate several putative spikes
+A single bi- or triphasic spike may generate several putative spikes
 as positive and negative deflections exceed the threshold. We use the
 |onAdjacent| function to step through pairs of adjacent
-spikes. |onAdjacent| is parametrised by a function that decides which
+spikes. |onAdjacent| is parameterised by a function that decides which
 out of two successive spikes should be kept; here, |f| expresses that
 if two spikes occur within 2 ms, then only the one with the lowest
 r.m.s. value should be kept. 
@@ -110,9 +110,9 @@ Figure S1. A, template used to identify spikes. B, histogram of root
 mean square differences from template for each putative spike over 40
 stable trials. C, a segment of the extracellular voltage (top) with
 putative events, plotted with their r.m.s. differences from the
-template.  D, averages of spikes with low (|around (filter ((<0.1)
-. snd) rmsEvs) ecVolts|) and high (|around (filter ((>0.2) . snd)
-rmsEvs) ecVolts|) r.m.s. difference from the template.
+template.  D, averages of spikes with low (|around ((<0.1)//rmsEvs)
+ecVolts|) and high (|around ((>0.2)//rmsEvs) ecVolts|)
+r.m.s. difference from the template.
 
 %>> plot $ ((baselineWhole $ during myDur ecVoltage) :+: tag 0.025 (during myDur s1) :+: tag 0.03 (during myDur s2))
 
