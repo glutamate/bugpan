@@ -44,6 +44,8 @@ instance Functor Signal where
     fmap f (Signal t1 t2 dt arr Eq) = Signal t1 t2 dt arr $ Kont f
     fmap f (Signal t1 t2 dt arr (Kont g)) = Signal t1 t2 dt arr $ Kont $ f . g
 
+--class Smap a where
+
 smap f = map (fmap f)
 
 sigPnts :: Signal a -> Int

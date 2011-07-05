@@ -1,0 +1,51 @@
+> openSession cf96
+
+>> swings = (\(lo,hi) -> abs(hi-lo)) <$$> sigStat (minF `both` maxF) vm
+>> noGood = contains ((>10)//swings) running
+
+>> spikeg = minInterval 0.1 spike
+
+%>> peakDur = inout (later 0.008 spikeg) (later 0.01 spikeg)
+%>> blDur =   inout (spikeg) (later 0.003 spikeg) 
+
+%>> peakMeas = sigStat meanF $ during (inout (later 0.008 spikeg) (later 0.01 spikeg)) vm
+%>> blMeas = sigStat meanF $ during (inout (spikeg) (later 0.003 spikeg)) vm
+%>> measure = \b p -> zipWith (\(_,bl) (ts,pl)->(ts,pl-bl)) b p
+>> measDur = notDuring noGood $ measureBl (0, 0.003) (0.008,0.01) vm spikeg 
+
+>> extDur = \tbefore tafter -> map $ \((t1,t2),v) -> ((t1-tbefore, t2+tafter), v)
+
+>> plotSigs = \ss -> plot $ XRange (-0.01) 0.05 $ baseline (-0.01) 0.005 $ limitSigs' (-0.05) 0.05 $ ss
+>> base = \ss -> baseline (-0.01) 0.005 $ limitSigs' (-0.05) 0.05 $ ss
+
+>> vmOk = map (sigCutLast 0.005) $ notDuring noGood vm
+
+>> aroundSpike = baseline (-0.01) 0.005 $ limitSigs' (-0.05) 0.05 $ around (spikeg) $ vmOk
+
+>> aroundSpikeDuring = \t1 t2 -> baseline (-0.01) 0.005 $ limitSigs' (-0.05) 0.05 $ around (filter (between t1 t2 . fst) spikeg) $ vmOk
+
+>> avDuring = \t1 t2 -> XRange (-0.01) 0.05 $ averageSigs $ aroundSpikeDuring t1 t2
+
+> plot $ XRange (-0.01) 0.05 $ averageSigs $ aroundSpike
+
+> plot $ XRange (-0.01) 0.05 $ take 50 aroundSpike
+
+%> plot $ take 1 aroundSpike :+: take 1 measDur
+
+> show $ length aroundSpike
+
+> plot $ XRange (-0.01) 0.05 $ varianceSigs $ aroundSpike
+
+> plot $  Points [PointType 7, PointSize 1] measDur
+
+> break 
+
+> plot $ Points [PointType 7, PointSize 1] $ during (fromto 2900 3000) $ measure (0,0.01) vm spikeg
+
+%> plot $ avDuring 0 500 :+: avDuring 2500 2920
+
+
+
+
+
+
