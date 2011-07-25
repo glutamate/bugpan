@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances, FlexibleContexts, TypeSynonymInstances, ExistentialQuantification, IncoherentInstances, DeriveDataTypeable, NoMonomorphismRestriction, BangPatterns, TypeOperators #-} 
+{-# LANGUAGE FlexibleInstances, FlexibleContexts, TypeSynonymInstances, ExistentialQuantification, IncoherentInstances, DeriveDataTypeable, NoMonomorphismRestriction, BangPatterns, TypeOperators, GADTs #-} 
 
 module QueryTypes where
 
@@ -53,6 +53,7 @@ import Text.Printf
 import NewSignal
 --import Graphics.Rendering.HSparklines
 import System.Environment
+import qualified Data.Binary as B
 
 type Duration a = ((Double,Double),a)
 type Event a = (Double,a)
@@ -334,7 +335,6 @@ class QueryResult a where
     qFilterSuccess = const True
 
 qs1 s = s -- [QString s]
-
 class Saveable a where
     showLine :: a -> String
 
@@ -355,6 +355,41 @@ instance Saveable a => QueryResult (SaveArray a) where
             forM_ xs $ hPutStrLn h . showLine
          return ""
       
+data SaveSignals = SaveSignals String [Signal Double]
+
+
+instance B.Binary SaveSignals where
+   put (SaveSignals _ sigs) = do
+     B.put (length sigs)
+     forM_ (map forceSigEq sigs) putSig 
+
+
+   get = do n <- B.get
+            sigs <- forM [1..(n::Int)] $ const $ do
+               dt <- B.get
+               t0 <- B.get
+               npnts <- B.get
+               let t2 = t0+(realToFrac npnts)*dt
+               pts <- forM [1..(npnts::Int)] $ const $ B.get
+               return $ Signal t0 t2 dt (SV.pack pts) Eq
+            return $ SaveSignals "loaded" sigs
+
+putSig :: Signal Double -> B.Put 
+putSig (Signal t1 t2 dt arr Eq) = do
+       B.put dt
+       B.put t1
+       B.put $ SV.length arr
+       forM_ (SV.unpack arr) $ B.put
+       return()
+
+
+instance QueryResult SaveSignals where
+     qReply s@(SaveSignals nm xs) _ = do
+         B.encodeFile nm s
+--         withFile nm WriteMode $ \h -> do
+--            forM_ xs $ hPutStrLn h . showLine
+         return ""
+
 
 instance QueryResult [Char] where
     qReply s _ = return $ qs1 s
