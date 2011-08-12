@@ -1,9 +1,11 @@
 > openSession cf96
 
->> swings = (\(lo,hi) -> abs(hi-lo)) <$$> sigStat (minF `both` maxF) vm
->> noGood = contains ((>10)//swings) running
+>> importHs Helper
 
->> spikeg = minInterval 0.1 spike
+>> swings = (\(lo,hi) -> abs(hi-lo)) <$$> sigStat (minF `both` maxF) vm
+>> noGood = ((0,500),()):contains ((>10)//swings) running
+
+>> spikeg = sortBy ( comparing (fst)) $ minInterval 0.1 $ notDuring noGood spike
 
 %>> peakDur = inout (later 0.008 spikeg) (later 0.01 spikeg)
 %>> blDur =   inout (spikeg) (later 0.003 spikeg) 
@@ -11,7 +13,7 @@
 %>> peakMeas = sigStat meanF $ during (inout (later 0.008 spikeg) (later 0.01 spikeg)) vm
 %>> blMeas = sigStat meanF $ during (inout (spikeg) (later 0.003 spikeg)) vm
 %>> measure = \b p -> zipWith (\(_,bl) (ts,pl)->(ts,pl-bl)) b p
->> measDur = notDuring noGood $ measureBl (0, 0.003) (0.008,0.01) vm spikeg 
+>> measDur = notDuring noGood $ measureBl (0, 0.003) (0.006,0.008) vm spikeg 
 
 >> extDur = \tbefore tafter -> map $ \((t1,t2),v) -> ((t1-tbefore, t2+tafter), v)
 
@@ -22,11 +24,17 @@
 
 >> aroundSpike = baseline (-0.01) 0.005 $ limitSigs' (-0.05) 0.05 $ around (spikeg) $ vmOk
 
+>> saveNoiseSigs = take 20 $ limitSigs' (-0.03) 0.0 $ around (spikeg) $ vmOk
+
+>> saveAmpSigs = limitSigs' (0.0) 0.03 $ around (spikeg) $ vmOk
+
 >> aroundSpikeDuring = \t1 t2 -> baseline (-0.01) 0.005 $ limitSigs' (-0.05) 0.05 $ around (filter (between t1 t2 . fst) spikeg) $ vmOk
 
 >> avDuring = \t1 t2 -> XRange (-0.01) 0.05 $ averageSigs $ aroundSpikeDuring t1 t2
 
 > plot $ XRange (-0.01) 0.05 $ averageSigs $ aroundSpike
+
+> plot $ XRange (0.0) 0.01 $ averageSigs $ aroundSpike
 
 > plot $ XRange (-0.01) 0.05 $ take 50 aroundSpike
 
@@ -40,12 +48,12 @@
 
 > break 
 
-> plot $ Points [PointType 7, PointSize 1] $ during (fromto 2900 3000) $ measure (0,0.01) vm spikeg
+> plot $ Points [PointType 7, PointSize 1] $ mpfa 500 $ durStart measDur
 
-%> plot $ avDuring 0 500 :+: avDuring 2500 2920
+% >> SaveArray ("cf96_epsps.dat") $ durStart $ sortBy ( comparing fst) measDur
 
+> plot $ XRange (0.0) 0.029 $ take 1 saveAmpSigs
 
-
-
-
+>> SaveSignals "cf96_noise" saveNoiseSigs
+>> SaveSignals "cf96_sigs" saveAmpSigs
 

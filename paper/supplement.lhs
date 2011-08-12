@@ -183,6 +183,17 @@ _dt = 5.0e-5
 ecVoltage <* ADC 0 20000
 ecVoltage *> store ""
 
+metaData x = [((0,tmax), x)]
+
+species = metaData "Schistocerca gregaria"
+morph = metaData "Gregarious"
+developmentalStage = metaData "Adult"
+recordingLocation = metaData "Neck connectives"
+recordingMode = metaData "Extracellular Hook"
+lowPassFilter = metaData (kHz 5)
+highPassFilter = metaData (kHz 50)
+amplifier = metaData "NeuroLog NL104"
+
 \end{verbatim}
 
 \begin{flushleft} Listing 1. Entire unformatted code for the experiment in
@@ -237,6 +248,16 @@ outv = {: <:celli:> * 1.0e9 :}
 outv *> DAC 0 20000
 
 vm *> store ""
+
+metaData x = [((0,tmax), x)]
+
+species = metaData "Danio rerio"
+developmentalStage = metaData "2 dpf"
+recordingLocation = metaData "Spinal Cord"
+recordingMode = metaData "Patch clamp"
+lowPassFilter = metaData (kHz 3)
+amplifier = metaData "BioLogic RK400"
+
 \end{verbatim}
 
 \begin{flushleft}Listing 2. Entire code for the experiment in Example 2, related to Figure 3.

@@ -1,7 +1,9 @@
 > openSession b34
 
+>> importHs Helper
+
 >> swings = (\(lo,hi) -> abs(hi-lo)) <$$> sigStat (minF `both` maxF) vm
->> noGood = contains ((>10)//swings) running
+>> noGood = ((0,5750),()):contains ((>10)//swings) running
 
 >> spikeg = minInterval 0.1 spike
 
@@ -11,7 +13,7 @@
 %>> peakMeas = sigStat meanF $ during (inout (later 0.008 spikeg) (later 0.01 spikeg)) vm
 %>> blMeas = sigStat meanF $ during (inout (spikeg) (later 0.003 spikeg)) vm
 %>> measure = \b p -> zipWith (\(_,bl) (ts,pl)->(ts,pl-bl)) b p
->> measDur = notDuring noGood $ measureBl (0, 0.003) (0.008,0.01) vm spikeg 
+>> measDur = notDuring noGood $ measureBl (0, 0.003) (0.008,0.012) vm spikeg 
 
 >> extDur = \tbefore tafter -> map $ \((t1,t2),v) -> ((t1-tbefore, t2+tafter), v)
 
@@ -27,6 +29,8 @@
 >> avDuring = \t1 t2 -> XRange (-0.01) 0.05 $ averageSigs $ aroundSpikeDuring t1 t2
 
 > plot $ XRange (-0.01) 0.05 $ averageSigs $ aroundSpike
+
+> plot $ XRange (0.0) 0.02 $ averageSigs $ aroundSpike
 
 > plot $ XRange (-0.01) 0.05 $ take 50 aroundSpike
 
@@ -44,8 +48,6 @@
 
 %> plot $ avDuring 0 500 :+: avDuring 2500 2920
 
+> plot $ Points [PointType 7, PointSize 1] $ mpfa 500 $ durStart measDur
 
-
-
-
-
+>> SaveArray ("b34_epsps.dat") $ durStart $ sortBy ( comparing fst) measDur

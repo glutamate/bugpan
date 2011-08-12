@@ -693,6 +693,25 @@ observations and quantities in CoPE
 \end{tabular}
 
 
+\pagebreak
+%\includepdf[pages=-]{supplement.pdf}
+\section*{Table 2}
+
+\begin{tabular}{l l l l}
+\hline
+& Type & Example 1 & Example 2 \\ 
+\hline
+|species| & |Duration String| & |dur "Schistocerca gregaria"| & |dur "Danio rerio"| \\
+|morph| & |Duration String| & |dur "Gregarious"| & \\
+|developmentStage| & |Duration String| & |dur "Adult"| & |dur "2 dpf"| \\
+|recordingLocation| & |Duration String| & |dur "Neck connectives"| & |dur "Spinal cord"| \\
+|recordingMode| & |Duration String| & |dur "Extracellular Hook"| & |dur "Patch clamp"| \\
+|lowPassFilter| & |Duration Double| & |dur (kHz 5)| & |dur (kHz 3)| \\
+|highPassFilter| & |Duration Double| & |dur (Hz 50)| & \\
+|amplifier| & |Duration String| & |dur "NeuroLog NL104"| & |dur "BioLogic RK400"| \\
+\hline
+\end{tabular}
+
 
 \end{document}
  
