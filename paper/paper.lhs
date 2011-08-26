@@ -310,12 +310,13 @@ binds the value or signal resulting from the observation of the
 \emph{identifier}. For a concrete example, the following code defines
 a simple experiment:
 \begin{code}
-v <* ADC 0 20000
+v <* ADC 0 (kHz 20)
 \end{code}
-This describes the observation of the voltage signal on channel 0 of
-an analog-to-digital converter at 20 kHz, binding the whole signal to
-the variable |v|. We have also used sources to sample values from
-probability distributions (see Supplementary Information).
+where |kHz x = 1000*x|.  This describes the observation of the voltage
+signal on channel 0 of an analog-to-digital converter at 20 kHz,
+binding the whole signal to the variable |v|. We have also used
+sources to sample values from probability distributions (see
+Supplementary Information).
 
 In addition to making appropriate observations, an experiment may also
 involve a perturbation of the experimental preparation. For example,
@@ -346,7 +347,7 @@ sineWave = smap sin seconds
 \end{code}
 We then write
 \begin{code}
-sineWave *> DAC 0 20000
+sineWave *> DAC 0 (kHz 20)
 \end{code}{}
 to send the |sineWave| signal to channel channel 0 of a
 digital-to-analog converter at 20 kHz. 
@@ -441,7 +442,7 @@ In our experiments, the extracellular voltage from the locust nerve
 (connective), in which the DCMD forms the largest amplitude spike,
 was amplified, filtered (see methods) and digitised:
 \begin{code}
-voltage <* ADC 0 20000
+voltage <* ADC 0 (kHz 20)
 \end{code}
 |loomingSquare'| and |voltage| thus define a single object approach
 and the recording of the elicited response. This approach was repeated
@@ -520,9 +521,9 @@ The output current
 |i| is calculated at each time-step from the simulated conductance |g|
 and the measured membrane voltage |v|:
 \begin{code}
-v <* ADC 0 20000
+v <* ADC 0 (kHz 20)
 i = sopen (<: v :> - E)* <: g :> sclose
-i *> DAC 0 20000
+i *> DAC 0 (kHz 20)
 \end{code}
 The experiment is thus characterised by the conductance signal $g$
 (for clarity, here we omit the amplifier-dependent input and output
@@ -578,9 +579,9 @@ ${\beta_a\;\Varid{v}\mathrel{=}\frac{k_{\beta a1}(\Varid{v}\mathbin{+}k_{\beta a
 %alphaa v = 20*(-46.9-v*1000)/(exp ((-46.9-v*1000)/10) -1)
 %betaa v = 17.5*(v*1000+19.9)/(exp ((v*1000+19.9)/10) -1)
 %\end{code}
-with $k_{\alpha a1} = -2.0\times 10^5$, $k_{\alpha a2} = 0.0469$,
-$k_{\alpha a3} = k_{\beta a3} = 0.01$, $k_{\beta a1} = 1.75\times
-10^5$, $k_{\beta a2} = 0.0199$. The time-varying state of the
+with $k_{\alpha a1} = inverseVolts\; -2.0\times 10^5$, $k_{\alpha a2} = volts\; 0.0469$,
+$k_{\alpha a3} = k_{\beta a3} = volts\; 0.01$, $k_{\beta a1} = inverseVolts\; 1.75\times
+10^5$, $k_{\beta a2} = volts\; 0.0199, volts = inverseVolts = $ |\x->x|. The time-varying state of the
 activation gate is given by a differential equation. We use the
 notation |D x = sopen f (x,<:seconds:>) sclose | to denote the
 ordinary differential equation that is conventionally written
@@ -602,7 +603,7 @@ This is added to the signal |i| defined above to give the output current
 % command, 
 thus completing the definition of this experiment:
 \begin{code}
-i + ika *> DAC 0 20000
+i + ika *> DAC 0 (kHz 20)
 \end{code}
 
 Figure 3A and 3B show the voltage response to a unitary synaptic
