@@ -185,13 +185,18 @@ ecVoltage *> store ""
 
 metaData x = [((0,tmax), x)]
 
-species = metaData "Schistocerca gregaria"
+electrophysiologyType = "Extracellular"
+genus = metaData "schistocerca"
+species = metaData "gregaria"
 morph = metaData "Gregarious"
 developmentalStage = metaData "Adult"
-recordingLocation = metaData "Neck connectives"
-recordingMode = metaData "Extracellular Hook"
-lowPassFilter = metaData (kHz 5)
-highPassFilter = metaData (kHz 50)
+locationStructure = metaData "Neck connectives"
+electrodeConfiguration = metaData "Bipolar Hook"
+targetCellType = metaData "FETi"
+recordingCondition = metaData "invivo awake"
+containingDevice = metaData "Room temperature"
+lowPassCut = metaData (kHz 5)
+highPassCut = metaData (Hz 50)
 amplifier = metaData "NeuroLog NL104"
 
 \end{verbatim}
@@ -251,11 +256,16 @@ vm *> store ""
 
 metaData x = [((0,tmax), x)]
 
-species = metaData "Danio rerio"
-developmentalStage = metaData "2 dpf"
-recordingLocation = metaData "Spinal Cord"
-recordingMode = metaData "Patch clamp"
-lowPassFilter = metaData (kHz 3)
+electrophysiologyType = "Intracellular"
+genus = metaData "danio"
+species = metaData "rerio"
+age = metaData "2 dpf"
+locationStructure = metaData "Spinal Cord"
+cellType = metaData "Spinal cord motoneuron"
+recordingCondition = metaData "invivo awake"
+containingDevice = metaData "Room temperature"
+electrodeConfiguration = metaData "Patch clamp"
+lowPassCut = metaData (kHz 3)
 amplifier = metaData "BioLogic RK400"
 
 \end{verbatim}
@@ -264,6 +274,74 @@ amplifier = metaData "BioLogic RK400"
 \end{flushleft}
 \pagebreak
 
+\subsubsection*{Metadata representation}
+
+
+\begin{tabular}{l p{3cm} p{8cm}}
+\hline
+  Variable name & Type & MINI: Electrophysiology item\\ 
+\hline
+  (implicit) &  & Date and time\\
+  experimenter & |Duration String| & Responsible person or role\\
+  experimentalContext & |Duration String| & Experimental Context\\
+  electrophysiologyType & |Duration String| & Electrophysiology Type \\
+  genus & |Duration String| & Genus \\
+  species & |Duration String| & Species \\ 
+  strain & |Duration String| & Strain \\ 
+  cellLine & |Duration String| & Cell line \\ 
+  geneticCharacteristcs& |Duration String| & Genetic characteristics \\ 
+  clinicalInformation& |Duration String| & Clinical Information \\ 
+  sex & |Duration String| & Sex \\ 
+  age & |Duration String| & Age \\
+  developmentalStage& |Duration String| & Developmental Stage \\ 
+  subjectLabel& |Duration String| & Subject label \\ 
+  subjectIdentifier & |Duration String| & Subject identifier \\ 
+  subjectDetails & |Duration String| & Associated subject details \\ 
+  preparationProtocol & |Duration String| & Preparation protocol \\ 
+  locationStructure & |Duration String| & Location structure \\ 
+  brainArea & |Duration String| & Brain area \\ 
+  sliceThickness & |Duration Double| & Slice thickness \\ 
+  sliceOrientation & |Duration String| & Slice orientation \\ 
+  cellType & |Duration String| & Cell type \\ 
+  behaviouralEvent & |Duration String| & Behavioural Event \\ 
+  behaviouralEquipment & |Duration String| & Behavioural Equipment \\ 
+  recordingCondition & |Duration String| & Recording Condition \\ 
+  containingDevice & |Duration String| & Containing device \\ 
+  solutions & |Duration String| & Solutions \\ 
+  flowSpeed & |Duration Double| & Solution flow speed\\ 
+  electrode & |Duration String| & Electrode \\
+  electrodeConfiguration & |Duration String| & Electrode configuration \\ 
+  electrodeImpedance & |Duration Double| & Electrode impedance\\
+  amplifier & |Duration String| & Amplifier\\ 
+  filter & |Duration String| & Filter \\
+  lowPassCut & |Duration Double| & Filter settings \\  
+  highPassCut & |Duration Double| & Filter settings \\  
+  recorder & |Duration String| & Recorder \\ 
+  (implicit) &  & Data format \\ 
+  (implicit) &  & Sampling Rate\\ 
+  (implicit) &  & File Location \\ 
+
+ & & \\
+
+\hline
+
+\end{tabular}
+
+\vskip1ex 
+
+%\end{comment}
+
+\noindent Table S3. Meta-data representation in CoPE variables
+inspired by Minimum Information about a Neuroscience Investigation
+(MINI): Electrophysiology [52]. Additional information, or information from
+other kinds of physiological experiments can be added as needed on an
+\emph{ad-hoc} basis, and irrelevant, inappropriate or unknown information can be left
+blank or not assigned a value. Information about the task, stimulus
+and time series data (Ref 52, sections 4,5 and 8) are
+covered by machine-executable equations in CoPE.
+
+
+\pagebreak
 
 \subsubsection*{Sources and Sinks}
 \doublespacing 
