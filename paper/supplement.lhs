@@ -39,7 +39,7 @@
 
   |s_0| & \parbox{9cm}{\begin{singlespace}The initial value of the signal |s| (can also be used on the left-hand side of a definition)\end{singlespace}}\\
 
-  |delay s| & The signal |s|, dealyed by a short time period\\
+  |delay s| & The signal |s|, delayed by a short time period\\
 
   |p ?? s| &  \parbox{9cm}{\begin{singlespace}Events that occur when the value of |s| satisfies the predicate |p| \end{singlespace}}\\
 
@@ -164,28 +164,35 @@
 \noindent Table S2. Examples of common operations in CoPE for generic manipulation of signals, events and durations.
 
 \pagebreak
+\singlespacing 
 
 \begin{verbatim}
 
 module Looming where
 
-lov = 4.0000e-2
-l = 0.2980
+lov = inverseSecs 4.0000e-2
+l = m 0.2980
 v = l/(lov*2)
+
+black = ((0,0),0)
 
 distance = {: (min (v*(<: seconds :> - 5))) (-0.1800) :}
 loomObj = {: colour black (translate (0, 0, <: distance :>) (cube l)) :}
 loomObj *> screen ""
 
-_tmax=6
-_dt = 5.0e-5
+_tmax=secs 6
+_dt = secs 5.0e-5
 
-ecVoltage <* ADC 0 20000
+ecVoltage <* ADC 0 (kHz 20)
 ecVoltage *> store ""
 
+m l = l
+inverseSecs x = x
+kHz r = 1000*r
+secs t = t
 metaData x = [((0,tmax), x)]
 
-electrophysiologyType = "Extracellular"
+electrophysiologyType = metaData "Extracellular"
 genus = metaData "schistocerca"
 species = metaData "gregaria"
 morph = metaData "Gregarious"
@@ -224,8 +231,8 @@ rawv, celli, vm, a, b, ika :: Signal Float
 rndSpike :: [(Float, ())]
 rndSpike <* poisson rate
 
-rawv <* ADC 0 20000
-vm = {: <: rawv:>  *0.10 :}
+rawv <* ADC 0 (kHz 20)
+vm = {: <: rawv:>  * 0.10 :}
 
 gcellsyn = {: convolution gsyn (forget 0.1 rndSpike ) <:seconds:> :}
 
@@ -256,7 +263,7 @@ vm *> store ""
 
 metaData x = [((0,tmax), x)]
 
-electrophysiologyType = "Intracellular"
+electrophysiologyType = metaData "Intracellular"
 genus = metaData "danio"
 species = metaData "rerio"
 age = metaData "2 dpf"
@@ -273,6 +280,7 @@ amplifier = metaData "BioLogic RK400"
 \begin{flushleft}Listing 2. Entire code for the experiment in Example 2, related to Figure 3.
 \end{flushleft}
 \pagebreak
+\doublespacing 
 
 \subsubsection*{Metadata representation}
 
@@ -289,7 +297,7 @@ amplifier = metaData "BioLogic RK400"
   species & |Duration String| & Species \\ 
   strain & |Duration String| & Strain \\ 
   cellLine & |Duration String| & Cell line \\ 
-  geneticCharacteristcs& |Duration String| & Genetic characteristics \\ 
+  geneticCharacteristics& |Duration String| & Genetic characteristics \\ 
   clinicalInformation& |Duration String| & Clinical Information \\ 
   sex & |Duration String| & Sex \\ 
   age & |Duration String| & Age \\
@@ -311,6 +319,8 @@ amplifier = metaData "BioLogic RK400"
   flowSpeed & |Duration Double| & Solution flow speed\\ 
   electrode & |Duration String| & Electrode \\
   electrodeConfiguration & |Duration String| & Electrode configuration \\ 
+\end{tabular}
+\begin{tabular}{l p{3cm} p{8cm}}
   electrodeImpedance & |Duration Double| & Electrode impedance\\
   amplifier & |Duration String| & Amplifier\\ 
   filter & |Duration String| & Filter \\

@@ -343,9 +343,9 @@ seconds <* clock
 \end{code}
 The sine wave can now be defined as:
 \begin{code}
-sineWave = smap sin seconds
+sineWave = sopen A * sin (f * <: seconds :> + p) sclose
 \end{code}
-We then write
+where |A|, |f| and |p| are |Double|-valued constants specifiying the amplitude, frequency and phase, respectively. We then write
 \begin{code}
 sineWave *> DAC 0 (kHz 20)
 \end{code}{}
@@ -486,7 +486,13 @@ $\frac{l}{||v||}$. The average of |hspike| for three different values
 of $\frac{l}{||v||}$ are shown in Figure 2A; 2B and 2C show the total
 number of spikes (|length spike|) and largest value of |hspike|, for
 each approach, plotted against the value of $\frac{l}{||v||}$
-\citep{Hatsopoulos1995}.
+\citep{Hatsopoulos1995}. The code that descibes and executes this
+experiment is given in the Supplementary Information (Listing 1). This
+code includes a description, in CoPE variables and with appropriate
+temporal context, of the experimental context which is not
+machine-executable. This description is based on proposed standards
+for minimal information about electrophysiological
+experiments \citep{Gibson2008}.
 
 This experiment demonstrates that the calculus of physiological
 evidence can adequately and concisely describe visual stimuli, spike
@@ -615,10 +621,12 @@ derivative of the |v| signal with
 \begin{code}
 spike = tag () ((\v'->v'>vth') ?? D v)
 \end{code}
-and the spike frequency calculated with the |frequencyDuring| function.
-This relationship between the postsynaptic spike frequency and the
-simulated synaptic input |rate| is plotted in Figure 3C for four
-different values of |gmaxk|. 
+and the spike frequency calculated with the |frequencyDuring|
+function.  This relationship between the postsynaptic spike frequency
+and the simulated synaptic input |rate| is plotted in Figure 3C for
+four different values of |gmaxk|. The code for Example 2 is given in
+the Supplementary Information (Listing 2).
+
 \input{discuss}
 
 \bibliographystyle{unsrt}
