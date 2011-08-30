@@ -450,7 +450,7 @@ downSample' n sig@(Signal t1 t2 dt arr _) =
                       (x,y) = sigSegStat (both maxF minF) (n1,n2) sig
                       in [x,y]
      in if npw>n 
-           then (Signal t1 t2 ((t2-t1)./.(nChunks*2))  narr Eq)
+           then (Signal t1 t2 ((t2-t1)/(realToFrac $ nChunks*2))  narr Eq)
            else sig
 downSample' n s = error $ "querytypes.downSample': " ++ show s
 
@@ -469,5 +469,5 @@ downsample' n sig@(Signal t1 t2 dt _ _) =
                       (x) = sigSegStat (meanF) (n1,n2) sig
                       in x
      in if npw>n 
-           then (Signal t1 t2 ((t2-t1)./.(nChunks))  narr Eq)
+           then (Signal t1 t2 ((t2-t1)/(realToFrac nChunks))  narr Eq)
            else sig

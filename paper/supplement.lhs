@@ -331,14 +331,14 @@ amplifier = metaData "BioLogic RK400"
 
 %\end{comment}
 
-\noindent Table S3. Meta-data representation in CoPE variables
-inspired by Minimum Information about a Neuroscience Investigation
-(MINI): Electrophysiology [52]. Additional information, or information from
-other kinds of physiological experiments can be added as needed on an
-\emph{ad-hoc} basis, and irrelevant, inappropriate or unknown information can be left
-blank or not assigned a value. Information about the task, stimulus
-and time series data (Ref 52, sections 4,5 and 8) are
-covered by machine-executable equations in CoPE.
+\noindent Table S3. Meta-data representation in CoPE variables based
+on Minimum Information about a Neuroscience Investigation (MINI):
+Electrophysiology [52]. Additional information, or information from
+other kinds of physiological experiments can be added as needed, and
+irrelevant, inappropriate or unknown variables can be left blank or
+unassigned. Information about the task, stimulus and time
+series data (Ref 52, sections 4,5 and 8) is represented by
+machine-executable equations in CoPE (``(implicit)'' in Table).
 
 
 \pagebreak
