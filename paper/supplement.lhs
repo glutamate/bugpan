@@ -174,22 +174,21 @@ lov = inverseSecs 4.0000e-2
 l = m 0.2980
 v = l/(lov*2)
 
-black = ((0,0),0)
-
-distance = {: (min (v*(<: seconds :> - 5))) (-0.1800) :}
-loomObj = {: colour black (translate (0, 0, <: distance :>) (cube l)) :}
-loomObj *> screen ""
+distance' = {: (min (v*(<: seconds :> - 5))) (-0.1800) :}
+loomSquare' = {: colour (0,0,0) (translate (0, 0, <: distance :>) (cube l)) :}
+loomSquare' *> screen ""
 
 _tmax=secs 6
 _dt = secs 5.0e-5
 
-ecVoltage <* ADC 0 (kHz 20)
-ecVoltage *> store ""
+voltage <* ADC 0 (kHz 20)
+voltage *> store ""
 
 m l = l
 inverseSecs x = x
 kHz r = 1000*r
 secs t = t
+
 metaData x = [((0,tmax), x)]
 
 electrophysiologyType = metaData "Extracellular"
@@ -216,11 +215,11 @@ Example 1, related to Figure 1 and 2.
 \begin{verbatim}
 module DynamicClamp where
 
-gampa = 5.0e-10
+gampa = nS 0.5
 rate = 50
-gmaxk = 0
-_tmax = 2
-_dt = 5.0e-5
+gmaxk = nS 10
+_tmax = seconds 2
+_dt = seconds 5.0e-5
 
 alpha tau t = if t<0.0 then 0.0 else (t/tau)*exp (1-t/tau)
 gsyn = {: gampa* (alpha 0.005 <: seconds:>) :}
@@ -236,28 +235,41 @@ vm = {: <: rawv:>  * 0.10 :}
 
 gcellsyn = {: convolution gsyn (forget 0.1 rndSpike ) <:seconds:> :}
 
-D a = {: 1000*(((alphaa ((<: vm:>*1000)+60))* ( 1-<:a:>)) -
-              ((betaa ((<:vm:>*1000)+60)) * <: a :>)) :}
+D a = {: alphaa <: vm:> * ( 1 - <:a:>) -
+         betaa <:vm:> * <: a :> :}
 a_0 = 0.025
 
-D b = {: 1000*(((alphab ((<: vm:>*1000)+60)) * ( 1-<:b:>)) -
-              ((betab ((<:vm:>*1000)+60)) * <: b :>)) :}
+D b = {: alphab <: vm:> * ( 1 - <:b:>) -
+         betab <:vm:> * <: b :> :}
 b_0 = 0.9
 
 alphaa, betaa, alphab, betab :: Float -> Float
 
-alphaa v = (0.02*(13.1-v))/((exp ((13.1 -v)/10)) -1)
-betaa v =  (0.0175*(v-40.1))/((exp ((v-40.1)/10))-1)
+alphaa v = kaa1*(v+kaa2)/((exp ((-kaa2 -v)/kaa3)) -1)
+betaa v =  kba1*(v+kba2)/((exp ((v+kba2)/kba3))-1)
 
-alphab v = 0.0016*exp((0-13-v)/18)
-betab v = 0.05/(1+(exp((10.1-v)/5))) 
+alphab v = kab1*(v+kab2)/((exp ((-kab2 -v)/kab3)) -1)
+betab v =  kbb1*(v+kbb2)/((exp ((v+kbb2)/kbb3))-1)
+
+kaa1 = inverseVolts (-2.0e5)
+kaa2 = volts 0.0469
+kaa3 = volts 0.01
+kba1 = inverseVolts 1.75e5
+kba2 = volts 0.0199
+kba3 = volts 0.01
+
+volts v = v
+inverseVolts x = x
+nS x = 1e-9*x
+secords t = t
+kHz x = 1000*x
 
 ika = {: gmaxk * <:a:> * <:b:>*(0.08+<:vm:>) :}
 ika_0 = 0
 
 celli = {: (0-<:vm:>) * <:gcellsyn:>  - <: ika:> :}
 outv = {: <:celli:> * 1.0e9 :} 
-outv *> DAC 0 20000
+outv *> DAC 0 (kHz 20)
 
 vm *> store ""
 
@@ -308,7 +320,7 @@ amplifier = metaData "BioLogic RK400"
   preparationProtocol & |Duration String| & Preparation protocol \\ 
   locationStructure & |Duration String| & Location structure \\ 
   brainArea & |Duration String| & Brain area \\ 
-  sliceThickness & |Duration Double| & Slice thickness \\ 
+  sliceThickness & |Duration Float| & Slice thickness \\ 
   sliceOrientation & |Duration String| & Slice orientation \\ 
   cellType & |Duration String| & Cell type \\ 
   behaviouralEvent & |Duration String| & Behavioural Event \\ 
@@ -316,16 +328,16 @@ amplifier = metaData "BioLogic RK400"
   recordingCondition & |Duration String| & Recording Condition \\ 
   containingDevice & |Duration String| & Containing device \\ 
   solutions & |Duration String| & Solutions \\ 
-  flowSpeed & |Duration Double| & Solution flow speed\\ 
+  flowSpeed & |Duration Float| & Solution flow speed\\ 
   electrode & |Duration String| & Electrode \\
   electrodeConfiguration & |Duration String| & Electrode configuration \\ 
 \end{tabular}
 \begin{tabular}{l p{3cm} p{8cm}}
-  electrodeImpedance & |Duration Double| & Electrode impedance\\
+  electrodeImpedance & |Duration Float| & Electrode impedance\\
   amplifier & |Duration String| & Amplifier\\ 
   filter & |Duration String| & Filter \\
-  lowPassCut & |Duration Double| & Filter settings \\  
-  highPassCut & |Duration Double| & Filter settings \\  
+  lowPassCut & |Duration Float| & Filter settings \\  
+  highPassCut & |Duration Float| & Filter settings \\  
   recorder & |Duration String| & Recorder \\ 
   (implicit) &  & Data format \\ 
   (implicit) &  & Sampling Rate\\ 
@@ -343,11 +355,11 @@ amplifier = metaData "BioLogic RK400"
 
 \noindent Table S3. Meta-data representation in CoPE variables based
 on Minimum Information about a Neuroscience Investigation (MINI):
-Electrophysiology [52]. Additional information, or information from
+Electrophysiology [43]. Additional information, or information from
 other kinds of physiological experiments can be added as needed, and
 irrelevant, inappropriate or unknown variables can be left blank or
 unassigned. Information about the task, stimulus and time
-series data (Ref 52, sections 4,5 and 8) is represented by
+series data (Ref 43, sections 4,5 and 8) is represented by
 machine-executable equations in CoPE (``(implicit)'' in Table).
 
 

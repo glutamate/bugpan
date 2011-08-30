@@ -104,60 +104,40 @@ wider neuroscience community, including functional neuroanatomy and
 microscopy, and other scientific diciplines that observe and
 manipulate spatiotemporal data.
 
+
 We have argued that observational data, experimental protocols and
 analyses formulated in CoPE (or similar frameworks) are less ambiguous
-and more transparent than those described using many contemporary
-formulations. The structure of CoPE also presents additional
-opportunities for mechanically excluding some types of procedural
-errors in drawing inferences from experiments. For instance, CoPE
-could incorporate an extension to simple type theory
-\citep{Kennedy1997} that adds not only a consistency check for
-dimensional units but also powerful aspects of dimensional analysis,
-such as Buckingham's $\pi$-theorem. 
-
-Furthermore, in our formulation,
-experimentally observed values exist as mathematical objects within a
-computational framework that can be used to define probability
-distributions. 
-
-Hierarchical probabilistic notation \citep{Gelman2006}
-permits the construction of flexible statistical models for the
-directly observed data. 
-
-This means that CoPE in principle can  such probabilistic models into powerful data analysis tools
-that can be accessed from within the CoPE formalism, 
-
-To make this work in the context of CoPE
-requires a mechanism for defining new elementary probability
-distributions for signals, events and durations in terms of random
-processes. 
-
-
-
-The derivation of such data analysis tools can largely be automated,
-as is done in the statistical packages WinBUGS \citep{Gilks1994} or
-Mlwin \citep{mlwin}, or by compiling descriptions of probabilistic
-models in CoPE to the specification format used by the AutoBayes
-\citep{AutoBayes} system to generate efficient code for statistical inference.
-
-
-This analysis workflow could be seamlessly integrated into an
-implementation of CoPE, such that not only the hierarchical model
-structure could be defined in terms of temporal contexts but also that
-the parameters estimated from a statistical inference tool such as
-AutoBayes are tagged with the appropriate temporal contexts.
-
- 
-
-
-This methodology can be used to quantify different aspects of
-uncertainty in the measurements, taking into account all available
-information, while largely avoiding ad-hoc transformations of
-data. Integrating well-developed statistical tools with data
-acquisition and manipulation within CoPE would create a powerful
-platform for validating inferences drawn from physiological
-experiments.
-
+and more transparent than those described using many current
+formulations. The structure of CoPE presents additional opportunities
+for mechanically excluding some types of procedural errors in drawing
+inferences from experiments. For instance, CoPE could incorporate an
+extension to simple type theory \citep{Kennedy1997} that adds not only
+a consistency check for dimensional units but also powerful aspects of
+dimensional analysis, such as Buckingham's $\pi$-theorem. Furthermore,
+in our formulation, experimentally observed values exist as
+mathematical objects within a computational framework that can be used
+to define probability distributions. Hierarchical probabilistic
+notation \citep{Gelman2006} permits the construction of flexible
+statistical models for the directly observed data. This means that
+CoPE could in principle be used to turn such probabilistic models into
+powerful data analysis tools accessible from within the CoPE
+formalism.  Such data analysis procedures can largely be automated,
+for instance by accessing statistical packages WinBUGS
+\citep{Gilks1994} or Mlwin \citep{mlwin}. Alternatively it would be
+possible to compile descriptions of probabilistic models in CoPE to
+the specification format used by the AutoBayes \citep{AutoBayes}
+system, which would then be used to generate efficient code for
+statistical inference. When run, this code would return data to
+CoPE. This analysis workflow could be integrated seamlessly into an
+implementation of CoPE such that both the hierarchical model structure
+and the returned parameters would be defined by and tagged with the
+appropriate temporal contexts. This methodology could be used to
+quantify different aspects of uncertainty in the measurements, taking
+into account all available information, while largely avoiding ad-hoc
+transformations of data. Integrating well-developed statistical tools
+like AutoBayes with data acquisition and manipulation within CoPE
+would create a powerful platform for validating inferences drawn from
+physiological experiments.
 
 \section*{Experimental Procedures}
 

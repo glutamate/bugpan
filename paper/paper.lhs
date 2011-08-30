@@ -9,7 +9,6 @@
 \usepackage[square, comma, numbers, compress]{natbib}
 %\usepackage{citesupernumber}
 \usepackage{relsize}
-\usepackage{lipsum}
 \usepackage{url}
 \usepackage{graphicx}
 
@@ -345,7 +344,7 @@ The sine wave can now be defined as:
 \begin{code}
 sineWave = sopen A * sin (f * <: seconds :> + p) sclose
 \end{code}
-where |A|, |f| and |p| are |Double|-valued constants specifiying the amplitude, frequency and phase, respectively. We then write
+where |A|, |f| and |p| are |Float|-valued constants specifiying the amplitude, frequency and phase, respectively. We then write
 \begin{code}
 sineWave *> DAC 0 (kHz 20)
 \end{code}{}
@@ -488,11 +487,11 @@ number of spikes (|length spike|) and largest value of |hspike|, for
 each approach, plotted against the value of $\frac{l}{||v||}$
 \citep{Hatsopoulos1995}. The code that descibes and executes this
 experiment is given in the Supplementary Information (Listing 1). This
-code includes a description, in CoPE variables and with appropriate
-temporal context, of the experimental context which is not
+code includes a description, captured in CoPE variables and with
+appropriate temporal context, of the experimental context that is not
 machine-executable. This description is based on proposed standards
-for minimal information about electrophysiological
-experiments \citep{Gibson2008}.
+for minimal information about electrophysiological experiments
+\citep{Gibson2008}.
 
 This experiment demonstrates that the calculus of physiological
 evidence can adequately and concisely describe visual stimuli, spike
@@ -542,7 +541,7 @@ conductance to a real neuron. Simple models of synapses approximate
 the conductance waveform with an alpha function
 \citep{Carnevale2006}:
 \begin{code}
-alpha_f amp tau = sopen tau **2 * <: seconds :> *exp (- <: seconds :> *tau) sclose
+alpha_f amp tau = sopen amp * tau **2 * <: seconds :> *exp (- <: seconds :> *tau) sclose
 \end{code}
 
 To simulate a barrage of synaptic input to a cell, this waveform is
