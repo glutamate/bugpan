@@ -175,8 +175,8 @@ l = m 0.2980
 v = l/(lov*2)
 
 distance' = {: (min (v*(<: seconds :> - 5))) (-0.1800) :}
-loomSquare' = {: colour (0,0,0) (translate (0, 0, <: distance :>) (cube l)) :}
-loomSquare' *> screen ""
+loomingSquare' = {: colour (0,0,0) (translate (0, 0, <: distance :>) (cube l)) :}
+loomingSquare' *> screen ""
 
 _tmax=secs 6
 _dt = secs 5.0e-5
@@ -204,10 +204,11 @@ containingDevice = metaData "Room temperature"
 lowPassCut = metaData (kHz 5)
 highPassCut = metaData (Hz 50)
 amplifier = metaData "NeuroLog NL104"
+amplifierGain = metaData 1000
 
 \end{verbatim}
 
-\begin{flushleft} Listing 1. Entire unformatted code for the experiment in
+\begin{flushleft} Listing 1. Unformatted code for experiment trials for
 Example 1, related to Figure 1 and 2.
 \end{flushleft}
 \pagebreak
@@ -225,15 +226,15 @@ alpha tau t = if t<0.0 then 0.0 else (t/tau)*exp (1-t/tau)
 gsyn = {: gampa* (alpha 0.005 <: seconds:>) :}
 stage gsyn -1		
 
-rawv, celli, vm, a, b, ika :: Signal Float
+rawv, celli, vm, a, b, iA :: Signal Float
 
-rndSpike :: [(Float, ())]
-rndSpike <* poisson rate
+preSpike :: [(Float, ())]
+preSpike <* poissonTrain rate
 
 rawv <* ADC 0 (kHz 20)
 vm = {: <: rawv:>  * 0.10 :}
 
-gcellsyn = {: convolution gsyn (forget 0.1 rndSpike ) <:seconds:> :}
+gsyn = convolveSE gsyn (tag 1 (forget 0.1 preSpike))
 
 D a = {: alphaa <: vm:> * ( 1 - <:a:>) -
          betaa <:vm:> * <: a :> :}
@@ -261,13 +262,13 @@ kba3 = volts 0.01
 volts v = v
 inverseVolts x = x
 nS x = 1e-9*x
-secords t = t
+seconds t = t
 kHz x = 1000*x
 
-ika = {: gmaxk * <:a:> * <:b:>*(0.08+<:vm:>) :}
-ika_0 = 0
+iA = {: gmaxk * <:a:> * <:b:>*(0.08+<:vm:>) :}
+iA_0 = 0
 
-celli = {: (0-<:vm:>) * <:gcellsyn:>  - <: ika:> :}
+celli = {: (0-<:vm:>) * <:gsyn:>  - <: iA:> :}
 outv = {: <:celli:> * 1.0e9 :} 
 outv *> DAC 0 (kHz 20)
 
@@ -289,7 +290,7 @@ amplifier = metaData "BioLogic RK400"
 
 \end{verbatim}
 
-\begin{flushleft}Listing 2. Entire code for the experiment in Example 2, related to Figure 3.
+\begin{flushleft}Listing 2. Code for the trials in Example 2, related to Figure 3.
 \end{flushleft}
 \pagebreak
 \doublespacing 
@@ -335,6 +336,7 @@ amplifier = metaData "BioLogic RK400"
 \begin{tabular}{l p{3cm} p{8cm}}
   electrodeImpedance & |Duration Float| & Electrode impedance\\
   amplifier & |Duration String| & Amplifier\\ 
+  amplifierGain & |Duration Float| & Amplifier\\ 
   filter & |Duration String| & Filter \\
   lowPassCut & |Duration Float| & Filter settings \\  
   highPassCut & |Duration Float| & Filter settings \\  

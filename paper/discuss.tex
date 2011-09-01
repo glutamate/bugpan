@@ -30,10 +30,10 @@ information needed to repeat an experiment \citep{Taylor2007,
   Gibson2008}, but in practice it is often not clear \emph{a priori}
 what aspects of an experiment could influence its outcome. With CoPE,
 our main goal was to describe unambiguously machine-executable aspects
-of the metadata of an experiment. Other information can nevertheless
-be added on an \emph{ad hoc} basis, and it can exploit the temporal
-contexts provided by CoPE, i.e. it can exist as signals, events or
-durations, as we have done in the code listings in the Supplementary
+of the metadata of an experiment. Nevertheless, any information that
+can be captured in a type can be represented in the temporal contexts
+provided by CoPE. I.e. it can exist as signals, events or durations,
+as we have demonstrated in the code listings in the Supplementary
 Materials. Here, we make no fundamental distinction between the
 representation of data and metadata. All relevant information about an
 experiment is indexed by time and thus linked by overlap on a common
@@ -75,7 +75,7 @@ sources of human error. Existing tools use differential equations to
 define dynamic clamp experiments (Model Reference Current Injection
 (MRCI); \citep{Raikov2004}) or simulations (X-Windows Phase Plane
 (XPP); \citep{Ermentrout1987}). Here, we show that a general
-(polymorphic) defintion of signal and events, embedded in the lambda
+(polymorphic) definition of signals and events, embedded in the lambda
 calculus, can define a much larger range of experiments, and the
 evidence that they produce. Our experiment definitions have the
 further advantage that they \emph{compose}; that is, more complex
@@ -122,22 +122,23 @@ statistical models for the directly observed data. This means that
 CoPE could in principle be used to turn such probabilistic models into
 powerful data analysis tools accessible from within the CoPE
 formalism.  Such data analysis procedures can largely be automated,
-for instance by accessing statistical packages WinBUGS
-\citep{Gilks1994} or Mlwin \citep{mlwin}. Alternatively it would be
-possible to compile descriptions of probabilistic models in CoPE to
-the specification format used by the AutoBayes \citep{AutoBayes}
-system, which would then be used to generate efficient code for
-statistical inference. When run, this code would return data to
-CoPE. This analysis workflow could be integrated seamlessly into an
+for instance by calculating parameter estimates using statistical
+packages such as WinBUGS \citep{Gilks1994} or Mlwin
+\citep{mlwin}. Alternatively it would be possible to compile
+descriptions of probabilistic models in CoPE to the specification
+format used by the AutoBayes \citep{AutoBayes} system, which would
+then be used to generate efficient code for statistical
+inference. When run, this code would return data to CoPE. This
+analysis workflow could be integrated seamlessly into an
 implementation of CoPE such that both the hierarchical model structure
 and the returned parameters would be defined by and tagged with the
 appropriate temporal contexts. This methodology could be used to
 quantify different aspects of uncertainty in the measurements, taking
 into account all available information, while largely avoiding ad-hoc
 transformations of data. Integrating well-developed statistical tools
-like AutoBayes with data acquisition and manipulation within CoPE
-would create a powerful platform for validating inferences drawn from
-physiological experiments.
+with data acquisition and manipulation within CoPE would create a
+powerful platform for validating inferences drawn from physiological
+experiments.
 
 \section*{Experimental Procedures}
 
@@ -199,7 +200,7 @@ board were controlled by programs written in
 % the calculus of physiological evidence
 CoPE running on a single computer.
 
-The full code for the locust experiment, including relevant metadata,
+The code for running the trials described in Example 1, including relevant metadata,
 is given in Listing 1 (Supplementary Materials).
 
 \subsubsection*{Zebrafish experiments}
@@ -220,7 +221,7 @@ above). The measured jitter for updating the output voltage was 6
 $\mu$s and was similar to that measured with the RTAI latency test
 tool for the experiment control computer.
 
-The full code for the Zebrafish experiments, including relevant
+The code for the Zebrafish experiment trials, including relevant
 metadata, is given in Listing 2 (Supplementary Materials).
 
 \subsubsection*{Author Contributions}  
@@ -240,7 +241,8 @@ recordings and Angus Silver, Guy Billings, Antonia Hamilton, Nick
 Hartell and Rodrigo Quian Quiroga for critical comments on the
 manuscript. This work was funded by a Human Frontier Science Project
 fellowship to T.N., a Biotechnology and Biological Sciences Research
-Council grant to T.M. and T.N., and Engineering and Physical Sciences Research
+Council grant to T.M. and T.N., a BBSRC Research Development
+Fellowship to T.M., and Engineering and Physical Sciences Research
 Council grants to H.N.
 
 

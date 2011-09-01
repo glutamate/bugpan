@@ -438,8 +438,9 @@ three-dimensional shapes onto a two-dimensional surface.
 loomingSquare' *> screen 
 \end{code}
 In our experiments, the extracellular voltage from the locust nerve
-(connective), in which the DCMD forms the largest amplitude spike,
-was amplified, filtered (see methods) and digitised:
+(connective), in which the DCMD forms the largest amplitude spike, was
+amplified, filtered (see methods and Listing 1 in Supplementary
+Information) and digitised:
 \begin{code}
 voltage <* ADC 0 (kHz 20)
 \end{code}
@@ -485,19 +486,19 @@ $\frac{l}{||v||}$. The average of |hspike| for three different values
 of $\frac{l}{||v||}$ are shown in Figure 2A; 2B and 2C show the total
 number of spikes (|length spike|) and largest value of |hspike|, for
 each approach, plotted against the value of $\frac{l}{||v||}$
-\citep{Hatsopoulos1995}. The code that descibes and executes this
-experiment is given in the Supplementary Information (Listing 1). This
+\citep{Hatsopoulos1995}. The code that descibes and executes these
+trials is given in the Supplementary Information (Listing 1). This
 code includes a description, captured in CoPE variables and with
 appropriate temporal context, of the experimental context that is not
 machine-executable. This description is based on proposed standards
 for minimal information about electrophysiological experiments
-\citep{Gibson2008}.
+\citep{Gibson2008}. A table of correspondences between these standards
+and CoPE variables is given in Table S3.
 
 This experiment demonstrates that the calculus of physiological
 evidence can adequately and concisely describe visual stimuli, spike
 recording and relevant analyses for activation of a locust looming
-detection circuit (see supplementary information for full code
-listings.) To demonstrate the versatility of this framework, we next
+detection circuit. To demonstrate the versatility of this framework, we next
 show that it can be used to implement dynamic clamp in an \emph{in
   vivo} patch clamp recording experiment.
 
@@ -524,17 +525,17 @@ The output current
 %
 % command
 |i| is calculated at each time-step from the simulated conductance |g|
-and the measured membrane voltage |v|:
+and the measured membrane voltage |v_m|:
 \begin{code}
-v <* ADC 0 (kHz 20)
-i = sopen (<: v :> - E)* <: g :> sclose
+v_m <* ADC 0 (kHz 20)
+i = sopen (<: v_m :> - E)* <: g :> sclose
 i *> DAC 0 (kHz 20)
 \end{code}
 The experiment is thus characterised by the conductance signal $g$
 (for clarity, here we omit the amplifier-dependent input and output
 gains).
 
-In the simplest case, $g$ is independent of $v$; for instance, when
+In the simplest case, |g| is independent of |v_m|; for instance, when
 considering linear synaptic conductances \citep{Mitchell2003}. We
 first consider the addition of a simulated fast excitatory synaptic
 conductance to a real neuron. Simple models of synapses approximate
@@ -594,21 +595,21 @@ $\frac{dx}{dt} = f(x,t) $ with starting conditions explicitly assigned
 to the variable $x_0$. The differential equation for the activation
 variable $a$ is
 \begin{code}
-D a = sopen  alphaa <: vm :> * (1- <:a:> ) -
-             betaa <: vm :> * <: a :> sclose
+D a = sopen  alphaa <: v_m :> * (1- <:a:> ) -
+             betaa <: v_m :> * <: a :> sclose
 a_0 = 0
 \end{code}
 The inactivation state signal |b| is defined similarly.
 
 The current signal from this channel is calculated from Ohm's law:
 \begin{code}
-ika = sopen gmaxk * <:a:> * <:b:> * (<:v:> - E) sclose
+ika = sopen gmaxk * <:a:> * <:b:> * (<:v_m:> - E) sclose
 \end{code}
 This is added to the signal |i| defined above to give the output current
 % command, 
 thus completing the definition of this experiment:
 \begin{code}
-i + ika *> DAC 0 (kHz 20)
+v_m*gsyn + ika *> DAC 0 (kHz 20)
 \end{code}
 
 Figure 3A and 3B show the voltage response to a unitary synaptic
@@ -616,9 +617,9 @@ conductance and a train of synaptic inputs, respectively, with |gmaxk|
 ranging from 0 to 100 nS. By varying the value of |rate|, we can
 examine the input-output relationship of the neuron by measuring the
 frequency of postsynaptic spikes. Spikes were detected from the first
-derivative of the |v| signal with
+derivative of the |v_m| signal with
 \begin{code}
-spike = tag () ((\v'->v'>vth') ?? D v)
+spike = tag () ((\v'->v'>vth') ?? D v_m)
 \end{code}
 and the spike frequency calculated with the |frequencyDuring|
 function.  This relationship between the postsynaptic spike frequency
@@ -697,26 +698,6 @@ observations and quantities in CoPE
   Trial with parameter |alpha| & |Duration alpha| \\
   Visual stimulus & |Signal Shape| \\
   Lab notebook & |Event String| \\
-\hline
-\end{tabular}
-
-
-\pagebreak
-%\includepdf[pages=-]{supplement.pdf}
-\section*{Table 2}
-
-\begin{tabular}{l l l l}
-\hline
-& Type & Example 1 & Example 2 \\ 
-\hline
-|species| & |Duration String| & |dur "Schistocerca gregaria"| & |dur "Danio rerio"| \\
-|morph| & |Duration String| & |dur "Gregarious"| & \\
-|developmentStage| & |Duration String| & |dur "Adult"| & |dur "2 dpf"| \\
-|recordingLocation| & |Duration String| & |dur "Neck connectives"| & |dur "Spinal cord"| \\
-|recordingMode| & |Duration String| & |dur "Extracellular Hook"| & |dur "Patch clamp"| \\
-|lowPassFilter| & |Duration Double| & |dur (kHz 5)| & |dur (kHz 3)| \\
-|highPassFilter| & |Duration Double| & |dur (Hz 50)| & \\
-|amplifier| & |Duration String| & |dur "NeuroLog NL104"| & |dur "BioLogic RK400"| \\
 \hline
 \end{tabular}
 
