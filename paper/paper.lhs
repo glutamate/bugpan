@@ -634,7 +634,7 @@ the Supplementary Information (Listing 2).
 
 \pagebreak
 
-\section* {Figure and Table Legends}
+\section* {Figure Legends}
 
 \textbf{Figure 1}. Diagram of an experiment to record the looming
 response from a locust DCMD neuron, showing the first five recorded
@@ -675,13 +675,8 @@ simulated presynaptic inputs, with $g_A$ as in A.
 %\pagebreak
 %\vskip1ex 
 
-\flushleft \textbf{Table 1}. Representation of physiological
-observations and quantities in CoPE
-
 \pagebreak
 %\includepdf[pages=-]{supplement.pdf}
-\section*{Table 1}
-
 \begin{tabular}{l  l}
 \hline
   Quantity & Type \\ 
@@ -701,6 +696,8 @@ observations and quantities in CoPE
 \hline
 \end{tabular}
 
+\flushleft \textbf{Table 1}. Representation of physiological
+observations and quantities in CoPE.
 
 \end{document}
  

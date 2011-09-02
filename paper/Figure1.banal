@@ -6,7 +6,7 @@
 >> everywhere lovDur = (extendDur 1 approachLoV)
 >> everywhere chopx = ChopxAxis 1 (take 5 $ drop 6 running)
 >> everywhere distFun lov t = let v = 0.149/lov in min (v*(t-5)) (-0.17)
->> everywhere collision = evInDur 3 running
+>> everywhere collision = evInDur 5 running
 >> everywhere rescale m a x = ((+a) . (*m)) <$$> x
 
 >> openSession 302
@@ -14,7 +14,7 @@
 >> lns = \c w -> Lines [LineType 1, LineWidth w, LineColor c]
 
 >> pts = \c ty sz -> Points [PointType ty, PointSize sz, LineColor c]  
->> extrapks = take 2 $ (<(-0.06)) ?? (head $ drop 8 ecVoltage)
+>> extrapks = take 2 $ (<(-0.06)) ?? [head $ drop 8 ecVoltage]
 >> spikes1 = sortBy (comparing fst) (extrapks ++ spikes)
 >> accu3 = (take 3 . accushow) :: Double -> String
 >> sbars = ScaleBars (0.14,4) (0.02,"20 ms") (1, "1 mV")
