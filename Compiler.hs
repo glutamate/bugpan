@@ -36,12 +36,12 @@ compileDec (Let (PatVar nm _) (Switch ses ser)) =
           unSig (Sig se) = se 
           unSig e = e
 compileDec rs@(ReadSource nm ("adc", _)) = compileAdcSrc rs
-compileDec (ReadSource nm ("loadTexture", (Const fnm))) = 
+{-compileDec (ReadSource nm ("loadTexture", (Const fnm))) = 
    [RunInGLThread $ \env -> do 
-          setTexture $ unsafeReify fnm
+          setTexture $ (unsafeReify fnm)::String
           print "HELLLOOOO!!!!!!!!!!!!"
           update env nm $ BoxV (p3 1 1 1) (p3 (-0.5) (-0.5) 0) (p3 1 1 1) 
-          return () ]
+          return () ] -}
 compileDec (ReadSource nm (srcNm, (Const arg))) = [ReadSrcAction nm $ genSrc srcNm arg]
 compileDec (Let (PatVar nm _) e) = [Env nm $ unVal e]
 compileDec (SinkConnect (Var nm) (snkNm,_)) = [SigSnkConn nm snkNm]

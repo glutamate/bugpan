@@ -47,6 +47,7 @@ import System.Environment
 --import System.Console.Readline
 import System.IO
 import Math.Probably.Student
+import Math.Probably.Sampler
 import Math.Probably.FoldingStats
 import Text.Printf
 import NewSignal
@@ -289,8 +290,8 @@ inLastSession sma = do
 
 inSession :: (MonadIO m, Functor m) => Session -> StateT QState m a -> m a
 inSession s sma =  do args <- liftIO $ getArgs
-                      gen <- liftIO $ getStdGen
-                      rnds <- liftIO $ randoms gen
+--                      gen <- liftIO $ getStdGen
+                      rnds <- liftIO $ getSeedIO
                       fst `liftM`  (runStateT sma $ QState s 0 0 True args Nothing rnds False False 0)
 
 changeToSession  :: (MonadIO m, Functor m) => Session -> StateT QState m ()
@@ -303,8 +304,8 @@ inSessionFromArgs :: (MonadIO m, Functor m) => StateT QState m a -> m a
 inSessionFromArgs sma = do allargs <- liftIO $ getArgs
                            let (opts, nm:args) = partition beginsWithHyphen allargs
                            sess <- liftIO $ loadApproxSession sessionsRootDir nm
-                           gen <- liftIO $ getStdGen
-                           rnds <- liftIO $ randoms gen
+--                           gen <- liftIO $ getStdGen
+                           rnds <- liftIO $ getSeedIO
                            fst `liftM`  (runStateT sma $ QState sess 0 0 True (opts++args) Nothing rnds False False 0)
 
 

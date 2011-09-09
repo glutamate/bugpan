@@ -64,7 +64,7 @@ data QState = QState { qsSess:: Session,
                        realTime :: Bool,
                        shArgs :: [String],
                        remoteCmdFile :: Maybe String,
-                       rnds :: [Double],
+                       rnds :: Seed,
                        forLiterate :: Bool,
                        forTable :: Bool,
                        loadShift :: Double
@@ -75,7 +75,7 @@ type QueryM = StateT QState IO
 sampleNQ :: MonadIO m => Int -> Sampler a -> StateT QState m [a]
 sampleNQ n sf = do
   rans <- rnds `liftM` get
-  modify $ \s-> s {rnds = []}
+--  modify $ \s-> s {rnds = []}
   let (vls, rans') = sam n rans sf []
   modify $ \s-> s {rnds = rans'}
   return vls

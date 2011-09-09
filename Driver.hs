@@ -49,7 +49,8 @@ main = do
   whenM (doesFileExist $ cmdFile ds) $ removeFile (cmdFile ds)
 
 
-  forkOS (initGlScreen (not $ "-w" `elem` args) dispPullMv runningMv (return ()))
+  forkOS (initGlScreen (not $ "-w" `elem` args) dispPullMv runningMv 
+          ((return ())::IO ()))
   waitSecs 0.5
 
   catchForever $ (loop ds >> hFlush stdout)

@@ -229,75 +229,6 @@ manyLikeOver durs lh1 = \obs-> \theta-> sum $ map (lh1 theta) $ chopAndReset dur
 
 
 
-{-instance (MutateGaussian a, UA a )=> MutateGaussian (UArr a) where
-    mutGauss cv xs = toU `fmap` mutGaussMany cv (fromU xs)
-    mutGaussAbs x0 cv xs = toU `fmap` mutGaussAbs (fromU x0) cv (fromU xs)
-    nearlyEq tol xs ys = lengthU xs == lengthU ys && (allU (uncurryS $ nearlyEq tol) $ zipU xs ys ) -}
-
-class MutateGaussian a where
-    mutGauss :: Double -> a -> Sampler a
-    mutGauss cv x = mutGaussAbs x cv x
-    mutGaussAbs :: a -> Double -> a -> Sampler a
-    --mutGaussAbs _ = mutGauss
-    mutGaussMany :: Double -> [a] -> Sampler [a]
-    mutGaussMany cv = mapM (mutGauss cv) 
-    nearlyEq :: Double -> a -> a -> Bool
-
-instance MutateGaussian Double where
-    mutGauss cv x = gaussD x (cv*x)
-    mutGaussAbs x0 cv x = gaussD x (cv*x0)
-    mutGaussMany cv xs = gaussManyD (map (\x-> (x,cv*x)) xs)
-    nearlyEq tol x y = abs(x-y)<tol  
-
-instance MutateGaussian Int where
-    mutGaussAbs _ cv' x = do
-      u <- unitSample
-      let cv = 0.5 -- max 0 $ min 0.4 (1/cv')
-      case u of 
-        _ | u < 0.5 -> return $ x-1
---          | u > 0.5 -> return $ x+1
-          | otherwise -> return $ x+1
-    nearlyEq _ x y = x==y
-
-{-instance MutateGaussian Int where
-    mutGauss cv x = round `fmap` gaussD (realToFrac x) (cv*realToFrac x)
-    nearlyEq tol x y = x==y -}
-
-instance MutateGaussian a => MutateGaussian [a] where
-    mutGauss cv xs = mutGaussMany cv xs 
-    mutGaussAbs xs0 cv xs =  mapM (\(x0,x)-> mutGaussAbs x0 cv x) $ zip xs0 xs
-    nearlyEq tol xs ys = length xs == length ys && (all (uncurry $ nearlyEq tol) $ zip xs ys )
-
-instance (MutateGaussian a, MutateGaussian b) => MutateGaussian (a,b) where
-    mutGauss cv (x,y) = liftM2 (,) (mutGauss cv x) (mutGauss cv y)
-    mutGaussAbs (x0, y0) cv (x,y) = liftM2 (,) (mutGaussAbs x0 cv x) (mutGaussAbs y0 cv y)
-    nearlyEq t (x,y) (x1,y1) = nearlyEq t x x1 && nearlyEq t y y1
-
-instance (MutateGaussian a, MutateGaussian b, MutateGaussian c) => MutateGaussian (a,b,c) where
-    mutGauss cv (x,y,z) = liftM3 (,,) (mutGauss cv x) (mutGauss cv y) (mutGauss cv z)
-    mutGaussAbs (x0, y0, z0) cv (x,y,z) = 
-        liftM3 (,,) (mutGaussAbs x0 cv x) (mutGaussAbs y0 cv y) (mutGaussAbs z0 cv z)
-    nearlyEq t (x,y, z) (x1,y1, z1) = nearlyEq t x x1 && nearlyEq t y y1 && nearlyEq t z z1
-
-instance (MutateGaussian a, MutateGaussian b, MutateGaussian c, MutateGaussian d) => MutateGaussian (a,b,c,d) where
-    mutGauss cv (x,y,z,w) = liftM4 (,,,) (mutGauss cv x) (mutGauss cv y) (mutGauss cv z) (mutGauss cv w)
-    mutGaussAbs (x0, y0, z0, w0) cv (x,y,z,w) = 
-        liftM4 (,,,) (mutGaussAbs x0 cv x) (mutGaussAbs y0 cv y) (mutGaussAbs z0 cv z) (mutGaussAbs w0 cv w)
-    nearlyEq t (x,y, z, w) (x1,y1, z1, w1) = nearlyEq t x x1 && nearlyEq t y y1 && nearlyEq t z z1 && nearlyEq t w w1
-
-
-instance (MutateGaussian a, U.Unbox a )=> MutateGaussian (U.Vector a) where
-    mutGauss cv xs = U.fromList `fmap` mutGaussMany cv (U.toList xs)
-    mutGaussAbs x0 cv xs = U.fromList `fmap` mutGaussAbs (U.toList x0) cv (U.toList xs)
-    nearlyEq tol xs ys = U.length xs == U.length ys && (U.all (uncurry $ nearlyEq tol) $ U.zip xs ys )
-
-
-instance (MutateGaussian a, Storable a )=> MutateGaussian (SV.Vector a) where
-    mutGauss cv xs = SV.pack `fmap` mutGaussMany cv (SV.unpack xs)
-    mutGaussAbs x0 cv xs = SV.pack `fmap` mutGaussAbs (SV.unpack x0) cv (SV.unpack xs)
-    nearlyEq tol xs ys = SV.length xs == SV.length ys && (all (uncurry $ nearlyEq tol) $ SV.zip xs ys )
-
-
 {-instance ChopByDur (UArr Double) where
     chopByDur durs arr = map (\((t1,t2),_)->filterU (\t->t>t1 && t<t2 ) arr) durs-}
 
@@ -377,7 +308,7 @@ f >-> g = \x -> f x >>= g
 
 metSampleP s = metSample1P s depSam
 --metSamplePx0 x0  = metSample1P (depSamx0 x0)
-metSamplePCL s = metSample1PCL s depSam
+--metSamplePCL s = metSample1PCL s depSam
 
 depSam w x0 =  mutGaussAbs x0 $ w*0.005
 depSamx0 x0 w _ =  mutGaussAbs x0 $ w*0.005

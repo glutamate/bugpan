@@ -30,7 +30,7 @@ instance Distribution RandomSignal where
           k = dim mu
           sigma = (realToFrac noise) * ident k
       in \obsSig -> P.multiNormal mu sigma $ sigToVector $ forceSigEq obsSig -}
-       SV.foldl1' (+) $ SV.zipWith (\muval obsVal -> P.logGaussD muval noise obsVal) muArr obsArr
+       SV.foldl1' (+) $ SV.zipWith (\muval obsVal -> P.gaussD muval noise obsVal) muArr obsArr
 
 {-instance ProperDistribution RandomSignal where
     sampler (RandomSignal meansig@(Signal t1 t2 dt _ _) noise) = 
@@ -54,12 +54,12 @@ instance Distribution RandomSignalFast where
 
 altPdfRSF1 :: RandomSignalFast -> Signal Double -> Double
 altPdfRSF1 (RandomSignalFast meansigf noise) (Signal t1 t2 dt obsArr Eq)= 
-        let f i obsVal = P.logGaussD (meansigf . (*dt) . realToFrac $ i) noise obsVal
+        let f i obsVal = P.gaussD (meansigf . (*dt) . realToFrac $ i) noise obsVal
         in SV.foldl1' (+) $ SV.mapIndexed f obsArr
 
 altPdfRSF :: RandomSignalFast -> Signal Double -> Double
 altPdfRSF (RandomSignalFast meansigf noise) (Signal t1 t2 dt obsArr Eq)= 
-        let facc  obsVal (sm, i) = (sm+P.logGaussD (meansigf . (*dt) . realToFrac $ i) noise obsVal, i+1)
+        let facc  obsVal (sm, i) = (sm+P.gaussD (meansigf . (*dt) . realToFrac $ i) noise obsVal, i+1)
         in fst $ SV.foldr facc (0,0) obsArr
 
 {-longPdfRSF :: RandomSignalFast -> Signal Double -> Double
