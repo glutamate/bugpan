@@ -5,7 +5,7 @@
 >> plotSize 32x50
 
 >> dur35 = [((4,5.1),())]
->> thefit = \lov -> during dur35 $ fitS fitf1 fitinit $ shist lov
+%>> thefit = \lov -> during dur35 $ fitS fitf1 fitinit $ shist lov
 >> pts = \c ty sz -> Points [PointType ty, PointSize sz, LineColor c]  
 
 >> collision = pts "black" 11 1.2 [((5::Double),(280::Double))]

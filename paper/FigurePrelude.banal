@@ -14,7 +14,7 @@
 >> everywhere nspikes = realcountDuring (approachLoV) spikes
 >> everywhere stdDur = (extendDur 1 $ during (speed 40) $ contains spikes $ during longStop notDisplaced)
 >> everywhere stdDur20 = (extendDur 1 $ during (speed 20) $ contains spikes $ during longStop notDisplaced)
->> everywhere shist lov =  spikeHistOver (extendDur 1 $ during (speed lov) $ contains spikes $ during longStop notDisplaced) 0.05 spikes
+>> everywhere shist lov =  Lines [LineWidth 2] $ spikeHistOver (extendDur 1 $ during (speed lov) $ contains spikes $ during longStop notDisplaced) 0.05 spikes
 >> everywhere shistMany  = histManyOver (extendDur 1 $ contains spikes $ during longStop notDisplaced) 0.05 spikes
 >> everywhere peakrate  = sigStat maxF $ shistMany 
 >> lovStr = \lov -> "l/|v| = " ++show (round $ (lov::Double)) ++ " ms^{-1}"

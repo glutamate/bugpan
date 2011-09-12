@@ -120,7 +120,7 @@ essential to the simplicity and flexibility of CoPE.
 
 We distinguish three type schemata in which physiological evidence can
 be values. These differ in the manner in which measurements appear in
-a temporal context, but which all derive their flexibility from
+a temporal context, but all derive their flexibility from
 parametric polymorphism. \emph{Signals} capture the notion of
 quantities that change in time. In physiology, observed time-varying
 quantities often represent scalar quantities, such as membrane
@@ -145,7 +145,7 @@ For example, an event can be constructed from a number-valued signal
 that represents the time of the largest amplitude value of of the
 signal, with that amplitude in the tag. Events that do not have a
 value of interest to associate with the time point at which it
-occurred, can be tagged with the unit type |()| which has only one
+occurred can be tagged with the unit type |()| which has only one
 element (that is, no information). Events can therefore represent
 measurements where the principal information is \emph{when} something
 happened, or measurements that concern \emph{what} happened.

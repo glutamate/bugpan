@@ -408,7 +408,7 @@ main = do
   writeFile hsFile code
   ghcres <- if ("-p" `elem` opts)
                then system $ "ghc -O2 -prof -auto-all --make "++hsFile
-               else system $ "ghc -O2 -package probably-0.1.1 --make "++hsFile
+               else system $ "ghc -O2 -package probably --make "++hsFile
   let profOpts =  if ("-p" `elem` opts)
                     then " +RTS -p"
                     else ""

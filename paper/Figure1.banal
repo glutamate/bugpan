@@ -8,6 +8,7 @@
 >> everywhere distFun lov t = let v = 0.149/lov in min (v*(t-5)) (-0.17)
 >> everywhere collision = evInDur 5 running
 >> everywhere rescale m a x = ((+a) . (*m)) <$$> x
+>> everywhere shistMany1  = histManyOver (extendDur 1 $ contains spikes $ during longStop notDisplaced) 0.05 spikes1
 
 >> openSession 302
 
@@ -34,21 +35,21 @@
 %>>        pts "red" 11 1 (chopx (tag 0.1 collision)) :+:
 %>>        lns "black" 1 (chopx (rescale 0.0015 1.35 shistMany))
 
->> plotSize 75x55
+>> plotSize 75x48
 
->> txtx = 1749.3
+>> txtx = 1750.5
 >> axx = 1753.0
->> freqAx = CustAxis (axx, 0.9) (100*0.0012) True 0.2 0.4 [(0,"0"), (100*0.0012, "100")]
->> lovAx = CustAxis (axx, 0.1-0.33) (0.02*5) True 0.2 0.4 [(0,"0.02"), (0.02*5, "0.04")]
->> distAx = CustAxis (axx, 0.175-(20*0.0035)) (20*0.0035) True 0.2 0.4 [(0,"20"), (20*0.0035, "0")]
+>> freqAx = CustAxis (axx, 0.75) (200*0.0012) True 0.2 0.4 [(0,"0"), (100*0.0012, "100"), (200*0.0012, "200")]
+>> lovAx = CustAxis (axx, 0.1-0.33-0.01*5) (0.03*5) True 0.2 0.4 [(0.0,"0.01"), (0.02*5+0.01*5, "0.04")]
+>> distAx = CustAxis (axx, 0.12-(50*0.0035)) (50*0.0035) True 0.2 0.4 [(0,"50"), (25*0.0035, "25"), (50*0.0035, "0")]
 
->> plot $ Noaxis $ XRange 1749 1792 $ XScaleBar (1770, 0.0) (2, "2 s") (0.03) $
->>        (TextAtRot (txtx, 0.142) "Distance (m)" $ WithAxis distAx $ lns "dark-red" 1 (chopx (rescale 0.0035 0.175 distSig))) :+: 
->>        (TextAtRot (txtx, 0.52) "Voltage" $ lns "black" 1 (chopx (rescale 4 0.63 ecVoltage))) :+: 
->>        (TextAtRot (txtx, -0.18) "l/|v| (s})" $ WithAxis lovAx $ lns "blue" 4 (chopx (rescale 5 (-0.33) lovDur))) :+:
->>        (TextAtRot (txtx, 0.8) "Spikes" $ pts "dark-green" 7 0.3 (chopx (jitterys 0.08 $ tag 0.8 spikes1))) :+:
->>        (pts "red" 11 1 (chopx (tag 0.20 collision))) :+:
->>        (TextAtRot (txtx, 0.99) "Frequency" $ TextAtRot (txtx+1.2, 0.93) "(s^{-1})" $ WithAxis freqAx $ lns "black" 1 (chopx (rescale 0.0012 0.9 shistMany))) 
+>> plot $ Noaxis $ XRange 1749 1792 $ XScaleBar (1784, (-0.02)) (2, "2 s") (0.03) $
+>>        (TextAtRot (txtx, 0.045) "Distance (m)" $ WithAxis distAx $ lns "dark-red" 2 (chopx (rescale 0.0035 0.12 distSig))) :+: 
+>>        (TextAtRot (txtx, 0.455) "Voltage" $ lns "black" 1 (chopx (rescale 4 0.565 ecVoltage))) :+: 
+>>        (TextAtRot (txtx, -0.20) "l/|v| (s})" $ WithAxis lovAx $ lns "blue" 5 (chopx (rescale 5 (-0.33) lovDur))) :+:
+>>        (TextAtRot (txtx, 0.69) "Spikes" $ pts "dark-green" 7 0.3 (chopx (jitterys 0.08 $ tag 0.69 spikes1))) :+:
+>>        (pts "red" 11 1.5 (chopx (tag 0.145 collision))) :+:
+>>        (TextAtRot (txtx, 0.87) "Frequency (s^{-1})" $ WithAxis freqAx $ lns "black" 1 (chopx (rescale 0.0012 0.75 shistMany1))) 
 
 %>>        (TextAtRot (txtx, 0.52) "Voltage" $ lns "black" 1 (chopx (rescale 4 0.63 ecVoltage))) :+: 
 

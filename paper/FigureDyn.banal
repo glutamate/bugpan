@@ -25,14 +25,14 @@
 
 >> outrate = freqDuring (ffcurve) spike
 
->> scat = LinesPoints [] . filx . scatter
+>> scat = LinesPoints [LineWidth 2] . filx . scatter
 
 >> ffscat = (scat $ gA 0 (zipD inrate outrate)) :+: (scat $ gA 1e-8 (zipD inrate outrate)) :+: (scat $ gA 4e-8 (zipD inrate outrate)) :+: (scat $ gA 1e-7 (zipD inrate outrate))
 
 >> focus1 = during [((1.69,1.8),())]
 >> focus2 = during [((1.2,1.5),())]
 >> r1 = 20
->> vm1 = \gk -> smoothN 4 $ focus1 (vmWhere gk r1)
+>> vm1 = \gk -> Lines [LineWidth 2] $ smoothN 4 $ focus1 (vmWhere gk r1)
 
 
 >> oneSyn =  TicFormat X "%.2f" $ YTics [-75, 5, -50] $ XRange 1.7 1.773 $ YRange (-75) (-49) $ KeyTopLeft True $ ("0 nS", vm1 0) :+: ("10 nS", vm1 1e-8) :+: ("40 nS", vm1 4e-8) :+: ("100 nS", vm1 1e-7)
