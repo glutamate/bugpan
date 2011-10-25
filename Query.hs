@@ -382,6 +382,18 @@ manySessionData sma = do -- catMaybes `liftM` inEverySession (setup >> ma)
                then return (lastTStop + 60 + t2s, res) 
                else return (lastTStop, res) 
 
+rebaseRelativeTo :: (MonadIO m, Functor m) => String -> StateT QState m ()
+rebaseRelativeTo approxSessnm = do
+  Session myBdir myTod <- qsSess `fmap` get
+  sessnm <- liftIO $ resolveApproxSession sessionsRootDir approxSessnm
+  let otherBdir = sessionsRootDir ++ sessnm
+  othert0 <- liftIO $ read `fmap` readFile (otherBdir ./ "tStart")
+  let otherTod = TOD (fst othert0) (snd othert0)
+  let tdiff = diffInS myTod otherTod
+  modify (\s -> s {loadShift = tdiff})
+  return ()
+  
+
 sessionDur :: (MonadIO m, Functor m) => StateT QState m [Duration String]
 sessionDur = do
   snm <- getSessionName

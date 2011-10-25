@@ -39,7 +39,14 @@ tellPrintSessionName = do
 tellEverywheres = do
   dfns <- snd `fmap` get
   --io $ print dfns
-  mapM_ (tell . ("let "++)) $ reverse dfns 
+  mapM_ (tell . ("let "++)) $ reverse $ filter (not . isRebase) dfns 
+tellRebase = do
+  dfns <- snd `fmap` get
+  --io $ print dfns
+  mapM_ tell $ reverse $ filter isRebase dfns 
+
+
+isRebase = ("rebaseRelativeTo " `isPrefixOf`)
 
 modimport :: Monad m => String -> CodeWriterT m () 
 modimport s = tellNoindent $ "import "++s
@@ -137,6 +144,7 @@ allNmsTypes = do
   getNamesAndTypes sesns
 
 tellNmsTys = do
+  tellRebase
   nmtys <- liftIO $ allNmsTypes 
   forM_ nmtys $ \(nm,ty) -> do
                if ty == SignalT (NumT (Just RealT))
@@ -275,6 +283,12 @@ procQ writeQ s
            let [[_, defn]] = s =~ "^\\s*everywhere\\s*(.+)"
            in do --io $ print s
                  modify $ \(i, ss) -> (i, defn:ss)
+                 --io $ putStrLn $ "remembering "++defn
+                 when writeQ $tellPrintCode $ "everywhere "++defn
+    | s =~ "^\\s*rebase\\s*(.+)" = 
+           let [[_, defn]] = s =~ "^\\s*rebase\\s*(.+)"
+           in do --io $ print s
+                 modify $ \(i, ss) -> (i, ("rebaseRelativeTo "++show defn):ss)
                  --io $ putStrLn $ "remembering "++defn
                  when writeQ $tellPrintCode $ "everywhere "++defn
     | s =~ "^\\s*(\\w+)\\s*@=\\s*(.+)" = 

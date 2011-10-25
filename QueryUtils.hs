@@ -185,8 +185,6 @@ align evs sigs = map align' sigs
               in shift (negate ts) sig
           distFrom x y = abs(x-y)
 
-
-
 alignBy :: ([Signal a] -> [Event b]) -> [Signal a] -> [Signal a]
 alignBy f = concatMap g
     where g sig = align (f [sig]) [sig]
@@ -215,6 +213,11 @@ inout ((t1,v1):ins) outs =
     case dropWhile ((<t1) . fst) outs of
       ((t2,v2):outs') -> ((t1,t2),(v1,v2)):inout ins outs'
       [] -> []
+
+durAroundEvent :: Double -> Double -> [Event a] -> [Duration a]
+durAroundEvent tbefore tafter = map f where
+   f (t, v) = ((t-tbefore, t+tafter), v)
+
 
 runStatsOn :: Tagged t => Fold a b -> [t a] -> [Duration b]
 runStatsOn _ [] = []
