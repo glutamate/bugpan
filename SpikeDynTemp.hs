@@ -44,7 +44,7 @@ dispatch h dst ('n':' ':rest) = prompt h $ dst { noiseThreshold = read rest}
 dispatch h dst ('s':' ':rest) = prompt h $ dst { splitThreshold = read rest}
 dispatch h dst ('o':' ':rest) = prompt h $ dst { sess = rest}
 dispatch h dst ('d':rest) = display h dst >> prompt h dst
-dispatch h dst ('c':rest) = do templs <- go dst 
+dispatch h dst ('c':rest) = do templs <- go h dst 
                                putStrLn $ show (length templs) ++ " templates"
                                prompt h dst {templates = templs}
 dispatch h dst "q" = return ()
@@ -62,12 +62,14 @@ dispatch h dst "?" = do
    prompt h dst
 dispatch h dst s = putStrLn ("unknown command "++s) >> prompt h dst
 
-go (DState nThr sThr sess _) = inApproxSession sess $ do
+go h (DState nThr sThr sess _) = inApproxSession sess $ do
      ecVolts <- signalsDirect "ecVoltage"
      let noiseSD = sigSD ecVolts 
      let minIdx [] = -1
          minIdx xs = if (xs!!minimumIx xs)> sThr then -1 else minimumIx xs
-     let putatives = (\v->v<(-nThr*noiseSD) || v>(nThr*noiseSD) ) ?? ecVolts
+     let putatives = if nThr > 0 
+                        then (\v->v>(nThr*noiseSD) ) ?? ecVolts
+                        else (\v->v<(nThr*noiseSD) ) ?? ecVolts
      io $ putStrLn $ "nputatives = "++show (length putatives)
      let rms = \t (templ, _, _ ) -> sqrt $ sumSig $ fmap (^2) $ templ - head (around (ev t) ecVolts)
      let aroundTime t = head $ limitSigs (-0.001) 0.001 $ around (ev t) ecVolts
@@ -78,13 +80,23 @@ go (DState nThr sThr sess _) = inApproxSession sess $ do
                                                          ,count+1, t:ts)
      let acc = \templatesAndCounts t -> update t templatesAndCounts $ minIdx $ map (rms t) templatesAndCounts
      let templates = foldl acc [] $ map fst putatives
+         sig1 = ecVolts!!(length ecVolts `div` 2)
+         line = [((sigT1 sig1, sigT2 sig1), nThr*noiseSD)]
+     io $ plotit h 500 $ [sig1] :+: line
      return $ map (\(tmpl, _, ts) -> (reverse ts, tmpl)) templates
 
 display h (DState _ _ _ tmpls) = do
      let minv = foldl1 min $ map (snd . sigStat' minF) $ map snd tmpls
      let maxv = foldl1 max $ map (snd . sigStat' maxF) $ map snd tmpls
+     let tmin = foldl1 min $ map (runStat minF) $ map fst tmpls
+     let tmax = foldl1 max $ map (runStat maxF) $ map fst tmpls
+         sett t = (((t - tmin)/(tmax-tmin))* 0.002 -0.001, 0)
+
      let height = length tmpls * 100
-     plotit h height $ Vplots $ map (Noaxis . YRange minv maxv . (:[]) . snd) tmpls
+
+     plotit h height $ Vplots $ (flip map) tmpls $ \(ts,sig) ->  
+          (Noaxis $ YRange minv maxv $ [sig] :+: map sett ts )
+     --plotit h 500 $ map snd tmpls
      return ()
 
 ev = \t->[(t,())]
