@@ -95,6 +95,13 @@ getSession = qsSess `liftM` get
 getSessionName = do Session bdir _ <- getSession
                     return $ last $ splitBy '/' bdir
 
+getSessionStart =  do
+   Session bdir _ <- getSession
+   (t1,t2) <- liftIO $ read `fmap` readFile (bdir++"/tStart")
+   return $  TOD t1 t2
+
+
+
 openReplies = modify (\s-> s { shArgs = "-o" : shArgs s })
 plotSize w h = modify (\s-> s { shArgs = ("-h"++show h) : ("-w"++show w): shArgs s })
 fontSize f= modify (\s-> s { shArgs = ("-f"++show f) : shArgs s })
@@ -382,6 +389,8 @@ putSig (Signal t1 t2 dt arr Eq) = do
        forM_ (SV.unpack arr) $ B.put
        return()
 
+instance QueryResult ClockTime where
+     qReply tod _ = return $ show tod
 
 instance QueryResult SaveSignals where
      qReply s@(SaveSignals nm xs) _ = do

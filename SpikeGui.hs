@@ -30,7 +30,7 @@ import System.Environment
 import EvalM
 import Numeric.LinearAlgebra hiding (flatten)
 import Foreign.Storable
-import Math.Probably.KMeans 
+--import Math.Probably.KMeans 
 import Control.Monad
 import Debug.Trace
 import Data.Maybe
@@ -260,15 +260,17 @@ promptForSess = do
 spikeDetectIO = do 
   initGUI
   (args) <-getArgs 
-  snm <- case args of
-           s:_ -> return s
-           _ -> promptForSess
-  inApproxSession snm $ do 
+  (sessnm, signm) <- case args of
+           sess:sig:_ -> return (sess,sig)
+           sess:_ -> return (sess, "ec")
+           _ -> do sess <- promptForSess
+                   return (sess, "ec")
+  inApproxSession sessnm $ do 
                   --openReplies
                   --initUserInput
                   --plotSize 490 329
                   --overDur <- unitDurations overDurNm
-                  autoSpikes "ec"
+                  autoSpikes signm
                   return ()
                   --normV <- signalsDirect "normV"
                   --spikeDetect [overDur] normV []

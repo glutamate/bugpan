@@ -1,117 +1,26 @@
->> everywhere aroundSpike = baseline (-0.01) 0.005 $ limitSigs' (-0.05) 0.05 $ around (spike) $ vm
+>> everywhere aroundSpike = baseline (-0.003) 0.003 $ limitSigs' (-0.05) 0.05 $ around (spike) $ vm
+>> everywhere ampPeak = snd $ head $ peak $ take 1 $ averageSigs $ take 100 $ aroundSpike
 >> everywhere tpeak = fst $ head $ peak $ take 1 $ averageSigs $ aroundSpike
+>> everywhere bgNoiseDurs = measureBl (-0.003, 0.003) (-tpeak-0.015,0.015-tpeak) vm spike
+>> everywhere bgAmp = runStat meanF $ map snd bgNoiseDurs
+>> everywhere bgSD = runStat stdDevF $ map snd bgNoiseDurs
+>> everywhere sigNoise = ampPeak/bgSD
 
-> table where ((("washin" `isPrefixOf`)//note) & notD crap)
+> table where (notD crap & spike & notD continues)
 >    nspikes ~ show $ length spike
->    lastSpkTime ~ (accushow $ (fst $ last spike)/60) ++ " mins"
->    tpeak ~ tpeak
+>    ampPeak ~ accushow ampPeak
+>    morph 
+>    sessionStart
+>    sigNoise ~ accushow sigNoise
 
-> break
+>> openSession 00c9
 
-> inSessionsWhere ((("washin" `isPrefixOf`)//note) & notD crap)
+> plot $ XRange (-0.02) 0.02 $ averageSigs $ aroundSpike
 
-%>> beforeES = \((t,_):_) sig -> sigT1 sig < t
-%>> afterES = \((t,_):_) sig -> sigT1 sig > t
-%>> beforeEE = \((t,_):_) (t1,_) -> t1 < t
+> ampPeak
 
->> washin = ("washin" `isPrefixOf`)//note
+> tpeak
 
-%>> blDur = sigStat meanF $ during (inout (later (-0.002) spike) (later 0.002 spike)) vm
-%>> spikeWin = inout (later (-0.01) $ beforeE washin spike) (later (0.05) $ beforeE washin spike)
-%>> swSigs = measure blDur (sigStat minF $ during spikeWin vm)
-%>> swings = (\(lo,hi) -> hi-lo) <$$> sigStat (minF `both` maxF) vm
-%>> noGood = case take 3 sessionIdentifier of "fcb" -> contains ((<(-6))//swSigs) running; "6e8" -> during ((>1.0)//swings) running ++ afterE [(1282.0::Double,())] running ; _ -> []
+> bgAmp
 
->> plotSigs = \ss -> plot $ XRange (-0.01) 0.05 $ baseline (-0.01) 0.005 $ limitSigs' (-0.05) 0.05 $ ss
->> base = \ss -> baseline (-0.01) 0.005 $ limitSigs' (-0.05) 0.05 $ ss
-%>> plotInRange = \ss -> plot $ XRange (-0.01) 0.05 $ ss
-
-%> plot $ Points [PointType 7, PointSize 1] swSigs
-
-%> show $ length noGood
-
-%> show $ washin
-
-%>> vmOk = map (sigCutLast 0.005) $ notDuring noGood vm
-
->> aroundSpike = baseline (-0.01) 0.005 $ limitSigs' (-0.05) 0.05 $ around (spike) $ vm
-%>> aroundSpike50 = baseline (-0.01) 0.005 $ limitSigs' (-0.05) 0.05 $ around (minInterval 0.05 $ beforeE washin spike) $ vmOk
-%>> aroundSpike100 = baseline (-0.01) 0.005 $ limitSigs' (-0.05) 0.05 $ around (minInterval 0.1 $ beforeE washin spike) $ vmOk
-
-%>> av1 = \sigs -> take 1 $ averageSigs sigs
-
->> winHalfSize = 0.001
->> blHalfSize = 0.002
->> showMeasDur = map (\ts-> (ts,0.1)) $ [(negate $ tpeak+winHalfSize,negate $ tpeak-winHalfSize),(-blHalfSize, blHalfSize),(tpeak-winHalfSize,tpeak+winHalfSize)]
-
->> plot $ XRange (-0.02) 0.04 $ (sessionIdentifier, averageSigs $ aroundSpike) :+: showMeasDur
-
-%> note
-
->> peakDur = inout (later (tpeak-winHalfSize) spike) (later (tpeak+winHalfSize) spike)
->> peakMeas = sigStat meanF $ during peakDur vm
->> measDur =  measureBl (-blHalfSize, blHalfSize) (tpeak-winHalfSize,tpeak+winHalfSize) vm spike
->> noiseDur =  measureBl (-blHalfSize, blHalfSize) (negate $ tpeak+winHalfSize,negate $ tpeak-winHalfSize) vm spike
-
->> snm = take 4 $ sessionIdentifier
-
->> SaveArray (snm++"_epsps.dat") $ map (\((t1,_), v) -> (t1,v)) $ sortBy ( comparing fst) measDur
-
-%> show $ length $ measDur
-%> show $ length $ map snd noiseDur
-> bgVar = runStat varF (map snd noiseDur) 
-%> show $ runStat varF (map snd measDur) 
-
-> meanVars = map (runStat (meanF `both` varF)) $ inGroupsOf 20 $ map snd measDur
-
-%> subBg = map $ \(mn,var) -> (mn, varbgVar))
-
-> plot meanVars
-
->> pts = \c ty sz -> Points [PointType ty, PointSize sz, LineColor c]  
-
-> plot $ pts "red" 4 2 measDur
-
-> break
-
-%> plot $ XRange (-0.02) 0.05 $ take 200 aroundSpike
-
-%> show $ length aroundSpike
-
-%> plot $ XRange (-0.01) 0.05 $ varianceSigs $ aroundSpike
-
-%> plot swings
-
-%> plot $ XRange (-0.01) 0.05 $ ("evens", av1 $ evens aroundSpike) :+: ("odds", av1 $ odds aroundSpike)
-
-%> plot $ XRange (-0.01) 0.05 $ ("No refraction", av1 aroundSpike) :+: ("50ms", av1 aroundSpike50) :+: ("100ms", av1 aroundSpike100)
-
-
-%> plot $ XRange (-0.01) 0.05 $ baseline (-0.01) 0.005 $ take 50 $ limitSigs' (-0.05) 0.05 $ around (beforeE washin spike) $  vmOk
-
-%> plotInRange $ ("after 4 mins", av1 $ base $ around (afterE (later 240 washin) spike) $ vmOk) :+: ("before", av1 $ base $ around (beforeE washin spike) $ vmOk) :+: ("after 8 mins", av1 $ base $ around (afterE (later 480 washin) spike) $ vmOk) 
-
-
-%> plot $ XRange (-0.01) 0.05 $ YRange (-0.5) 1 $ take 20 $ smoothN 10 $ baseline 0.04 0.05 $ limitSigs' (-0.05) 0.05 $ around spike vmOk
-
-%> plot $ XRange (-0.005) 0.005 $ take 20 $ smoothN 10 $ baseline 0.04 0.05 $ limitSigs' (-0.05) 0.05 $ around spike ec
-
-%> plot $ XRange (0) 0.05 $ take 20  $alignBy sigStart $ during stimLeg vmOk 
-
-%> plot $ XRange (0) 0.09 $ YRange (-0.2) 1.5 $ baseline 0 0.029 $ averageSigs  $alignBy sigStart $ beforeE washin $ during stimNerve vmOk 
-
-%> plot $ XRange (0) 0.09 $ YRange (-0.2) 0.5 $ baseline 0 0.09 $ noConst $ averageSigs  $alignBy sigStart $ afterE washin $ during stimNerve vmOk 
-
-%> plot $ Points [PointType 7, PointSize 1] measDur
-
-%> show $ length measDur
-
-%> show $ length (beforeE washin spike)
-
-%> show $ length (minInterval 0.05 $ beforeE washin spike)
-
-%> show $ length (minInterval 0.1 $ beforeE washin spike)
-
-%> break
-
-
+> bgSD

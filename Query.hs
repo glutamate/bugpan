@@ -133,9 +133,9 @@ events :: (MonadIO m, Reify (Event a)) => String -> a-> StateT QState m [Event a
 events nm _ = do
   Session bdir t0 <- getSession
   tshift <- loadShift `liftM` get
-  ifM (liftIO (doesDirectoryExist (bdir++"/events/"++nm)))
+  liftIO $ unsafeInterleaveIO $ ifM (doesDirectoryExist (bdir++"/events/"++nm))
       (do fnms <- getSortedDirContents $ bdir++"/events/"++nm
-          utevs <- forM fnms $ \fn-> liftIO $ loadVs $ bdir++"/events/"++nm++"/"++fn
+          utevs <- forM fnms $ \fn-> loadVs $ bdir++"/events/"++nm++"/"++fn
           return . shift tshift $ catMaybes $ map reify $ concat utevs) 
       (return [])
 
@@ -154,9 +154,9 @@ durations :: (MonadIO m, Reify (Duration a)) => String -> a-> StateT QState m [D
 durations nm _ = do
   Session bdir t0 <- getSession
   tshift <- loadShift `liftM` get
-  ifM (liftIO (doesDirectoryExist (bdir++"/durations/"++nm)))
+  liftIO $ unsafeInterleaveIO $ ifM (doesDirectoryExist (bdir++"/durations/"++nm))
       (do fnms <- getSortedDirContents $ bdir++"/durations/"++nm
-          eps <- forM fnms $ \fn-> liftIO $ loadVs $ bdir++"/durations/"++nm++"/"++fn
+          eps <- forM fnms $ \fn-> loadVs $ bdir++"/durations/"++nm++"/"++fn
           return . shift tshift $ catMaybes $ map reify $ concat eps)
       (return [])            
 

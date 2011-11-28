@@ -33,6 +33,7 @@ tellEndCode = tell $ "io $ putStrLn $ \"\\\\end{code}\\n\""
 
 tellPrintSessionName = do
     tell "sessionIdentifier <- getSessionName"
+    tell "sessionStart <- getSessionStart"
     tellBeginCode
     tell "io $ putStrLn $ \"openSession \"++sessionIdentifier"
     tellEndCode
@@ -239,6 +240,7 @@ procTable qs tablines = do
                             indent 3                       
   --tellPrint "<tr>"
   tell "sessionIdentifier <- getSessionName"
+  tell "sessionStart <- getSessionStart"
   tell "io $ putStrLn $ take 6 sessionIdentifier"
   forM_ (tablines ) $ \ln -> do
                          tellPrintNoLn " & "
