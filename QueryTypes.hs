@@ -95,6 +95,8 @@ getSession = qsSess `liftM` get
 getSessionName = do Session bdir _ <- getSession
                     return $ last $ splitBy '/' bdir
 
+
+
 getSessionStart =  do
    Session bdir _ <- getSession
    (t1,t2) <- liftIO $ read `fmap` readFile (bdir++"/tStart")

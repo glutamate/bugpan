@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveDataTypeable, ScopedTypeVariables, NoMonomorphismRestriction, ViewPatterns #-}
+{-# LANGUAGE DeriveDataTypeable, ScopedTypeVariables, NoMonomorphismRestriction, ViewPatterns, PackageImports #-}
 module QuantalHelp where
 import Math.Probably.MCMC
 import Math.Probably.StochFun
@@ -17,7 +17,7 @@ import qualified Data.StorableVector as SV
 import System.IO.Unsafe
 import qualified Math.Probably.PDF as PDF
 import qualified Numeric.LinearAlgebra as L
-import Baysig.Estimate.RTS
+import "baysig" Baysig.Estimate.RTS
 import Math.Probably.RandIO
 import Data.List
 
@@ -69,7 +69,7 @@ alpha = \tc-> \t-> ((((step t)*tc)*tc)*t)*(exp ((0.000-t)*tc))
 qsig = \amp-> \tc-> \t0-> \off-> \t-> off+(amp*(alpha tc (t-t0)))
 covOU = \theta-> \sigma-> \s-> \t-> (((sigma*sigma)*0.500)/theta)*(exp (0.000-(theta*(abs (s-t)))))
 dt = 5.000e-5
-tmax = 5.000e-2
+tmax = 1.000e-1
 np = round$(tmax/dt)
 toD = \i-> (realToFrac i)*dt
 
@@ -77,11 +77,11 @@ ifObs = \i-> \j-> \sig-> if (i==j) then sig else 0.000
 
 gpByInvLogPdf = \(_) -> \(_) -> \meansig-> \lndet-> \covinv-> \obssig-> let ((dt,_),obsvec) = observe obssig; meanVec = (fillV np)$(\i-> meansig (toD i)) in ((mvnPdf lndet covinv) meanVec) obsvec
 
-posteriorNoiseV sigs v = let (covM)=fillM (((round (5.000e-2/5.000e-5)),(round (5.000e-2/5.000e-5)))) (\(i,j)-> ((((sigma*sigma)*0.500)/(exp logtheta))*(exp (0.000-((exp logtheta)*(abs (((realToFrac i)*5.000e-5)-((realToFrac j)*5.000e-5)))))))+(if (i==j) then (exp logobs) else 0.000)) in let (inv,lndet)=invlndet covM in uniformLogPdf (0.000-50.000) (100.000) logtheta
+posteriorNoiseV sigs v = let (covM)=fillM ((np,np)) (\(i,j)-> ((((sigma*sigma)*0.500)/(exp logtheta))*(exp (0.000-((exp logtheta)*(abs (((realToFrac i)*dt)-((realToFrac j)*dt)))))))+(if (i==j) then (exp logobs) else 0.000)) in let (inv,lndet)=invlndet covM in uniformLogPdf (0.000-50.000) (100.000) logtheta
  +uniformLogPdf (0.000) (10.000) sigma
  +uniformLogPdf (0.000-50.000) (100.000) logobs
  +uniformLogPdf (0.000-80.000) (0.000-40.000) vmean
- +(sum $ (flip map) (zip [1..10] sigs) $ \(i, sigv)->gpByInvLogPdf (5.000e-5) (5.000e-2) (\y-> vmean) (lndet) (inv) sigv)
+ +(sum $ (flip map) (zip [1..10] sigs) $ \(i, sigv)->gpByInvLogPdf (dt) (tmax) (\y-> vmean) (lndet) (inv) sigv)
   where logtheta = v@> 0
         sigma = v@> 1
         logobs = v@> 2

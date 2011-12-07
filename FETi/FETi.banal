@@ -7,11 +7,12 @@
 >> everywhere sigNoise = ampPeak/bgSD
 
 > table where (notD crap & spike & notD continues)
->    nspikes ~ show $ length spike
+>    nspks ~ show $ length spike
 >    ampPeak ~ accushow ampPeak
 >    morph 
->    sessionStart
+>    date ~ let wds = words $ show sessionStart in wds!!2 ++wds!!1++ (drop 2 $ wds!!5) 
 >    sigNoise ~ accushow sigNoise
+>    sd ~ accushow bgSD
 
 >> openSession 00c9
 
