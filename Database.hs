@@ -158,7 +158,7 @@ resolveApproxSession  root nm | nm == "last" = do
   --print sessns
   case find (nm `isPrefixOf`) sessns of
     Just s -> return s
-    _ -> fail $ "resolveApproxSession: cannot find session "++nm++" in "++root
+    _ -> return $ "fail_resolve"
   
 loadApproxSession :: FilePath -> String -> IO Session
 loadApproxSession root nm = do

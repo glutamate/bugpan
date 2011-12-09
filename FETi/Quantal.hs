@@ -35,8 +35,11 @@ import Control.Monad.Trans
 
 
 main = do 
-  sessApprox:dowhat:_ <- getArgs
-  sess <- resolveApproxSession sessionsRootDir sessApprox
+  sessApprox:dowhat:rest <- getArgs
+  let remove_fail "fail_resolve" = sessApprox
+      remove_fail s = s
+  sess <- fmap remove_fail $ resolveApproxSession sessionsRootDir sessApprox
+
   createDirectoryIfMissing False $ take 6 sess
 
   when ('1' `elem` dowhat) $ epspSigs sess
@@ -44,8 +47,15 @@ main = do
   when ('3' `elem` dowhat) $ measAmps sess
   when ('4' `elem` dowhat) $ measNPQ sess
   when ('5' `elem` dowhat) $ summary sess
-
+  when ('6' `elem` dowhat) $ simulate sess rest
   return ()
+
+simulate sess rest = runRIO $ do
+  let n = read $ head rest
+  sigs <- fmap ( map stagger . zip [1..] ) $ sample $ fakesam $ n
+  io $ encodeFile (take 6 sess++"/sigs_"++take 6 sess++"_epsps") $ LoadSignals sigs 
+  io $ writeFile (take 6 sess++"/noisePars") $ show (log thetaHat, sigmaHat, log obsHat)
+
 
 summary sess = do
   changeWorkingDirectory $ take 6 sess
@@ -88,10 +98,10 @@ summary sess = do
             LoadSignals sigs <-  decodeFile $ "sigs_"++take 6 sessNm++"_epsps" 
             return sigs
 
-  let Signal _ _ sv = baselineSig 0.003 $ averageSigs $ sigs
+  let wf@(Signal _ _ sv) = baselineSig 0.003 $ averageSigs $ sigs
   let wfAmp = foldl1' max $ L.toList sv
   puts $ "wfamp= "++show wfAmp++"\n"
-
+  plotIt "wf" wf
   let ffile = (unzip3 .  sortBy (comparing fst3) . map read . lines)
   (t0s'::[Double], amps::[Double],sds::[Double]) <- fmap ffile  $ readFile ("epsps")
   plotIt ("epspsou_"++ take 6 sess) $ Points [PointSize 1] $ zip t0s' $ map (*wfAmp) amps

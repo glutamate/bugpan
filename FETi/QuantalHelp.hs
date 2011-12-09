@@ -150,3 +150,21 @@ showNPQV (L.toList -> [n, logcv, phi, logq])
 minWidth n s | len < n = s ++ replicate (n - len) ' '
              | otherwise = s
   where len = length s
+
+simslope = 8.000e-3
+simq = 2.000e-4
+--simn = 50
+simoffset = 500
+simntrials = 1000
+simt0 = 0.035
+
+
+thetaHat = 0.15 --4.630e-3
+sigmaHat = 1.6 --6.260
+obsHat = 2.7e-4
+
+
+fakesam simn = (return simn)>>=(\n-> (return 0.150)>>=(\cv-> (return simslope)>>=(\slope-> (return simoffset)>>=(\offset-> (return 0.800)>>=(\phi-> (return 0.200)>>=(\plo-> (return (simq*(100/realToFrac simn)))>>=(\q-> (return 170.000)>>=(\tc-> (return simt0)>>=(\t0-> (for 1 simntrials)$(\i-> let p = phi-((phi-plo)/(1.000+(exp ((offset*slope)-(slope*(realToFrac i)))))) in ((((binGauss n p) q) cv) 0.000)>>=(\amp-> (return (0-60.000))>>=(\vstart-> ((gpByChol dt tmax) (\t-> vstart+(amp*(((((step (t-t0))*tc)*tc)*(t-t0))*(exp ((0.000-(t-t0))*tc)))))) cholm))))))))))))
+  where cholm = chol$((fillM (((np+1),(np+1))))$(\(i,j)-> ((covOU thetaHat sigmaHat) (toD i)) (toD j)+ifObs i j obsHat))
+
+stagger (i, Signal dt t0 sig) = Signal dt i sig
