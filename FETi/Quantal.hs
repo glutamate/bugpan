@@ -26,7 +26,7 @@ import System.Cmd
 import Graphics.Gnewplot.Exec
 import Graphics.Gnewplot.Types
 import Graphics.Gnewplot.Style
---import Graphics.Gnewplot.Panels
+import Graphics.Gnewplot.Panels
 import Graphics.Gnewplot.Instances
 import Graphics.Gnewplot.Histogram
 
@@ -44,18 +44,42 @@ main = do
 
   when ('1' `elem` dowhat) $ epspSigs sess
   when ('2' `elem` dowhat) $ measNoise sess
+
+  when ('6' `elem` dowhat) $ simulate sess rest
   when ('3' `elem` dowhat) $ measAmps sess
   when ('4' `elem` dowhat) $ measNPQ sess
   when ('5' `elem` dowhat) $ summary sess
-  when ('6' `elem` dowhat) $ simulate sess rest
+
+  when ('7' `elem` dowhat) $ measAmps1 sess
+
+  when ('8' `elem` dowhat) $ simulateAll [200, 300]
+  when ('9' `elem` dowhat) $ simulateAll [25, 50, 100]
+  
   return ()
 
+pad (c:[]) = '0':c:[]
+pad cs = cs
+
+simulateAll nss = do 
+  forM_ [1000, 5000, 10000] $ \ntr -> do
+   forM_ nss $ \ns -> do
+     forM_ [1..5] $ \run -> do
+       let ntrs = pad $ reverse $ drop 3 $ reverse $ show ntr
+           nsstr = take 2 $ show ns           
+           sessnm = ntrs++nsstr++show run
+           runIt = "./Quantal "++sessnm++" 6 "++show ns++" "++show ntr
+       system runIt
+       writeFile (sessnm++"/sessions") $ show [sessnm]
+       system $ "./Quantal "++sessnm++" 34"
+
+
 simulate sess rest = runRIO $ do
-  let n = read $ head rest
-  sigs <- fmap ( map stagger . zip [1..] ) $ sample $ fakesam $ n
+  let n = read $ rest!!0
+  let ntrials = read $ rest!!1
+  sigs <- fmap ( map stagger . zip [1..] ) $ sample $ fakesam n ntrials
   io $ encodeFile (take 6 sess++"/sigs_"++take 6 sess++"_epsps") $ LoadSignals sigs 
   io $ writeFile (take 6 sess++"/noisePars") $ show (log thetaHat, sigmaHat, log obsHat)
-
+ 
 
 summary sess = do
   changeWorkingDirectory $ take 6 sess
@@ -105,6 +129,37 @@ summary sess = do
   let ffile = (unzip3 .  sortBy (comparing fst3) . map read . lines)
   (t0s'::[Double], amps::[Double],sds::[Double]) <- fmap ffile  $ readFile ("epsps")
   plotIt ("epspsou_"++ take 6 sess) $ Points [PointSize 1] $ zip t0s' $ map (*wfAmp) amps
+
+  puts $ "wfamp= "++show wfAmp++"\n"
+  plotIt "wf" $ wf 
+  plotIt "first10" $ take 3 sigs 
+
+  noisePars <- readFile ("noisePars")
+  puts $ "\nnoisePars = "++noisePars++"\n"
+
+  let ffile = (unzip3 .  sortBy (comparing fst3) . map read . lines)
+  (t0s'::[Double], amps,sds::[Double]) <-  fmap ffile  $ readFile ("epsps")
+  let tsamps = zip t0s' amps
+      --tsamps = filter ((<3) . (\(t, amp)-> zscore tsamps' (t,amp))) tsamps'
+      t0s = map fst tsamps
+  let weighCurve' = map (weighRegression tsamps ) t0s
+      maxPcurve = foldl1 max weighCurve'
+      pcurve = map (/(maxPcurve)) weighCurve'
+  let globalSd = sqrt $ runStat (before meanF (**2)) sds
+
+  puts $ "\nglobalSd  = "++show globalSd++"\n"
+
+  plotIt "pcurve" $ zip t0s pcurve :+: tsamps
+
+  vsamples::[L.Vector Double] <- fmap read $ readFile ("npq_samples")
+  let (mean,sd) =  (both meanF stdDevF) `runStat` vsamples 
+  puts $ intercalate "\t" $ map (minWidth 8) $ words "n cv phi q"
+  puts $ "\n"++showNPQV mean++"\n"
+  puts $ showNPQV sd ++"\n"
+
+  puts "\n"
+  
+  plotIt "nplot" $ zip [(0::Double)..] $ map (@>0) vsamples
 
   puts "\\end{document}"
   hClose h
@@ -161,15 +216,49 @@ measAmps sess = runRIO $ do
   h<- io $ openFile (take 6 sess++"/epsps") WriteMode 
   forM_ sigs $ \sig@(Signal dt t0 _) -> do
       let initialV = L.fromList [-60,1]
-      iniampar <- sample $ initialAdaMet 100 5e-3 (posteriorSigV wf invDetails sig) initialV
-      froampar <- runAndDiscard 2000 (show . ampPar) iniampar $ adaMet False (posteriorSigV wf invDetails sig)
-      vsamples<- runAdaMetRIO 3000 True froampar (posteriorSigV wf invDetails sig)
-      let (amp,sd) = both meanF stdDevF `runStat` map (@>1) vsamples
-      io $ print (t0,amp,sd)
-      io $ hPutStrLn h $ show (t0, amp,sd)
+      case laplaceApprox defaultAM {nmTol = 0.01} (posteriorSigV wf invDetails sig) [] initialV of
+
+         (v, Just cor) -> do
+                let amp = v @> 1
+                    sd = sqrt $ (L.@@>) cor (1,1)
+                io $ putStrLn $ "by Laplace: "++ show (t0,amp,sd)
+
+                io $ hPutStrLn h $ show (t0, amp,sd)
+
+         _             -> do
+                vsamples <- nmAdaMet defaultAM (posteriorSigV wf invDetails sig) [] initialV
+                let (amp,sd) = both meanF stdDevF `runStat` map (@>1) vsamples
+                io $ print (t0,amp,sd)
+                io $ hPutStrLn h $ show (t0, amp,sd)
       --plotPts $ zip [0..] $ map (@>1) vsamples
       return ()
   io $ hClose h
+  return ()
+
+measAmps1 sess = runRIO $ do
+  (logtheta, sigma, logobs) <- fmap read $ io $ readFile (take 6 sess++"/noisePars")
+  let covM = fillM (np,np) $
+              \(i,j)-> ((covOU (exp logtheta) (sigma::Double)) (toD i)) (toD j)+ifObs i j (exp logobs)
+  let invDetails = invlndet covM
+  nms <- fmap read $ io $ readFile (take 6 sess++"/sessions")
+  sigs <- fmap concat $ forM nms $ \sessNm-> do 
+            LoadSignals sigs <- io $ decodeFile $ take 6 sess++"/sigs_"++take 6 sessNm++"_epsps" 
+            return sigs
+  let wf = baselineSig 0.003 $ averageSigs $ sigs
+  let sig@(Signal dt t0 _) = head sigs
+  let initialV = L.fromList [-60,1]
+{-  iniampar <- sample $ initialAdaMet 100 5e-3 (posteriorSigV wf invDetails sig) initialV
+  froampar <- runAndDiscard 2000 (show . ampPar) iniampar $ adaMet False (posteriorSigV wf invDetails sig)
+  vsamples<- runAdaMetRIO 3000 True froampar (posteriorSigV wf invDetails sig)
+  let (amp,sd) = both meanF stdDevF `runStat` map (@>1) vsamples-}
+--  io $ print (amp,sd)
+  nmasams <- nmAdaMet defaultAM (posteriorSigV wf invDetails sig) [] initialV
+  let (ampnm,sdnm) = both meanF stdDevF `runStat` map (@>1) nmasams
+--  io $ print (amp,sd)
+  io $ print (ampnm,sdnm)
+
+
+  --plotPts $ zip [0..] $ map (@>1) vsamples
   return ()
  
 measNPQ sess = runRIO $ do
@@ -185,8 +274,8 @@ measNPQ sess = runRIO $ do
 
   let initialV = L.fromList [100,log 0.15,0.8,log 0.02]
 
-  let nsam = 40000
-      nfrozen = 20000 
+  let nsam = 100000
+      nfrozen = 100000
   io $ print $ posteriorNPQV amps pcurve globalSd initialV
   iniampar <- sample $ initialAdaMet 500 5e-3 (posteriorNPQV amps pcurve globalSd) initialV
   io $ putStr "inipar ="
