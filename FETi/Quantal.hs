@@ -52,16 +52,14 @@ main = do
 
   when ('7' `elem` dowhat) $ measAmps1 sess
 
-  when ('8' `elem` dowhat) $ simulateAll [200, 300]
-  when ('9' `elem` dowhat) $ simulateAll [25, 50, 100]
+  when ('8' `elem` dowhat) $ simulateAll [200, 100] [2500, 5000]
+  when ('9' `elem` dowhat) $ simulateAll [300, 50] [2500, 5000]
   
   return ()
 
-pad (c:[]) = '0':c:[]
-pad cs = cs
 
-simulateAll nss = do 
-  forM_ [1000, 5000, 10000] $ \ntr -> do
+simulateAll nss ntrs = do 
+  forM_ ntrs $ \ntr -> do
    forM_ nss $ \ns -> do
      forM_ [1..5] $ \run -> do
        let ntrs = pad $ reverse $ drop 3 $ reverse $ show ntr
@@ -131,8 +129,12 @@ summary sess = do
   plotIt ("epspsou_"++ take 6 sess) $ Points [PointSize 1] $ zip t0s' $ map (*wfAmp) amps
 
   puts $ "wfamp= "++show wfAmp++"\n"
+  puts $ "\nnsigs= "++show (length sigs)++"\n"
   plotIt "wf" $ wf 
   plotIt "first10" $ take 3 sigs 
+
+
+
 
   noisePars <- readFile ("noisePars")
   puts $ "\nnoisePars = "++noisePars++"\n"
@@ -274,30 +276,20 @@ measNPQ sess = runRIO $ do
 
   let initialV = L.fromList [100,log 0.15,0.8,log 0.02]
 
-  let nsam = 100000
-      nfrozen = 100000
+  let nsam = 40000
+      nfrozen = 20000
   io $ print $ posteriorNPQV amps pcurve globalSd initialV
   iniampar <- sample $ initialAdaMet 500 5e-3 (posteriorNPQV amps pcurve globalSd) initialV
   io $ putStr "inipar ="
-  io $ print $ ampPar iniampar
-  froampar <- runAndDiscard nsam (showNPQV . ampPar) iniampar $ adaMet False (posteriorNPQV amps pcurve globalSd)
+  io $ print $ ampPar iniampar 
+  froampar <- runAndDiscard nsam (showNPQV') iniampar $ adaMet False (posteriorNPQV amps pcurve globalSd)
   io $ putStr "frozenpar ="
   io $ print $ ampPar froampar
   vsamples <- runAdaMetRIO nfrozen True froampar (posteriorNPQV amps pcurve globalSd) 
   io $ writeFile (take 6 sess++"/npq_samples") $ show vsamples
   let (mean,sd) =  (both meanF stdDevF) `runStat` vsamples 
   io $ putStrLn $ intercalate "\t" $ map (minWidth 8) $ words "n cv phi q"
-  io $ putStrLn $ showNPQV mean
+  io $ putStrLn $ showNPQV $ mean
   io $ putStrLn $ showNPQV sd 
   return ()
 
-fst3 (x,_,_) = x
-
-whenContinues sess mma = do
-      conts <- durations "continues" "foo"
-      sessid <- getSessionName
-      case conts of
-        [] -> if (sessid==sess) then mma else return Nothing
-        (_,s):_ | s `isPrefixOf` sess -> mma
-                | otherwise -> return Nothing
-  

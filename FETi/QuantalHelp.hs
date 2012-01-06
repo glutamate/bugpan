@@ -21,6 +21,11 @@ import "baysig" Baysig.Estimate.RTS
 import Math.Probably.RandIO
 import Data.List
 
+import Query hiding (io) 
+import QueryTypes
+import QueryUtils hiding (averageSigs)
+
+
 neg = \x-> 0.000-x
 square = \x-> x*x
 step = \x-> if (x<0.000) then 0.000 else 1.000
@@ -37,7 +42,7 @@ uniformLogPdf = \lo-> \hi-> \x->
 uniform' = \lo-> \hi-> unit>>=(\x-> return ((x*(hi-lo))+lo))
 unormal' = unit>>=(\u1-> unit>>=(\u2-> return ((sqrt ((0.000-2.000)*(log u1)))*(cos ((2.000*pi)*u2)))))
 oneTo = \n-> (uniform 0.500 ((realToFrac n)+0.500))>>=(\x-> return (round x))
-oneToLogPdf = \hi-> \x-> if ((x<(hi+1))&&(x>0)) then 1.000 else (0.000-1.000e20)
+oneToLogPdf = \hi-> \x-> if ((x<(hi+1))&&(x>0)) then 1.000 else (0.000-1.000e50)
 normal = \mean-> \tau-> unormal>>=(\u-> return ((u/(sqrt (tau*2.000)))+mean))
 normalSd = \mean-> \sd-> unormal>>=(\u-> return ((u*sd)+mean))
 normalPdf = \mu-> \tau-> \x-> (sqrt ((tau/2.000)*pi))*(exp (0.000-(((x-mu)*(x-mu))*tau)))
@@ -143,18 +148,20 @@ zscore tsamps (t,amp) = abs z where
   z = (amp - (slope*t + offset))/ sd
  
 
+showNPQV' am = showNPQV (ampPar am)++" lh: "++show (lastLike am)
+
 showNPQV :: L.Vector Double -> String
 showNPQV (L.toList -> [n, logcv, phi, logq]) 
   = intercalate "\t" $ map (minWidth 8 . accushow) [n, exp logcv, phi, exp logq]
+  
 
 minWidth n s | len < n = s ++ replicate (n - len) ' '
              | otherwise = s
   where len = length s
 
-simslope = 8.000e-3
 simq = 2.000e-4
 --simn = 50
-simoffset = 500
+
 --simntrials = 1000
 simt0 = 0.035
 
@@ -164,7 +171,23 @@ sigmaHat = 1.6 --6.260
 obsHat = 2.7e-4
 
 
-fakesam simn ntrials = (return simn)>>=(\n-> (return 0.150)>>=(\cv-> (return simslope)>>=(\slope-> (return simoffset)>>=(\offset-> (return 0.800)>>=(\phi-> (return 0.200)>>=(\plo-> (return (simq*(100/realToFrac simn)))>>=(\q-> (return 170.000)>>=(\tc-> (return simt0)>>=(\t0-> (for 1 ntrials)$(\i-> let p = phi-((phi-plo)/(1.000+(exp ((offset*slope)-(slope*(realToFrac i)))))) in ((((binGauss n p) q) cv) 0.000)>>=(\amp-> (return (0-60.000))>>=(\vstart-> ((gpByChol dt tmax) (\t-> vstart+(amp*(((((step (t-t0))*tc)*tc)*(t-t0))*(exp ((0.000-(t-t0))*tc)))))) cholm))))))))))))
-  where cholm = chol$((fillM (((np+1),(np+1))))$(\(i,j)-> ((covOU thetaHat sigmaHat) (toD i)) (toD j)+ifObs i j obsHat))
+fakesam simn ntrials = (return simn)>>=(\n-> (return 0.150)>>=(\cv-> (return sslope)>>=(\slope-> (return soffset)>>=(\offset-> (return 0.800)>>=(\phi-> (return 0.200)>>=(\plo-> (return (simq*(100/realToFrac simn)))>>=(\q-> (return 170.000)>>=(\tc-> (return simt0)>>=(\t0-> (for 1 ntrials)$(\i-> let p = phi-((phi-plo)/(1.000+(exp ((offset*slope)-(slope*(realToFrac i)))))) in ((((binGauss n p) q) cv) 0.000)>>=(\amp-> (return (0-60.000))>>=(\vstart-> ((gpByChol dt tmax) (\t-> vstart+(amp*(((((step (t-t0))*tc)*tc)*(t-t0))*(exp ((0.000-(t-t0))*tc)))))) cholm))))))))))))
+  where cholm = chol $ fillM (np+1,np+1) $ \(i,j)-> covOU thetaHat sigmaHat (toD i) (toD j)+ifObs i j obsHat
+        soffset = ntrials / 2
+        sslope = 8.000e-3 * (1000/ntrials)
 
 stagger (i, Signal dt t0 sig) = Signal dt i sig
+
+pad (c:[]) = '0':c:[]
+pad cs = cs
+
+fst3 (x,_,_) = x
+
+whenContinues sess mma = do
+      conts <- durations "continues" "foo"
+      sessid <- getSessionName
+      case conts of
+        [] -> if (sessid==sess) then mma else return Nothing
+        (_,s):_ | s `isPrefixOf` sess -> mma
+                | otherwise -> return Nothing
+  
