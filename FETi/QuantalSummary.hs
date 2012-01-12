@@ -61,11 +61,23 @@ simsum = do
 datasess = 
  words "00c9bd 0ca3a9 22b152 512f48 7b8f60 84b41c b34863 b62b8f cf96ab fcb952"
 
+whenM mb mu = do 
+   b <- mb
+   when b mu
+
 countSigs sess = do
-  e <- doesFileExist $  (take 6 sess++"/epsps")
-  when e $ do
+  putStr $ sess ++ " "
+  whenM (doesFileExist (take 6 sess++"/epsps")) $ do
     lns <- fmap lines $ readFile (take 6 sess++"/epsps")
-    print (sess, length lns)
+    putStrLn $ show (length lns)
+  whenM (doesFileExist (take 6 sess++"/npq_samples")) $ do
+    fileconts::[L.Vector Double] <- fmap read $ readFile (take 6 sess++"/npq_samples")
+    
+    let (mnpars, sdpars) = runStat meanSDF fileconts
+    putStrLn $ show $ L.toList mnpars -- ::L.Vector Double)
+    putStr $ show $ L.toList sdpars -- ::L.Vector Double)
+    return ()
+  putStr "\n"
   
 
 main = do

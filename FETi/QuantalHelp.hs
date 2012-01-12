@@ -50,6 +50,7 @@ normalLogPdf :: Double -> Double -> Double -> Double
 normalLogPdf = \mu-> \tau-> \x-> (log (sqrt ((tau/2.000)*pi)))+(0.000-(((x-mu)*(x-mu))*tau))
 sdToTau = \sd-> 1.000/((2.000*sd)*sd)
 meanCVToTau = \mn-> \cv-> 1.000/((2.000*(cv*mn))*(cv*mn))
+varToTau :: Double -> Double
 varToTau = \var-> 1.000/(2.000*var)
 tauToSD = \t-> 1.000/(sqrt (t*2.000))
 logNormal = \mu-> \tau-> (fmap exp)$(normal mu tau)
@@ -64,7 +65,9 @@ unfoldN = \n-> \m-> \lastx-> \s-> if (n<m) then ((s n lastx)>>=(\x-> (((unfoldN 
 unfold = \n-> \lastx-> \s-> ((unfoldN 1 n) lastx) s
 binGauss = \ns-> \p-> \q-> \cv-> \bgSd-> (binomial ns p)>>=(\nr-> normal ((realToFrac nr)*q) (varToTau$(((((q*cv)*q)*cv)*(realToFrac nr))+(bgSd*bgSd))))
 binGaussPdf = \ns-> \p-> \q-> \cv-> \bgSd-> \v-> (bigSum 0 ns)$(\nr-> ((normalPdf ((realToFrac nr)*q) (varToTau$(((((q*cv)*q)*cv)*(realToFrac nr))+(bgSd*bgSd)))) v)*((binomialProb ns p) nr))
+
 binGaussLogPdf = \ns-> \p-> \q-> \cv-> \bgSd-> \v-> log$((bigSum 0 ns)$(\nr-> exp$(((normalLogPdf ((realToFrac nr)*q) (varToTau$(((((q*cv)*q)*cv)*(realToFrac nr))+(bgSd*bgSd)))) v)+((binomialLogProb ns p) nr))))
+
 normalInit = \mu-> \(_) -> mu
 uniformInit = \lo-> \hi-> (hi+lo)/2.000
 oneToInit = \n-> div n 2
@@ -111,7 +114,7 @@ baselineSig tbase (Signal dt tst vec) =
 posteriorSigV wf invDetails sig v 
   = ouSynapseLogPdf invDetails (scaleSig (v0) amp wf) sig
  where v0 = v@> 0
-       amp = v@> 1
+       amp = v@>1       
 
 posteriorNPQV amps pcurve sd v = -- ((n,cv,slope,offset,phi,plo,q,tc,t0), loopvals) = 
  oneToLogPdf (800) n
@@ -123,6 +126,19 @@ posteriorNPQV amps pcurve sd v = -- ((n,cv,slope,offset,phi,plo,q,tc,t0), loopva
         cv = exp $ v @> 1
         phi = v @> 2
         q = exp $ v @> 3
+
+type Vec = L.Vector Double
+
+fastNPQ :: (Vec -> Double) -> Int -> Vec -> (Vec, Double)
+fastNPQ pdf n0 par0 = fN initLike n0 par0 where
+  initLike = fst $ optimise n0 par0
+  setN x y = L.buildVector 6 $ \ix -> if ix == 0 then x else y L.@> ix
+  fN lastLike nlast pars = let (thislike, thispars) = optimise (nlast+1) pars
+                           in if thislike > lastLike 
+                                 then fN thislike (nlast+1) pars
+                                 else (thispars, thislike)
+  optimise n pars = 
+
 
 cut = 500
 
