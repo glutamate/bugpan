@@ -129,7 +129,7 @@ posteriorNPQV amps pcurve sd v = -- ((n,cv,slope,offset,phi,plo,q,tc,t0), loopva
 
 type Vec = L.Vector Double
 
-fastNPQ :: (Vec -> Double) -> Int -> Vec -> (Vec, Double)
+{-fastNPQ :: (Vec -> Double) -> Int -> Vec -> (Vec, Double)
 fastNPQ pdf n0 par0 = fN initLike n0 par0 where
   initLike = fst $ optimise n0 par0
   setN x y = L.buildVector 6 $ \ix -> if ix == 0 then x else y L.@> ix
@@ -137,7 +137,7 @@ fastNPQ pdf n0 par0 = fN initLike n0 par0 where
                            in if thislike > lastLike 
                                  then fN thislike (nlast+1) pars
                                  else (thispars, thislike)
-  optimise n pars = 
+  optimise n pars =  -}
 
 
 cut = 500
