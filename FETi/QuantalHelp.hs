@@ -164,7 +164,7 @@ zscore tsamps (t,amp) = abs z where
   z = (amp - (slope*t + offset))/ sd
  
 
-showNPQV' am = showNPQV (ampPar am)++" lh: "++show (lastLike am)
+--showNPQV' am = showNPQV (ampPar am)++" lh: "++show (lastLike am)
 
 showNPQV :: L.Vector Double -> String
 showNPQV (L.toList -> [n, logcv, phi, logq]) 
@@ -206,4 +206,48 @@ whenContinues sess mma = do
         [] -> if (sessid==sess) then mma else return Nothing
         (_,s):_ | s `isPrefixOf` sess -> mma
                 | otherwise -> return Nothing
-  
+
+
+posteriorTop pcurve amparloops v = -- ((n,cv,slope,offset,phi,plo,q,tc,t0), loopvals) = 
+ oneToLogPdf (800) n
+ +uniformLogPdf 0.00001 0.5 cv
+ +uniformLogPdf (0) (1) phi
+ +uniformLogPdf (0.000) (1) q
+ +(sum $ (flip map) (zip3 pcurve nrs amps) $ \(pcurveVal, nr, amp)->
+    let p=pcurveVal * phi 
+    in binomialLogProb (n) (p) nr +
+       normalLogPdf (realToFrac nr*q) (varToTau (q*cv*q*cv*(realToFrac nr))) amp )
+  where n = round $ v @> 0
+        cv = exp $ v @> 1
+        phi = v @> 2
+        q = exp $ v @> 3
+        nrs = map (round . (@>2) .  ampPar) amparloops
+        amps =map ( (@>1) .  ampPar) amparloops
+
+posteriorLoop wf invDetails ampartop pcurveVal sig v 
+  = binomialLogProb (n) (p) nr +
+    normalLogPdf (realToFrac nr*q) (varToTau (q*cv*q*cv*(realToFrac nr))) amp +
+    ouSynapseLogPdf invDetails (scaleSig (v0) amp wf) sig
+ where v0 = v@> 0
+       amp = v@>1       
+       nr = round $ v@>2
+       vt = ampPar ampartop
+       n = round $ vt @> 0
+       cv = exp $ vt @> 1
+       phi = vt @> 2
+       q = exp $ vt @> 3
+       p = pcurveVal * phi
+       
+updateG wf invDetails pcurve sigs (ampartop,amparloops) = do
+   --DONT FORGET NOT TO CACHE PREVIOUS POSTERIOR VALUE
+   newtop <- adaMet False (posteriorTop pcurve amparloops) ampartop
+   newloops <- forM (zip3 pcurve sigs amparloops) $ \(pcurveVal, sig, ampar) ->
+                 adaMet False 
+                        (posteriorLoop wf invDetails newtop pcurveVal sig) 
+                        ampar
+   return (newtop, newloops)
+
+runGibbs 0 wf invDetails pcurve sigs (ampartop,amparloops) xs = return $ reverse xs
+runGibbs n wf invDetails pcurve sigs (ampartop,amparloops) xs = do
+      (newtop, newloops)<- updateG wf invDetails pcurve sigs (ampartop,amparloops)
+      runGibbs (n-1) wf invDetails pcurve sigs (newtop, newloops) (ampPar newtop:xs)
