@@ -268,10 +268,11 @@ measAmps1 sess = runRIO $ do
  
 measNPQ sess = runRIO $ do
   let ffile = (unzip3 .  sortBy (comparing fst3) . map read . lines)
-  (t0s'::[Double], amps,sds) <- io $ fmap ffile  $ readFile (take 6 sess++"/epsps")
-  let tsamps =  filter (getFilter sess) $ zip t0s' amps
+  (t0s'::[Double], amps'::[Double],sds) <- io $ fmap ffile  $ readFile (take 6 sess++"/epsps")
+  let tsamps =  filter (getFilter sess) $ zip t0s' amps'
       --tsamps = filter ((<3) . (\(t, amp)-> zscore tsamps' (t,amp))) tsamps'
       t0s = map fst tsamps
+      amps = map snd tsamps
   let weighCurve' = map (weighRegression tsamps ) t0s
       maxPcurve = foldl1 max weighCurve'
       pcurve = map (/(maxPcurve)) weighCurve'
@@ -288,7 +289,35 @@ measNPQ sess = runRIO $ do
 
   let npq@(maxV, maxN, _, smplx) = fastNPQ fastPDF  startN $  L.fromList [-10,0.5,-3.7]
 
-      (maxPost,hess) = hessianFromSimplex' (negate . posteriorNPQV amps pcurve globalSd) [0] 
+  
+  let maxFullV = L.join [ L.fromList [realToFrac maxN], maxV]
+
+ 
+  io $ print $ posteriorNPQV amps pcurve globalSd $ maxFullV
+
+  let nsam = 2000
+      nfrozen = 10000
+
+
+  iniampar <- sample $ initialAdaMet 500 5e-3 (posteriorNPQV amps pcurve globalSd) maxFullV
+  io $ putStr "inipar ="
+  io $ print $ iniampar 
+  topampar <- runAndDiscard nsam (showNPQV') iniampar $ adaMet False  (posteriorNPQV amps pcurve globalSd)
+
+  let phiHat = ampPar topampar @> 2
+
+  inilooppars <- forM (zip amps pcurve) $ \(ampMean, pcurveVal) -> do
+        sample $ initialAdaMet 500 5e-3 
+                               (posteriorLoop' globalSd topampar pcurveVal ampMean) 
+                               $ L.fromList [ pcurveVal*phiHat* realToFrac maxN, ampMean ]
+                               
+  vsamples <- sample $ runGibbs' 1000 globalSd amps pcurve (topampar, inilooppars) []
+
+  io $ mapM_ print $ thin 10 vsamples
+
+  return ()
+  
+{-    (maxPost,hess) = hessianFromSimplex' (negate . posteriorNPQV amps pcurve globalSd) [0] 
                                       $ augmentSimplex maxN smplx 
        
   io $ putStr "fastNPQ ="
@@ -307,17 +336,18 @@ measNPQ sess = runRIO $ do
   io $ putStr "posdefified hess matrix eigen="
   io $ print $ L.eigSH $ posdefify hess
 
-  let cor = posdefify $ setM 1 1 10 $ {-L.scale 1.5 $ -} L.inv $ posdefify hess
-  let maxFullV = L.join [ L.fromList [realToFrac maxN], maxV]
+  let cor = posdefify $ setM 1 1 10 $ {-L.scale 1.5 $ -} L.inv $ posdefify hess -}
 
-  io $ putStr " mean ="
+
+
+ {-io $ putStr " mean ="
   io $ print $ maxFullV
-
-
   io $ putStr "correlation matrix ="
-  io $ print $ cor
+  io $ print $ cor -}
 
-  
+
+    
+
 
 
   {-(mnIL, covIL) <- sample $ iterLap [200,200, 500, 1000] (posteriorNPQV amps pcurve globalSd) (maxFullV, cor)
@@ -328,14 +358,11 @@ measNPQ sess = runRIO $ do
   io $ putStr "improved mean ="
   io $ print $ mnIL -}
 
-  io $ print $ posteriorNPQV amps pcurve globalSd $ maxFullV
 
-  let nsam = 50000
-      nfrozen = 100000
 
   --let ampar = AMPar maxFullV maxFullV cor (posteriorNPQV amps pcurve globalSd $maxFullV) 0 0
   --vsamples <- runAdaMetRIO nsam True ampar $ posteriorNPQV amps pcurve globalSd   
-  iniampar <- sample $ initialAdaMetWithCov 500 (posteriorNPQV amps pcurve globalSd) cor maxFullV
+{-  iniampar <- sample $ initialAdaMetWithCov 500 (posteriorNPQV amps pcurve globalSd) cor maxFullV
   io $ putStr "inipar ="
   io $ print $ iniampar 
   froampar <- runAndDiscard nsam (showNPQV') iniampar $ adaMet False  (posteriorNPQV amps pcurve globalSd)
@@ -350,7 +377,7 @@ measNPQ sess = runRIO $ do
   io $ putStrLn $ showNPQV sd 
   return ()
 
-  {-let nsam = 40000
+  let nsam = 40000
       nfrozen = 20000
   io $ print $ posteriorNPQV amps pcurve globalSd initialV
   iniampar <- sample $ initialAdaMet 500 5e-3 (posteriorNPQV amps pcurve globalSd) maxFullV

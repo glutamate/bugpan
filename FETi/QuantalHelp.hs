@@ -140,7 +140,7 @@ fastNPQ pdfN n0 par0 = fN initLike (n0-1) par0 where
                                  then fN thislike (nlast+1) thispars
                                  else (pars, nlast, lastLike, simp)
   optimise n pars = let pdf = pdfN n
-                        (maxV, _,smplx) = laplaceApprox defaultAM {nmTol = 0.001} pdf [] pars
+                        (maxV, _,smplx) = laplaceApprox defaultAM {nmTol = 0.1} pdf [] pars
                         --(maxPost,hess) = hessianFromSimplex (negate . pdfN) [] $ augmentSimplex n smplx 
                         like = pdf maxV
                       in  trace ("laplace"++show n++": "++show maxV++" lh="++show like) $ (like, maxV, smplx)
@@ -223,7 +223,7 @@ zscore tsamps (t,amp) = abs z where
   z = (amp - (slope*t + offset))/ sd
  
 
---showNPQV' am = showNPQV (ampPar am)++" lh: "++show (lastLike am)
+showNPQV' am = showNPQV (ampPar am)++" lh: "++show (lastLike am)
 
 showNPQV :: L.Vector Double -> String
 showNPQV (L.toList -> [n, logcv, phi, logq]) 
@@ -292,16 +292,31 @@ posteriorTop pcurve amparloops v = -- ((n,cv,slope,offset,phi,plo,q,tc,t0), loop
         cv = exp $ v @> 1
         phi = v @> 2
         q = exp $ v @> 3
-        nrs = map (round . (@>2) .  ampPar) amparloops
+        nrs = map (round . (@>0) .  ampPar) amparloops
         amps =map ( (@>1) .  ampPar) amparloops
 
 posteriorLoop wf invDetails ampartop pcurveVal sig v 
   = binomialLogProb (n) (p) nr +
     normalLogPdf (realToFrac nr*q) (varToTau (q*cv*q*cv*(realToFrac nr))) amp +
     ouSynapseLogPdf invDetails (scaleSig (v0) amp wf) sig
- where v0 = v@> 0
+ where v0 = v@> 2
        amp = v@>1       
-       nr = round $ v@>2
+       nr = round $ v@>0
+       vt = ampPar ampartop
+       n = round $ vt @> 0
+       cv = exp $ vt @> 1
+       phi = vt @> 2
+       q = exp $ vt @> 3
+       p = pcurveVal * phi
+ 
+posteriorLoop' sd ampartop pcurveVal sigAmpMean v 
+  = binomialLogProb (n) (p) nr +
+    normalLogPdf (realToFrac nr*q) (varToTau (q*cv*q*cv*(realToFrac nr))) amp +
+    --ouSynapseLogPdf invDetails (scaleSig (v0) amp wf) sig
+    normalLogPdf sigAmpMean (varToTau $ sd*sd ) amp
+ where --v0 = v@> 2
+       amp = v@>1       
+       nr = round $ v@>0
        vt = ampPar ampartop
        n = round $ vt @> 0
        cv = exp $ vt @> 1
@@ -311,14 +326,30 @@ posteriorLoop wf invDetails ampartop pcurveVal sig v
        
 updateG wf invDetails pcurve sigs (ampartop,amparloops) = do
    --DONT FORGET NOT TO CACHE PREVIOUS POSTERIOR VALUE
-   newtop <- adaMet False (posteriorTop pcurve amparloops) ampartop
+   newtop <- adaMetNoCacheP False (posteriorTop pcurve amparloops) ampartop
    newloops <- forM (zip3 pcurve sigs amparloops) $ \(pcurveVal, sig, ampar) ->
-                 adaMet False 
+                 adaMetNoCacheP False 
                         (posteriorLoop wf invDetails newtop pcurveVal sig) 
                         ampar
    return (newtop, newloops)
+
+updateG' sd amps pcurve (ampartop,amparloops) = do
+   --DONT FORGET NOT TO CACHE PREVIOUS POSTERIOR VALUE
+   newtop <- adaMetNoCacheP False (posteriorTop pcurve amparloops) ampartop
+   newloops <- forM (zip3 pcurve amps amparloops) $ \(pcurveVal, amp, ampar) ->
+                 adaMetNoCacheP False 
+                        (posteriorLoop' sd newtop pcurveVal amp ) 
+                        ampar
+   return (newtop, newloops)
+
 
 runGibbs 0 wf invDetails pcurve sigs (ampartop,amparloops) xs = return $ reverse xs
 runGibbs n wf invDetails pcurve sigs (ampartop,amparloops) xs = do
       (newtop, newloops)<- updateG wf invDetails pcurve sigs (ampartop,amparloops)
       runGibbs (n-1) wf invDetails pcurve sigs (newtop, newloops) (ampPar newtop:xs)
+
+runGibbs' 0 sd amps pcurve (ampartop,amparloops) xs = return $ reverse xs
+runGibbs' n sd amps pcurve (ampartop,amparloops) xs = do
+      (newtop, newloops)<- updateG' sd amps pcurve  (ampartop,amparloops)
+      runGibbs' (n-1) sd amps pcurve (newtop, newloops) 
+                (L.join [ampPar newtop, ampPar $ head newloops]:xs)
