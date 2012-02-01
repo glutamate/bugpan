@@ -19,12 +19,14 @@ import qualified Math.Probably.PDF as PDF
 import qualified Numeric.LinearAlgebra as L
 import "baysig" Baysig.Estimate.RTS
 import Math.Probably.RandIO
+import Math.Probably.NelderMead
 import Data.List
 
 import Query hiding (io) 
 import QueryTypes
 import QueryUtils hiding (averageSigs)
 
+import Debug.Trace
 
 neg = \x-> 0.000-x
 square = \x-> x*x
@@ -129,16 +131,73 @@ posteriorNPQV amps pcurve sd v = -- ((n,cv,slope,offset,phi,plo,q,tc,t0), loopva
 
 type Vec = L.Vector Double
 
-{-fastNPQ :: (Vec -> Double) -> Int -> Vec -> (Vec, Double)
-fastNPQ pdf n0 par0 = fN initLike n0 par0 where
-  initLike = fst $ optimise n0 par0
-  setN x y = L.buildVector 6 $ \ix -> if ix == 0 then x else y L.@> ix
-  fN lastLike nlast pars = let (thislike, thispars) = optimise (nlast+1) pars
-                           in if thislike > lastLike 
-                                 then fN thislike (nlast+1) pars
-                                 else (thispars, thislike)
-  optimise n pars =  -}
+fastNPQ :: (Int -> Vec -> Double) -> Int -> Vec -> (Vec, Int, Double, Simplex)
+fastNPQ pdfN n0 par0 = fN initLike (n0-1) par0 where
+  initLike = -1e20 -- fst $ optimise n0 par0
 
+  fN lastLike nlast pars = let (thislike, thispars, simp) = optimise (nlast+1) pars
+                           in if thislike > lastLike 
+                                 then fN thislike (nlast+1) thispars
+                                 else (pars, nlast, lastLike, simp)
+  optimise n pars = let pdf = pdfN n
+                        (maxV, _,smplx) = laplaceApprox defaultAM {nmTol = 0.001} pdf [] pars
+                        --(maxPost,hess) = hessianFromSimplex (negate . pdfN) [] $ augmentSimplex n smplx 
+                        like = pdf maxV
+                      in  trace ("laplace"++show n++": "++show maxV++" lh="++show like) $ (like, maxV, smplx)
+
+       
+augmentSimplex n = map f where
+   f (vec, like) = (L.join [morev, vec], like)
+   morev = L.fromList [realToFrac n]
+       
+
+
+                  
+hessianFromSimplex' :: (L.Vector Double -> Double) -> [Int] -> Simplex -> (L.Vector Double, Matrix Double)
+hessianFromSimplex' f isInt sim = 
+  let mat :: [L.Vector Double]
+      mat = L.toRows $ L.fromColumns $ map fst sim
+      fsw ((y0, ymin),ymax) = (y0, max (ymax-y0) (y0-ymin))
+      swings = flip map mat $ runStat (fmap fsw $ meanF `both` minFrom 1e80 `both` maxFrom (-1e80)) . L.toList 
+      n = length swings
+      xv = L.fromList $ map fst swings
+      fxv = f  xv
+      iswings i | i `elem` isInt = atLeastOne' $snd $ swings!!i
+                | otherwise = snd $ swings!!i
+      funits d i | d/=i = 0
+                 | i `elem` isInt = atLeastOne' $ snd $ swings!!i
+                 | otherwise = snd $ swings!!i 
+      units = traceit "\n\nunits" $ flip map [0..n-1] $ \d -> L.buildVector n $ funits d
+      --http://www.caspur.it/risorse/softappl/doc/sas_docs/ormp/chap5/sect28.htm
+      fhess (i,j) | i>=j = 
+                      ((f $ xv + units!!i + units!!j)
+                       - (f $ xv + units!!i - units!!j)
+                       - (f $ xv - units!!i + units!!j)
+                       + (f $ xv - units!!i - units!!j) ) 
+                      / (4*(iswings i) * (iswings j))
+                  | otherwise = 0.0    
+      hess1= L.buildMatrix n n fhess 
+      hess2 = L.buildMatrix n n $ \(i,j) ->if i>=j then hess1 L.@@>(i,j) 
+                                                 else hess1 L.@@>(j,i) 
+  in (L.fromList (map (fst) swings), hess2)
+
+
+setM i j v m = L.buildMatrix (L.rows m) (L.cols m)$ \(i',j') ->if i'==i && j==j' then v
+                                                               else m L.@@>(i',j') 
+
+
+
+atLeastOne' :: Double -> Double
+atLeastOne' x | isNaN x || isInfinite x = 1.0
+              | x < -1.0 || x > 1.0 = realToFrac $ round x
+              | x < 0 = -1.0
+              | otherwise = 1.0
+
+
+
+traceit s x = trace (s++": "++show x) x
+
+setN x v = L.buildVector 6 $ \ix -> if ix == 0 then x else v L.@> ix
 
 cut = 500
 
@@ -175,7 +234,7 @@ minWidth n s | len < n = s ++ replicate (n - len) ' '
              | otherwise = s
   where len = length s
 
-simq = 2.000e-4
+simq = 4.000e-4
 --simn = 50
 
 --simntrials = 1000
@@ -187,7 +246,7 @@ sigmaHat = 1.6 --6.260
 obsHat = 2.7e-4
 
 
-fakesam simn ntrials = (return simn)>>=(\n-> (return 0.150)>>=(\cv-> (return sslope)>>=(\slope-> (return soffset)>>=(\offset-> (return 0.800)>>=(\phi-> (return 0.200)>>=(\plo-> (return (simq*(100/realToFrac simn)))>>=(\q-> (return 170.000)>>=(\tc-> (return simt0)>>=(\t0-> (for 1 ntrials)$(\i-> let p = phi-((phi-plo)/(1.000+(exp ((offset*slope)-(slope*(realToFrac i)))))) in ((((binGauss n p) q) cv) 0.000)>>=(\amp-> (return (0-60.000))>>=(\vstart-> ((gpByChol dt tmax) (\t-> vstart+(amp*(((((step (t-t0))*tc)*tc)*(t-t0))*(exp ((0.000-(t-t0))*tc)))))) cholm))))))))))))
+fakesam simn ntrials = (return simn)>>=(\n-> (return 0.150)>>=(\cv-> (return sslope)>>=(\slope-> (return soffset)>>=(\offset-> (return 0.400)>>=(\phi-> (return 0.200)>>=(\plo-> (return (simq*(100/realToFrac simn)))>>=(\q-> (return 170.000)>>=(\tc-> (return simt0)>>=(\t0-> (for 1 ntrials)$(\i-> let p = phi-((phi-plo)/(1.000+(exp ((offset*slope)-(slope*(realToFrac i)))))) in ((((binGauss n p) q) cv) 0.000)>>=(\amp-> (return (0-60.000))>>=(\vstart-> ((gpByChol dt tmax) (\t-> vstart+(amp*(((((step (t-t0))*tc)*tc)*(t-t0))*(exp ((0.000-(t-t0))*tc)))))) cholm))))))))))))
   where cholm = chol $ fillM (np+1,np+1) $ \(i,j)-> covOU thetaHat sigmaHat (toD i) (toD j)+ifObs i j obsHat
         soffset = ntrials / 2
         sslope = 8.000e-3 * (1000/ntrials)
@@ -207,3 +266,15 @@ whenContinues sess mma = do
         (_,s):_ | s `isPrefixOf` sess -> mma
                 | otherwise -> return Nothing
   
+startNs = [("00c9", 50), ("84", 40), ("512", 50) ]
+filters = [("b34", \(t,amp)-> t>5300)]
+
+
+
+getStartN sess = case find (\(s,v) -> s `isPrefixOf` sess) startNs of
+                  Just (s,v) -> v
+                  Nothing -> 15
+
+getFilter sess = case find (\(s,v) -> s `isPrefixOf` sess) filters of
+                  Just (s,v) -> v
+                  Nothing -> const True

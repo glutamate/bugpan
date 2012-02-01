@@ -23,6 +23,8 @@ import Data.Ord
 import System.Posix.Directory
 import System.Cmd
 
+import QuantalHelp
+
 import Graphics.Gnewplot.Exec
 import Graphics.Gnewplot.Types
 import Graphics.Gnewplot.Style
@@ -58,17 +60,18 @@ plotIt nm obj = do
   lift $ system $ "epstopdf "++nm++".eps"
   putLn $"\\includegraphics[width=16cm]{"++nm++"}\n"
 
-simsum = writeTex "simSummary.tex" $ forM_ [1000, 2500, 5000] $ \ntr -> do
+simsum = writeTex "simSummary.tex" $ forM_ [1000, 2500] $ \ntr -> do
    let ntrs = pad $ reverse $ drop 3 $ reverse $ show ntr
    pts <- fmap (concat . concat) $ forM [25::Double, 50, 100, 200, 300] $ \ns -> do
             forM [1..5] $ \run -> do
                let nsstr = take 2 $ show $ round ns           
                    sessnm = ntrs++nsstr++show (round run)
                    fnm = sessnm++"/npq_samples"
+                   qsim = simq * (100 / realToFrac ns)
                lift $ print fnm
                ifM (lift $ doesFileExist fnm) 
                    (do vsamples::[L.Vector Double] <- lift $ fmap (read)  $ readFile fnm
-                       return $ zip (repeat (ns+(run-3)*3)) $ map (@>0) $ thin 100 vsamples)
+                       return $ zip (repeat (ns+(run-3)*3)) $ map (\v-> exp (v@>3)) $ thin 100 vsamples)
                    (return [])
    plotIt ("sim_npq_res"++ntrs) pts
 
@@ -127,7 +130,7 @@ compareNPQ = writeTex "npqSummary.tex" $ do
   plotIt "ampplot" $ ManySup $ map q1 ptss
 
 main = do
---  simsum
+  --simsum
 --  mapM_ countSigs datasess
   compareNPQ
 

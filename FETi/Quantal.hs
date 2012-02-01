@@ -17,7 +17,10 @@ import Baysig.Estimate.RTS
 import Data.Binary
 import qualified Numeric.LinearAlgebra as L
 import Math.Probably.MCMC
+import Math.Probably.Sampler
 import Math.Probably.FoldingStats
+import Math.Probably.NelderMead
+
 import System.IO
 import Data.Ord
 import System.Posix.Directory
@@ -32,7 +35,7 @@ import Graphics.Gnewplot.Histogram
 
 import Control.Monad.Trans
 
-
+import Math.Probably.IterLap
 
 main = do 
   sessApprox:dowhat:rest <- getArgs
@@ -52,8 +55,8 @@ main = do
 
   when ('7' `elem` dowhat) $ measAmps1 sess
 
-  when ('8' `elem` dowhat) $ simulateAll [200, 100] [2500, 5000]
-  when ('9' `elem` dowhat) $ simulateAll [300, 50] [2500, 5000]
+  when ('8' `elem` dowhat) $ simulateAll [25, 50, 300] [1000,2500]
+  when ('9' `elem` dowhat) $ simulateAll [200, 100] [1000, 2500]
   
   return ()
 
@@ -220,7 +223,7 @@ measAmps sess = runRIO $ do
       let initialV = L.fromList [-60,1]
       case laplaceApprox defaultAM {nmTol = 0.01} (posteriorSigV wf invDetails sig) [] initialV of
 
-         (v, Just cor) -> do
+         (v, Just cor, smplx) -> do
                 let amp = v @> 1
                     sd = sqrt $ (L.@@>) cor (1,1)
                 io $ putStrLn $ "by Laplace: "++ show (t0,amp,sd)
@@ -266,7 +269,7 @@ measAmps1 sess = runRIO $ do
 measNPQ sess = runRIO $ do
   let ffile = (unzip3 .  sortBy (comparing fst3) . map read . lines)
   (t0s'::[Double], amps,sds) <- io $ fmap ffile  $ readFile (take 6 sess++"/epsps")
-  let tsamps = zip t0s' amps
+  let tsamps =  filter (getFilter sess) $ zip t0s' amps
       --tsamps = filter ((<3) . (\(t, amp)-> zscore tsamps' (t,amp))) tsamps'
       t0s = map fst tsamps
   let weighCurve' = map (weighRegression tsamps ) t0s
@@ -274,12 +277,83 @@ measNPQ sess = runRIO $ do
       pcurve = map (/(maxPcurve)) weighCurve'
   let globalSd = sqrt $ runStat (before meanF (**2)) sds
 
-  let initialV = L.fromList [100,log 0.15,0.8,log 0.02]
+--  let initialV = (L.fromList [100,-10,0.6,-3]:: L.Vector Double)
+ 
+--  io $ putStr "init ="
+--  io $ print $ initialV
+ 
 
-  let nsam = 40000
+  let fastPDF n v = posteriorNPQV amps pcurve globalSd $ L.join [ L.fromList [realToFrac n],  v]-- set n
+      startN = getStartN sess
+
+  let npq@(maxV, maxN, _, smplx) = fastNPQ fastPDF  startN $  L.fromList [-10,0.5,-3.7]
+
+      (maxPost,hess) = hessianFromSimplex' (negate . posteriorNPQV amps pcurve globalSd) [0] 
+                                      $ augmentSimplex maxN smplx 
+       
+  io $ putStr "fastNPQ ="
+  io $ print $ npq
+
+  io $ putStr "hess="
+  io $ print $ hess
+
+  io $ putStr "hess matrix eigen="
+  io $ print $ L.eigSH hess
+
+
+  io $ putStr "posdefify hess matrix: "
+  io $ print $ posdefify hess
+
+  io $ putStr "posdefified hess matrix eigen="
+  io $ print $ L.eigSH $ posdefify hess
+
+  let cor = posdefify $ setM 1 1 10 $ {-L.scale 1.5 $ -} L.inv $ posdefify hess
+  let maxFullV = L.join [ L.fromList [realToFrac maxN], maxV]
+
+  io $ putStr " mean ="
+  io $ print $ maxFullV
+
+
+  io $ putStr "correlation matrix ="
+  io $ print $ cor
+
+  
+
+
+  {-(mnIL, covIL) <- sample $ iterLap [200,200, 500, 1000] (posteriorNPQV amps pcurve globalSd) (maxFullV, cor)
+
+  io $ putStr "improved correlation matrix ="
+  io $ print $ covIL
+
+  io $ putStr "improved mean ="
+  io $ print $ mnIL -}
+
+  io $ print $ posteriorNPQV amps pcurve globalSd $ maxFullV
+
+  let nsam = 50000
+      nfrozen = 100000
+
+  --let ampar = AMPar maxFullV maxFullV cor (posteriorNPQV amps pcurve globalSd $maxFullV) 0 0
+  --vsamples <- runAdaMetRIO nsam True ampar $ posteriorNPQV amps pcurve globalSd   
+  iniampar <- sample $ initialAdaMetWithCov 500 (posteriorNPQV amps pcurve globalSd) cor maxFullV
+  io $ putStr "inipar ="
+  io $ print $ iniampar 
+  froampar <- runAndDiscard nsam (showNPQV') iniampar $ adaMet False  (posteriorNPQV amps pcurve globalSd)
+  io $ putStr "frozenpar ="
+  io $ print $ froampar
+  vsamples <- runAdaMetRIOInterleaveInitial nfrozen True cor froampar (posteriorNPQV amps pcurve globalSd) 
+
+  io $ writeFile (take 6 sess++"/npq_samples") $ show vsamples
+  let (mean,sd) =  (both meanF stdDevF) `runStat` vsamples 
+  io $ putStrLn $ intercalate "\t" $ map (minWidth 8) $ words "n cv phi q"
+  io $ putStrLn $ showNPQV $ mean
+  io $ putStrLn $ showNPQV sd 
+  return ()
+
+  {-let nsam = 40000
       nfrozen = 20000
   io $ print $ posteriorNPQV amps pcurve globalSd initialV
-  iniampar <- sample $ initialAdaMet 500 5e-3 (posteriorNPQV amps pcurve globalSd) initialV
+  iniampar <- sample $ initialAdaMet 500 5e-3 (posteriorNPQV amps pcurve globalSd) maxFullV
   io $ putStr "inipar ="
   io $ print $ ampPar iniampar 
   froampar <- runAndDiscard nsam (showNPQV') iniampar $ adaMet False (posteriorNPQV amps pcurve globalSd)
@@ -291,5 +365,5 @@ measNPQ sess = runRIO $ do
   io $ putStrLn $ intercalate "\t" $ map (minWidth 8) $ words "n cv phi q"
   io $ putStrLn $ showNPQV $ mean
   io $ putStrLn $ showNPQV sd 
-  return ()
+  return () -}
 
