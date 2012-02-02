@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveDataTypeable, ScopedTypeVariables, NoMonomorphismRestriction, ViewPatterns #-}
+{-# LANGUAGE DeriveDataTypeable, ScopedTypeVariables, NoMonomorphismRestriction, ViewPatterns, PackageImports #-}
 module Main where
 
 import System.Environment
@@ -11,15 +11,15 @@ import Data.Maybe
 import Data.List
 import Control.Monad
 import System.Directory
-import Math.Probably.RandIO
+import "probably" Math.Probably.RandIO
 import QuantalHelp
-import Baysig.Estimate.RTS
+import "baysig" Baysig.Estimate.RTS
 import Data.Binary
 import qualified Numeric.LinearAlgebra as L
-import Math.Probably.MCMC
-import Math.Probably.Sampler
-import Math.Probably.FoldingStats
-import Math.Probably.NelderMead
+import "probably" Math.Probably.MCMC
+import "probably" Math.Probably.Sampler
+import "probably" Math.Probably.FoldingStats
+import "probably" Math.Probably.NelderMead
 
 import System.IO
 import Data.Ord
@@ -35,7 +35,7 @@ import Graphics.Gnewplot.Histogram
 
 import Control.Monad.Trans
 
-import Math.Probably.IterLap
+import "probably" Math.Probably.IterLap
 
 main = do 
   sessApprox:dowhat:rest <- getArgs
@@ -134,7 +134,7 @@ summary sess = do
   puts $ "wfamp= "++show wfAmp++"\n"
   puts $ "\nnsigs= "++show (length sigs)++"\n"
   plotIt "wf" $ wf 
-  plotIt "first10" $ take 3 sigs 
+  --plotIt "first10" $ take 3 sigs 
 
 
 
@@ -295,23 +295,41 @@ measNPQ sess = runRIO $ do
  
   io $ print $ posteriorNPQV amps pcurve globalSd $ maxFullV
 
-  let nsam = 2000
+  let nsam = 5000
       nfrozen = 10000
 
 
   iniampar <- sample $ initialAdaMet 500 5e-3 (posteriorNPQV amps pcurve globalSd) maxFullV
   io $ putStr "inipar ="
   io $ print $ iniampar 
-  topampar <- runAndDiscard nsam (showNPQV') iniampar $ adaMet False  (posteriorNPQV amps pcurve globalSd)
+  topAll <- runAndDiscard nsam (showNPQV') iniampar $ adaMet False  (posteriorNPQV amps pcurve globalSd)
 
-  let phiHat = ampPar topampar @> 2
+  let phiHat = ampPar topAll @> 1
+
+  let topNP = AMPar (L.fromList [ampPar topAll @> 0, ampPar topAll @> 2])
+                    (L.fromList [ampPar topAll @> 0, ampPar topAll @> 2])
+                    (((L.><) 2 2) [ampCov topAll L.@@> (0,0), ampCov topAll L.@@> (2,0), 
+                                   ampCov topAll L.@@> (0,2), ampCov topAll L.@@> (2,2)])
+                    1
+                    10 5
+  let topQCV= AMPar (L.fromList [ampPar topAll @> 1, ampPar topAll @> 3])
+                    (L.fromList [ampPar topAll @> 1, ampPar topAll @> 3])
+                    (((L.><) 2 2) [ampCov topAll L.@@> (1,1), ampCov topAll L.@@> (3,1), 
+                                   ampCov topAll L.@@> (1,3), ampCov topAll L.@@> (3,3)])
+                    1
+                    10 5
 
   inilooppars <- forM (zip amps pcurve) $ \(ampMean, pcurveVal) -> do
         sample $ initialAdaMet 500 5e-3 
-                               (posteriorLoop' globalSd topampar pcurveVal ampMean) 
-                               $ L.fromList [ pcurveVal*phiHat* realToFrac maxN, ampMean ]
+                               (posteriorLoop' globalSd topNP topQCV pcurveVal ampMean) 
+                               $ L.fromList [ 1, ampMean ]
                                
-  vsamples <- sample $ runGibbs' 1000 globalSd amps pcurve (topampar, inilooppars) []
+  let schedule = zip (repeat 2000) [1] -- 300,200,150,100,75,50,30,20,15,10]
+
+  vsamples <- sample $ runGibbs' schedule
+                                 globalSd amps pcurve 
+                                 (shrink 100 topNP, shrink 10 topQCV,
+                                  map (reset_counts 10) inilooppars) []
 
   io $ mapM_ print $ thin 10 vsamples
 

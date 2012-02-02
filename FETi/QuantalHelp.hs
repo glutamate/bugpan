@@ -1,15 +1,15 @@
 {-# LANGUAGE DeriveDataTypeable, ScopedTypeVariables, NoMonomorphismRestriction, ViewPatterns, PackageImports #-}
 module QuantalHelp where
-import Math.Probably.MCMC
-import Math.Probably.StochFun
-import Math.Probably.Sampler
-import Math.Probably.FoldingStats
+import "probably" Math.Probably.MCMC
+import "probably" Math.Probably.StochFun
+import "probably" Math.Probably.Sampler
+import "probably" Math.Probably.FoldingStats
 import Control.Monad
 import Data.Array
-import qualified Statistics.Math as SM
+--import qualified Statistics.Math as SM
 import qualified Math.Probably.Student as S
 import qualified Data.StorableVector as SV
-import Codec.Image.DevIL
+--import Codec.Image.DevIL
 import qualified Data.Array.Unboxed as UA
 import Foreign.ForeignPtr
 import Foreign.Storable.Tuple
@@ -18,8 +18,8 @@ import System.IO.Unsafe
 import qualified Math.Probably.PDF as PDF
 import qualified Numeric.LinearAlgebra as L
 import "baysig" Baysig.Estimate.RTS
-import Math.Probably.RandIO
-import Math.Probably.NelderMead
+import "probably" Math.Probably.RandIO
+import "probably" Math.Probably.NelderMead
 import Data.List
 
 import Query hiding (io) 
@@ -61,6 +61,10 @@ binNormalApprox = \n-> \p-> normal (n*p) (varToTau ((n*p)*(1.000-p)))
 binomialProb = \n-> \p-> \k-> ((choose n k)*(p^k))*((1.000-p)^(n-k))
 binomialLogProb :: Int ->Double ->Int -> Double 
 binomialLogProb = \n-> \p-> \k-> ((log$(choose n k))+((realToFrac k)*(log p)))+((realToFrac (n-k))*(log (1.000-p)))
+
+binomialLogProb' n p k | k > n = binomialLogProb' n p n 
+                       | otherwise = ((log$(choose n k))+((realToFrac k)*(log p)))+((realToFrac (n-k))*(log (1.000-p)))
+
 countTrue = \_arg0-> case _arg0 of Nil  -> 0; Cons True  bs -> 1+(countTrue bs); Cons False  bs -> countTrue bs
 betaLogPdf = \a-> \b-> \x-> log$(((1.000/(S.beta (realToFrac a) (realToFrac b)))*(x^(a-1)))*((1.000-x)^(b-1)))
 unfoldN = \n-> \m-> \lastx-> \s-> if (n<m) then ((s n lastx)>>=(\x-> (((unfoldN (n+1) m) x) s)>>=(\xs-> return (Cons x xs)))) else ((s n lastx)>>=(\v-> return (Cons v Nil)))
@@ -123,7 +127,9 @@ posteriorNPQV amps pcurve sd v = -- ((n,cv,slope,offset,phi,plo,q,tc,t0), loopva
  +uniformLogPdf 0.00001 0.5 cv
  +uniformLogPdf (0) (1) phi
  +uniformLogPdf (0.000) (1) q
- +(sum $ (flip map) (zip pcurve amps) $ \(pcurveVal, amp)->let p=pcurveVal * phi in binGaussLogPdf (n) (p) (q) (cv) (sd) amp)
+ +(sum $ (flip map) (zip pcurve amps) $ \(pcurveVal, amp)->
+               let p=pcurveVal * phi 
+               in binGaussLogPdf (n) (p) (q) (cv) (sd) amp)
   where n = round $ v @> 0
         cv = exp $ v @> 1
         phi = v @> 2
@@ -284,16 +290,46 @@ posteriorTop pcurve amparloops v = -- ((n,cv,slope,offset,phi,plo,q,tc,t0), loop
  +uniformLogPdf 0.00001 0.5 cv
  +uniformLogPdf (0) (1) phi
  +uniformLogPdf (0.000) (1) q
- +(sum $ (flip map) (zip3 pcurve nrs amps) $ \(pcurveVal, nr, amp)->
+ +(sum $ (flip map) (zip3 pcurve relfracs amps) $ \(pcurveVal, relfrac, amp)->
     let p=pcurveVal * phi 
+        nr::Int = round $ relfrac *p* realToFrac n
     in binomialLogProb (n) (p) nr +
        normalLogPdf (realToFrac nr*q) (varToTau (q*cv*q*cv*(realToFrac nr))) amp )
   where n = round $ v @> 0
         cv = exp $ v @> 1
         phi = v @> 2
         q = exp $ v @> 3
-        nrs = map (round . (@>0) .  ampPar) amparloops
+        relfracs = map ( (@>0) .  ampPar) amparloops
         amps =map ( (@>1) .  ampPar) amparloops
+
+posteriorTopNP pcurve amTopQCV amparloops v = -- ((n,cv,slope,offset,phi,plo,q,tc,t0), loopvals) = 
+ oneToLogPdf (800) n
+ +uniformLogPdf (0) (1) phi
+ +(sum $ (flip map) (zip3 pcurve relfracs amps) $ \(pcurveVal, relfrac, amp)->
+    let p=pcurveVal * phi 
+        nr::Int = round $ relfrac *p* realToFrac n
+    in binomialLogProb' (n) (p) nr)
+  where n = round $ v @> 0
+        --cv = exp $ v @> 1
+        phi = v @> 1
+        --q = exp $ v @> 3
+        relfracs = map ( (@>0) .  ampPar) amparloops
+        amps =map ( (@>1) .  ampPar) amparloops
+
+posteriorTopQCV pcurve amTopNP amparloops v = -- ((n,cv,slope,offset,phi,plo,q,tc,t0), loopvals) = 
+ uniformLogPdf 0.00001 0.5 cv
+ +uniformLogPdf (0.000) (1) q
+ +(sum $ (flip map) (zip3 pcurve relfracs amps) $ \(pcurveVal, relfrac, amp)->
+    let p=pcurveVal * phi 
+        nr::Int = round $ relfrac *p* realToFrac n
+    in normalLogPdf (realToFrac nr*q) (varToTau (q*cv*q*cv*(realToFrac nr))) amp )
+  where n = round $ (ampPar amTopNP) @> 0
+        cv = exp $ v @> 0
+        phi = (ampPar amTopNP) @> 1
+        q = exp $ v @> 1
+        relfracs = map ( (@>0) .  ampPar) amparloops
+        amps =map ( (@>1) .  ampPar) amparloops
+
 
 posteriorLoop wf invDetails ampartop pcurveVal sig v 
   = binomialLogProb (n) (p) nr +
@@ -309,19 +345,21 @@ posteriorLoop wf invDetails ampartop pcurveVal sig v
        q = exp $ vt @> 3
        p = pcurveVal * phi
  
-posteriorLoop' sd ampartop pcurveVal sigAmpMean v 
-  = binomialLogProb (n) (p) nr +
+posteriorLoop' sd amtopNP amtopQCV pcurveVal sigAmpMean v 
+  = binomialLogProb' (n) (p) nr +
     normalLogPdf (realToFrac nr*q) (varToTau (q*cv*q*cv*(realToFrac nr))) amp +
     --ouSynapseLogPdf invDetails (scaleSig (v0) amp wf) sig
     normalLogPdf sigAmpMean (varToTau $ sd*sd ) amp
  where --v0 = v@> 2
        amp = v@>1       
-       nr = round $ v@>0
-       vt = ampPar ampartop
-       n = round $ vt @> 0
-       cv = exp $ vt @> 1
-       phi = vt @> 2
-       q = exp $ vt @> 3
+       relfrac =  v@>0
+       nr = round $ relfrac *p* realToFrac n
+       vNP = ampPar amtopNP
+       vQCV = ampPar amtopQCV
+       n = round $ vNP @> 0
+       cv = exp $ vQCV @> 0
+       phi = vNP @> 1
+       q = exp $ vQCV @> 1
        p = pcurveVal * phi
        
 updateG wf invDetails pcurve sigs (ampartop,amparloops) = do
@@ -333,14 +371,15 @@ updateG wf invDetails pcurve sigs (ampartop,amparloops) = do
                         ampar
    return (newtop, newloops)
 
-updateG' sd amps pcurve (ampartop,amparloops) = do
+updateG' sd amps pcurve topcool (amtopNP, amtopQCV,amparloops) = do
    --DONT FORGET NOT TO CACHE PREVIOUS POSTERIOR VALUE
-   newtop <- adaMetNoCacheP False (posteriorTop pcurve amparloops) ampartop
+   newtopNP <- adaMetNoCacheP False ((/topcool) . posteriorTopNP pcurve amtopQCV amparloops) amtopNP
+   newtopQCV <- adaMetNoCacheP False ((/topcool) . posteriorTopQCV pcurve newtopNP amparloops) amtopQCV
    newloops <- forM (zip3 pcurve amps amparloops) $ \(pcurveVal, amp, ampar) ->
                  adaMetNoCacheP False 
-                        (posteriorLoop' sd newtop pcurveVal amp ) 
+                        (posteriorLoop' sd newtopNP newtopQCV pcurveVal amp ) 
                         ampar
-   return (newtop, newloops)
+   return (newtopNP, newtopQCV, newloops)
 
 
 runGibbs 0 wf invDetails pcurve sigs (ampartop,amparloops) xs = return $ reverse xs
@@ -348,8 +387,15 @@ runGibbs n wf invDetails pcurve sigs (ampartop,amparloops) xs = do
       (newtop, newloops)<- updateG wf invDetails pcurve sigs (ampartop,amparloops)
       runGibbs (n-1) wf invDetails pcurve sigs (newtop, newloops) (ampPar newtop:xs)
 
-runGibbs' 0 sd amps pcurve (ampartop,amparloops) xs = return $ reverse xs
-runGibbs' n sd amps pcurve (ampartop,amparloops) xs = do
-      (newtop, newloops)<- updateG' sd amps pcurve  (ampartop,amparloops)
-      runGibbs' (n-1) sd amps pcurve (newtop, newloops) 
-                (L.join [ampPar newtop, ampPar $ head newloops]:xs)
+runGibbs' [] sd amps pcurve pars xs = return $ reverse xs
+runGibbs' ((0,_):rest) sd amps pcurve pars xs = do
+      runGibbs' (rest) sd amps pcurve pars xs
+runGibbs' ((n,topcool):rest) sd amps pcurve pars xs = do
+      newpars@(p1,p2,p3)<- updateG' sd amps pcurve topcool pars
+      runGibbs' ((n-2,topcool):rest) sd amps pcurve newpars
+                (L.join (map ampPar [p1,p2,head p3]):xs)
+
+
+reset_counts n ampar = ampar { count = n, count_accept = n `div` 2} 
+
+shrink x ampar = ampar {ampCov = L.scale (recip x) $ ampCov ampar} 
