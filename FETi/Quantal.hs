@@ -295,18 +295,20 @@ measNPQ sess = runRIO $ do
  
   io $ print $ posteriorNPQV amps pcurve globalSd $ maxFullV
 
-  let nsam = 5000
+  let nsam = 1000000
       nfrozen = 10000
 
 
   iniampar <- sample $ initialAdaMet 500 5e-3 (posteriorNPQV amps pcurve globalSd) maxFullV
   io $ putStr "inipar ="
   io $ print $ iniampar 
-  topAll <- runAndDiscard nsam (showNPQV') iniampar $ adaMet False  (posteriorNPQV amps pcurve globalSd)
+  {-topAll <- runAndDiscard nsam (showNPQV') iniampar $ adaMet False  (posteriorNPQV amps pcurve globalSd)
+  io $ putStr "topall ="
+  io $ print $ topAll 
 
-  let phiHat = ampPar topAll @> 1
+  let phiHat = ampPar topAll @> 1 -}
 
-  let topNP = AMPar (L.fromList [ampPar topAll @> 0, ampPar topAll @> 2])
+  {-let topNP = AMPar (L.fromList [ampPar topAll @> 0, ampPar topAll @> 2])
                     (L.fromList [ampPar topAll @> 0, ampPar topAll @> 2])
                     (((L.><) 2 2) [ampCov topAll L.@@> (0,0), ampCov topAll L.@@> (2,0), 
                                    ampCov topAll L.@@> (0,2), ampCov topAll L.@@> (2,2)])
@@ -319,21 +321,28 @@ measNPQ sess = runRIO $ do
                     1
                     10 5
 
-  inilooppars <- forM (zip amps pcurve) $ \(ampMean, pcurveVal) -> do
-        sample $ initialAdaMet 500 5e-3 
-                               (posteriorLoop' globalSd topNP topQCV pcurveVal ampMean) 
-                               $ L.fromList [ 1, ampMean ]
+  io $ putStr "topnp ="
+  io $ print $ topNP 
+
+  io $ putStr "topqcv ="
+  io $ print $ topQCV -}
+
+
+{-  inilooppars <- forM (zip amps pcurve) $ \(ampMean, pcurveVal) -> do
+        sample $ initialAdaMet 200 5e-3 
+                               (posteriorLoop' globalSd topAll  pcurveVal ampMean) 
+                               $ L.fromList [ ampMean ]
                                
   let schedule = zip (repeat 2000) [1] -- 300,200,150,100,75,50,30,20,15,10]
 
   vsamples <- sample $ runGibbs' schedule
                                  globalSd amps pcurve 
-                                 (shrink 100 topNP, shrink 10 topQCV,
+                                 (shrink 10 topAll,  
                                   map (reset_counts 10) inilooppars) []
 
   io $ mapM_ print $ thin 10 vsamples
 
-  return ()
+  return () -}
   
 {-    (maxPost,hess) = hessianFromSimplex' (negate . posteriorNPQV amps pcurve globalSd) [0] 
                                       $ augmentSimplex maxN smplx 
@@ -380,13 +389,13 @@ measNPQ sess = runRIO $ do
 
   --let ampar = AMPar maxFullV maxFullV cor (posteriorNPQV amps pcurve globalSd $maxFullV) 0 0
   --vsamples <- runAdaMetRIO nsam True ampar $ posteriorNPQV amps pcurve globalSd   
-{-  iniampar <- sample $ initialAdaMetWithCov 500 (posteriorNPQV amps pcurve globalSd) cor maxFullV
-  io $ putStr "inipar ="
-  io $ print $ iniampar 
-  froampar <- runAndDiscard nsam (showNPQV') iniampar $ adaMet False  (posteriorNPQV amps pcurve globalSd)
-  io $ putStr "frozenpar ="
-  io $ print $ froampar
-  vsamples <- runAdaMetRIOInterleaveInitial nfrozen True cor froampar (posteriorNPQV amps pcurve globalSd) 
+--  iniampar <- sample $ initialAdaMetWithCov 500 (posteriorNPQV amps pcurve globalSd) cor maxFullV
+--  io $ putStr "inipar ="
+--  io $ print $ iniampar 
+  --froampar <- runAndDiscard nsam (showNPQV') iniampar $ adaMet False  (posteriorNPQV amps pcurve globalSd)
+  --io $ putStr "frozenpar ="
+  --io $ print $ froampar
+  vsamples <- runAdaMetRIO nsam False  iniampar (posteriorNPQV amps pcurve globalSd) 
 
   io $ writeFile (take 6 sess++"/npq_samples") $ show vsamples
   let (mean,sd) =  (both meanF stdDevF) `runStat` vsamples 
@@ -395,7 +404,7 @@ measNPQ sess = runRIO $ do
   io $ putStrLn $ showNPQV sd 
   return ()
 
-  let nsam = 40000
+  {-let nsam = 40000
       nfrozen = 20000
   io $ print $ posteriorNPQV amps pcurve globalSd initialV
   iniampar <- sample $ initialAdaMet 500 5e-3 (posteriorNPQV amps pcurve globalSd) maxFullV
@@ -410,5 +419,5 @@ measNPQ sess = runRIO $ do
   io $ putStrLn $ intercalate "\t" $ map (minWidth 8) $ words "n cv phi q"
   io $ putStrLn $ showNPQV $ mean
   io $ putStrLn $ showNPQV sd 
-  return () -}
+  return ()  -}
 
