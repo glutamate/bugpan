@@ -365,6 +365,9 @@ instance Saveable a => QueryResult (SaveArray a) where
          return ""
       
 data SaveSignals = SaveSignals String [Signal Double]
+                 | SaveSignalsCSV String [(String,Signal Double)]
+
+
 
 
 instance B.Binary SaveSignals where
@@ -397,6 +400,16 @@ instance QueryResult ClockTime where
 instance QueryResult SaveSignals where
      qReply s@(SaveSignals nm xs) _ = do
          B.encodeFile nm s
+--         withFile nm WriteMode $ \h -> do
+--            forM_ xs $ hPutStrLn h . showLine
+         return ""
+     qReply s@(SaveSignalsCSV nm nmxs) _ = do
+         let nms = map fst nmxs
+         let lines = transpose $ map sigToList $ map snd nmxs
+         withFile nm WriteMode $ \h -> do
+            hPutStrLn h $ intercalate ", " nms
+            forM_ lines $ \line -> hPutStrLn h $ intercalate ", " $ map show line
+
 --         withFile nm WriteMode $ \h -> do
 --            forM_ xs $ hPutStrLn h . showLine
          return ""
@@ -447,7 +460,7 @@ chopAndReset durs evs = map (\(xs, ((t1,t2),v))-> shift (negate t1) xs) $ zip (c
 
 downSample n = map (downSample' (n `div` 2))
 
-downSample' :: (Ord a, Bounded a, Num a, Storable a) => Int -> Signal a -> Signal a
+downSample' :: (Ord a, Bounded a, Num a, Storable a, Show a) => Int -> Signal a -> Signal a
 --downSample' :: Int -> Signal Double -> Signal Double
 downSample' n sig@(Signal t1 t2 dt arr _) =
     let x ./. y = realToFrac x / realToFrac y

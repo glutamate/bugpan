@@ -123,6 +123,11 @@ sigCutLast tm s@(Signal t1 t2 dt arr eqOrK) =
        
 sigZero s@(Signal t1 t2 dt arr eqOrK) = Signal 0 (t2-t1) dt arr eqOrK
 
+clockFrom s@(Signal t1 t2 dt _ _) = Signal t1 t2 dt arr Eq where
+  arr = SV.pack $ sigTimePoints s
+                       
+
+
 
 limitSig lo hi (Signal t1 t2 dt arr eqOrK) = 
     let t1' = max t1 lo

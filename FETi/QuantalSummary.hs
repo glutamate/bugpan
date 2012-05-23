@@ -76,7 +76,7 @@ simsum = writeTex "simSummary.tex" $ forM_ [1000, 2500] $ \ntr -> do
    plotIt ("sim_npq_res"++ntrs) pts
 
 datasess = 
- words "00c9bd 0ca3a9 84b41c 22b152 512f48 7b8f60 b34863 b62b8f cf96ab fcb952"
+ words "00c9bd 0ca3a9 84b41c 22b152 512f48 7b8f60 b34863 b62b8f cf96ab fcb952 57246a"
 
 whenM mb mu = do 
    b <- mb
@@ -113,14 +113,14 @@ compareNPQ = writeTex "npqSummary.tex" $ do
      let fnm = sess++"/npq_samples"
      lift $ print fnm
      ifM (lift $ doesFileExist fnm) 
-         (do vsamples::[L.Vector Double] <- lift $ fmap (read)  $ readFile fnm
+         (do vsamples::[L.Vector Double] <- lift $ fmap (thin 1000 . read)  $ readFile fnm
              sigs <- do LoadSignals sigs <-  lift $ B.decodeFile $ take 6 sess++"/sigs_"++take 6 sess++"_epsps" 
                         return sigs
              let wf@(Signal _ _ sv) = baselineSig 0.003 $ averageSigs $ sigs
              let wfAmp = foldl1' max $ L.toList sv
              let wf1@(Signal _ _ sv1) = baselineSig 0.003 $ averageSigs $ take 20 sigs
              let wfAmp1 = foldl1' max $ L.toList sv1
-             return $ (zip (repeat nsess) $ thin 100 vsamples, (wfAmp, wfAmp1)))
+             return $ (zip (repeat nsess) $ vsamples, (wfAmp, wfAmp1)))
          (return ([], (1, 0)))
   plotIt "nplot" $ ManySup $ map (map (\(i,pts)-> (i, pts L.@> 0))) $ map fst ptss
   plotIt "phiplot" $ ManySup $ map (map (\(i,pts)-> (i, pts L.@> 2))) $ map fst ptss

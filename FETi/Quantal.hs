@@ -201,8 +201,8 @@ measNoise sess = runRIO $ do
   let initialV = L.fromList [-2, 2::Double, -5, -60]
   io$ print $ initialV
   io$ print $ tmax/dt
-  iniampar <- sample $ initialAdaMet 100 5e-3 (posteriorNoiseV sigs) initialV
-  froampar <- runAndDiscard 500 (show . ampPar) iniampar $ adaMet False (posteriorNoiseV sigs)
+  iniampar <- sample $ initialAdaMet 50 5e-3 (posteriorNoiseV sigs) initialV
+  froampar <- runAndDiscard 200 (show . ampPar) iniampar $ adaMet False (posteriorNoiseV sigs)
   vsamples<- runAdaMetRIO 200 True froampar (posteriorNoiseV sigs)
   let [logtheta, sigma, logobs, _] = L.toList$   runStat meanF vsamples
   io $ writeFile (take 6 sess++"/noisePars") $ show (logtheta, sigma, logobs)
@@ -295,7 +295,7 @@ measNPQ sess = runRIO $ do
  
   io $ print $ posteriorNPQV amps pcurve globalSd $ maxFullV
 
-  let nsam = 1000000
+  let nsam = 100000
       nfrozen = 10000
 
 

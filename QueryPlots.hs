@@ -146,7 +146,7 @@ writeSig fp s@(Signal t1 t2 dt sf Eq) = do
   SV.hPut h sf
   hClose h
 
-instance Num a => PlotWithGnuplot [Event a] where
+instance (Num a, Show a) => PlotWithGnuplot [Event a] where
     getGnuplotCmd [] = return []
     getGnuplotCmd es = 
         do q<- getQueryIdentifier
@@ -158,7 +158,7 @@ instance Num a => PlotWithGnuplot [Event a] where
                    forM_ evs $ \(t,v)-> hPutStrLn h $ show t++"\t"++show v
                    hClose h
 
-instance Num a => PlotWithGnuplot [Duration a] where
+instance (Num a, Show a) => PlotWithGnuplot [Duration a] where
     getGnuplotCmd [] = return []
     getGnuplotCmd es = 
         do q<- getQueryIdentifier
@@ -232,7 +232,7 @@ idDouble :: Double -> Double
 idDouble = id
 
 
-instance (Ord a, Bounded a, Num a, Storable a, Reify a) => QueryResult [Signal a] where
+instance (Ord a, Bounded a, Num a, Storable a, Reify a, Show a) => QueryResult [Signal a] where
     qReply [sig] opts | grid opts = let sig' = downSample' 100 sig
                                         vls = sigToList sig'
                                         minPt = negate $ foldl1 (min)  vls

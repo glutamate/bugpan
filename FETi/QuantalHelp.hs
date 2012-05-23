@@ -257,7 +257,18 @@ sigmaHat = 1.6 --6.260
 obsHat = 2.7e-4
 
 
-fakesam simn ntrials = (return simn)>>=(\n-> (return 0.150)>>=(\cv-> (return sslope)>>=(\slope-> (return soffset)>>=(\offset-> (return 0.400)>>=(\phi-> (return 0.200)>>=(\plo-> (return (simq*(100/realToFrac simn)))>>=(\q-> (return 170.000)>>=(\tc-> (return simt0)>>=(\t0-> (for 1 ntrials)$(\i-> let p = phi-((phi-plo)/(1.000+(exp ((offset*slope)-(slope*(realToFrac i)))))) in ((((binGauss n p) q) cv) 0.000)>>=(\amp-> (return (0-60.000))>>=(\vstart-> ((gpByChol dt tmax) (\t-> vstart+(amp*(((((step (t-t0))*tc)*tc)*(t-t0))*(exp ((0.000-(t-t0))*tc)))))) cholm))))))))))))
+fakesam simn ntrials = return 0.150>>=(\cv-> 
+        (return 0.800)>>=(\phi-> 
+        (return 0.200)>>=(\plo-> 
+        (return (simq*(100/realToFrac simn)))>>=(\q-> 
+        (return 170.000)>>=(\tc-> 
+        (for 1 ntrials)$(\i-> 
+            let p = phi-((phi-plo)/(1.000+(exp (soffset*sslope-sslope*realToFrac i)))) 
+            in ((((binGauss simn p) q) cv) 0.000)>>=(\amp-> 
+               (return (0-60.000))>>=(\vstart-> 
+               ((gpByChol dt tmax) 
+                          (\t-> vstart+(amp*(((((step (t-simt0))*tc)*tc)*(t-simt0))*(exp ((0.000-(t-simt0))*tc)))))) 
+                          cholm))))))))
   where cholm = chol $ fillM (np+1,np+1) $ \(i,j)-> covOU thetaHat sigmaHat (toD i) (toD j)+ifObs i j obsHat
         soffset = ntrials / 2
         sslope = 8.000e-3 * (1000/ntrials)

@@ -12,7 +12,7 @@ import Data.Maybe
 --import Debug.Trace
 import Numbers
 import Data.Array
-import Data.Generics hiding (Unit)
+import Data.Generics --hiding (Unit)
 import TNUtils
 import qualified Data.StorableVector as SV
 

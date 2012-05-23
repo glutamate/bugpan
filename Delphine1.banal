@@ -1,5 +1,3 @@
-Hello!
-
 We have our duration "scratch" that defines a scratch. Sometimes we
 might be interested in only those scratches in which no current was
 injected. Let's call it "scratchD0". It's defined as the scratches
@@ -42,18 +40,35 @@ we can also look at just the bursts in D0:
 
 Let's define some more things we need for the cross-correlations (one plot for ever animal)
 
-> everywhere binSize = 0.05
+> everywhere binSize = 0.01
 > everywhere cc x y = limitSigs (-0.2) 0.2 $ crossCorrelateControlled scratch binSize x y
+> everywhere cc1 x y = head $ limitSigs (-0.2) 0.2 $ crossCorrelateControlled scratch binSize x y
 
-The plots are on the following pages!
+
+The plots are on the following pages
 
 > break
 
 > inEverySession 
 
->> plot ((("flexor feti",  cc fetiSpikes flex1Spikes) :||: ("ci1 feti ",  cc fetiSpikes ci1Spikes ))
+>> plot ((("ci1 seti",  cc setiSpikes ci1Spikes) :||: ("ci1 feti ",  cc fetiSpikes ci1Spikes ))
 >>      :==:
->>      (("ci1 flexor" , cc flex1Spikes ci1Spikes ) :||: ("seti flexor ", cc flex1Spikes setiSpikes)))
+>>      (("ci1 flexor" , cc flex1Spikes ci1Spikes ) :||: Noplot ))
+
+>> plot ((("seti feti",  cc fetiSpikes setiSpikes) :||: ("seti flexor ", cc flex1Spikes setiSpikes))
+>>      :==:
+>>      (Noplot :||: ("feti flexor ", cc flex1Spikes fetiSpikes)))
+
+All of flexors above were 'flexor1.' There is also a 'flexor2' recording: 
+
+>> plot ((("ci1 flexor2" , cc flex2Spikes ci1Spikes ) :||: ("seti flexor2 ", cc flex2Spikes setiSpikes))
+>>      :==:
+>>      (Noplot :||: ("feti flexor2 ", cc flex2Spikes fetiSpikes)))
+
+
+> SaveSignalsCSV ("cc_"++ sessionIdentifier++".csv") $ [("time", clockFrom (cc1 fetiSpikes ci1Spikes)), ("ci1 seti",  cc1 setiSpikes ci1Spikes),("ci1 feti ",  cc1 fetiSpikes ci1Spikes ),("ci1 flexor" , cc1 flex1Spikes ci1Spikes), ("seti feti",  cc1 fetiSpikes setiSpikes), ("seti flexor ", cc1 flex1Spikes setiSpikes), ("feti flexor ", cc1 flex1Spikes fetiSpikes), ("ci1 flexor2" , cc1 flex2Spikes ci1Spikes ),("seti flexor2 ", cc1 flex2Spikes setiSpikes), ("feti flexor2 ", cc1 flex2Spikes fetiSpikes)  ]
+
+> show [length flex2Spikes, length setiSpikes, length ci1Spikes, length fetiSpikes, length flex1Spikes]
 
 > break
 

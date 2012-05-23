@@ -8,7 +8,7 @@ import Data.Binary.Get
 import Data.Binary.Put
 import qualified Data.ByteString.Lazy as L
 import Numbers
-import Array
+--import Array
 import Control.Monad 
 import TNUtils
 import Debug.Trace
@@ -152,7 +152,7 @@ getRaw (PairT t1 t2) = do v1 <- getRaw t1
                           return $ PairV v1 v2
 getRaw (ListT t) = do n <- get :: Get Int
                       ListV `fmap` getManyRaw n t
-getRaw (SignalT (NumT (Just RealT))) = do 
+{-getRaw (SignalT (NumT (Just RealT))) = do 
                         t1 <- get
                         t2 <- get
                         dt <- get 
@@ -167,7 +167,7 @@ getRaw (SignalT t) = do t1 <- getD
                         let n = round $ (t2-t1)/dt
                         vls <- getManyRaw n t
                         let arr = listArray (0, length vls -1) vls
-                        return . SigV t1 t2 dt $ \pt->arr!pt
+                        return . SigV t1 t2 dt $ \pt->arr!pt -}
                        
 
 -- copied from Data.Binary

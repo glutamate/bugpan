@@ -8,7 +8,7 @@ import qualified Data.StorableVector as SV
 import System.Time
 import Database
 --import Parse
-import EvalM hiding (ListT)
+--import EvalM hiding (ListT)
 --import Eval
 --import Expr
 --import Stages
@@ -34,6 +34,7 @@ import PlotGnuplot
 import QueryPlots
 --import RandomSources
 import System.Random.Mersenne
+import NewSignal
 
 --1. AVERAGE WAVEFORMS CI1-SETI and CI1-FLEXOR
 --2. for every ci1 spike which is nearest : seti or flexor?
@@ -49,7 +50,7 @@ manyDurs :: Int -> Double -> Double -> [Duration ()]
 manyDurs n tsep tmax= let durs = replicate n ((0,tmax),())
                       in map (\(oneDur,i)->shift (i*tsep) oneDur)  $ zip durs [0..]
  
---extensor max 0.030 s
+--extensor max 0.030 s 
 --flexor max 0.025 s
 
 

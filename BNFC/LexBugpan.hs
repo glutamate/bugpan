@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 {-# OPTIONS -fglasgow-exts -cpp #-}
 {-# LINE 3 "LexBugpan.x" #-}
 

@@ -7,7 +7,7 @@ import Data.Binary
 import Data.Binary.Get
 import qualified Data.ByteString.Lazy as L
 import Numbers
-import Array
+--import Array
 import Control.Monad 
 import TNUtils
 import Debug.Trace
@@ -92,12 +92,12 @@ getFull = do tt1 <- get
                        --vls <- get
                        vls <- forM [0..n-1] $ const getFull
                        return $ OListV vls
-               8 -> do t1 <- get
+{-               8 -> do t1 <- get
                        t2 <- get
                        dt <- get
                        vls <- forM [t1,t1+dt..t2] $ const getFull
                        let arr = listArray (0, length vls -1) vls
-                       return . OSigV t1 t2 dt $ \pt->arr!pt
+                       return . OSigV t1 t2 dt $ \pt->arr!pt -}
                9 -> OStringV `fmap` get 
                tt -> error $ "unknown type tag: "++show tt
     where idWord8 :: Word8 -> Word8
