@@ -94,50 +94,50 @@ loadChainMap nm cnum (flo, fhi) takeN dropN = do
       where nOf n lst = sequence $ replicate n $ oneOf lst
             joinMap k mv = fmap ((,) k) mv 
   
-newtype Samples a = Samples {unSamples :: [a] } deriving (Eq, Ord, Show)
+newtype Sampls a = Sampls {unSampls :: [a] } deriving (Eq, Ord, Show)
 
-pickSamples :: [(String,[a])] -> IO [(String,a)]
-pickSamples = mapM $ \(s,xs)-> fmap (((,) s) . head) $ runSamplerIO $ oneOf xs
+pickSampls :: [(String,[a])] -> IO [(String,a)]
+pickSampls = mapM $ \(s,xs)-> fmap (((,) s) . head) $ runSamplerIO $ oneOf xs
 
-instance Functor Samples where
-    fmap f = Samples . map f . unSamples
+instance Functor Sampls where
+    fmap f = Sampls . map f . unSampls
 
-instance Applicative Samples where
-    pure x = Samples $ repeat x
-    (Samples fs) <*> (Samples xs) = Samples $ zipWith ($) fs xs
+instance Applicative Sampls where
+    pure x = Sampls $ repeat x
+    (Sampls fs) <*> (Sampls xs) = Sampls $ zipWith ($) fs xs
 
-samOp2 op (Samples xs) (Samples ys) = Samples $ zipWith op xs ys
+samOp2 op (Sampls xs) (Sampls ys) = Sampls $ zipWith op xs ys
 
-thinSamples n = Samples . thin n . unSamples
+thinSampls n = Sampls . thin n . unSampls
 
-samMean (Samples xs) = runStat meanF xs
+samMean (Sampls xs) = runStat meanF xs
 
-samplesGaussian (Samples xs)= 
+samplesGaussian (Sampls xs)= 
                 let (mu,sd) = runStat meanSDF xs
                     gaussian = P.gauss mu sd
                     dx = 6*sd/100
                 in  for [0..99] $ \i-> let x = i*dx+(mu-3*sd) in (x, gaussian $ i*dx+(mu-3*sd))
 
-instance Num a => Num (Samples a) where
+instance Num a => Num (Sampls a) where
     (+) = samOp2 (+)
     (*) = samOp2 (*)
     (-) = samOp2 (-)
     abs = fmap abs
     signum = fmap signum
-    fromInteger = Samples . repeat . fromInteger
+    fromInteger = Sampls . repeat . fromInteger
 
-instance Fractional a => Fractional (Samples a) where
+instance Fractional a => Fractional (Sampls a) where
     (/) = samOp2 (/)
-    fromRational = Samples . repeat . fromRational    
+    fromRational = Sampls . repeat . fromRational    
 
 onlyKeys :: Eq k => [k] -> [(k,v)] -> [(k,v)]
 onlyKeys ks = filter ((`elem` ks) . fst)
 
-mapScat :: [String] -> [Samples Double] -> CatScat
-mapScat nms sams = CatScat $ zip nms $ map unSamples sams
+mapScat :: [String] -> [Sampls Double] -> CatScat
+mapScat nms sams = CatScat $ zip nms $ map unSampls sams
 
-instance PlotWithGnuplot (Samples Double) where
-   getGnuplotCmd (Samples xs) = getGnuplotCmd $ Histo 50 $ xs
+instance PlotWithGnuplot (Sampls Double) where
+   getGnuplotCmd (Sampls xs) = getGnuplotCmd $ Histo 50 $ xs
 
 mapSingly2 :: Eq k => k -> (v->v->a) -> k -> [(k,[v])] -> [a]
 mapSingly2 k1 op k2 mp = 
