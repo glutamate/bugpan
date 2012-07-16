@@ -12,11 +12,11 @@ build-type:          Custom
 
 Flag NoGl
   Description: Disable OpenGL and GLFW
-  Default:     False
+  Default:     True
 
 Flag NoDaq
   Description: Disable Comedi DAQ
-  Default:     False
+  Default:     True
 
 Flag OnlyLib
   Description: Only build library
