@@ -25,7 +25,7 @@ data RandomSignal = RandomSignal (Signal Double) Double
 
 instance Distribution RandomSignal where
     type Elem RandomSignal = Signal Double
-    pdf (RandomSignal (Signal _ _ _ muArr Eq) noise) (Signal _ _ _ obsArr Eq) = 
+    pdf (RandomSignal (Signal _ _ _ muArr Eq) noise) (Signal _ _ _ obsArr Eq) =
       {-let mu = sigToVector $ forceSigEq meansig
           k = dim mu
           sigma = (realToFrac noise) * ident k
@@ -33,7 +33,7 @@ instance Distribution RandomSignal where
        SV.foldl1' (+) $ SV.zipWith (\muval obsVal -> P.gaussD muval noise obsVal) muArr obsArr
 
 {-instance ProperDistribution RandomSignal where
-    sampler (RandomSignal meansig@(Signal t1 t2 dt _ _) noise) = 
+    sampler (RandomSignal meansig@(Signal t1 t2 dt _ _) noise) =
       let mu = sigToVector $ forceSigEq meansig
           k = dim mu
           sigma = (realToFrac noise) * ident k
@@ -45,25 +45,25 @@ data RandomSignalFast = RandomSignalFast (Double->Double) Double
 
 instance Distribution RandomSignalFast where
     type Elem RandomSignalFast = Signal Double
-    --pdf (RandomSignalFast meansigf noise) (Signal t1 t2 dt obsArr Eq)= 
-      {-let k = round $ tmax/dt 
+    --pdf (RandomSignalFast meansigf noise) (Signal t1 t2 dt obsArr Eq)=
+      {-let k = round $ tmax/dt
           mu = buildVector k $ meansigf . (*dt) . realToFrac
           sigma = (realToFrac noise) * ident k
       in \Signal _ _ _ arr Eq) -> sum P.multiNormal mu sigma $ sigToVector $ forceSigEq obsSig  -}
     pdf = altPdfRSF1 -- longPdfRSF
 
 altPdfRSF1 :: RandomSignalFast -> Signal Double -> Double
-altPdfRSF1 (RandomSignalFast meansigf noise) (Signal t1 t2 dt obsArr Eq)= 
+altPdfRSF1 (RandomSignalFast meansigf noise) (Signal t1 t2 dt obsArr Eq)=
         let f i obsVal = P.gaussD (meansigf . (*dt) . realToFrac $ i) noise obsVal
         in SV.foldl1' (+) $ SV.mapIndexed f obsArr
 
 altPdfRSF :: RandomSignalFast -> Signal Double -> Double
-altPdfRSF (RandomSignalFast meansigf noise) (Signal t1 t2 dt obsArr Eq)= 
-        let facc  obsVal (sm, i) = (sm+P.gaussD (meansigf . (*dt) . realToFrac $ i) noise obsVal, i+1)
+altPdfRSF (RandomSignalFast meansigf noise) (Signal t1 t2 dt obsArr Eq)=
+        let facc  obsVal (sm, i) = (sm+P.gaussD (meansigf . (*dt) . realToFrac $ (i::Int)) noise obsVal, i+1)
         in fst $ SV.foldr facc (0,0) obsArr
 
 {-longPdfRSF :: RandomSignalFast -> Signal Double -> Double
-longPdfRSF  (RandomSignalFast meansigf noise) obsSig@(Signal t1 t2 dt obsArr Eq)= 
+longPdfRSF  (RandomSignalFast meansigf noise) obsSig@(Signal t1 t2 dt obsArr Eq)=
       let meansig = fillSig t1 t2 dt meansigf
           mu = sigToVector $ forceSigEq meansig
           k = dim mu
@@ -77,9 +77,9 @@ testRS = RandomSignalFast id 0.1
 testm = (realToFrac 3.2 * ident 10):: Matrix Double
 
 --buildVector :: Element a => Int -> (Int -> a) -> Vector a
-                    
+
 {-instance ProperDistribution RandomSignalFast where
-    sampler (RandomSignal meansig@(Signal t1 t2 dt _ _) noise) = 
+    sampler (RandomSignal meansig@(Signal t1 t2 dt _ _) noise) =
       let mu = sigToVector $ forceSigEq meansig
           k = dim mu
           sigma = (realToFrac noise) * ident k
@@ -88,11 +88,11 @@ testm = (realToFrac 3.2 * ident 10):: Matrix Double
     estimator = undefined -}
 
 
-data InhomogeneousPoisson = InhomogeneousPoisson (Signal Double) (Signal Double) 
+data InhomogeneousPoisson = InhomogeneousPoisson (Signal Double) (Signal Double)
 
 instance Distribution InhomogeneousPoisson where
     type Elem InhomogeneousPoisson = [(Double,())]
-    pdf (InhomogeneousPoisson rateSig intRate ) evs = 
+    pdf (InhomogeneousPoisson rateSig intRate ) evs =
         (sum $ map (log . (rateSig `readSig`) . fst) evs) -log (intRate`readSig`(sigT1 rateSig) - intRate`readSig`(sigT2 rateSig))
 
 
@@ -102,7 +102,7 @@ instance ProperDistribution InhomogeneousPoisson where
 
 
 simulateInhomogeneousPoisson ::[Duration a] -> (a -> Signal Double) -> S.Sampler [Event ()]
-simulateInhomogeneousPoisson durpars condRate = 
+simulateInhomogeneousPoisson durpars condRate =
     let bigsam = fmap concat $ forM durpars $ \((t1d, t2d),p)-> do
                     evs <- sIPevSam $ condRate p
                     return $ map (onFst (+t1d)) evs
@@ -119,7 +119,6 @@ sIPevSam rate@(Signal t1 t2 dt _ _) = do
                   return $ u<(rate `readSig` t) * dt
   fmap (map $ flip (,) ()) $ filterM isGo (sigTimePoints rate)
 
---foo = filterM 
+--foo = filterM
 
 test = simulateInhomogeneousPoisson [((10,13), 11), ((20,23), 20)] (\x-> x*sineSig)
-

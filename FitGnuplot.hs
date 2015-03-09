@@ -18,7 +18,7 @@ import System.IO.Unsafe
 import Control.Monad
 
 data Fit = Fit String [(String, Double)] (Signal Double)
-         
+
 data FitG = FitG ([Double] -> Double -> Double) (Sampler [Double]) (Signal Double)
 
 instance QueryResult Fit where
@@ -26,7 +26,7 @@ instance QueryResult Fit where
     qReply (Fit eqn initVals sig) _ = do
                            nm <- fit eqn initVals sig
                            return $ "\\input{"++nm++"}"
-                                    
+
 
 fit :: String -> [(String, Double)] -> Signal Double -> IO String
 fit eqn initVals sig@(Signal t1 t2 dt _ _) = do
@@ -34,7 +34,7 @@ fit eqn initVals sig@(Signal t1 t2 dt _ _) = do
   let fnm = "/tmp/fitgnuplotsig"++ u
   writeSig fnm $ forceSigEq sig
   let format = "format=\"%float64\" using ($0*"++^dt++"+"++^ t1++"):1"
-  --putStrLn format             
+  --putStrLn format
   let cmd=unlines $ ["set terminal latex",
                      "set output 'fitplot"++u++"'",
                      "pos(x)=x<0?0:x",
@@ -57,7 +57,7 @@ fitG f inits sigs = map g sigs
     where g sig@(Signal t1 t2 _ _ _) = ((t1,t2), fst3 $ fitG' f inits (const 0) sig)
 
 fitG' :: ([Double] -> Double -> Double) -> Sampler [Double] -> ([Double] -> Double) -> Signal Double -> ([Double], Signal Double, Double)
-fitG' f initsam penalty sig@(Signal t1 t2 dt arr Eq) = 
+fitG' f initsam penalty sig@(Signal t1 t2 dt arr Eq) =
     let fitsam = do
           inits <- initsam
           return $ fitG1 f inits penalty sig
@@ -72,16 +72,16 @@ fitG' f inits penalty sig = fitG' f inits penalty $ forceSigEq sig
 --foldl' :: Storable a => (b -> a -> b) -> b -> Vector a -> b
 
 fitG1 :: ([Double] -> Double -> Double) -> [Double] -> ([Double] -> Double) -> Signal Double -> Maybe ([Double], Signal Double, Double)
-fitG1 f inits penalty sig@(Signal t1 t2 dt arr Eq) = 
-   let n = SV.length arr 
+fitG1 f inits penalty sig@(Signal t1 t2 dt arr Eq) =
+   let n = SV.length arr
        square x = x*x
        predarr arg = SV.sample n (\i->f arg (realToFrac i*dt))
-       summer arg (!i,!sm) v = (i+1, sm + square (f arg (realToFrac i*dt) - v))
+       summer arg (!i,!sm) v = (i+1, sm + square (f arg (realToFrac (i::Int)*dt) - v))
        g arg = penalty arg + (snd $ SV.foldl' (summer arg) (0,0) arr)
        soln = unsafePerformIO $ C.catch (return $ Just $ minimize NMSimplex2 2E-5 300 (map (/10) inits) g inits)
-                                        (\e-> const (return Nothing) (e::C.SomeException)) 
+                                        (\e-> const (return Nothing) (e::C.SomeException))
        --soln =Just $ myMinimise 2E-5 300 (map (/10) inits) g inits
-                                        
+
        --soln = Just $ minimize NMSimplex2 1E-5 500 (map (/10) inits) g inits
    in case soln of
         Just s -> Just (fst s, Signal t1 t2 dt (predarr $ fst s) Eq, g $ fst s)
@@ -92,28 +92,28 @@ fitS :: ([Double] -> Double -> Double) -> Sampler [Double] -> [Signal Double] ->
 fitS f initsam sigs = map (snd3 . fitG' f initsam (const 0). forceSigEq) sigs
 
 myMinimise tol iters cv f init =
-    myMin (f init) init 0 
-          where myMin !curfit vals !iter 
+    myMin (f init) init 0
+          where myMin !curfit vals !iter
                     | curfit < tol = vals
                     | iter > iters = vals
-                    | otherwise = let newvs = for (zip vals cv) $ \(v, cv) -> 
+                    | otherwise = let newvs = for (zip vals cv) $ \(v, cv) ->
                                                  head $ sampleN 1 $ gaussD v (v*cv)
                                   in myMin (f newvs) newvs (iter+1)
-                  
+
 
 
 instance PlotWithGnuplot FitG where
-    getGnuplotCmd (FitG f inits sig@(Signal t1 t2 dt _ _)) = 
+    getGnuplotCmd (FitG f inits sig@(Signal t1 t2 dt _ _)) =
         let soln = fst3 $ fitG' f inits (const 0) sig
         in getGnuplotCmd $ FunSeg t1 t2 $ f soln
-       
-                     
+
+
 instance QueryResult FitG where
     qFilterSuccess _ = True
     qReply (FitG eqn initVals sig) _ = do
                             let (sol, _, err) = fitG' eqn initVals (const 0) $ forceSigEq sig
                             return $ show (err,sol)
- 
+
 
 mainTest = fit "a*x*x+b*x+c" [("a", 1), ("b", 2), ("c", 3)] sineSig
 mainTest1 = fitG' (\[a,b,c] x-> a*x*x+b*x+c) (return [1,2,3]) (const 0) sineSig

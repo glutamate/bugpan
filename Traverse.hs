@@ -5,7 +5,7 @@ import Expr
 import Control.Monad.State.Strict
 import Control.Monad.Identity
 import qualified Data.List as L
-import Debug.Trace
+import Debug.Trace hiding (traceM)
 import Data.Maybe
 import PrettyPrint
 import TNUtils
@@ -25,7 +25,7 @@ data TravS = TravS { counter :: Int,
 type TravM a = StateT TravS (Either  String) a
 
 alterDefinition :: String -> (E->E) -> TravM ()
-alterDefinition nm f = do 
+alterDefinition nm f = do
   ds <- decls `fmap` get
   let line = [ (def,lnum, t) | (Let (PatVar nm1 t) def ,lnum) <- zip ds [0..], nm==nm1]
   case line of
@@ -33,7 +33,7 @@ alterDefinition nm f = do
     [] -> return ()
 
 alterTypeDefinition :: String -> T -> TravM ()
-alterTypeDefinition nm t = do 
+alterTypeDefinition nm t = do
   ds <- decls `fmap` get
   let line = [ (def,lnum) | (DeclareType nm1 def ,lnum) <- zip ds [0..], nm==nm1]
   case line of
@@ -45,7 +45,7 @@ clearTyConstraints = setter (\s-> s {tyConstraints = []})
 
 addTyConstraint :: (T,T) -> TravM ()
 addTyConstraint con = setter (\s-> s {tyConstraints = con:tyConstraints s})
-                      
+
 traceDecls :: TravM ()
 traceDecls = do ds <- decls `fmap` get
                 mapM_ (\d->traceM $ ppDecl d) ds
@@ -78,18 +78,18 @@ errorInfo :: String -> TravM a -> TravM a
 errorInfo msg ma = ma `catchError` (\s-> throwError $ s++"\n"++msg)
 
 runTravM :: [Declare] -> [(String, E)] -> TravM a -> (a, [Declare])
-runTravM decs env tx 
+runTravM decs env tx
     = let initS = TravS 0 decs env [] 0 [] False []
           (x, TravS _ decsFinal _ _ _ _ _ _) = case  runStateT tx initS of
                                                  Left s -> error $ "runTravM fail: "++s
                                                  Right tup -> tup
                                                -- Just x -> x
                                                -- Nothing -> error "runTravM returns mzero"
-                                             
+
       in (x, decsFinal)
 
 safeRunTravM :: [Declare] -> TravM a -> Either String [Declare]
-safeRunTravM decs tx 
+safeRunTravM decs tx
     = let initS = TravS 0 decs [] [] 0 [] False []
       in case runStateT tx initS of
                   Left s -> Left s
@@ -104,8 +104,8 @@ mapDE f =do ds <- decls `fmap` get
             untilM (stopCond `fmap` get) $ do
               ln <- curLine
               --trace ("now doing line "++show ln) $ return ()
-              case ln of 
-                Let n e -> do 
+              case ln of
+                Let n e -> do
                         e' <- errorInfo ("in line: "++ppDecl ln) $ f e
                         when (e' /= e) $ do markChange
                                             --trace (pp e++ " /= \n" ++ pp e') $ return ()
@@ -114,11 +114,11 @@ mapDE f =do ds <- decls `fmap` get
                 _ -> return ()
               lnum <- lineNum `fmap` get
               setter $ \s-> s { lineNum = lnum+1 }
-                     
+
 stopCond :: TravS -> Bool
 stopCond s = lineNum s >= length ( decls s)
 
-           -- forM_ [0..(lns-1)] $ \lnum-> do 
+           -- forM_ [0..(lns-1)] $ \lnum-> do
 
 mapD :: (Declare -> TravM Declare)  -> TravM ()
 mapD f = do ds <- decls `fmap` get
@@ -135,7 +135,7 @@ mapD f = do ds <- decls `fmap` get
 
 
 renameEverywhere :: String -> String -> TravM ()
-renameEverywhere oldn newn 
+renameEverywhere oldn newn
     = do ds <- decls `fmap` get
          setter $ \s-> s { decls = map rnm ds}
     where rnm (Let (PatVar nm t) e) | nm == oldn = Let (PatVar newn t) $ mapE rne e
@@ -144,7 +144,7 @@ renameEverywhere oldn newn
           rnm (Stage nm s) | nm == oldn = Stage newn s
                            | otherwise = Stage nm s
           rnm d = d
-          
+
           rne (Var n) | n == oldn = Var newn
                       | otherwise = Var n
           rne e = e
@@ -157,7 +157,7 @@ whileChanges :: TravM () -> TravM ()
 whileChanges ma = do eraseChange
                      ma
                      whenM (changed `fmap` get)
-                           (whileChanges ma) 
+                           (whileChanges ma)
 
 markChange = setter $ \s-> s { changed = True }
 eraseChange = setter $ \s-> s { changed = False }
@@ -210,7 +210,7 @@ lookUp nm = do env <- trenv `fmap` get
                                Just e -> return e
                                Nothing -> do ln <- curLine
                                              fail $ "lookUp: can't find "++nm++" in line: "++ ppDecl ln++"\nin env"++show (map fst ds)
-                          
+
 
 safeLookUp :: String -> TravM (Maybe E)
 safeLookUp nm = do env <- trenv `fmap` get
@@ -219,7 +219,7 @@ safeLookUp nm = do env <- trenv `fmap` get
                      Nothing -> lookUpInDecls
     where lookUpInDecls = do ds <- declsToEnv `fmap` decls `fmap` get
                              return $ L.lookup nm ds
-          
+
 insertAtTop :: [Declare] -> TravM ()
 insertAtTop [] = return ()
 insertAtTop ds = markChange >> (setter $ \s-> let ln = lineNum s
@@ -244,7 +244,7 @@ insertAfter ds = markChange >> (setter $ \s-> let ln = lineNum s
 
 declsToEnv [] = []
 declsToEnv (Let (PatVar n t) e:ds) = (n,e):declsToEnv ds
-declsToEnv (_:ds) = declsToEnv ds 
+declsToEnv (_:ds) = declsToEnv ds
 
 concatM :: Monad m => [m [a]] -> m [a]
 concatM [] = return []
@@ -257,19 +257,19 @@ queryM q e = queryM' e
     where m = queryM q
           queryM' e@(If p c a) = concatM [q e,m p, m c,m a]
           queryM' e@(LetE ses er) = withBvars (concatMap (patIntroducedVars . fst) ses) $
-                           concatM [q e, 
-                                    concat `fmap` mapM m (map snd ses), 
+                           concatM [q e,
+                                    concat `fmap` mapM m (map snd ses),
                                     m er]
-          queryM' e@(Switch ses er) = concatM [q e, 
-                                      concat `fmap` mapM m (map fst ses), 
-                                      concat `fmap` mapM m (map snd ses), 
+          queryM' e@(Switch ses er) = concatM [q e,
+                                      concat `fmap` mapM m (map fst ses),
+                                      concat `fmap` mapM m (map snd ses),
                                       m er]
           queryM' e@(Lam n t bd) = withBvars [n] $ concatM [q e, m bd]
           queryM' e@(App le ae) = concatM [q e, m le, m ae]
           queryM' e@(Pair e1 e2) = concatM [q e, m e1, m e2]
           queryM' e@(Cons e1 e2) =concatM [ q e, m e1, m e2]
           queryM' e@(M1 _ e1) = concatM [q e, m e1]
-          queryM' e@(M2 _ e1 e2) = concatM [q e, m e1, m e2] 
+          queryM' e@(M2 _ e1 e2) = concatM [q e, m e1, m e2]
           queryM' e@(Cmp _ e1 e2) = concatM [q e, m e1, m e2]
           queryM' e@(And e1 e2) = concatM [q e, m e1, m e2]
           queryM' e@(Or e1 e2) = concatM [q e, m e1, m e2]
@@ -292,17 +292,17 @@ queryM q e = queryM' e
           queryM' e@(Translate e1 e2) = concatM [q e, m e1, m e2]
           queryM' e@(Colour e1 e2) = concatM [q e, m e1, m e2]
           queryM' e@(HasType _ e1) = concatM [q e, m e1]
-          queryM' e@(Case ce cs) = concatM [q e, q ce, 
-                                            concat `fmap` mapM (\(p,ep)->  
-                                                                withBvars (patIntroducedVars p) 
+          queryM' e@(Case ce cs) = concatM [q e, q ce,
+                                            concat `fmap` mapM (\(p,ep)->
+                                                                withBvars (patIntroducedVars p)
                                                                           (m ep)) cs]
 
---queryM q e = fail $ "queryM: unknown expr "++show  e 
+--queryM q e = fail $ "queryM: unknown expr "++show  e
 
 
 mapEM :: (E-> TravM E)-> E -> TravM E
 mapEM f e = mapEM' e
-    where m = withPath e . mapEM f 
+    where m = withPath e . mapEM f
           mapEM' (If p c a) = ( return If `ap` m p `ap` m c `ap` m a) >>= f
           mapEM' (Lam n t bd) = (withBvars [n] $ return (Lam n t) `ap` m bd) >>= f
           mapEM' (App le ae) = (return App `ap` m le `ap` m ae) >>= f
@@ -335,17 +335,16 @@ mapEM f e = mapEM' e
           mapEM' (HasType t s2) = (return (HasType t) `ap` m s2) >>= f
 
           mapEM' (LetE ses er) = (
-              withBvars (concatMap (patIntroducedVars . fst) ses) $ 
-              return LetE `ap` mapM (\(p,e)-> return ((,) p) `ap` m e) ses 
+              withBvars (concatMap (patIntroducedVars . fst) ses) $
+              return LetE `ap` mapM (\(p,e)-> return ((,) p) `ap` m e) ses
                           `ap` m er) >>= f
-          mapEM' (Case e pats) = (return Case `ap` 
-                                         m e `ap` 
-                                         mapM (\(pat, ep)-> 
-                                               (pair pat) `fmap` (withBvars (patIntroducedVars pat) $ m ep)) pats 
+          mapEM' (Case e pats) = (return Case `ap`
+                                         m e `ap`
+                                         mapM (\(pat, ep)->
+                                               (pair pat) `fmap` (withBvars (patIntroducedVars pat) $ m ep)) pats
                           ) >>= f
           mapEM' (Switch ses er) = (
-              return Switch `ap` mapM (\(e1,e2)-> return (,) `ap` m e1 `ap` m e2) ses 
+              return Switch `ap` mapM (\(e1,e2)-> return (,) `ap` m e1 `ap` m e2) ses
                             `ap` m er) >>= f
           pair x y = (x,y)
-          -- mapE f e = error $ "mapE: unknown expr "++show e 
-              
+          -- mapE f e = error $ "mapE: unknown expr "++show e

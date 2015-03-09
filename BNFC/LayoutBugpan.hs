@@ -9,12 +9,18 @@ import Data.Maybe (isNothing, fromJust)
 
 -- local parameters
 
+
+topLayout :: Bool
 topLayout = False
-layoutWords = ["where","of","let","switch"]
+
+layoutWords, layoutStopWords :: [String]
+layoutWords     = ["where","of","let","switch"]
 layoutStopWords = ["in"]
 
 -- layout separators
 
+
+layoutOpen, layoutClose, layoutSep :: String
 layoutOpen  = "{"
 layoutClose = "}"
 layoutSep   = ";"
@@ -53,15 +59,15 @@ resolveLayout tp = res Nothing [if tl then Implicit 1 else Explicit]
                      -- insert an open brace after the layout word
                      b:ts' = addToken (nextPos t0) layoutOpen ts
                      -- save the start column
-                     st' = Implicit col:st 
+                     st' = Implicit col:st
                   in moveAlong st' [t0,b] ts'
 
     -- If we encounter a closing brace, exit the first explicit layout block.
-    | isLayoutClose t0 = 
+    | isLayoutClose t0 =
           let st' = drop 1 (dropWhile isImplicit st)
-           in if null st' 
-                 then error $ "Layout error: Found " ++ layoutClose ++ " at (" 
-                              ++ show (line t0) ++ "," ++ show (column t0) 
+           in if null st'
+                 then error $ "Layout error: Found " ++ layoutClose ++ " at ("
+                              ++ show (line t0) ++ "," ++ show (column t0)
                               ++ ") without an explicit layout block."
                  else moveAlong st' [t0] ts
 
@@ -69,8 +75,8 @@ resolveLayout tp = res Nothing [if tl then Implicit 1 else Explicit]
   res pt st@(Implicit n:ns) (t0:ts)
 
       -- End of implicit block by a layout stop word
-    | isStop t0 = 
-           -- Exit the current block and all implicit blocks 
+    | isStop t0 =
+           -- Exit the current block and all implicit blocks
            -- more indented than the current token
        let (ebs,ns') = span (`moreIndent` column t0) ns
            moreIndent (Implicit x) y = x > y
@@ -83,18 +89,18 @@ resolveLayout tp = res Nothing [if tl then Implicit 1 else Explicit]
         in moveAlong ns' ts1 ts2
 
     -- End of an implicit layout block
-    | newLine && column t0 < n  = 
+    | newLine && column t0 < n  =
            -- Insert a closing brace after the previous token.
        let b:t0':ts' = addToken (afterPrev pt) layoutClose (t0:ts)
            -- Repeat, with the current block removed from the stack
         in moveAlong ns [b] (t0':ts')
 
     -- Encounted a new line in an implicit layout block.
-    | newLine && column t0 == n = 
+    | newLine && column t0 == n =
        -- Insert a semicolon after the previous token.
        -- unless we are the beginning of the file,
        -- or the previous token is a semicolon or open brace.
-       if isNothing pt || isTokenIn [layoutSep,layoutOpen] (fromJust pt) 
+       if isNothing pt || isTokenIn [layoutSep,layoutOpen] (fromJust pt)
           then moveAlong st [t0] ts
           else let b:t0':ts' = addToken (afterPrev pt) layoutSep (t0:ts)
                 in moveAlong st [b,t0'] ts'
@@ -111,28 +117,28 @@ resolveLayout tp = res Nothing [if tl then Implicit 1 else Explicit]
 
   -- If we are using top-level layout, insert a semicolon after
   -- the last token, if there isn't one already
-  res (Just t) [Implicit n] []
+  res (Just t) [Implicit _n] []
       | isTokenIn [layoutSep] t = []
       | otherwise = addToken (nextPos t) layoutSep []
 
   -- At EOF in an implicit, non-top-level block: close the block
-  res (Just t) (Implicit n:bs) [] =
+  res (Just t) (Implicit _n:bs) [] =
      let c = addToken (nextPos t) layoutClose []
       in moveAlong bs c []
 
   -- This should only happen if the input is empty.
-  res Nothing st [] = []
+  res Nothing _st [] = []
 
   -- | Move on to the next token.
   moveAlong :: [Block] -- ^ The layout stack.
             -> [Token] -- ^ Any tokens just processed.
             -> [Token] -- ^ the rest of the tokens.
             -> [Token]
-  moveAlong st [] ts = error $ "Layout error: moveAlong got [] as old tokens"
+  moveAlong _  [] _  = error $ "Layout error: moveAlong got [] as old tokens"
   moveAlong st ot ts = ot ++ res (Just $ last ot) st ts
 
 data Block = Implicit Int -- ^ An implicit layout block with its start column.
-           | Explicit 
+           | Explicit
              deriving Show
 
 type Position = Posn
@@ -147,7 +153,7 @@ addTokens :: Position -- ^ Position of the first new token.
           -> [String] -- ^ Token symbols.
           -> [Token]  -- ^ The rest of the tokens. These will have their
                       --   positions updated to make room for the new tokens .
-          -> [Token]                       
+          -> [Token]
 addTokens p ss ts = foldr (addToken p) ts ss
 
 -- | Insert a new symbol token at the begninning of a list of tokens.
@@ -164,8 +170,8 @@ afterPrev :: Maybe Token -> Position
 afterPrev = maybe (Pn 0 1 1) nextPos
 
 -- | Get the position immediately to the right of the given token.
-nextPos :: Token -> Position 
-nextPos t = Pn (g + s) l (c + s + 1) 
+nextPos :: Token -> Position
+nextPos t = Pn (g + s) l (c + s + 1)
   where Pn g l c = position t
         s = tokenLength t
 
@@ -183,7 +189,91 @@ incrGlobal _ _ p = error $ "cannot add token at " ++ show p
 
 -- | Create a symbol token.
 sToken :: Position -> String -> Token
-sToken p s = PT p (TS s) -- reserved word or symbol
+sToken p s = PT p (TS s i)
+  where
+    i = case s of
+      " " -> 1
+      "!" -> 2
+      "!=" -> 3
+      "#" -> 4
+      "&&" -> 5
+      "(" -> 6
+      "()" -> 7
+      ")" -> 8
+      "*" -> 9
+      "*>" -> 10
+      "+" -> 11
+      "," -> 12
+      "-" -> 13
+      "->" -> 14
+      "/" -> 15
+      ":" -> 16
+      "::" -> 17
+      ":>" -> 18
+      ":]" -> 19
+      ":}" -> 20
+      ";" -> 21
+      "<" -> 22
+      "<*" -> 23
+      "<-" -> 24
+      "<:" -> 25
+      "<=" -> 26
+      "=" -> 27
+      "==" -> 28
+      "=>" -> 29
+      ">" -> 30
+      ">=" -> 31
+      "?" -> 32
+      "@" -> 33
+      "Bool" -> 34
+      "D" -> 35
+      "Duration" -> 36
+      "Event" -> 37
+      "Int" -> 38
+      "Number" -> 39
+      "Real" -> 40
+      "Shape" -> 41
+      "Signal" -> 42
+      "[" -> 43
+      "[:" -> 44
+      "[]" -> 45
+      "\\" -> 46
+      "]" -> 47
+      "^^" -> 48
+      "_" -> 49
+      "box" -> 50
+      "case" -> 51
+      "colour" -> 52
+      "delay" -> 53
+      "else" -> 54
+      "escan" -> 55
+      "exp" -> 56
+      "false" -> 57
+      "fby" -> 58
+      "forget" -> 59
+      "if" -> 60
+      "im" -> 61
+      "in" -> 62
+      "inevery" -> 63
+      "let" -> 64
+      "ln" -> 65
+      "module" -> 66
+      "of" -> 67
+      "re" -> 68
+      "stage" -> 69
+      "switch" -> 70
+      "then" -> 71
+      "translate" -> 72
+      "true" -> 73
+      "use" -> 74
+      "where" -> 75
+      "{" -> 76
+      "{:" -> 77
+      "||" -> 78
+      "}" -> 79
+      "~" -> 80
+      "~>" -> 81
+      _ -> error $ "not a reserved word: " ++ show s
 
 -- | Get the position of a token.
 position :: Token -> Position
@@ -202,7 +292,7 @@ column t = case position t of Pn _ _ c -> c
 -- | Check if a token is one of the given symbols.
 isTokenIn :: [String] -> Token -> Bool
 isTokenIn ts t = case t of
-  PT _ (TS r) | elem r ts -> True
+  PT _ (TS r _) | elem r ts -> True
   _ -> False
 
 -- | Check if a word is a layout start token.
